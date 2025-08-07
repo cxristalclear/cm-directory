@@ -3,105 +3,182 @@
 import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { supabase } from '@/lib/supabase'
+import { useFilters } from '../contexts/FilterContext'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
 
-interface Facility {
-  id: string
-  company_id: string
-  city: string
-  state: string
-  latitude: number
-  longitude: number
-  companies: {
-    company_name: string
-    website_url: string
-    slug: string
-  }
+interface CompanyMapProps {
+  allCompanies: any[]
 }
 
-export default function CompanyMap() {
+export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
-  const [facilities, setFacilities] = useState<Facility[]>([])
+  const markers = useRef<mapboxgl.Marker[]>([])
+  const { filters, setFilteredCount } = useFilters()
+  const [filteredFacilities, setFilteredFacilities] = useState<any[]>([])
 
-  useEffect(() => {
-    fetchFacilities()
-  }, [])
+  // Filter companies based on current filters
+  const filterCompanies = () => {
+    let filtered = [...allCompanies]
 
-  const fetchFacilities = async () => {
-    const { data, error } = await supabase
-      .from('facilities')
-      .select(`
-        id,
-        company_id,
-        city,
-        state,
-        latitude,
-        longitude,
-        companies (
-          company_name,
-          website_url,
-          slug
-        )
-      `)
-      .not('latitude', 'is', null)
-      .not('longitude', 'is', null)
-
-    if (data) {
-      setFacilities(data as any)
+    // Search term filter
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase()
+      filtered = filtered.filter(company =>
+        company.company_name?.toLowerCase().includes(searchLower) ||
+        company.description?.toLowerCase().includes(searchLower) ||
+        company.key_differentiators?.toLowerCase().includes(searchLower)
+      )
     }
+
+    // State filter
+    if (filters.states.length > 0) {
+      filtered = filtered.filter(company =>
+        company.facilities?.some((f: any) => filters.states.includes(f.state))
+      )
+    }
+
+    // Capabilities filter
+    if (filters.capabilities.length > 0) {
+      filtered = filtered.filter(company => {
+        if (!company.capabilities?.[0]) return false
+        const cap = company.capabilities[0]
+        return filters.capabilities.some(filter => {
+          switch(filter) {
+            case 'smt': return cap.pcb_assembly_smt
+            case 'through_hole': return cap.pcb_assembly_through_hole
+            case 'cable_harness': return cap.cable_harness_assembly
+            case 'box_build': return cap.box_build_assembly
+            case 'prototyping': return cap.prototyping
+            default: return false
+          }
+        })
+      })
+    }
+
+    // Volume capability filter
+    if (filters.volumeCapability.length > 0) {
+      filtered = filtered.filter(company => {
+        if (!company.capabilities?.[0]) return false
+        const cap = company.capabilities[0]
+        return filters.volumeCapability.some(vol => {
+          switch(vol) {
+            case 'low': return cap.low_volume_production
+            case 'medium': return cap.medium_volume_production
+            case 'high': return cap.high_volume_production
+            default: return false
+          }
+        })
+      })
+    }
+
+    // Certifications filter
+    if (filters.certifications.length > 0) {
+      filtered = filtered.filter(company =>
+        company.certifications?.some((cert: any) =>
+          filters.certifications.includes(
+            cert.certification_type.toLowerCase().replace(/\s+/g, '_')
+          )
+        )
+      )
+    }
+
+    // Industries filter
+    if (filters.industries.length > 0) {
+      filtered = filtered.filter(company =>
+        company.industries?.some((ind: any) =>
+          filters.industries.includes(
+            ind.industry_name.toLowerCase().replace(/\s+/g, '_')
+          )
+        )
+      )
+    }
+
+    // Employee range filter
+    if (filters.employeeRange.length > 0) {
+      filtered = filtered.filter(company =>
+        filters.employeeRange.includes(company.employee_count_range)
+      )
+    }
+
+    // Extract facilities from filtered companies
+    const facilities = filtered.flatMap(company =>
+      company.facilities?.map((facility: any) => ({
+        ...facility,
+        company: company
+      })) || []
+    ).filter(f => f.latitude && f.longitude)
+
+    setFilteredFacilities(facilities)
+    setFilteredCount(filtered.length)
+    return facilities
   }
 
+  // Initial map setup
   useEffect(() => {
-    if (!mapContainer.current || facilities.length === 0) return
+    if (!mapContainer.current) return
 
-    // Initialize map
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
-      center: [-98.5795, 39.8283], // Center of USA
+      center: [-98.5795, 39.8283],
       zoom: 4
     })
 
-    // Add markers for each facility
-    facilities.forEach((facility) => {
-      if (facility.latitude && facility.longitude) {
-        // Create marker element
-        const el = document.createElement('div')
-        el.className = 'w-8 h-8 bg-blue-600 rounded-full border-2 border-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors'
-        
-        // Create popup
-        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-          <div class="p-2">
-            <h3 class="font-bold">${facility.companies?.company_name}</h3>
-            <p class="text-sm">${facility.city}, ${facility.state}</p>
-            <a href="/companies/${facility.companies?.slug}" class="text-blue-500 text-sm">View Details →</a>
-          </div>
-        `)
-
-        // Add marker to map
-        new mapboxgl.Marker(el)
-          .setLngLat([facility.longitude, facility.latitude])
-          .setPopup(popup)
-          .addTo(map.current!)
-      }
-    })
-
-    // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
 
     return () => {
       map.current?.remove()
     }
-  }, [facilities])
+  }, [])
+
+  // Update markers when filters change
+  useEffect(() => {
+    if (!map.current) return
+
+    // Clear existing markers
+    markers.current.forEach(marker => marker.remove())
+    markers.current = []
+
+    // Filter and add new markers
+    const facilities = filterCompanies()
+
+    facilities.forEach((facility: any) => {
+      const el = document.createElement('div')
+      el.className = 'w-8 h-8 bg-blue-600 rounded-full border-2 border-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors'
+      
+      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+        <div class="p-2">
+          <h3 class="font-bold">${facility.company.company_name}</h3>
+          <p class="text-sm">${facility.city}, ${facility.state}</p>
+          <a href="/companies/${facility.company.slug}" class="text-blue-500 text-sm">View Details →</a>
+        </div>
+      `)
+
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([facility.longitude, facility.latitude])
+        .setPopup(popup)
+        .addTo(map.current!)
+
+      markers.current.push(marker)
+    })
+
+    // Auto-adjust map bounds if we have filtered results
+    if (facilities.length > 0 && facilities.length < allCompanies.length * 0.5) {
+      const bounds = new mapboxgl.LngLatBounds()
+      facilities.forEach((f: any) => {
+        bounds.extend([f.longitude, f.latitude])
+      })
+      map.current.fitBounds(bounds, { padding: 50, maxZoom: 10 })
+    }
+  }, [filters, allCompanies])
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       <div ref={mapContainer} className="h-[600px] rounded-lg shadow-lg" />
       <div className="absolute top-4 left-4 bg-white px-4 py-2 rounded shadow">
-        <p className="font-semibold">{facilities.length} Locations</p>
+        <p className="font-semibold">{filteredFacilities.length} Locations</p>
       </div>
     </div>
   )
