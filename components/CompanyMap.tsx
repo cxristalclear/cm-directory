@@ -146,7 +146,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
     facilities.forEach((facility: any) => {
       const el = document.createElement('div')
-      el.className = 'w-8 h-8 bg-blue-600 rounded-full border-2 border-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors'
+      el.className = 'w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors'
       
       const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
         <div class="p-2">
