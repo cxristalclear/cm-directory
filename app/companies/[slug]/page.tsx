@@ -119,7 +119,7 @@ export default async function CompanyPage({
                   {company.certifications.map((cert: any, index: number) => (
                     <div key={index} className="flex justify-between items-center">
                       <span className="font-medium">{cert.certification_type}</span>
-                      <span className={`text-sm ${cert.status === 'Active' ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span className={`text-sm ${cert.status === 'Active' ? 'text-green-600' : 'text-black'}`}>
                         {cert.status} {cert.expiration_date && `(Expires: ${cert.expiration_date})`}
                       </span>
                     </div>
