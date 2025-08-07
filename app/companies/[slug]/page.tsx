@@ -2,7 +2,14 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-export default async function CompanyPage({ params }: { params: { slug: string } }) {
+export default async function CompanyPage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  // Await the params
+  const { slug } = await params;
+  
   const { data: company } = await supabase
     .from('companies')
     .select(`
@@ -15,7 +22,7 @@ export default async function CompanyPage({ params }: { params: { slug: string }
       business_info (*),
       contacts (*)
     `)
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .single()
 
   if (!company) {
@@ -47,7 +54,7 @@ export default async function CompanyPage({ params }: { params: { slug: string }
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-2xl font-bold mb-4">Company Overview</h2>
               {company.description && (
-                <p className="text-gray-700 mb-4">{company.description}</p>
+                <p className="text-black mb-4">{company.description}</p>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -127,7 +134,7 @@ export default async function CompanyPage({ params }: { params: { slug: string }
                 <h2 className="text-2xl font-bold mb-4">Industry Specializations</h2>
                 <div className="flex flex-wrap gap-2">
                   {company.industries.map((ind: any, index: number) => (
-                    <span key={index} className="bg-gray-100 text-gray-800 px-3 py-2 rounded">
+                    <span key={index} className="bg-gray-100 text-black px-3 py-2 rounded">
                       {ind.industry_name}
                     </span>
                   ))}
@@ -145,7 +152,7 @@ export default async function CompanyPage({ params }: { params: { slug: string }
               {company.facilities?.map((facility: any, index: number) => (
                 <div key={index} className="mb-3">
                   <p className="font-semibold">{facility.facility_type || 'Facility'}</p>
-                  <p className="text-gray-600">
+                  <p className="text-black">
                     {facility.city}, {facility.state} {facility.zip_code}
                   </p>
                 </div>
@@ -160,7 +167,7 @@ export default async function CompanyPage({ params }: { params: { slug: string }
                   <div key={index} className="mb-4">
                     <p className="font-semibold">{contact.contact_type}</p>
                     {contact.full_name && <p>{contact.full_name}</p>}
-                    {contact.title && <p className="text-sm text-gray-600">{contact.title}</p>}
+                    {contact.title && <p className="text-sm text-black">{contact.title}</p>}
                     {contact.email && (
                       <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline text-sm">
                         {contact.email}
