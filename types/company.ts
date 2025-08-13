@@ -24,6 +24,7 @@ export interface Capabilities {
   low_volume_production: boolean;
   medium_volume_production: boolean;
   high_volume_production: boolean;
+  through_hole: boolean;
 }
 
 export interface Certification {
