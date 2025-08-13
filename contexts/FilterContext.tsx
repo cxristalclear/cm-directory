@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useTransitio
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useDebouncedCallback } from 'use-debounce'
 import type { FilterState, FilterContextType } from '../types/company'
+import { debugLog } from '../utils/debug'
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
@@ -67,6 +68,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
   // Use this for search term updates
   const updateFilter = <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
+    console.time('filterUpdate')
     if (key === 'searchTerm') {
       debouncedUpdateFilter(key, value)
     } else {
@@ -91,6 +93,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
         })
       })
     }
+    console.timeEnd('filterUpdate')
   }
 
   const clearFilters = () => {
