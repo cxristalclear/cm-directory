@@ -1,7 +1,8 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useDebouncedCallback } from 'use-debounce'
 import type { FilterState, FilterContextType } from '../types/company'
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
@@ -10,6 +11,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
 
   const [filters, setFilters] = useState<FilterState>({
     searchTerm: '',
@@ -39,23 +41,56 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   }, [searchParams])
 
   // Update URL when filters change
+  const debouncedUpdateFilter = useDebouncedCallback(
+    (key: keyof FilterState, value: FilterState[keyof FilterState]) => {
+      const newFilters = { ...filters, [key]: value }
+      setFilters(newFilters)
+      
+      startTransition(() => {
+        const params = new URLSearchParams()
+        
+        if (newFilters.searchTerm) params.set('search', newFilters.searchTerm)
+        if (newFilters.states.length) params.set('states', newFilters.states.join(','))
+        if (newFilters.capabilities.length) params.set('capabilities', newFilters.capabilities.join(','))
+        if (newFilters.certifications.length) params.set('certifications', newFilters.certifications.join(','))
+        if (newFilters.industries.length) params.set('industries', newFilters.industries.join(','))
+        if (newFilters.employeeRange.length) params.set('employees', newFilters.employeeRange.join(','))
+        if (newFilters.volumeCapability.length) params.set('volume', newFilters.volumeCapability.join(','))
+
+        router.replace(`${pathname}${params.toString() ? '?' + params.toString() : ''}`, {
+          scroll: false // Prevent scrolling to top
+        })
+      })
+    },
+    300 // 300ms delay
+  )
+
+  // Use this for search term updates
   const updateFilter = <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
-    const newFilters = { ...filters, [key]: value }
-    setFilters(newFilters)
+    if (key === 'searchTerm') {
+      debouncedUpdateFilter(key, value)
+    } else {
+      // Regular update for other filters
+      const newFilters = { ...filters, [key]: value }
+      setFilters(newFilters)
 
-    // Update URL
-    const params = new URLSearchParams()
-    
-    if (newFilters.searchTerm) params.set('search', newFilters.searchTerm)
-    if (newFilters.states.length) params.set('states', newFilters.states.join(','))
-    if (newFilters.capabilities.length) params.set('capabilities', newFilters.capabilities.join(','))
-    if (newFilters.certifications.length) params.set('certifications', newFilters.certifications.join(','))
-    if (newFilters.industries.length) params.set('industries', newFilters.industries.join(','))
-    if (newFilters.employeeRange.length) params.set('employees', newFilters.employeeRange.join(','))
-    if (newFilters.volumeCapability.length) params.set('volume', newFilters.volumeCapability.join(','))
+      // Update URL in a transition
+      startTransition(() => {
+        const params = new URLSearchParams()
+        
+        if (newFilters.searchTerm) params.set('search', newFilters.searchTerm)
+        if (newFilters.states.length) params.set('states', newFilters.states.join(','))
+        if (newFilters.capabilities.length) params.set('capabilities', newFilters.capabilities.join(','))
+        if (newFilters.certifications.length) params.set('certifications', newFilters.certifications.join(','))
+        if (newFilters.industries.length) params.set('industries', newFilters.industries.join(','))
+        if (newFilters.employeeRange.length) params.set('employees', newFilters.employeeRange.join(','))
+        if (newFilters.volumeCapability.length) params.set('volume', newFilters.volumeCapability.join(','))
 
-    const queryString = params.toString()
-    router.push(`${pathname}${queryString ? '?' + queryString : ''}`)
+        router.replace(`${pathname}${params.toString() ? '?' + params.toString() : ''}`, {
+          scroll: false // Prevent scrolling to top
+        })
+      })
+    }
   }
 
   const clearFilters = () => {
@@ -68,7 +103,9 @@ export function FilterProvider({ children }: { children: ReactNode }) {
       employeeRange: [],
       volumeCapability: []
     })
-    router.push(pathname)
+    router.push(pathname, {
+      scroll: false // Also prevent scrolling when clearing filters
+    })
   }
 
   return (
@@ -77,7 +114,8 @@ export function FilterProvider({ children }: { children: ReactNode }) {
       updateFilter, 
       clearFilters, 
       filteredCount, 
-      setFilteredCount 
+      setFilteredCount,
+      isPending 
     }}>
       {children}
     </FilterContext.Provider>
