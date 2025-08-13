@@ -67,6 +67,29 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
     setFilteredCompanies(filtered)
   }, [filters, allCompanies])
 
+
+
+  // Ad Placeholder Component
+const AdPlaceholder = ({ 
+  width, 
+  height, 
+  label, 
+  className = "" 
+}: { 
+  width: string
+  height: string
+  label: string
+  className?: string
+}) => (
+  <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} 
+       style={{ width, height }}>
+    <div className="text-center text-gray-500">
+      <div className="text-sm font-medium">{label}</div>
+      <div className="text-xs mt-1">{width} × {height}</div>
+      <div className="text-xs text-gray-400 mt-1">Advertisement</div>
+    </div>
+  </div>
+)
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">
@@ -101,6 +124,14 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
           ))
         )}
       </div>
+
+        {/* Bottom of Results Ad */}
+              <AdPlaceholder 
+                width="100%" 
+                height="250px" 
+                label="Results Footer"
+              />
+
     </div>
   )
 }

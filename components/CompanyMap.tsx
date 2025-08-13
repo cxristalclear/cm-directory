@@ -124,7 +124,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [-98.5795, 39.8283],
-      zoom: 4
+      zoom: 3
     })
 
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
@@ -164,23 +164,46 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
       markers.current.push(marker)
     })
-
-    // Auto-adjust map bounds if we have filtered results
-    if (facilities.length > 0 && facilities.length < allCompanies.length * 0.5) {
-      const bounds = new mapboxgl.LngLatBounds()
-      facilities.forEach((f) => {
-        bounds.extend([f.longitude, f.latitude])
-      })
-      map.current.fitBounds(bounds, { padding: 50, maxZoom: 10 })
-    }
   }, [filterCompanies, allCompanies])
 
+  const AdPlaceholder = ({ 
+  width, 
+  height, 
+  label, 
+  className = "" 
+}: { 
+  width: string
+  height: string
+  label: string
+  className?: string
+}) => (
+  <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} 
+       style={{ width, height }}>
+    <div className="text-center text-gray-500">
+      <div className="text-sm font-medium">{label}</div>
+      <div className="text-xs mt-1">{width} × {height}</div>
+      <div className="text-xs text-gray-400 mt-1">Advertisement</div>
+    </div>
+  </div>
+)
+
   return (
-    <div className="relative h-full">
+    <div className="relative h-full space-y-6">
       <div ref={mapContainer} className="h-[600px] rounded-lg shadow-lg" />
       <div className="absolute top-4 left-4 bg-white px-4 py-2 rounded shadow">
         <p className="font-semibold">{filteredFacilities.length} Locations</p>
       </div>
+
+      {/* Below Map Ad */}
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="text-xs text-gray-400 mb-3 uppercase tracking-wide text-center">Sponsored</div>
+            <AdPlaceholder 
+                width="100%" 
+                height="100px" 
+                label="Map Footer Banner"
+                className="border-blue-200"
+            />
+          </div>
     </div>
   )
 }
