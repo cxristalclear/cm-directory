@@ -71,15 +71,6 @@ export default async function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Filter Sidebar */}
             <div className="lg:col-span-3 space-y-6">
-              {/* Top Sidebar Ad */}
-              <div className="sticky top-4">
-                <AdPlaceholder 
-                  width="100%" 
-                  height="250px" 
-                  label="Sidebar Rectangle"
-                  className="mb-6"
-                />
-              </div>
 
               <Suspense fallback={<div>Loading filters...</div>}>
                 <FilterSidebar allCompanies={companies} />
