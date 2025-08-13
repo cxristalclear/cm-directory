@@ -109,4 +109,5 @@ export interface FilterContextType {
   clearFilters: () => void;
   filteredCount: number;
   setFilteredCount: (count: number) => void;
+  isPending: boolean; // Added isPending field
 }
