@@ -5,6 +5,28 @@ import FilterSidebar from '@/components/FilterSidebar'
 import { FilterProvider } from '../contexts/FilterContext'
 import { supabase } from '../lib/supabase'
 
+// Ad Placeholder Component
+const AdPlaceholder = ({ 
+  width, 
+  height, 
+  label, 
+  className = "" 
+}: { 
+  width: string
+  height: string
+  label: string
+  className?: string
+}) => (
+  <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} 
+       style={{ width, height }}>
+    <div className="text-center text-gray-500">
+      <div className="text-sm font-medium">{label}</div>
+      <div className="text-xs mt-1">{width} × {height}</div>
+      <div className="text-xs text-gray-400 mt-1">Advertisement</div>
+    </div>
+  </div>
+)
+
 async function getData() {
   const { data: companies } = await supabase
     .from('companies')
@@ -26,6 +48,7 @@ export default async function Home() {
   return (
     <FilterProvider>
       <main className="min-h-screen bg-gray-50">
+        {/* Hero Header */}
         <div className="bg-blue-900 text-white py-8">
           <div className="container mx-auto px-4">
             <h1 className="text-4xl font-bold">Contract Manufacturer Directory</h1>
@@ -34,26 +57,83 @@ export default async function Home() {
         </div>
         
         <div className="container mx-auto px-4 py-8">
+          {/* Top Content Ad - Native/Sponsored */}
+          <div className="mb-8 bg-white rounded-lg shadow-sm p-6">
+            <div className="text-xs text-gray-400 mb-3 uppercase tracking-wide">Featured Partner</div>
+            <AdPlaceholder 
+              width="100%" 
+              height="150px" 
+              label="Sponsored Content / Featured Manufacturer"
+              className="border-blue-200"
+            />
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Filter Sidebar */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 space-y-6">
+              {/* Top Sidebar Ad */}
+              <div className="sticky top-4">
+                <AdPlaceholder 
+                  width="100%" 
+                  height="250px" 
+                  label="Sidebar Rectangle"
+                  className="mb-6"
+                />
+              </div>
+
               <Suspense fallback={<div>Loading filters...</div>}>
                 <FilterSidebar allCompanies={companies} />
               </Suspense>
+
+              {/* Bottom Sidebar Ad */}
+              <AdPlaceholder 
+                width="100%" 
+                height="300px" 
+                label="Sidebar Skyscraper"
+              />
             </div>
             
             {/* Map */}
-            <div className="lg:col-span-6">
+            <div className="lg:col-span-6 space-y-6">
               <Suspense fallback={<div>Loading map...</div>}>
                 <CompanyMap allCompanies={companies} />
               </Suspense>
             </div>
             
             {/* Company List */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 space-y-6">
               <Suspense fallback={<div>Loading companies...</div>}>
                 <CompanyList allCompanies={companies} />
               </Suspense>
+            </div>
+          </div>
+
+          {/* In-Feed Ad (appears after some results on mobile) */}
+          <div className="lg:hidden mt-8 bg-white rounded-lg shadow-sm p-6">
+            <div className="text-xs text-gray-400 mb-3 uppercase tracking-wide">Sponsored</div>
+            <AdPlaceholder 
+              width="100%" 
+              height="120px" 
+              label="Mobile In-Feed Ad"
+              className="border-blue-200"
+            />
+          </div>
+
+          {/* Footer Ad Section */}
+          <div className="mt-16 pt-8 border-t border-gray-200">
+            <div className="flex justify-center mb-8">
+              <AdPlaceholder 
+                width="728px" 
+                height="90px" 
+                label="Footer Leaderboard"
+                className="hidden md:block"
+              />
+
+            </div>
+
+            {/* Additional footer content can go here */}
+            <div className="text-center text-gray-500 text-sm">
+              <p>© 2025 Contract Manufacturer Directory. Powered by Venkel.</p>
             </div>
           </div>
         </div>
