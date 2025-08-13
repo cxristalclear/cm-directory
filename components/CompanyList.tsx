@@ -3,14 +3,15 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useFilters } from '../contexts/FilterContext'
+import type { Company } from '../types/company'
 
 interface CompanyListProps {
-  allCompanies: any[]
+  allCompanies: Company[]
 }
 
 export default function CompanyList({ allCompanies }: CompanyListProps) {
   const { filters } = useFilters()
-  const [filteredCompanies, setFilteredCompanies] = useState(allCompanies)
+  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>(allCompanies)
 
   useEffect(() => {
     let filtered = [...allCompanies]
@@ -26,7 +27,7 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
 
     if (filters.states.length > 0) {
       filtered = filtered.filter(company =>
-        company.facilities?.some((f: any) => filters.states.includes(f.state))
+        company.facilities?.some((f) => filters.states.includes(f.state))
       )
     }
 
@@ -49,7 +50,7 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
 
     if (filters.certifications.length > 0) {
       filtered = filtered.filter(company =>
-        company.certifications?.some((cert: any) =>
+        company.certifications?.some((cert) =>
           filters.certifications.includes(
             cert.certification_type.toLowerCase().replace(/\s+/g, '_')
           )

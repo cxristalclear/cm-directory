@@ -1,17 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useFilters } from '../contexts/FilterContext'
 import { ChevronDown, ChevronRight, X, Filter } from 'lucide-react'
-
-interface FilterOption {
-  value: string
-  label: string
-  count: number
-}
+import type { Company } from '../types/company'
 
 interface FilterSidebarProps {
-  allCompanies: any[]
+  allCompanies: Company[]
 }
 
 interface FilterCount {
@@ -41,7 +36,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
 
     allCompanies.forEach(company => {
       // States
-      company.facilities?.forEach((facility: any) => {
+      company.facilities?.forEach((facility) => {
         if (facility.state) {
           counts.states[facility.state] = (counts.states[facility.state] || 0) + 1
         }
@@ -61,13 +56,13 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       }
 
       // Certifications
-      company.certifications?.forEach((cert: any) => {
+      company.certifications?.forEach((cert) => {
         const certType = cert.certification_type.toLowerCase().replace(/\s+/g, '_')
         counts.certifications[certType] = (counts.certifications[certType] || 0) + 1
       })
 
       // Industries
-      company.industries?.forEach((ind: any) => {
+      company.industries?.forEach((ind) => {
         const indName = ind.industry_name.toLowerCase().replace(/\s+/g, '_')
         counts.industries[indName] = (counts.industries[indName] || 0) + 1
       })
@@ -92,7 +87,9 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
     )
   }
 
-  const handleCheckboxChange = (filterKey: keyof typeof filters, value: string) => {
+  type FilterKey = 'states' | 'capabilities' | 'certifications' | 'industries' | 'employeeRange' | 'volumeCapability';
+
+  const handleCheckboxChange = (filterKey: FilterKey, value: string) => {
     const currentValues = filters[filterKey] as string[]
     const newValues = currentValues.includes(value)
       ? currentValues.filter(v => v !== value)
@@ -168,7 +165,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
             <div className="mb-4 flex flex-wrap gap-2">
               {filters.searchTerm && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                  "{filters.searchTerm}"
+                  &quot;{filters.searchTerm}&quot;
                   <button onClick={() => updateFilter('searchTerm', '')}>
                     <X className="w-3 h-3" />
                   </button>

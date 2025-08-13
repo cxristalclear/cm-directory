@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { useFilters } from '../contexts/FilterContext'
+import type { Company, FacilityWithCompany } from '../types/company'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
 
 interface CompanyMapProps {
-  allCompanies: any[]
+  allCompanies: Company[]
 }
 
 export default function CompanyMap({ allCompanies }: CompanyMapProps) {
@@ -16,10 +17,10 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const map = useRef<mapboxgl.Map | null>(null)
   const markers = useRef<mapboxgl.Marker[]>([])
   const { filters, setFilteredCount } = useFilters()
-  const [filteredFacilities, setFilteredFacilities] = useState<any[]>([])
+  const [filteredFacilities, setFilteredFacilities] = useState<FacilityWithCompany[]>([])
 
-  // Filter companies based on current filters
-  const filterCompanies = () => {
+  // Filter companies based on current filters - memoized with useCallback
+  const filterCompanies = useCallback(() => {
     let filtered = [...allCompanies]
 
     // Search term filter
@@ -35,7 +36,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     // State filter
     if (filters.states.length > 0) {
       filtered = filtered.filter(company =>
-        company.facilities?.some((f: any) => filters.states.includes(f.state))
+        company.facilities?.some((f) => filters.states.includes(f.state))
       )
     }
 
@@ -76,7 +77,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     // Certifications filter
     if (filters.certifications.length > 0) {
       filtered = filtered.filter(company =>
-        company.certifications?.some((cert: any) =>
+        company.certifications?.some((cert) =>
           filters.certifications.includes(
             cert.certification_type.toLowerCase().replace(/\s+/g, '_')
           )
@@ -87,7 +88,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     // Industries filter
     if (filters.industries.length > 0) {
       filtered = filtered.filter(company =>
-        company.industries?.some((ind: any) =>
+        company.industries?.some((ind) =>
           filters.industries.includes(
             ind.industry_name.toLowerCase().replace(/\s+/g, '_')
           )
@@ -104,16 +105,16 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
     // Extract facilities from filtered companies
     const facilities = filtered.flatMap(company =>
-      company.facilities?.map((facility: any) => ({
+      company.facilities?.map((facility) => ({
         ...facility,
         company: company
       })) || []
-    ).filter(f => f.latitude && f.longitude)
+    ).filter((f): f is FacilityWithCompany => f.latitude !== null && f.longitude !== null)
 
     setFilteredFacilities(facilities)
     setFilteredCount(filtered.length)
     return facilities
-  }
+  }, [filters, allCompanies, setFilteredCount])
 
   // Initial map setup
   useEffect(() => {
@@ -144,7 +145,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     // Filter and add new markers
     const facilities = filterCompanies()
 
-    facilities.forEach((facility: any) => {
+    facilities.forEach((facility) => {
       const el = document.createElement('div')
       el.className = 'w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors'
       
@@ -167,12 +168,12 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     // Auto-adjust map bounds if we have filtered results
     if (facilities.length > 0 && facilities.length < allCompanies.length * 0.5) {
       const bounds = new mapboxgl.LngLatBounds()
-      facilities.forEach((f: any) => {
+      facilities.forEach((f) => {
         bounds.extend([f.longitude, f.latitude])
       })
       map.current.fitBounds(bounds, { padding: 50, maxZoom: 10 })
     }
-  }, [filters, allCompanies])
+  }, [filterCompanies, allCompanies])
 
   return (
     <div className="relative h-full">
