@@ -2,24 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-
-interface FilterState {
-  searchTerm: string
-  states: string[]
-  capabilities: string[]
-  certifications: string[]
-  industries: string[]
-  employeeRange: string[]
-  volumeCapability: string[]
-}
-
-interface FilterContextType {
-  filters: FilterState
-  updateFilter: (key: keyof FilterState, value: any) => void
-  clearFilters: () => void
-  filteredCount: number
-  setFilteredCount: (count: number) => void
-}
+import type { FilterState, FilterContextType } from '../types/company'
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
@@ -56,7 +39,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   }, [searchParams])
 
   // Update URL when filters change
-  const updateFilter = (key: keyof FilterState, value: any) => {
+  const updateFilter = <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
     const newFilters = { ...filters, [key]: value }
     setFilters(newFilters)
 
