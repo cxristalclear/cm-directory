@@ -5,6 +5,7 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { useFilters } from '../contexts/FilterContext'
 import type { Company, FacilityWithCompany } from '../types/company'
+import { createPopupFromFacility } from '../lib/mapbox-utils'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
 
@@ -134,7 +135,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     }
   }, [])
 
-  // Update markers when filters change
+  // Update markers when filters change - SECURE VERSION
   useEffect(() => {
     if (!map.current) return
 
@@ -146,16 +147,12 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     const facilities = filterCompanies()
 
     facilities.forEach((facility) => {
+      // Create marker element
       const el = document.createElement('div')
       el.className = 'w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors'
       
-      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-        <div class="p-2">
-          <h3 class="font-bold">${facility.company.company_name}</h3>
-          <p class="text-sm">${facility.city}, ${facility.state}</p>
-          <a href="/companies/${facility.company.slug}" class="text-blue-500 text-sm">View Details →</a>
-        </div>
-      `)
+      // Create secure popup using the utility function
+      const popup = createPopupFromFacility(facility)
 
       const marker = new mapboxgl.Marker(el)
         .setLngLat([facility.longitude, facility.latitude])
@@ -167,25 +164,25 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   }, [filterCompanies, allCompanies])
 
   const AdPlaceholder = ({ 
-  width, 
-  height, 
-  label, 
-  className = "" 
-}: { 
-  width: string
-  height: string
-  label: string
-  className?: string
-}) => (
-  <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} 
-       style={{ width, height }}>
-    <div className="text-center text-gray-500">
-      <div className="text-sm font-medium">{label}</div>
-      <div className="text-xs mt-1">{width} × {height}</div>
-      <div className="text-xs text-gray-400 mt-1">Advertisement</div>
+    width, 
+    height, 
+    label, 
+    className = "" 
+  }: { 
+    width: string
+    height: string
+    label: string
+    className?: string
+  }) => (
+    <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} 
+         style={{ width, height }}>
+      <div className="text-center text-gray-500">
+        <div className="text-sm font-medium">{label}</div>
+        <div className="text-xs mt-1">{width} × {height}</div>
+        <div className="text-xs text-gray-400 mt-1">Advertisement</div>
+      </div>
     </div>
-  </div>
-)
+  )
 
   return (
     <div className="relative h-full space-y-6">
@@ -195,15 +192,15 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       </div>
 
       {/* Below Map Ad */}
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <div className="text-xs text-gray-400 mb-3 uppercase tracking-wide text-center">Sponsored</div>
-            <AdPlaceholder 
-                width="100%" 
-                height="100px" 
-                label="Map Footer Banner"
-                className="border-blue-200"
-            />
-          </div>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="text-xs text-gray-400 mb-3 uppercase tracking-wide text-center">Sponsored</div>
+        <AdPlaceholder 
+          width="100%" 
+          height="100px" 
+          label="Map Footer Banner"
+          className="border-blue-200"
+        />
+      </div>
     </div>
   )
 }
