@@ -19,7 +19,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const map = useRef<mapboxgl.Map | null>(null)
   const markers = useRef<mapboxgl.Marker[]>([])
   const { filters, setFilteredCount } = useFilters()
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/light-v11")
   const [isLoading, setIsLoading] = useState(true)
 
@@ -135,9 +134,10 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       return
     }
 
+    // Initialize map with initial style
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: mapStyle,
+      style: "mapbox://styles/mapbox/light-v11", // Use static initial style
       center: [-98.5795, 39.8283],
       zoom: 3.5,
       pitch: 0,
@@ -170,8 +170,9 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         map.current = null
       }
     }
-  }, []) // Remove mapStyle dependency to prevent recreation
+  }, []) // Empty dependency array - only run once on mount
 
+  // Separate effect for style changes
   useEffect(() => {
     if (map.current && !isLoading) {
       map.current.setStyle(mapStyle)
@@ -187,7 +188,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
     const facilities = filteredFacilities.facilities
 
-    facilities.forEach((facility, index) => {
+    facilities.forEach((facility) => {
       const el = document.createElement("div")
       el.className = `
         relative w-6 h-6 cursor-pointer
