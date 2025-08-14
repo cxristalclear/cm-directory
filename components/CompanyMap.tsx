@@ -1,83 +1,63 @@
-'use client'
+"use client"
 
-import { useEffect, useMemo, useRef } from 'react'
-import mapboxgl, { GeoJSONSource, Map as MapboxMap, MapboxGeoJSONFeature } from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import { useEffect, useRef, useState, useMemo } from "react"
+import mapboxgl from "mapbox-gl"
+import "mapbox-gl/dist/mapbox-gl.css"
+import { useFilters } from "../contexts/FilterContext"
+import { MapPin, Layers, RotateCcw } from "lucide-react"
+import type { Company, FacilityWithCompany } from "../types/company"
+import { createPopupFromFacility } from "../lib/mapbox-utils"
 
-import { useFilters } from '../contexts/FilterContext'
-import type { Company, FacilityWithCompany } from '../types/company'
-import { createPopupFromFacility } from '../lib/mapbox-utils'
-
-// NOTE: Token handling is out of scope for this refactor per the spec.
-// Ensure NEXT_PUBLIC_MAPBOX_TOKEN is configured at the app level.
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
 interface CompanyMapProps {
   allCompanies: Company[]
 }
 
-// ---- Source & Layer IDs -----------------------------------------------------------------------
-const SRC_ID = 'companies-src'
-const LAYER_CLUSTER_CIRCLES = 'companies-cluster-circles'
-const LAYER_CLUSTER_COUNT = 'companies-cluster-count'
-const LAYER_UNCLUSTERED = 'companies-unclustered-points'
-
-// ---- Clustering defaults ----------------------------------------------------------------------
-const CLUSTER_MAX_ZOOM = 14 // stop clustering beyond this zoom (decluster sooner)
-const clusterRadiusPx = () =>
-  typeof window !== 'undefined' && window.innerWidth <= 768 ? 35 : 50
-
-// GeoJSON types used in this component
-export type PropertiesWithFacility = { facility: FacilityWithCompany }
-export type FeatureCollectionWithFacilities = GeoJSON.FeatureCollection<
-  GeoJSON.Point,
-  PropertiesWithFacility
->
-
 export default function CompanyMap({ allCompanies }: CompanyMapProps) {
-  const mapContainerRef = useRef<HTMLDivElement | null>(null)
-  const mapRef = useRef<MapboxMap | null>(null)
-  const popupRef = useRef<mapboxgl.Popup | null>(null)
-
+  const mapContainer = useRef<HTMLDivElement>(null)
+  const map = useRef<mapboxgl.Map | null>(null)
+  const markers = useRef<mapboxgl.Marker[]>([])
   const { filters, setFilteredCount } = useFilters()
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/light-v11")
+  const [isLoading, setIsLoading] = useState(true)
 
-  // ----------------------------
-  // Pure filtering (NO setState)
-  // ----------------------------
-  const { filteredCompanies, fc } = useMemo(() => {
+  const filteredFacilities = useMemo(() => {
     let filtered = [...allCompanies]
 
+    // Search term filter
     if (filters.searchTerm) {
-      const s = filters.searchTerm.toLowerCase()
+      const searchLower = filters.searchTerm.toLowerCase()
       filtered = filtered.filter(
         (company) =>
-          company.company_name?.toLowerCase().includes(s) ||
-          company.description?.toLowerCase().includes(s) ||
-          company.key_differentiators?.toLowerCase().includes(s)
+          company.company_name?.toLowerCase().includes(searchLower) ||
+          company.description?.toLowerCase().includes(searchLower) ||
+          company.key_differentiators?.toLowerCase().includes(searchLower),
       )
     }
 
+    // State filter
     if (filters.states.length > 0) {
-      filtered = filtered.filter((company) =>
-        company.facilities?.some((f) => filters.states.includes(f.state))
-      )
+      filtered = filtered.filter((company) => company.facilities?.some((f) => filters.states.includes(f.state)))
     }
 
+    // Capabilities filter
     if (filters.capabilities.length > 0) {
       filtered = filtered.filter((company) => {
-        const cap = company.capabilities?.[0]
-        if (!cap) return false
+        if (!company.capabilities?.[0]) return false
+        const cap = company.capabilities[0]
         return filters.capabilities.some((filter) => {
           switch (filter) {
-            case 'smt':
+            case "smt":
               return cap.pcb_assembly_smt
-            case 'through_hole':
+            case "through_hole":
               return cap.pcb_assembly_through_hole
-            case 'cable_harness':
+            case "cable_harness":
               return cap.cable_harness_assembly
-            case 'box_build':
+            case "box_build":
               return cap.box_build_assembly
-            case 'prototyping':
+            case "prototyping":
               return cap.prototyping
             default:
               return false
@@ -86,17 +66,18 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       })
     }
 
+    // Volume capability filter
     if (filters.volumeCapability.length > 0) {
       filtered = filtered.filter((company) => {
-        const cap = company.capabilities?.[0]
-        if (!cap) return false
-        return filters.volumeCapability.some((v) => {
-          switch (v) {
-            case 'low':
+        if (!company.capabilities?.[0]) return false
+        const cap = company.capabilities[0]
+        return filters.volumeCapability.some((vol) => {
+          switch (vol) {
+            case "low":
               return cap.low_volume_production
-            case 'medium':
+            case "medium":
               return cap.medium_volume_production
-            case 'high':
+            case "high":
               return cap.high_volume_production
             default:
               return false
@@ -105,233 +86,314 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       })
     }
 
+    // Certifications filter
     if (filters.certifications.length > 0) {
       filtered = filtered.filter((company) =>
         company.certifications?.some((cert) =>
-          filters.certifications.includes(
-            cert.certification_type.toLowerCase().replace(/\s+/g, '_')
-          )
-        )
+          filters.certifications.includes(cert.certification_type.toLowerCase().replace(/\s+/g, "_")),
+        ),
       )
     }
 
+    // Industries filter
     if (filters.industries.length > 0) {
       filtered = filtered.filter((company) =>
         company.industries?.some((ind) =>
-          filters.industries.includes(ind.industry_name.toLowerCase().replace(/\s+/g, '_'))
-        )
+          filters.industries.includes(ind.industry_name.toLowerCase().replace(/\s+/g, "_")),
+        ),
       )
     }
 
+    // Employee range filter
     if (filters.employeeRange.length > 0) {
-      filtered = filtered.filter((company) =>
-        filters.employeeRange.includes(company.employee_count_range)
+      filtered = filtered.filter((company) => filters.employeeRange.includes(company.employee_count_range))
+    }
+
+    // Extract facilities from filtered companies
+    const facilities = filtered
+      .flatMap(
+        (company) =>
+          company.facilities?.map((facility) => ({
+            ...facility,
+            company: company,
+          })) || [],
       )
+      .filter((f): f is FacilityWithCompany => f.latitude !== null && f.longitude !== null)
+
+    return { facilities, filteredCount: filtered.length }
+  }, [filters, allCompanies])
+
+  useEffect(() => {
+    setFilteredCount(filteredFacilities.filteredCount)
+  }, [filteredFacilities.filteredCount, setFilteredCount])
+
+  useEffect(() => {
+    if (!mapContainer.current || map.current) return
+
+    if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN === "pk.demo_token") {
+      setIsLoading(false)
+      return
     }
 
-    // derive facilities with lat/lng
-    const facilities: FacilityWithCompany[] = (
-      filtered.flatMap((company) =>
-        company.facilities?.map((f) => ({ ...f, company })) ?? []
-      ) as FacilityWithCompany[]
-    ).filter((f) => f.latitude != null && f.longitude != null)
-
-    // build a FeatureCollection for Mapbox GL JS
-    const featureCollection: FeatureCollectionWithFacilities = {
-      type: 'FeatureCollection',
-      features: facilities.map((f) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [f.longitude as number, f.latitude as number],
-        },
-        properties: { facility: f },
-      })),
-    }
-
-    return { filteredCompanies: filtered, fc: featureCollection }
-  }, [allCompanies, filters])
-
-  // Post-render: let the FilterProvider know how many COMPANIES matched
-  useEffect(() => {
-    setFilteredCount(filteredCompanies.length)
-  }, [filteredCompanies.length, setFilteredCount])
-
-  // ----------------------------
-  // Map initialization (once)
-  // ----------------------------
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return
-
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [-98.5795, 39.8283], // USA centroid-ish
-      zoom: 3,
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: mapStyle,
+      center: [-98.5795, 39.8283],
+      zoom: 3.5,
+      pitch: 0,
+      bearing: 0,
+      antialias: true,
+      fadeDuration: 300,
     })
 
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right')
-    mapRef.current = map
+    // Add controls
+    map.current.addControl(
+      new mapboxgl.NavigationControl({
+        showCompass: true,
+        showZoom: true,
+        visualizePitch: true,
+      }),
+      "top-right",
+    )
 
-    map.on('load', () => {
-      // 1) single clustered GeoJSON source
-      map.addSource(SRC_ID, {
-        type: 'geojson',
-        data: fc, // seed with current filtered FeatureCollection
-        cluster: true,
-        clusterRadius: clusterRadiusPx(),
-        clusterMaxZoom: CLUSTER_MAX_ZOOM,
-      })
+    map.current.addControl(new mapboxgl.FullscreenControl(), "top-right")
+    map.current.addControl(new mapboxgl.ScaleControl(), "bottom-left")
 
-      // 2) cluster circles
-      map.addLayer({
-        id: LAYER_CLUSTER_CIRCLES,
-        type: 'circle',
-        source: SRC_ID,
-        filter: ['has', 'point_count'],
-        paint: {
-          'circle-radius': ['step', ['get', 'point_count'], 16, 10, 20, 25, 26, 50, 32],
-          'circle-color': [
-            'step',
-            ['get', 'point_count'],
-            '#90CAF9',
-            10,
-            '#64B5F6',
-            25,
-            '#42A5F5',
-            50,
-            '#1E88E5',
-          ],
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 1.5,
-        },
-      })
-
-      // 3) cluster count labels
-      map.addLayer({
-        id: LAYER_CLUSTER_COUNT,
-        type: 'symbol',
-        source: SRC_ID,
-        filter: ['has', 'point_count'],
-        layout: {
-          'text-field': ['get', 'point_count_abbreviated'],
-          'text-size': 12,
-        },
-        paint: { 'text-color': '#17324D' },
-      })
-
-      // 4) unclustered points
-      map.addLayer({
-        id: LAYER_UNCLUSTERED,
-        type: 'circle',
-        source: SRC_ID,
-        filter: ['!', ['has', 'point_count']],
-        paint: {
-          'circle-radius': 6,
-          'circle-color': '#0D47A1',
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 1.25,
-        },
-      })
-
-      // Cursor feedback
-      map.on('mouseenter', LAYER_CLUSTER_CIRCLES, () => (map.getCanvas().style.cursor = 'pointer'))
-      map.on('mouseleave', LAYER_CLUSTER_CIRCLES, () => (map.getCanvas().style.cursor = ''))
-      map.on('mouseenter', LAYER_UNCLUSTERED, () => (map.getCanvas().style.cursor = 'pointer'))
-      map.on('mouseleave', LAYER_UNCLUSTERED, () => (map.getCanvas().style.cursor = ''))
-
-      // Click cluster -> expand/zoom
-      map.on('click', LAYER_CLUSTER_CIRCLES, (e) => {
-        const features = map.queryRenderedFeatures(e.point, { layers: [LAYER_CLUSTER_CIRCLES] })
-        const clusterFeature = features[0] as MapboxGeoJSONFeature | undefined
-        const src = map.getSource(SRC_ID) as GeoJSONSource | undefined
-        if (!clusterFeature || !src) return
-
-        const point = clusterFeature.geometry as GeoJSON.Point
-        const center = point.coordinates as [number, number]
-        const clusterId = (clusterFeature.properties as { cluster_id?: number } | null)?.cluster_id
-        if (typeof clusterId !== 'number') return
-
-        src.getClusterExpansionZoom(clusterId, (err, expansionZoom) => {
-          const targetZoom =
-            typeof expansionZoom === 'number' && !err
-              ? expansionZoom
-              : Math.min(CLUSTER_MAX_ZOOM + 2, 16)
-          map.easeTo({ center, zoom: targetZoom })
-        })
-      })
-
-      // Click single point -> safe popup
-      map.on('click', LAYER_UNCLUSTERED, (e) => {
-        const feature = e.features?.[0] as MapboxGeoJSONFeature | undefined
-        if (!feature) return
-
-        const coords = (feature.geometry as GeoJSON.Point).coordinates as [number, number]
-        const props = feature.properties as unknown as PropertiesWithFacility
-        const facility = props.facility
-
-        // Close previous popup if open
-        if (popupRef.current) {
-          popupRef.current.remove()
-          popupRef.current = null
-        }
-
-        // Build popup using SAFE builder from PR A (setDOMContent under the hood)
-        const popup = createPopupFromFacility(facility)
-        popup.setLngLat(coords).addTo(map)
-        popupRef.current = popup
-      })
+    // Map load event
+    map.current.on("load", () => {
+      setIsLoading(false)
     })
 
     return () => {
-      if (popupRef.current) {
-        popupRef.current.remove()
-        popupRef.current = null
+      if (map.current) {
+        map.current.remove()
+        map.current = null
       }
-      map.remove()
-      mapRef.current = null
     }
-    // We intentionally run this effect only once to initialize/teardown the Mapbox instance.
-    // Re-creating the map on prop changes would cause leaks & double-registrations.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []) // Remove mapStyle dependency to prevent recreation
 
-  // ----------------------------
-  // Update data via setData (no teardown)
-  // ----------------------------
   useEffect(() => {
-    const map = mapRef.current
-    if (!map) return
-    const src = map.getSource(SRC_ID) as GeoJSONSource | undefined
-    if (!src) return
-    // Update source when filtered FeatureCollection changes
-    src.setData(fc)
-  }, [fc])
+    if (map.current && !isLoading) {
+      map.current.setStyle(mapStyle)
+    }
+  }, [mapStyle, isLoading])
 
-  return (
-    <div className="relative h-full space-y-6">
-      <div ref={mapContainerRef} className="h-[600px] rounded-lg shadow-lg" />
+  useEffect(() => {
+    if (!map.current || isLoading) return
 
-      {/* simple count pill */}
-      <div className="absolute top-4 left-4 bg-white px-4 py-2 rounded shadow">
-        <p className="font-semibold">{fc.features.length} Locations</p>
-      </div>
+    // Clear existing markers
+    markers.current.forEach((marker) => marker.remove())
+    markers.current = []
 
-      {/* Ad block (unchanged styling placeholder) */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <div className="text-xs text-gray-400 mb-3 uppercase tracking-wide text-center">
-          Sponsored
+    const facilities = filteredFacilities.facilities
+
+    facilities.forEach((facility, index) => {
+      const el = document.createElement("div")
+      el.className = `
+        relative w-6 h-6 cursor-pointer
+      `
+
+      // Inner marker with gradient
+      el.innerHTML = `
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-lg"></div>
+        <div class="absolute inset-1 bg-white rounded-full flex items-center justify-center">
+          <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
         </div>
-        <div
-          className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center w-full"
-          style={{ height: '100px' }}
-        >
-          <div className="text-center text-gray-500">
-            <div className="text-sm font-medium">Map Footer Banner</div>
-            <div className="text-xs mt-1">100% × 100px</div>
-            <div className="text-xs text-gray-400 mt-1">Advertisement</div>
+      `
+
+      // Create enhanced popup
+      const popup = createPopupFromFacility(facility)
+      popup.setMaxWidth("320px")
+
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([facility.longitude, facility.latitude])
+        .setPopup(popup)
+        .addTo(map.current!)
+
+      markers.current.push(marker)
+    })
+
+    // Fit bounds to show all markers if there are any
+    if (facilities.length > 0) {
+      const bounds = new mapboxgl.LngLatBounds()
+      facilities.forEach((facility) => {
+        bounds.extend([facility.longitude, facility.latitude])
+      })
+
+      map.current.fitBounds(bounds, {
+        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        maxZoom: 10,
+        duration: 1000,
+      })
+    }
+  }, [filteredFacilities.facilities, isLoading]) // Use memoized facilities
+
+  const handleStyleChange = (newStyle: string) => {
+    setMapStyle(newStyle)
+  }
+
+  const resetView = () => {
+    if (map.current) {
+      map.current.flyTo({
+        center: [-98.5795, 39.8283],
+        zoom: 3.5,
+        pitch: 0,
+        bearing: 0,
+        duration: 1500,
+      })
+    }
+  }
+
+  const AdPlaceholder = ({
+    width,
+    height,
+    label,
+    className = "",
+  }: {
+    width: string
+    height: string
+    label: string
+    className?: string
+  }) => (
+    <div
+      className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`}
+      style={{ width, height }}
+    >
+      <div className="text-center text-gray-500">
+        <div className="text-sm font-medium">{label}</div>
+        <div className="text-xs mt-1">
+          {width} × {height}
+        </div>
+        <div className="text-xs text-gray-400 mt-1">Advertisement</div>
+      </div>
+    </div>
+  )
+
+  if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN === "pk.demo_token") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 font-serif">Manufacturing Locations</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Interactive map showing {filteredFacilities.facilities.length} verified facilities
+            </p>
           </div>
         </div>
+
+        <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Map Unavailable</h3>
+              <p className="text-gray-600 max-w-md">
+                To display the interactive map, please add your Mapbox token to the environment variables.
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Showing {filteredFacilities.facilities.length} facilities based on current filters.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Map Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 font-serif">Manufacturing Locations</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Interactive map showing {filteredFacilities.facilities.length} verified facilities
+          </p>
+        </div>
+      </div>
+
+      {/* Map Container */}
+      <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden">
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-600 font-medium">Loading map...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Map Controls Overlay */}
+        <div className="absolute top-4 left-4 z-10 flex flex-col space-y-3">
+          {/* Location Counter */}
+          <div className="glass-effect rounded-xl px-4 py-3 shadow-lg">
+            <div className="flex items-center space-x-2">
+              <MapPin className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="font-bold text-gray-900">{filteredFacilities.facilities.length}</p>
+                <p className="text-xs text-gray-600">Locations</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Map Style Selector */}
+          <div className="glass-effect rounded-xl p-3 shadow-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <Layers className="w-4 h-4 text-gray-600" />
+              <span className="text-xs font-medium text-gray-700">Map Style</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              <button
+                onClick={() => handleStyleChange("mapbox://styles/mapbox/light-v11")}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  mapStyle === "mapbox://styles/mapbox/light-v11"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Light
+              </button>
+              <button
+                onClick={() => handleStyleChange("mapbox://styles/mapbox/satellite-streets-v12")}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  mapStyle === "mapbox://styles/mapbox/satellite-streets-v12"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Satellite
+              </button>
+            </div>
+          </div>
+
+          {/* Reset View Button */}
+          <button
+            onClick={resetView}
+            className="glass-effect rounded-xl p-3 shadow-lg hover:bg-white/80 transition-colors group"
+            title="Reset view"
+          >
+            <RotateCcw className="w-4 h-4 text-gray-600 group-hover:text-blue-600 transition-colors" />
+          </button>
+        </div>
+
+        {/* Map */}
+        <div ref={mapContainer} className="h-[600px] w-full" style={{ minHeight: "600px" }} />
+
+        {/* Map Legend */}
+        <div className="absolute bottom-4 right-4 glass-effect rounded-xl p-3 shadow-lg">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border border-white shadow-sm"></div>
+              <span className="text-xs text-gray-600">Manufacturing Facility</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Below Map Ad */}
+      <div className="bg-white rounded-xl shadow-xl p-6">
+        <div className="text-xs text-gray-400 mb-3 uppercase tracking-wide text-center">Sponsored</div>
+        <AdPlaceholder width="100%" height="120px" label="Map Footer Banner" className="border-blue-200" />
       </div>
     </div>
   )
