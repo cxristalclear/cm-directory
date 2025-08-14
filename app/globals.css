@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
 :root {
   --background: oklch(1 0 0);
@@ -72,6 +71,8 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* @theme directive for Tailwind v4 - disable CSS linting for this */
+/* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -111,10 +112,14 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Tailwind base layer with @apply directives */
+/* stylelint-disable-next-line at-rule-no-unknown */
 @layer base {
+  /* stylelint-disable-next-line at-rule-no-unknown */
   * {
     @apply border-border outline-ring/50;
   }
+  /* stylelint-disable-next-line at-rule-no-unknown */
   body {
     @apply bg-background text-foreground;
   }
@@ -157,10 +162,11 @@
   background: #94a3b8;
 }
 
-/* Line clamp utilities */
+/* Line clamp utilities with standard property */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2; /* Standard property */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -168,6 +174,7 @@
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3; /* Standard property */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

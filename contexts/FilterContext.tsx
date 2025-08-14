@@ -27,7 +27,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
   // Load filters from URL on mount
   useEffect(() => {
-    const params = new URLSearchParams(searchParams)
+    const params = new URLSearchParams(searchParams.toString())
 
     const newFilters = {
       searchTerm: params.get("search") || "",
@@ -57,45 +57,41 @@ export function FilterProvider({ children }: { children: ReactNode }) {
       if (newFilters.employeeRange.length) params.set("employees", newFilters.employeeRange.join(","))
       if (newFilters.volumeCapability.length) params.set("volume", newFilters.volumeCapability.join(","))
 
-      router.replace(`${pathname}${params.toString() ? "?" + params.toString() : ""}`, {
-        scroll: false,
-      })
+      const newUrl = `${pathname}${params.toString() ? "?" + params.toString() : ""}`
+      
+      // Schedule the router update after the current render
+      setTimeout(() => {
+        startTransition(() => {
+          router.replace(newUrl, { scroll: false })
+        })
+      }, 0)
     },
-    [router, pathname],
+    [router, pathname]
   )
 
-  const debouncedUpdateFilter = useDebouncedCallback(
-    (key: keyof FilterState, value: FilterState[keyof FilterState]) => {
+  const debouncedUpdateURL = useDebouncedCallback(updateURLParams, 300)
+
+  const updateFilter = useCallback(
+    <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
       setFilters((prevFilters) => {
         const newFilters = { ...prevFilters, [key]: value }
-        startTransition(() => {
+        
+        // For search term, use debounced update
+        if (key === "searchTerm") {
+          debouncedUpdateURL(newFilters)
+        } else {
+          // For other filters, update immediately
           updateURLParams(newFilters)
-        })
+        }
+        
         return newFilters
       })
     },
-    300,
-  )
-
-  const updateFilter = useCallback(
-    (key: keyof FilterState, value: FilterState[keyof FilterState]) => {
-      if (key === "searchTerm") {
-        debouncedUpdateFilter(key, value)
-      } else {
-        setFilters((prevFilters) => {
-          const newFilters = { ...prevFilters, [key]: value }
-          startTransition(() => {
-            updateURLParams(newFilters)
-          })
-          return newFilters
-        })
-      }
-    },
-    [debouncedUpdateFilter, updateURLParams],
+    [debouncedUpdateURL, updateURLParams]
   )
 
   const clearFilters = useCallback(() => {
-    const defaultFilters = {
+    const defaultFilters: FilterState = {
       searchTerm: "",
       states: [],
       capabilities: [],
@@ -104,28 +100,31 @@ export function FilterProvider({ children }: { children: ReactNode }) {
       employeeRange: [],
       volumeCapability: [],
     }
+    
     setFilters(defaultFilters)
-    startTransition(() => {
-      router.replace(pathname, { scroll: false })
-    })
+    
+    // Schedule the router update after the current render
+    setTimeout(() => {
+      startTransition(() => {
+        router.replace(pathname, { scroll: false })
+      })
+    }, 0)
   }, [router, pathname])
 
-  const contextValue = useCallback(
-    () => ({
-      filters,
-      updateFilter,
-      clearFilters,
-      filteredCount,
-      setFilteredCount,
-      isPending,
-    }),
-    [filters, updateFilter, clearFilters, filteredCount, setFilteredCount, isPending],
-  )
+  // Create the context value directly as an object
+  const contextValue: FilterContextType = {
+    filters,
+    updateFilter,
+    clearFilters,
+    filteredCount,
+    setFilteredCount,
+    isPending,
+  }
 
-  return <FilterContext.Provider value={contextValue()}>{children}</FilterContext.Provider>
+  return <FilterContext.Provider value={contextValue}>{children}</FilterContext.Provider>
 }
 
-export const useFilters = () => {
+export function useFilters() {
   const context = useContext(FilterContext)
   if (!context) {
     throw new Error("useFilters must be used within FilterProvider")
