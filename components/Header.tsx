@@ -22,7 +22,7 @@ export default function Header({ onSearchToggle, onFilterToggle }: HeaderProps) 
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white font-serif">CM Directory</h1>
+                  <h1 className="text-xl font-bold text-white font-sans">CM Directory</h1>
                   <p className="text-xs text-blue-100">Manufacturing Network</p>
                 </div>
               </Link>
@@ -68,20 +68,19 @@ export default function Header({ onSearchToggle, onFilterToggle }: HeaderProps) 
         </nav>
 
         {/* Hero Section */}
-        <div className="relative z-10 py-16 md:py-24">
+        <div className="relative z-10 py-12 md:py-16">
           <div className="container mx-auto px-4 text-center">
             <div className="max-w-4xl mx-auto">
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 font-serif leading-tight">
-                Find Your Perfect
-                <span className="block text-blue-200">Manufacturing Partner</span>
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 font-sans leading-tight">
+                Find Your Next Manufacturing Partner
               </h1>
-              <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
-                Connect with verified contract manufacturers worldwide. Search by capabilities, location, and
+              <p className="text-lg md:text-xl text-blue-100 mb-6 leading-relaxed">
+                Connect with verified contract manufacturers. Filter by capabilities, location, and
                 certifications.
               </p>
 
-              {/* Search Bar */}
-              <div className="max-w-2xl mx-auto mb-8">
+              {/* Search Bar
+              <div className="max-w-2xl mx-auto mb-6">
                 <div className="glass-effect rounded-2xl p-2">
                   <div className="flex items-center">
                     <div className="flex-1 flex items-center space-x-3 px-4">
@@ -92,28 +91,12 @@ export default function Header({ onSearchToggle, onFilterToggle }: HeaderProps) 
                         className="flex-1 bg-transparent border-none outline-none text-gray-700 placeholder-gray-400 text-lg"
                       />
                     </div>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold transition-colors">
+                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors">
                       Search
                     </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
-                <div className="glass-effect rounded-xl p-6 text-center">
-                  <div className="text-3xl font-bold text-gray-800 mb-2">2,500+</div>
-                  <div className="text-gray-600 font-medium">Verified Manufacturers</div>
-                </div>
-                <div className="glass-effect rounded-xl p-6 text-center">
-                  <div className="text-3xl font-bold text-gray-800 mb-2">50+</div>
-                  <div className="text-gray-600 font-medium">Countries Covered</div>
-                </div>
-                <div className="glass-effect rounded-xl p-6 text-center">
-                  <div className="text-3xl font-bold text-gray-800 mb-2">100+</div>
-                  <div className="text-gray-600 font-medium">Industry Categories</div>
-                </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

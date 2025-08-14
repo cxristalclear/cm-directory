@@ -102,7 +102,7 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
     <div className="space-y-6">
       {/* List Header */}
       <div className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm">
-        <h2 className="text-2xl font-bold text-gray-900 font-serif">Companies Directory</h2>
+        <h2 className="text-2xl font-bold text-gray-900 font-sans">Companies Directory</h2>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-600">
             Showing <span className="font-semibold text-gray-900">{filteredCompanies.length}</span> of{" "}
@@ -154,12 +154,12 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
                         {company.company_name?.charAt(0) || "C"}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 font-serif truncate">
+                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 font-sans break-words">
                           {company.company_name}
                         </h3>
                         <div className="flex items-center gap-1 mt-1">
                           <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                          <span className="text-xs text-gray-600 font-medium truncate">
+                          <span className="text-xs text-gray-600 font-medium">
                             {company.facilities?.[0]?.city}, {company.facilities?.[0]?.state}
                           </span>
                         </div>
