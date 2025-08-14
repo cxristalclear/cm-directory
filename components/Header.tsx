@@ -311,7 +311,7 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
               <p className="text-lg md:text-xl text-blue-100 mb-6 leading-relaxed">
                 Connect with verified contract manufacturers. Search by name, location, capabilities, and more.
               </p>
-              {/* Enhanced Search Bar */}
+              {/* Enhanced Search Bar
               <div className="max-w-2xl mx-auto mb-6" ref={searchRef}>
                 <div className="glass-effect rounded-2xl p-1 relative">
                   <div className="flex items-center">
@@ -345,7 +345,7 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
                     </button>
                   </div>
 
-                  {/* Search Suggestions Dropdown */}
+                  {/* Search Suggestions Dropdown
                   {showSuggestions && suggestions.length > 0 && (
                     <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
                       <div className="py-2">
@@ -395,9 +395,8 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
-            </div>
+                </div> */}
+              </div> 
           </div>
         </div>
 
