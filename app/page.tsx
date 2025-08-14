@@ -1,10 +1,10 @@
-import { Suspense } from "react"
-import CompanyMap from "../components/CompanyMap"
-import CompanyList from "../components/CompanyList"
-import FilterSidebar from "@/components/FilterSidebar"
-import Header from "@/components/Header"
-import { FilterProvider } from "../contexts/FilterContext"
-import { supabase } from "../lib/supabase"
+import { Suspense } from "react";
+import CompanyMap from "../components/CompanyMap";
+import CompanyList from "../components/CompanyList";
+import FilterSidebar from "@/components/FilterSidebar";
+import Header from "@/components/Header";
+import { FilterProvider } from "../contexts/FilterContext";
+import { supabase } from "../lib/supabase";
 
 // Ad Placeholder Component
 const AdPlaceholder = ({
@@ -42,74 +42,72 @@ async function getData() {
       certifications(*),
       industries(*)
     `)
-    .eq("is_active", true)
-
-  if (error) {
-    console.error("Error fetching companies:", error)
-    return []
-  }
-
-  return companies || []
+    .eq("is_active", true);
+  if (error) return [];
+  return companies || [];
 }
+
 
 export default async function Home() {
   const companies = await getData()
 
   return (
-    <FilterProvider>
-      <div className="min-h-screen bg-gray-50">
-        <Header companies={companies} />
+    <Suspense fallback={<div className="p-4">Loading…</div>}>
+      <FilterProvider>
+        <div className="min-h-screen bg-gray-50">
+          <Header companies={companies} />
 
-        <main className="container mx-auto px-4 py-6">
-          {/* Top Content Ad - Native/Sponsored */}
-          <div className="mb-6 bg-white rounded-xl shadow-xl p-4">
-            <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Featured Partner</div>
-            <AdPlaceholder
-              width="100%"
-              height="120px"
-              label="Sponsored Content / Featured Manufacturer"
-              className="border-blue-200"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Filter Sidebar */}
-            <div className="lg:col-span-3 space-y-4">
-              <Suspense fallback={<div>Loading filters...</div>}>
-                <FilterSidebar allCompanies={companies} />
-              </Suspense>
-
-              {/* Bottom Sidebar Ad */}
-              <AdPlaceholder width="100%" height="250px" label="Sidebar Skyscraper" />
+          <main className="container mx-auto px-4 py-6">
+            {/* Top Content Ad - Native/Sponsored */}
+            <div className="mb-6 bg-white rounded-xl shadow-xl p-4">
+              <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Featured Partner</div>
+              <AdPlaceholder
+                width="100%"
+                height="120px"
+                label="Sponsored Content / Featured Manufacturer"
+                className="border-blue-200"
+              />
             </div>
 
-            <div className="lg:col-span-9 space-y-4">
-              {/* Map */}
-              <Suspense fallback={<div>Loading map...</div>}>
-                <CompanyMap allCompanies={companies} />
-              </Suspense>
-
-              {/* List */}
-              <div className="companies-directory">
-                <Suspense fallback={<div>Loading companies...</div>}>
-                  <CompanyList allCompanies={companies} />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Filter Sidebar */}
+              <div className="lg:col-span-3 space-y-4">
+                <Suspense fallback={<div>Loading filters...</div>}>
+                  <FilterSidebar allCompanies={companies} />
                 </Suspense>
+
+                {/* Bottom Sidebar Ad */}
+                <AdPlaceholder width="100%" height="250px" label="Sidebar Skyscraper" />
               </div>
 
-              {/* Bottom Content Ad */}
-              <div className="bg-white rounded-xl shadow-xl p-4">
-                <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide text-center">Sponsored</div>
-                <AdPlaceholder
-                  width="100%"
-                  height="150px"
-                  label="Bottom Banner / Native Content"
-                  className="border-green-200"
-                />
+              <div className="lg:col-span-9 space-y-4">
+                {/* Map */}
+                <Suspense fallback={<div>Loading map...</div>}>
+                  <CompanyMap allCompanies={companies} />
+                </Suspense>
+
+                {/* List */}
+                <div className="companies-directory">
+                  <Suspense fallback={<div>Loading companies...</div>}>
+                    <CompanyList allCompanies={companies} />
+                  </Suspense>
+                </div>
+
+                {/* Bottom Content Ad */}
+                <div className="bg-white rounded-xl shadow-xl p-4">
+                  <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide text-center">Sponsored</div>
+                  <AdPlaceholder
+                    width="100%"
+                    height="150px"
+                    label="Bottom Banner / Native Content"
+                    className="border-green-200"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </main>
-      </div>
-    </FilterProvider>
-  )
+          </main>
+        </div>
+      </FilterProvider>
+    </Suspense>
+  );
 }
