@@ -1,14 +1,248 @@
 "use client"
 
+import { useState, useEffect, useRef, useMemo } from "react"
 import Link from "next/link"
-import { Search, Building2, Filter } from "lucide-react"
+import { Search, Building2, Filter, X, MapPin, Award, Settings } from "lucide-react"
+import { useFilters } from "../contexts/FilterContext"
+import { useRouter } from "next/navigation"
+import type { Company } from "../types/company"
+import { type LucideIcon } from "lucide-react"
+
 
 interface HeaderProps {
   onSearchToggle?: () => void
   onFilterToggle?: () => void
+  companies?: Company[]
 }
 
-export default function Header({ onSearchToggle, onFilterToggle }: HeaderProps) {
+export default function Header({ onSearchToggle, onFilterToggle, companies = [] }: HeaderProps) {
+  const router = useRouter()
+  const { filters, updateFilter } = useFilters()
+  const [searchValue, setSearchValue] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [selectedIndex, setSelectedIndex] = useState(-1)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Sync with filters context
+  useEffect(() => {
+    setSearchValue(filters.searchTerm)
+  }, [filters.searchTerm])
+
+  // Generate search suggestions
+  const suggestions = useMemo(() => {
+    if (!searchValue.trim() || searchValue.length < 2) return []
+
+    const searchLower = searchValue.toLowerCase()
+    const results: Array<{
+      type: 'company' | 'capability' | 'location' | 'certification'
+      value: string
+      label: string
+      icon: LucideIcon
+      count?: number
+    }> = []
+
+    // Company name suggestions
+    companies.forEach(company => {
+      if (company.company_name?.toLowerCase().includes(searchLower)) {
+        results.push({
+          type: 'company',
+          value: company.company_name,
+          label: company.company_name,
+          icon: Building2
+        })
+      }
+    })
+
+    // Location suggestions (cities and states)
+    const locationSet = new Set<string>()
+    companies.forEach(company => {
+      company.facilities?.forEach(facility => {
+        if (facility.city?.toLowerCase().includes(searchLower)) {
+          locationSet.add(`${facility.city}, ${facility.state}`)
+        }
+        if (facility.state?.toLowerCase().includes(searchLower)) {
+          locationSet.add(facility.state)
+        }
+      })
+    })
+    
+    locationSet.forEach(location => {
+      results.push({
+        type: 'location',
+        value: location,
+        label: location,
+        icon: MapPin,
+        count: companies.filter(c => 
+          c.facilities?.some(f => 
+            location.includes(',') 
+              ? `${f.city}, ${f.state}` === location
+              : f.state === location
+          )
+        ).length
+      })
+    })
+
+    // Capability suggestions
+    const capabilityKeywords = [
+      { key: 'smt', label: 'SMT Assembly' },
+      { key: 'pcb', label: 'PCB Assembly' },
+      { key: 'cable', label: 'Cable & Harness' },
+      { key: 'box build', label: 'Box Build' },
+      { key: 'prototype', label: 'Prototyping' },
+      { key: 'through hole', label: 'Through-Hole' }
+    ]
+
+    capabilityKeywords.forEach(cap => {
+      if (cap.label.toLowerCase().includes(searchLower) || cap.key.includes(searchLower)) {
+        const count = companies.filter(c => {
+          const capabilities = c.capabilities?.[0]
+          if (!capabilities) return false
+          
+          switch(cap.key) {
+            case 'smt': return capabilities.pcb_assembly_smt
+            case 'pcb': return capabilities.pcb_assembly_smt || capabilities.pcb_assembly_through_hole
+            case 'cable': return capabilities.cable_harness_assembly
+            case 'box build': return capabilities.box_build_assembly
+            case 'prototype': return capabilities.prototyping
+            case 'through hole': return capabilities.pcb_assembly_through_hole
+            default: return false
+          }
+        }).length
+
+        results.push({
+          type: 'capability',
+          value: cap.label,
+          label: cap.label,
+          icon: Settings,
+          count
+        })
+      }
+    })
+
+    // Certification suggestions
+    const certSet = new Set<string>()
+    companies.forEach(company => {
+      company.certifications?.forEach(cert => {
+        if (cert.certification_type?.toLowerCase().includes(searchLower)) {
+          certSet.add(cert.certification_type)
+        }
+      })
+    })
+
+    certSet.forEach(cert => {
+      results.push({
+        type: 'certification',
+        value: cert,
+        label: cert,
+        icon: Award,
+        count: companies.filter(c => 
+          c.certifications?.some(ce => ce.certification_type === cert)
+        ).length
+      })
+    })
+
+    // Limit to top 8 suggestions
+    return results.slice(0, 8)
+  }, [searchValue, companies])
+
+  // Handle clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false)
+        setSelectedIndex(-1)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions) {
+      if (e.key === 'ArrowDown' && suggestions.length > 0) {
+        setShowSuggestions(true)
+        setSelectedIndex(0)
+        e.preventDefault()
+      }
+      return
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setSelectedIndex(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        )
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1)
+        if (selectedIndex === 0) {
+          inputRef.current?.focus()
+        }
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+          handleSuggestionClick(suggestions[selectedIndex].value)
+        } else {
+          handleSearch()
+        }
+        break
+      case 'Escape':
+        setShowSuggestions(false)
+        setSelectedIndex(-1)
+        break
+    }
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value)
+    updateFilter('searchTerm', value)
+    setShowSuggestions(value.length >= 2)
+    setSelectedIndex(-1)
+  }
+
+  const handleSuggestionClick = (value: string) => {
+    setSearchValue(value)
+    updateFilter('searchTerm', value)
+    setShowSuggestions(false)
+    setSelectedIndex(-1)
+    
+    // Scroll to results if on homepage
+    if (window.location.pathname === '/') {
+      const resultsElement = document.querySelector('.companies-directory')
+      resultsElement?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  const handleSearch = () => {
+    if (searchValue.trim()) {
+      updateFilter('searchTerm', searchValue.trim())
+      setShowSuggestions(false)
+      
+      // Navigate to homepage if not already there
+      if (window.location.pathname !== '/') {
+        router.push(`/?search=${encodeURIComponent(searchValue.trim())}`)
+      } else {
+        // Scroll to results
+        const resultsElement = document.querySelector('.companies-directory')
+        resultsElement?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }
+  }
+
+  const handleClear = () => {
+    setSearchValue("")
+    updateFilter('searchTerm', "")
+    setShowSuggestions(false)
+    setSelectedIndex(-1)
+    inputRef.current?.focus()
+  }
+
   return (
     <header className="relative overflow-hidden">
       {/* Background with gradient */}
@@ -75,28 +309,94 @@ export default function Header({ onSearchToggle, onFilterToggle }: HeaderProps) 
                 Find Your Next Manufacturing Partner
               </h1>
               <p className="text-lg md:text-xl text-blue-100 mb-6 leading-relaxed">
-                Connect with verified contract manufacturers. Filter by capabilities, location, and
-                certifications.
+                Connect with verified contract manufacturers. Search by name, location, capabilities, and more.
               </p>
-
-              {/* Search Bar
-              <div className="max-w-2xl mx-auto mb-6">
-                <div className="glass-effect rounded-2xl p-2">
+              {/* Enhanced Search Bar */}
+              <div className="max-w-2xl mx-auto mb-6" ref={searchRef}>
+                <div className="glass-effect rounded-2xl p-1 relative">
                   <div className="flex items-center">
                     <div className="flex-1 flex items-center space-x-3 px-4">
-                      <Search className="w-5 h-5 text-gray-400" />
+                      <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
                       <input
+                        ref={inputRef}
                         type="text"
+                        value={searchValue}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onFocus={() => searchValue.length >= 2 && setShowSuggestions(true)}
                         placeholder="Search by company name, capability, or location..."
                         className="flex-1 bg-transparent border-none outline-none text-gray-700 placeholder-gray-400 text-lg"
                       />
+                      {searchValue && (
+                        <button
+                          onClick={handleClear}
+                          className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                          aria-label="Clear search"
+                        >
+                          <X className="w-4 h-4 text-gray-500" />
+                        </button>
+                      )}
                     </div>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors">
+                    <button 
+                      onClick={handleSearch}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold transition-colors"
+                    >
                       Search
                     </button>
                   </div>
+
+                  {/* Search Suggestions Dropdown */}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
+                      <div className="py-2">
+                        {suggestions.map((suggestion, index) => {
+                          const Icon = suggestion.icon
+                          return (
+                            <button
+                              key={`${suggestion.type}-${suggestion.value}`}
+                              onClick={() => handleSuggestionClick(suggestion.value)}
+                              onMouseEnter={() => setSelectedIndex(index)}
+                              className={`w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors ${
+                                selectedIndex === index ? 'bg-gray-50' : ''
+                              }`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className={`p-1.5 rounded-lg ${
+                                  suggestion.type === 'company' ? 'bg-blue-100 text-blue-600' :
+                                  suggestion.type === 'location' ? 'bg-green-100 text-green-600' :
+                                  suggestion.type === 'capability' ? 'bg-purple-100 text-purple-600' :
+                                  'bg-orange-100 text-orange-600'
+                                }`}>
+                                  <Icon className="w-4 h-4" />
+                                </div>
+                                <div className="text-left">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {suggestion.label}
+                                  </div>
+                                  <div className="text-xs text-gray-500 capitalize">
+                                    {suggestion.type}
+                                  </div>
+                                </div>
+                              </div>
+                              {suggestion.count !== undefined && (
+                                <span className="text-xs text-gray-400">
+                                  {suggestion.count} {suggestion.count === 1 ? 'result' : 'results'}
+                                </span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <div className="border-t border-gray-100 px-4 py-2 bg-gray-50">
+                        <p className="text-xs text-gray-500">
+                          Press <kbd className="px-1.5 py-0.5 bg-white rounded border border-gray-300 text-xs">↵</kbd> to search, 
+                          <kbd className="px-1.5 py-0.5 bg-white rounded border border-gray-300 text-xs ml-1">↑↓</kbd> to navigate
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div> */}
+              </div>
             </div>
           </div>
         </div>

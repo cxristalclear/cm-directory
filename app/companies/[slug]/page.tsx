@@ -409,6 +409,36 @@ export default async function CompanyPage({
               </div>
             )}
 
+            {company.industries && company.industries.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200/50 p-6 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h4M9 7h6m-6 4h6m-6 4h6"
+                      />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">Industry Specializations</h2>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {company.industries.map((ind, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 rounded-xl font-medium transition-all duration-200 cursor-default text-sm"
+                    >
+                      <div className="w-1.5 h-1.5 bg-gray-500 rounded-full mr-2"></div>
+                      {ind.industry_name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {company.certifications && company.certifications.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200/50 p-6 hover:shadow-md transition-shadow duration-200">
                 <div className="flex items-center gap-3 mb-4">
@@ -450,36 +480,6 @@ export default async function CompanyPage({
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {company.industries && company.industries.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200/50 p-6 hover:shadow-md transition-shadow duration-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h4M9 7h6m-6 4h6m-6 4h6"
-                      />
-                    </svg>
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900">Industry Specializations</h2>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {company.industries.map((ind, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 rounded-xl font-medium transition-all duration-200 cursor-default text-sm"
-                    >
-                      <div className="w-1.5 h-1.5 bg-gray-500 rounded-full mr-2"></div>
-                      {ind.industry_name}
-                    </span>
                   ))}
                 </div>
               </div>
