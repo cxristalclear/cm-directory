@@ -1,10 +1,9 @@
-'use client'
+"use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode, useTransition } from 'react'
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useDebouncedCallback } from 'use-debounce'
-import type { FilterState, FilterContextType } from '../types/company'
-import { debugLog } from '../utils/debug'
+import { createContext, useContext, useState, useEffect, type ReactNode, useTransition, useCallback } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { useDebouncedCallback } from "use-debounce"
+import type { FilterState, FilterContextType } from "../types/company"
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
@@ -15,13 +14,13 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   const [isPending, startTransition] = useTransition()
 
   const [filters, setFilters] = useState<FilterState>({
-    searchTerm: '',
+    searchTerm: "",
     states: [],
     capabilities: [],
     certifications: [],
     industries: [],
     employeeRange: [],
-    volumeCapability: []
+    volumeCapability: [],
   })
 
   const [filteredCount, setFilteredCount] = useState(0)
@@ -29,106 +28,107 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   // Load filters from URL on mount
   useEffect(() => {
     const params = new URLSearchParams(searchParams)
-    
-    setFilters({
-      searchTerm: params.get('search') || '',
-      states: params.get('states')?.split(',').filter(Boolean) || [],
-      capabilities: params.get('capabilities')?.split(',').filter(Boolean) || [],
-      certifications: params.get('certifications')?.split(',').filter(Boolean) || [],
-      industries: params.get('industries')?.split(',').filter(Boolean) || [],
-      employeeRange: params.get('employees')?.split(',').filter(Boolean) || [],
-      volumeCapability: params.get('volume')?.split(',').filter(Boolean) || []
+
+    const newFilters = {
+      searchTerm: params.get("search") || "",
+      states: params.get("states")?.split(",").filter(Boolean) || [],
+      capabilities: params.get("capabilities")?.split(",").filter(Boolean) || [],
+      certifications: params.get("certifications")?.split(",").filter(Boolean) || [],
+      industries: params.get("industries")?.split(",").filter(Boolean) || [],
+      employeeRange: params.get("employees")?.split(",").filter(Boolean) || [],
+      volumeCapability: params.get("volume")?.split(",").filter(Boolean) || [],
+    }
+
+    setFilters((prevFilters) => {
+      const hasChanged = JSON.stringify(prevFilters) !== JSON.stringify(newFilters)
+      return hasChanged ? newFilters : prevFilters
     })
   }, [searchParams])
 
-  // Update URL when filters change
-  const debouncedUpdateFilter = useDebouncedCallback(
-    (key: keyof FilterState, value: FilterState[keyof FilterState]) => {
-      const newFilters = { ...filters, [key]: value }
-      setFilters(newFilters)
-      
-      startTransition(() => {
-        const params = new URLSearchParams()
-        
-        if (newFilters.searchTerm) params.set('search', newFilters.searchTerm)
-        if (newFilters.states.length) params.set('states', newFilters.states.join(','))
-        if (newFilters.capabilities.length) params.set('capabilities', newFilters.capabilities.join(','))
-        if (newFilters.certifications.length) params.set('certifications', newFilters.certifications.join(','))
-        if (newFilters.industries.length) params.set('industries', newFilters.industries.join(','))
-        if (newFilters.employeeRange.length) params.set('employees', newFilters.employeeRange.join(','))
-        if (newFilters.volumeCapability.length) params.set('volume', newFilters.volumeCapability.join(','))
+  const updateURLParams = useCallback(
+    (newFilters: FilterState) => {
+      const params = new URLSearchParams()
 
-        router.replace(`${pathname}${params.toString() ? '?' + params.toString() : ''}`, {
-          scroll: false // Prevent scrolling to top
-        })
+      if (newFilters.searchTerm) params.set("search", newFilters.searchTerm)
+      if (newFilters.states.length) params.set("states", newFilters.states.join(","))
+      if (newFilters.capabilities.length) params.set("capabilities", newFilters.capabilities.join(","))
+      if (newFilters.certifications.length) params.set("certifications", newFilters.certifications.join(","))
+      if (newFilters.industries.length) params.set("industries", newFilters.industries.join(","))
+      if (newFilters.employeeRange.length) params.set("employees", newFilters.employeeRange.join(","))
+      if (newFilters.volumeCapability.length) params.set("volume", newFilters.volumeCapability.join(","))
+
+      router.replace(`${pathname}${params.toString() ? "?" + params.toString() : ""}`, {
+        scroll: false,
       })
     },
-    300 // 300ms delay
+    [router, pathname],
   )
 
-  // Use this for search term updates
-  const updateFilter = <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
-    console.time('filterUpdate')
-    if (key === 'searchTerm') {
-      debouncedUpdateFilter(key, value)
-    } else {
-      // Regular update for other filters
-      const newFilters = { ...filters, [key]: value }
-      setFilters(newFilters)
-
-      // Update URL in a transition
-      startTransition(() => {
-        const params = new URLSearchParams()
-        
-        if (newFilters.searchTerm) params.set('search', newFilters.searchTerm)
-        if (newFilters.states.length) params.set('states', newFilters.states.join(','))
-        if (newFilters.capabilities.length) params.set('capabilities', newFilters.capabilities.join(','))
-        if (newFilters.certifications.length) params.set('certifications', newFilters.certifications.join(','))
-        if (newFilters.industries.length) params.set('industries', newFilters.industries.join(','))
-        if (newFilters.employeeRange.length) params.set('employees', newFilters.employeeRange.join(','))
-        if (newFilters.volumeCapability.length) params.set('volume', newFilters.volumeCapability.join(','))
-
-        router.replace(`${pathname}${params.toString() ? '?' + params.toString() : ''}`, {
-          scroll: false // Prevent scrolling to top
+  const debouncedUpdateFilter = useDebouncedCallback(
+    (key: keyof FilterState, value: FilterState[keyof FilterState]) => {
+      setFilters((prevFilters) => {
+        const newFilters = { ...prevFilters, [key]: value }
+        startTransition(() => {
+          updateURLParams(newFilters)
         })
+        return newFilters
       })
-    }
-    console.timeEnd('filterUpdate')
-  }
+    },
+    300,
+  )
 
-  const clearFilters = () => {
-    setFilters({
-      searchTerm: '',
+  const updateFilter = useCallback(
+    (key: keyof FilterState, value: FilterState[keyof FilterState]) => {
+      if (key === "searchTerm") {
+        debouncedUpdateFilter(key, value)
+      } else {
+        setFilters((prevFilters) => {
+          const newFilters = { ...prevFilters, [key]: value }
+          startTransition(() => {
+            updateURLParams(newFilters)
+          })
+          return newFilters
+        })
+      }
+    },
+    [debouncedUpdateFilter, updateURLParams],
+  )
+
+  const clearFilters = useCallback(() => {
+    const defaultFilters = {
+      searchTerm: "",
       states: [],
       capabilities: [],
       certifications: [],
       industries: [],
       employeeRange: [],
-      volumeCapability: []
+      volumeCapability: [],
+    }
+    setFilters(defaultFilters)
+    startTransition(() => {
+      router.replace(pathname, { scroll: false })
     })
-    router.push(pathname, {
-      scroll: false // Also prevent scrolling when clearing filters
-    })
-  }
+  }, [router, pathname])
 
-  return (
-    <FilterContext.Provider value={{ 
-      filters, 
-      updateFilter, 
-      clearFilters, 
-      filteredCount, 
+  const contextValue = useCallback(
+    () => ({
+      filters,
+      updateFilter,
+      clearFilters,
+      filteredCount,
       setFilteredCount,
-      isPending 
-    }}>
-      {children}
-    </FilterContext.Provider>
+      isPending,
+    }),
+    [filters, updateFilter, clearFilters, filteredCount, setFilteredCount, isPending],
   )
+
+  return <FilterContext.Provider value={contextValue()}>{children}</FilterContext.Provider>
 }
 
 export const useFilters = () => {
   const context = useContext(FilterContext)
   if (!context) {
-    throw new Error('useFilters must be used within FilterProvider')
+    throw new Error("useFilters must be used within FilterProvider")
   }
   return context
 }
