@@ -15,6 +15,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
   const [filters, setFilters] = useState<FilterState>({
     searchTerm: "",
+    countries: [], // Add if you want country filtering
     states: [],
     capabilities: [],
     certifications: [],
@@ -23,14 +24,13 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     volumeCapability: [],
   })
 
-  const [filteredCount, setFilteredCount] = useState(0)
-
-  // Load filters from URL on mount
+  // Load filters from URL on mount and when URL changes
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
 
-    const newFilters = {
+    const newFilters: FilterState = {
       searchTerm: params.get("search") || "",
+      countries: params.get("countries")?.split(",").filter(Boolean) || [],
       states: params.get("states")?.split(",").filter(Boolean) || [],
       capabilities: params.get("capabilities")?.split(",").filter(Boolean) || [],
       certifications: params.get("certifications")?.split(",").filter(Boolean) || [],
@@ -40,6 +40,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     }
 
     setFilters((prevFilters) => {
+      // Only update if actually changed to prevent re-renders
       const hasChanged = JSON.stringify(prevFilters) !== JSON.stringify(newFilters)
       return hasChanged ? newFilters : prevFilters
     })
@@ -49,7 +50,9 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     (newFilters: FilterState) => {
       const params = new URLSearchParams()
 
+      // Only add params that have values
       if (newFilters.searchTerm) params.set("search", newFilters.searchTerm)
+      if (newFilters.countries?.length) params.set("countries", newFilters.countries.join(","))
       if (newFilters.states.length) params.set("states", newFilters.states.join(","))
       if (newFilters.capabilities.length) params.set("capabilities", newFilters.capabilities.join(","))
       if (newFilters.certifications.length) params.set("certifications", newFilters.certifications.join(","))
@@ -59,12 +62,10 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
       const newUrl = `${pathname}${params.toString() ? "?" + params.toString() : ""}`
       
-      // Schedule the router update after the current render
-      setTimeout(() => {
-        startTransition(() => {
-          router.replace(newUrl, { scroll: false })
-        })
-      }, 0)
+      // Use startTransition directly
+      startTransition(() => {
+        router.replace(newUrl, { scroll: false })
+      })
     },
     [router, pathname]
   )
@@ -76,11 +77,10 @@ export function FilterProvider({ children }: { children: ReactNode }) {
       setFilters((prevFilters) => {
         const newFilters = { ...prevFilters, [key]: value }
         
-        // For search term, use debounced update
+        // Debounce search, immediate for others
         if (key === "searchTerm") {
           debouncedUpdateURL(newFilters)
         } else {
-          // For other filters, update immediately
           updateURLParams(newFilters)
         }
         
@@ -93,6 +93,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   const clearFilters = useCallback(() => {
     const defaultFilters: FilterState = {
       searchTerm: "",
+      countries: [],
       states: [],
       capabilities: [],
       certifications: [],
@@ -103,23 +104,17 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     
     setFilters(defaultFilters)
     
-    // Schedule the router update after the current render
-    setTimeout(() => {
-      startTransition(() => {
-        router.replace(pathname, { scroll: false })
-      })
-    }, 0)
+    startTransition(() => {
+      router.replace(pathname, { scroll: false })
+    })
   }, [router, pathname])
 
-  // Create the context value directly as an object
-  const contextValue: FilterContextType = {
-    filters,
-    updateFilter,
-    clearFilters,
-    filteredCount,
-    setFilteredCount,
-    isPending,
-  }
+const contextValue: FilterContextType = {
+  filters,
+  updateFilter,
+  clearFilters,   
+  isPending,
+}
 
   return <FilterContext.Provider value={contextValue}>{children}</FilterContext.Provider>
 }

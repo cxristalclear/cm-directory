@@ -7,6 +7,8 @@ import { useFilters } from "../contexts/FilterContext"
 import { useRouter } from "next/navigation"
 import type { Company } from "../types/company"
 import { type LucideIcon } from "lucide-react"
+import { getStateName } from '../utils/stateMapping'
+
 
 
 interface HeaderProps {
@@ -68,10 +70,15 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
     })
     
     locationSet.forEach(location => {
+      // Display full state name in suggestions
+      const displayLabel = location.includes(',') 
+        ? location.split(', ').map((part, i) => i === 1 ? getStateName(part) : part).join(', ')
+        : getStateName(location);
+        
       results.push({
         type: 'location',
-        value: location,
-        label: location,
+        value: location, // Keep original for filtering
+        label: displayLabel, // Show full name
         icon: MapPin,
         count: companies.filter(c => 
           c.facilities?.some(f => 
@@ -302,13 +309,13 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
         </nav>
 
         {/* Hero Section */}
-        <div className="relative z-10 py-12 md:py-16">
+        <div className="relative z-10 py-8 md:py-10">
           <div className="container mx-auto px-4 text-center">
             <div className="max-w-4xl mx-auto">
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 font-sans leading-tight">
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 font-sans leading-tight">
                 Find Your Next Manufacturing Partner
               </h1>
-              <p className="text-lg md:text-xl text-blue-100 mb-6 leading-relaxed">
+              <p className="text-lg md:text-xl text-blue-100 mb-2 leading-relaxed">
                 Connect with verified contract manufacturers. Search by name, location, capabilities, and more.
               </p>
               {/* Enhanced Search Bar

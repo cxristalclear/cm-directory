@@ -1,21 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useFilters } from '../contexts/FilterContext'
-import { ChevronDown, ChevronRight, X, Filter, Search, MapPin, Settings, Award, Building2, Users, Layers } from 'lucide-react'
+import { ChevronDown, X, Filter, Search, MapPin, Settings, Award, Building2, Users, Layers } from 'lucide-react'
 import type { Company } from '../types/company'
+import { getStateName } from '../utils/stateMapping'
 
 interface FilterSidebarProps {
   allCompanies: Company[]
-}
-
-interface FilterCount {
-  states: Record<string, number>;
-  capabilities: Record<string, number>;
-  certifications: Record<string, number>;
-  industries: Record<string, number>;
-  employeeRange: Record<string, number>;
-  volumeCapability: Record<string, number>;
 }
 
 export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
@@ -23,61 +15,221 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [expandedSections, setExpandedSections] = useState<string[]>(['location', 'capabilities'])
 
-  // Calculate counts for each filter option
-  const getFilterCounts = (): FilterCount => {
-    const counts: FilterCount = {
-        states: {},
-        capabilities: {},
-        certifications: {},
-        industries: {},
-        employeeRange: {},
-        volumeCapability: {}
-    }   
-
-    allCompanies.forEach(company => {
-      // States
-      company.facilities?.forEach((facility) => {
-        if (facility.state) {
-          counts.states[facility.state] = (counts.states[facility.state] || 0) + 1
-        }
-      })
-
-      // Capabilities
-      if (company.capabilities?.[0]) {
-        const cap = company.capabilities[0]
-        if (cap.pcb_assembly_smt) counts.capabilities['smt'] = (counts.capabilities['smt'] || 0) + 1
-        if (cap.pcb_assembly_through_hole) counts.capabilities['through_hole'] = (counts.capabilities['through_hole'] || 0) + 1
-        if (cap.cable_harness_assembly) counts.capabilities['cable_harness'] = (counts.capabilities['cable_harness'] || 0) + 1
-        if (cap.box_build_assembly) counts.capabilities['box_build'] = (counts.capabilities['box_build'] || 0) + 1
-        if (cap.prototyping) counts.capabilities['prototyping'] = (counts.capabilities['prototyping'] || 0) + 1
-        if (cap.low_volume_production) counts.volumeCapability['low'] = (counts.volumeCapability['low'] || 0) + 1
-        if (cap.medium_volume_production) counts.volumeCapability['medium'] = (counts.volumeCapability['medium'] || 0) + 1
-        if (cap.high_volume_production) counts.volumeCapability['high'] = (counts.volumeCapability['high'] || 0) + 1
+  // Calculate dynamic filter counts
+  const dynamicCounts = useMemo(() => {
+    // Helper function INSIDE useMemo to fix ESLint warning
+    const companyMatchesFilters = (
+      company: Company,
+      excludeFilterType?: keyof typeof filters
+    ): boolean => {
+      // Check search term (unless we're excluding it)
+      if (excludeFilterType !== 'searchTerm' && filters.searchTerm) {
+        const searchLower = filters.searchTerm.toLowerCase()
+        const matches = 
+          company.company_name?.toLowerCase().includes(searchLower) ||
+          company.description?.toLowerCase().includes(searchLower)
+        if (!matches) return false
       }
+      
+      // Check states (unless we're excluding it)
+      if (excludeFilterType !== 'states' && filters.states.length > 0) {
+        const hasState = company.facilities?.some(f => 
+          filters.states.includes(f.state)
+        )
+        if (!hasState) return false
+      }
+      
+      // Check capabilities (unless we're excluding it)
+      if (excludeFilterType !== 'capabilities' && filters.capabilities.length > 0) {
+        if (!company.capabilities?.[0]) return false
+        
+        const cap = company.capabilities[0]
+        const hasCapability = filters.capabilities.some(selected => {
+          switch (selected) {
+            case 'smt': return cap.pcb_assembly_smt
+            case 'through_hole': return cap.pcb_assembly_through_hole
+            case 'cable_harness': return cap.cable_harness_assembly
+            case 'box_build': return cap.box_build_assembly
+            case 'prototyping': return cap.prototyping
+            default: return false
+          }
+        })
+        if (!hasCapability) return false
+      }
+      
+      // Check volume capability (unless we're excluding it)
+      if (excludeFilterType !== 'volumeCapability' && filters.volumeCapability.length > 0) {
+        if (!company.capabilities?.[0]) return false
+        
+        const cap = company.capabilities[0]
+        const hasVolume = filters.volumeCapability.some(volume => {
+          switch (volume) {
+            case 'low': return cap.low_volume_production
+            case 'medium': return cap.medium_volume_production
+            case 'high': return cap.high_volume_production
+            default: return false
+          }
+        })
+        if (!hasVolume) return false
+      }
+      
+      // Check certifications (unless we're excluding it)
+      if (excludeFilterType !== 'certifications' && filters.certifications.length > 0) {
+        const hasCert = company.certifications?.some(cert =>
+          filters.certifications.includes(
+            cert.certification_type.toLowerCase().replace(/\s+/g, '_')
+          )
+        )
+        if (!hasCert) return false
+      }
+      
+      // Check industries (unless we're excluding it)
+      if (excludeFilterType !== 'industries' && filters.industries.length > 0) {
+        const hasIndustry = company.industries?.some(ind =>
+          filters.industries.includes(
+            ind.industry_name.toLowerCase().replace(/\s+/g, '_')
+          )
+        )
+        if (!hasIndustry) return false
+      }
+      
+      // Check employee range (unless we're excluding it)
+      if (excludeFilterType !== 'employeeRange' && filters.employeeRange.length > 0) {
+        if (!filters.employeeRange.includes(company.employee_count_range)) {
+          return false
+        }
+      }
+      
+      return true
+    }
 
-      // Certifications
-      company.certifications?.forEach((cert) => {
-        const certType = cert.certification_type.toLowerCase().replace(/\s+/g, '_')
-        counts.certifications[certType] = (counts.certifications[certType] || 0) + 1
-      })
-
-      // Industries
-      company.industries?.forEach((ind) => {
-        const indName = ind.industry_name.toLowerCase().replace(/\s+/g, '_')
-        counts.industries[indName] = (counts.industries[indName] || 0) + 1
-      })
-
-      // Employee Range
-      if (company.employee_count_range) {
-        counts.employeeRange[company.employee_count_range] = 
-          (counts.employeeRange[company.employee_count_range] || 0) + 1
+    // Initialize counts
+    const counts = {
+      states: new Map<string, number>(),
+      capabilities: new Map<string, number>(),
+      certifications: new Map<string, number>(),
+      industries: new Map<string, number>(),
+      employeeRange: new Map<string, number>(),
+      volumeCapability: new Map<string, number>()
+    }
+    
+    // STATES - Count companies that match all filters except states
+    allCompanies.forEach(company => {
+      if (companyMatchesFilters(company, 'states')) {
+        company.facilities?.forEach(facility => {
+          if (facility.state) {
+            counts.states.set(
+              facility.state,
+              (counts.states.get(facility.state) || 0) + 1
+            )
+          }
+        })
       }
     })
 
-    return counts
-  }
+    // CAPABILITIES - Count companies that match all filters except capabilities
+    allCompanies.forEach(company => {
+      if (companyMatchesFilters(company, 'capabilities')) {
+        if (company.capabilities?.[0]) {
+          const cap = company.capabilities[0]
+          
+          if (cap.pcb_assembly_smt) {
+            counts.capabilities.set('smt',
+              (counts.capabilities.get('smt') || 0) + 1
+            )
+          }
+          
+          if (cap.pcb_assembly_through_hole) {
+            counts.capabilities.set('through_hole',
+              (counts.capabilities.get('through_hole') || 0) + 1
+            )
+          }
+          
+          if (cap.cable_harness_assembly) {
+            counts.capabilities.set('cable_harness',
+              (counts.capabilities.get('cable_harness') || 0) + 1
+            )
+          }
+          
+          if (cap.box_build_assembly) {
+            counts.capabilities.set('box_build',
+              (counts.capabilities.get('box_build') || 0) + 1
+            )
+          }
+          
+          if (cap.prototyping) {
+            counts.capabilities.set('prototyping',
+              (counts.capabilities.get('prototyping') || 0) + 1
+            )
+          }
+        }
+      }
+    })
 
-  const filterCounts = getFilterCounts()
+    // VOLUME CAPABILITY - Count companies that match all filters except volume
+    allCompanies.forEach(company => {
+      if (companyMatchesFilters(company, 'volumeCapability')) {
+        if (company.capabilities?.[0]) {
+          const cap = company.capabilities[0]
+          
+          if (cap.low_volume_production) {
+            counts.volumeCapability.set('low',
+              (counts.volumeCapability.get('low') || 0) + 1
+            )
+          }
+          
+          if (cap.medium_volume_production) {
+            counts.volumeCapability.set('medium',
+              (counts.volumeCapability.get('medium') || 0) + 1
+            )
+          }
+          
+          if (cap.high_volume_production) {
+            counts.volumeCapability.set('high',
+              (counts.volumeCapability.get('high') || 0) + 1
+            )
+          }
+        }
+      }
+    })
+
+    // CERTIFICATIONS - Count companies that match all filters except certifications
+    allCompanies.forEach(company => {
+      if (companyMatchesFilters(company, 'certifications')) {
+        company.certifications?.forEach(cert => {
+          const certKey = cert.certification_type.toLowerCase().replace(/\s+/g, '_')
+          counts.certifications.set(certKey,
+            (counts.certifications.get(certKey) || 0) + 1
+          )
+        })
+      }
+    })
+
+    // INDUSTRIES - Count companies that match all filters except industries
+    allCompanies.forEach(company => {
+      if (companyMatchesFilters(company, 'industries')) {
+        company.industries?.forEach(ind => {
+          const indKey = ind.industry_name.toLowerCase().replace(/\s+/g, '_')
+          counts.industries.set(indKey,
+            (counts.industries.get(indKey) || 0) + 1
+          )
+        })
+      }
+    })
+
+    // EMPLOYEE RANGE - Count companies that match all filters except employee range
+    allCompanies.forEach(company => {
+      if (companyMatchesFilters(company, 'employeeRange')) {
+        if (company.employee_count_range) {
+          counts.employeeRange.set(company.employee_count_range,
+            (counts.employeeRange.get(company.employee_count_range) || 0) + 1
+          )
+        }
+      }
+    })
+    
+    return counts
+  }, [allCompanies, filters])
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev =>
@@ -204,7 +356,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                   )}
                   {filters.states.map(state => (
                     <span key={state} className="inline-flex items-center gap-1 px-3 py-1.5 bg-white text-gray-700 rounded-full text-sm font-medium shadow-sm border border-gray-200">
-                      {state}
+                      {getStateName(state)}
                       <button onClick={() => handleCheckboxChange('states', state)} className="ml-1 hover:bg-gray-100 rounded-full p-0.5 transition-colors">
                         <X className="w-3 h-3" />
                       </button>
@@ -279,24 +431,49 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 </button>
                 {expandedSections.includes('location') && (
                   <div className="mt-4 space-y-2 max-h-48 overflow-y-auto pl-1">
-                    {Object.entries(filterCounts.states)
-                      .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([state, count]) => (
-                        <label key={state} className="flex items-center justify-between p-2 rounded-lg hover:bg-white cursor-pointer transition-colors group">
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={filters.states.includes(state)}
-                              onChange={() => handleCheckboxChange('states', state)}
-                              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                            />
-                            <span className="text-sm font-medium text-gray-700">{state}</span>
-                          </div>
-                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded-full group-hover:bg-gray-200 transition-colors">
-                            {count}
-                          </span>
-                        </label>
-                      ))}
+                    {Array.from(dynamicCounts.states.entries())
+                      .sort(([a], [b]) => {
+                        const nameA = getStateName(a);
+                        const nameB = getStateName(b);
+                        return nameA.localeCompare(nameB);
+                      })
+                      .map(([state, count]) => {
+                        const isSelected = filters.states.includes(state)
+                        const isDisabled = count === 0 && !isSelected
+                        
+                        return (
+                          <label 
+                            key={state} 
+                            className={`flex items-center justify-between p-2 rounded-lg ${
+                              isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
+                            } transition-colors group`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => !isDisabled && handleCheckboxChange('states', state)}
+                                disabled={isDisabled}
+                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                              />
+                              <span className={`text-sm font-medium ${
+                                isDisabled ? 'text-gray-400' : 'text-gray-700'
+                              }`}>
+                                {getStateName(state)}
+                              </span>
+                            </div>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              isSelected 
+                                ? 'bg-blue-100 text-blue-700 font-semibold'
+                                : isDisabled
+                                  ? 'bg-gray-50 text-gray-400'
+                                  : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                            } transition-colors`}>
+                              {count}
+                            </span>
+                          </label>
+                        )
+                      })}
                   </div>
                 )}
               </div>
@@ -324,24 +501,43 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 </button>
                 {expandedSections.includes('capabilities') && (
                   <div className="mt-4 space-y-2">
-                    {Object.entries(filterCounts.capabilities).map(([cap, count]) => (
-                      <label key={cap} className="flex items-center justify-between p-2 rounded-lg hover:bg-white cursor-pointer transition-colors group">
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={filters.capabilities.includes(cap)}
-                            onChange={() => handleCheckboxChange('capabilities', cap)}
-                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                          />
-                          <span className="text-sm font-medium text-gray-700">
-                            {cap.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    {Array.from(dynamicCounts.capabilities.entries()).map(([cap, count]) => {
+                      const isSelected = filters.capabilities.includes(cap)
+                      const isDisabled = count === 0 && !isSelected
+                      
+                      return (
+                        <label 
+                          key={cap} 
+                          className={`flex items-center justify-between p-2 rounded-lg ${
+                            isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
+                          } transition-colors group`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => !isDisabled && handleCheckboxChange('capabilities', cap)}
+                              disabled={isDisabled}
+                              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                            />
+                            <span className={`text-sm font-medium ${
+                              isDisabled ? 'text-gray-400' : 'text-gray-700'
+                            }`}>
+                              {cap.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            isSelected 
+                              ? 'bg-blue-100 text-blue-700 font-semibold'
+                              : isDisabled
+                                ? 'bg-gray-50 text-gray-400'
+                                : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                          } transition-colors`}>
+                            {count}
                           </span>
-                        </div>
-                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded-full group-hover:bg-gray-200 transition-colors">
-                          {count}
-                        </span>
-                      </label>
-                    ))}
+                        </label>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -369,24 +565,43 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 </button>
                 {expandedSections.includes('volume') && (
                   <div className="mt-4 space-y-2">
-                    {Object.entries(filterCounts.volumeCapability).map(([vol, count]) => (
-                      <label key={vol} className="flex items-center justify-between p-2 rounded-lg hover:bg-white cursor-pointer transition-colors group">
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={filters.volumeCapability.includes(vol)}
-                            onChange={() => handleCheckboxChange('volumeCapability', vol)}
-                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                          />
-                          <span className="text-sm font-medium text-gray-700">
-                            {vol.charAt(0).toUpperCase() + vol.slice(1)} Volume
+                    {Array.from(dynamicCounts.volumeCapability.entries()).map(([vol, count]) => {
+                      const isSelected = filters.volumeCapability.includes(vol)
+                      const isDisabled = count === 0 && !isSelected
+                      
+                      return (
+                        <label 
+                          key={vol} 
+                          className={`flex items-center justify-between p-2 rounded-lg ${
+                            isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
+                          } transition-colors group`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => !isDisabled && handleCheckboxChange('volumeCapability', vol)}
+                              disabled={isDisabled}
+                              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                            />
+                            <span className={`text-sm font-medium ${
+                              isDisabled ? 'text-gray-400' : 'text-gray-700'
+                            }`}>
+                              {vol.charAt(0).toUpperCase() + vol.slice(1)} Volume
+                            </span>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            isSelected 
+                              ? 'bg-blue-100 text-blue-700 font-semibold'
+                              : isDisabled
+                                ? 'bg-gray-50 text-gray-400'
+                                : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                          } transition-colors`}>
+                            {count}
                           </span>
-                        </div>
-                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded-full group-hover:bg-gray-200 transition-colors">
-                          {count}
-                        </span>
-                      </label>
-                    ))}
+                        </label>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -414,24 +629,45 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 </button>
                 {expandedSections.includes('certifications') && (
                   <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
-                    {Object.entries(filterCounts.certifications)
-                      .slice(0, 10) // Limit to top 10
-                      .map(([cert, count]) => (
-                        <label key={cert} className="flex items-center justify-between p-2 rounded-lg hover:bg-white cursor-pointer transition-colors group">
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={filters.certifications.includes(cert)}
-                              onChange={() => handleCheckboxChange('certifications', cert)}
-                              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                            />
-                            <span className="text-sm font-medium text-gray-700">{cert.replace(/_/g, ' ').toUpperCase()}</span>
-                          </div>
-                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded-full group-hover:bg-gray-200 transition-colors">
-                            {count}
-                          </span>
-                        </label>
-                      ))}
+                    {Array.from(dynamicCounts.certifications.entries())
+                      .slice(0, 10)
+                      .map(([cert, count]) => {
+                        const isSelected = filters.certifications.includes(cert)
+                        const isDisabled = count === 0 && !isSelected
+                        
+                        return (
+                          <label 
+                            key={cert} 
+                            className={`flex items-center justify-between p-2 rounded-lg ${
+                              isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
+                            } transition-colors group`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => !isDisabled && handleCheckboxChange('certifications', cert)}
+                                disabled={isDisabled}
+                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                              />
+                              <span className={`text-sm font-medium ${
+                                isDisabled ? 'text-gray-400' : 'text-gray-700'
+                              }`}>
+                                {cert.replace(/_/g, ' ').toUpperCase()}
+                              </span>
+                            </div>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              isSelected 
+                                ? 'bg-blue-100 text-blue-700 font-semibold'
+                                : isDisabled
+                                  ? 'bg-gray-50 text-gray-400'
+                                  : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                            } transition-colors`}>
+                              {count}
+                            </span>
+                          </label>
+                        )
+                      })}
                   </div>
                 )}
               </div>
@@ -459,26 +695,45 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 </button>
                 {expandedSections.includes('industries') && (
                   <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
-                    {Object.entries(filterCounts.industries)
-                      .slice(0, 15) // Limit display
-                      .map(([ind, count]) => (
-                        <label key={ind} className="flex items-center justify-between p-2 rounded-lg hover:bg-white cursor-pointer transition-colors group">
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={filters.industries.includes(ind)}
-                              onChange={() => handleCheckboxChange('industries', ind)}
-                              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                            />
-                            <span className="text-sm font-medium text-gray-700">
-                              {ind.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    {Array.from(dynamicCounts.industries.entries())
+                      .slice(0, 15)
+                      .map(([ind, count]) => {
+                        const isSelected = filters.industries.includes(ind)
+                        const isDisabled = count === 0 && !isSelected
+                        
+                        return (
+                          <label 
+                            key={ind} 
+                            className={`flex items-center justify-between p-2 rounded-lg ${
+                              isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
+                            } transition-colors group`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => !isDisabled && handleCheckboxChange('industries', ind)}
+                                disabled={isDisabled}
+                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                              />
+                              <span className={`text-sm font-medium ${
+                                isDisabled ? 'text-gray-400' : 'text-gray-700'
+                              }`}>
+                                {ind.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </span>
+                            </div>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              isSelected 
+                                ? 'bg-blue-100 text-blue-700 font-semibold'
+                                : isDisabled
+                                  ? 'bg-gray-50 text-gray-400'
+                                  : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                            } transition-colors`}>
+                              {count}
                             </span>
-                          </div>
-                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded-full group-hover:bg-gray-200 transition-colors">
-                            {count}
-                          </span>
-                        </label>
-                      ))}
+                          </label>
+                        )
+                      })}
                   </div>
                 )}
               </div>
@@ -506,27 +761,48 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 </button>
                 {expandedSections.includes('employees') && (
                   <div className="mt-4 space-y-2">
-                    {Object.entries(filterCounts.employeeRange)
+                    {Array.from(dynamicCounts.employeeRange.entries())
                       .sort(([a], [b]) => {
                         const order = ['<50', '50-150', '150-500', '500-1000', '1000+']
                         return order.indexOf(a) - order.indexOf(b)
                       })
-                      .map(([range, count]) => (
-                        <label key={range} className="flex items-center justify-between p-2 rounded-lg hover:bg-white cursor-pointer transition-colors group">
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={filters.employeeRange.includes(range)}
-                              onChange={() => handleCheckboxChange('employeeRange', range)}
-                              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                            />
-                            <span className="text-sm font-medium text-gray-700">{range} employees</span>
-                          </div>
-                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded-full group-hover:bg-gray-200 transition-colors">
-                            {count}
-                          </span>
-                        </label>
-                      ))}
+                      .map(([range, count]) => {
+                        const isSelected = filters.employeeRange.includes(range)
+                        const isDisabled = count === 0 && !isSelected
+                        
+                        return (
+                          <label 
+                            key={range} 
+                            className={`flex items-center justify-between p-2 rounded-lg ${
+                              isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
+                            } transition-colors group`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => !isDisabled && handleCheckboxChange('employeeRange', range)}
+                                disabled={isDisabled}
+                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                              />
+                              <span className={`text-sm font-medium ${
+                                isDisabled ? 'text-gray-400' : 'text-gray-700'
+                              }`}>
+                                {range} employees
+                              </span>
+                            </div>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              isSelected 
+                                ? 'bg-blue-100 text-blue-700 font-semibold'
+                                : isDisabled
+                                  ? 'bg-gray-50 text-gray-400'
+                                  : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                            } transition-colors`}>
+                              {count}
+                            </span>
+                          </label>
+                        )
+                      })}
                   </div>
                 )}
               </div>

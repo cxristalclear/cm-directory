@@ -531,7 +531,7 @@ export default async function CompanyPage({
               )}
             </div>
 
-            {company.contacts && company.contacts.length > 0 && (
+            {/*{company.contacts && company.contacts.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200/50 p-4 hover:shadow-md transition-shadow duration-200">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-5 h-5 bg-green-100 rounded-lg flex items-center justify-center">
@@ -589,7 +589,7 @@ export default async function CompanyPage({
                   ))}
                 </div>
               </div>
-            )}
+            )}*/}
 
             {company.business_info && company.business_info.length > 0 && company.business_info[0] && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200/50 p-4 hover:shadow-md transition-shadow duration-200">
