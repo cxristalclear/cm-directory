@@ -18,7 +18,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const markers = useRef<mapboxgl.Marker[]>([])
-  const { filters, setFilteredCount } = useFilters()
+  const { filters} = useFilters()
   const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/light-v11")
   const [isLoading, setIsLoading] = useState(true)
 
@@ -121,10 +121,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
     return { facilities, filteredCount: filtered.length }
   }, [filters, allCompanies])
-
-  useEffect(() => {
-    setFilteredCount(filteredFacilities.filteredCount)
-  }, [filteredFacilities.filteredCount, setFilteredCount])
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return
