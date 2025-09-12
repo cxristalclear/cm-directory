@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { createContext, useContext, useState, useEffect, type ReactNode, useTransition, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
@@ -15,7 +15,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
   const [filters, setFilters] = useState<FilterState>({
     searchTerm: "",
-    countries: [], // Add if you want country filtering
+    countries: [],
     states: [],
     capabilities: [],
     certifications: [],
@@ -24,7 +24,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     volumeCapability: [],
   })
 
-  // Load filters from URL on mount and when URL changes
+  // Load filters from URL on mount
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
 
@@ -40,7 +40,6 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     }
 
     setFilters((prevFilters) => {
-      // Only update if actually changed to prevent re-renders
       const hasChanged = JSON.stringify(prevFilters) !== JSON.stringify(newFilters)
       return hasChanged ? newFilters : prevFilters
     })
@@ -50,9 +49,8 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     (newFilters: FilterState) => {
       const params = new URLSearchParams()
 
-      // Only add params that have values
       if (newFilters.searchTerm) params.set("search", newFilters.searchTerm)
-      if (newFilters.countries?.length) params.set("countries", newFilters.countries.join(","))
+      if (newFilters.countries.length) params.set("countries", newFilters.countries.join(","))
       if (newFilters.states.length) params.set("states", newFilters.states.join(","))
       if (newFilters.capabilities.length) params.set("capabilities", newFilters.capabilities.join(","))
       if (newFilters.certifications.length) params.set("certifications", newFilters.certifications.join(","))
@@ -62,10 +60,12 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
       const newUrl = `${pathname}${params.toString() ? "?" + params.toString() : ""}`
       
-      // Use startTransition directly
-      startTransition(() => {
-        router.replace(newUrl, { scroll: false })
-      })
+      // Defer the router update to avoid updating during render
+      setTimeout(() => {
+        startTransition(() => {
+          router.replace(newUrl, { scroll: false })
+        })
+      }, 0)
     },
     [router, pathname]
   )
@@ -77,12 +77,14 @@ export function FilterProvider({ children }: { children: ReactNode }) {
       setFilters((prevFilters) => {
         const newFilters = { ...prevFilters, [key]: value }
         
-        // Debounce search, immediate for others
-        if (key === "searchTerm") {
-          debouncedUpdateURL(newFilters)
-        } else {
-          updateURLParams(newFilters)
-        }
+        // Defer URL update to after render
+        setTimeout(() => {
+          if (key === "searchTerm") {
+            debouncedUpdateURL(newFilters)
+          } else {
+            updateURLParams(newFilters)
+          }
+        }, 0)
         
         return newFilters
       })
@@ -104,17 +106,20 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     
     setFilters(defaultFilters)
     
-    startTransition(() => {
-      router.replace(pathname, { scroll: false })
-    })
+    // Defer the router update to avoid updating during render
+    setTimeout(() => {
+      startTransition(() => {
+        router.replace(pathname, { scroll: false })
+      })
+    }, 0)
   }, [router, pathname])
 
-const contextValue: FilterContextType = {
-  filters,
-  updateFilter,
-  clearFilters,   
-  isPending,
-}
+  const contextValue: FilterContextType = {
+    filters,
+    updateFilter,
+    clearFilters,
+    isPending,
+  }
 
   return <FilterContext.Provider value={contextValue}>{children}</FilterContext.Provider>
 }
