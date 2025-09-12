@@ -390,12 +390,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
           </div>
         </div>
       </div>
-
-      {/* Below Map Ad */}
-      <div className="bg-white rounded-xl shadow-xl p-6">
-        <div className="text-xs text-gray-400 mb-3 uppercase tracking-wide text-center">Sponsored</div>
-        <AdPlaceholder width="100%" height="120px" label="Map Footer Banner" className="border-blue-200" />
-      </div>
     </div>
   )
 }

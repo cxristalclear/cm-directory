@@ -5,6 +5,8 @@ import Link from "next/link"
 import { useFilters } from "../contexts/FilterContext"
 import { MapPin, Users, Award, ChevronRight, Building2, Globe } from "lucide-react"
 import type { Company } from "../types/company"
+import { getStateName } from '../utils/stateMapping'
+
 
 interface CompanyListProps {
   allCompanies: Company[]

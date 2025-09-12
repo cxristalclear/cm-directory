@@ -96,6 +96,7 @@ export interface FacilityWithCompany extends Facility {
 
 export interface FilterState {
   searchTerm: string;
+  countries: string[];
   states: string[];
   capabilities: string[];
   certifications: string[];
@@ -108,7 +109,15 @@ export interface FilterContextType {
   filters: FilterState;
   updateFilter: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
   clearFilters: () => void;
-  filteredCount: number;
-  setFilteredCount: (count: number) => void;
   isPending: boolean; // Added isPending field
+} 
+
+export interface DynamicFilterCounts {
+  countries: Map<string, number>;
+  states: Map<string, number>;
+  capabilities: Map<string, number>;
+  certifications: Map<string, number>;
+  industries: Map<string, number>;
+  employeeRange: Map<string, number>;
+  volumeCapability: Map<string, number>;
 }
