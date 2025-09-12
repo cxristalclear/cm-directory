@@ -28,6 +28,14 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
       )
     }
 
+    if (filters.countries.length > 0) {
+     filtered = filtered.filter((company) => 
+       company.facilities?.some((f) => 
+         filters.countries.includes(f.country || 'US')
+       )
+     )
+   }
+
     if (filters.states.length > 0) {
       filtered = filtered.filter((company) => company.facilities?.some((f) => filters.states.includes(f.state)))
     }
