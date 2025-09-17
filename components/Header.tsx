@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { useState, useEffect, useRef, useMemo } from "react"
 import Link from "next/link"
-import { Search, Building2, Filter, X, MapPin, Award, Settings } from "lucide-react"
+import { Search, Building2, Filter, MapPin, Award, Settings } from "lucide-react"
 import { useFilters } from "../contexts/FilterContext"
 import { useRouter } from "next/navigation"
 import type { Company } from "../types/company"
@@ -23,14 +24,15 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
   const [searchValue, setSearchValue] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
-  const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
+  
+  const searchRef = useRef<HTMLDivElement>(null)
   // Sync with filters context
   useEffect(() => {
     setSearchValue(filters.searchTerm)
   }, [filters.searchTerm])
 
+{/*
   // Generate search suggestions
   const suggestions = useMemo(() => {
     if (!searchValue.trim() || searchValue.length < 2) return []
@@ -151,7 +153,7 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
 
     // Limit to top 8 suggestions
     return results.slice(0, 8)
-  }, [searchValue, companies])
+  }, [searchValue, companies]) */}
 
   // Handle clicking outside
   useEffect(() => {
@@ -166,7 +168,7 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Handle keyboard navigation
+ {/*} // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showSuggestions) {
       if (e.key === 'ArrowDown' && suggestions.length > 0) {
@@ -249,7 +251,7 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
     setSelectedIndex(-1)
     inputRef.current?.focus()
   }
-
+*/}
   return (
     <header className="relative overflow-hidden">
       {/* Background with gradient */}

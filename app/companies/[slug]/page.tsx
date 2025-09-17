@@ -115,9 +115,9 @@ export default async function CompanyPage({
             Back to Directory
           </Link>
 
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div className="flex-1">
-              <div className="flex items-start gap-4 mb-4">
+              <div className="flex items-start gap-2 mb-2">
                 <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
                   <svg className="w-8 h-8 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -130,7 +130,7 @@ export default async function CompanyPage({
                 </div>
                 <div>
                   <h1 className="text-3xl lg:text-4xl font-bold mb-1 leading-tight">{company.company_name}</h1>
-                  {company.dba_name && <p className="text-lg text-blue-200 mb-1">DBA: {company.dba_name}</p>}
+                  {company.dba_name && <p className="text-md text-blue-200 mb-1">DBA: {company.dba_name}</p>}
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-200 border border-green-400/30">
                       <div className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></div>
