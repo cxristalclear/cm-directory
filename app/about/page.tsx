@@ -211,6 +211,21 @@ function Feature({ title, desc }: { title: string; desc: string }) {
     </div>
   );
 }
+function Badge({
+  children,
+  className = "",
+}: { children: React.ReactNode; className?: string }) {
+  return (
+    <span
+      className={
+        "inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 " +
+        className
+      }
+    >
+      {children}
+    </span>
+  );
+}
 
 {/*
 function StatCard({ label, value }: { label: string; value: string }) {
@@ -230,12 +245,5 @@ function TimelineItem({ title, body }: { title: string; body: string }) {
       <div className="text-sm font-medium text-neutral-900">{title}</div>
       <p className="mt-1 text-neutral-700">{body}</p>
     </li>
-  );
-}
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-      {children}
-    </span>
   );
 }
