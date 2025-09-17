@@ -110,8 +110,15 @@ export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
   }, [allCompanies, filters])
   
   // Calculate map markers (locations)
+  type MapMarker = {
+    company: string;
+    facility: string;
+    lat: number;
+    lng: number;
+  }
+
   const mapMarkers = useMemo(() => {
-    const markers: any[] = []
+    const markers: MapMarker[] = []
     
     filteredCompanies.forEach(company => {
       company.facilities?.forEach(facility => {
