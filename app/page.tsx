@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import CompanyMap from "../components/CompanyMap";
 import CompanyList from "../components/CompanyList";
 import FilterSidebar from "@/components/FilterSidebar";
+import FilterDebugger from '@/components/FilterDebugger'
 import Header from "@/components/Header";
 import { FilterProvider } from "../contexts/FilterContext";
 import { supabase } from "../lib/supabase";
@@ -74,6 +75,7 @@ export default async function Home() {
               <div className="lg:col-span-3 space-y-4">
                 <Suspense fallback={<div>Loading filters...</div>}>
                   <FilterSidebar allCompanies={companies} />
+                  <FilterDebugger allCompanies={companies} />
                 </Suspense>
 
                 {/* Bottom Sidebar Ad */}

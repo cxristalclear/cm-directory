@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest",
+    "geocode": "tsx scripts/geocode-facilities.ts",
+    "geocode:dry-run": "DRY_RUN=true tsx scripts/geocode-facilities.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.54.0",
@@ -31,6 +33,7 @@
     "@types/dompurify": "^3.0.5",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
+    "@types/node-fetch": "^2.6.13",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.2.2",
@@ -38,8 +41,10 @@
     "eslint-config-next": "15.4.6",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
+    "node-fetch": "^3.3.2",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.1",
+    "tsx": "^4.20.5",
     "typescript": "^5"
   }
 }
