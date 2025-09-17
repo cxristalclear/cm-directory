@@ -31,7 +31,7 @@ function Chip({ label, onRemove }: ChipProps) {
 }
 
 export default function ActiveFiltersBar() {
-  const { filters, setFilters, clearAll } = useFilters() as any;
+  const { filters, setFilters, clearFilters } = useFilters() as any;
 
   // Helpers to remove one filter value from an array in state
   const removeFromArray = (key: string, value: string) =>
@@ -76,7 +76,7 @@ export default function ActiveFiltersBar() {
       <div className="flex flex-wrap items-center gap-2">{hasAny ? chips : <span className="text-sm text-neutral-500">No active filters</span>}</div>
       {hasAny && (
         <button
-          onClick={() => clearAll?.()}
+          onClick={clearFilters}
           className="text-sm font-medium text-blue-700 hover:text-blue-800"
           aria-label="Clear all filters"
         >
