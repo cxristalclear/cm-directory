@@ -303,6 +303,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
     filters.volumeCapability.length +
     (filters.searchTerm ? 1 : 0)
 
+
   const sectionIcons = {
     location: <MapPin className="w-4 h-4" />,
     capabilities: <Settings className="w-4 h-4" />,

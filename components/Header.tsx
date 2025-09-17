@@ -269,18 +269,6 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
               </Link>
 
               <div className="hidden md:flex items-center space-x-6">
-                <Link
-                  href="/manufacturers"
-                  className="text-white/90 hover:text-white transition-colors text-sm font-medium"
-                >
-                  Browse All
-                </Link>
-                <Link
-                  href="/industries"
-                  className="text-white/90 hover:text-white transition-colors text-sm font-medium"
-                >
-                  Industries
-                </Link>
                 <Link href="/about" className="text-white/90 hover:text-white transition-colors text-sm font-medium">
                   About
                 </Link>

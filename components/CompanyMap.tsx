@@ -122,6 +122,14 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     return { facilities, filteredCount: filtered.length }
   }, [filters, allCompanies])
 
+    const companyCount = useMemo(() => {
+    const uniqueCompanies = new Set(
+      filteredFacilities.facilities.map(f => f.company.id)
+    );
+    return uniqueCompanies.size;
+  }, [filteredFacilities.facilities]);
+
+
   useEffect(() => {
     if (!mapContainer.current || map.current) return
 
@@ -274,6 +282,9 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
             <h2 className="text-2xl font-bold text-gray-900 font-sans">Manufacturing Locations</h2>
             <p className="text-sm text-gray-600 mt-1">
               Interactive map showing {filteredFacilities.facilities.length} verified facilities
+              {companyCount !== filteredFacilities.facilities.length && 
+                ` from ${companyCount} ${companyCount === 1 ? 'company' : 'companies'}`
+              }
             </p>
           </div>
         </div>
@@ -327,8 +338,15 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
             <div className="flex items-center space-x-2">
               <MapPin className="w-5 h-5 text-blue-600" />
               <div>
-                <p className="font-bold text-gray-900">{filteredFacilities.facilities.length}</p>
-                <p className="text-xs text-gray-600">Locations</p>
+                <p className="font-bold text-gray-900">{companyCount}</p>
+                <p className="text-xs text-gray-600">
+                  {companyCount === 1 ? 'Company' : 'Companies'}
+                </p>
+                {companyCount !== filteredFacilities.facilities.length && (
+                  <p className="text-xs text-gray-500">
+                    {filteredFacilities.facilities.length} locations
+                  </p>
+                )}
               </div>
             </div>
           </div>

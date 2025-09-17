@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
 import { useFilters } from "../contexts/FilterContext"
 import { MapPin, Users, Award, ChevronRight, Building2, Globe } from "lucide-react"
 import type { Company } from "../types/company"
 import { getStateName } from '../utils/stateMapping'
+import Pagination from "./Pagination"
 
 
 interface CompanyListProps {
@@ -14,6 +15,13 @@ interface CompanyListProps {
 
 export default function CompanyList({ allCompanies }: CompanyListProps) {
   const { filters } = useFilters()
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 12
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters])
 
   const filteredCompanies = useMemo(() => {
     let filtered = [...allCompanies]
@@ -108,6 +116,20 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
     return filtered
   }, [filters, allCompanies])
 
+    const facilityCount = useMemo(() => {
+    return filteredCompanies.reduce((acc, company) => 
+      acc + (company.facilities?.filter(f => f.latitude && f.longitude).length || 0), 0
+    );
+  }, [filteredCompanies]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage)
+  const paginatedCompanies = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return filteredCompanies.slice(startIndex, endIndex)
+  }, [filteredCompanies, currentPage, itemsPerPage])
+
   return (
     <div className="space-y-6">
       {/* List Header */}
@@ -117,6 +139,11 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
           <span className="text-sm text-gray-600">
             Showing <span className="font-semibold text-gray-900">{filteredCompanies.length}</span> of{" "}
             <span className="font-semibold text-gray-900">{allCompanies.length}</span> companies
+            {facilityCount !== filteredCompanies.length && (
+              <span className="text-gray-500">
+                {' '}({facilityCount} locations)
+              </span>
+            )}
           </span>
         </div>
       </div>
@@ -132,7 +159,7 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
             <p className="text-gray-500 text-sm">Try adjusting your filters or search terms</p>
           </div>
         ) : (
-          filteredCompanies.map((company) => (
+          paginatedCompanies.map((company) => (
             <Link key={company.id} href={`/companies/${company.slug}`} className="block group">
               <div
                 className="
@@ -160,6 +187,7 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-3">
+                      
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
                         {company.company_name?.charAt(0) || "C"}
                       </div>
@@ -167,11 +195,20 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
                         <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 font-sans break-words">
                           {company.company_name}
                         </h3>
-                        <div className="flex items-center gap-1 mt-1">
-                          <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                          <span className="text-xs text-gray-600 font-medium">
-                            {company.facilities?.[0]?.city}, {company.facilities?.[0]?.state}
-                          </span>
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          {company.facilities?.[0]?.city && company.facilities?.[0]?.state && (
+                            <div className="flex items-center space-x-2">
+                              <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                              <span className="text-xs text-gray-600 font-medium">{company.facilities?.[0]?.city}, {company.facilities?.[0]?.state}</span>
+                            </div>
+                          )}
+                          {/* Multiple Locations Indicator */}
+                          {company.facilities && company.facilities.filter(f => f.latitude && f.longitude).length > 1 && (
+                            <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 rounded-full px-2 py-1 w-fit">
+                              <MapPin className="w-3 h-3" />
+                              <span>{company.facilities.filter(f => f.latitude && f.longitude).length} locations</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -235,6 +272,15 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      {filteredCompanies.length > itemsPerPage && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   )
 }
