@@ -8,6 +8,7 @@ import type { Company } from "../types/company";
 // import { getStateName } from '../utils/stateMapping'
 import Pagination from "./Pagination";
 import React from "react";
+import ActiveFiltersBar from "../components/ActiveFiltersBar";
 
 interface CompanyListProps {
   allCompanies: Company[];
@@ -161,10 +162,12 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
   }, [filteredCompanies, currentPage, itemsPerPage]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-1">
       {/* List Header */}
-      <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
-        <h2 className="font-sans text-2xl font-bold text-gray-900">Companies Directory</h2>
+      <div className="flex items-center justify-between p-2">
+        <div className="mb-4">
+          <ActiveFiltersBar />
+        </div>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-600">
             Showing <span className="font-semibold text-gray-900">{filteredCompanies.length}</span> of{" "}

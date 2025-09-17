@@ -2,11 +2,13 @@ import { Suspense } from "react";
 import CompanyMap from "../components/CompanyMap";
 import CompanyList from "../components/CompanyList";
 import FilterSidebar from "@/components/FilterSidebar";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import FilterDebugger from '@/components/FilterDebugger'
 import Header from "@/components/Header";
 import { FilterProvider } from "../contexts/FilterContext";
 import { supabase } from "../lib/supabase";
+
+const SHOW_DEBUG = process.env.NEXT_PUBLIC_SHOW_DEBUG === "true";
+
 
 // Ad Placeholder Component
 const AdPlaceholder = ({
@@ -76,7 +78,9 @@ export default async function Home() {
               <div className="lg:col-span-3 space-y-4">
                 <Suspense fallback={<div>Loading filters...</div>}>
                   <FilterSidebar allCompanies={companies} />
-                 {/* <FilterDebugger allCompanies={companies} /> */}
+                  {SHOW_DEBUG && (
+                  <FilterDebugger allCompanies={companies} />
+                  )}
                 </Suspense>
 
                 {/* Bottom Sidebar Ad */}

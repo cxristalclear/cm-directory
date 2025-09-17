@@ -26,6 +26,8 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   
+  const ADD_COMPANY_PATH = "/add-company"; // ← change if your route is different
+
   const searchRef = useRef<HTMLDivElement>(null)
   // Sync with filters context
   useEffect(() => {
@@ -252,6 +254,7 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
     inputRef.current?.focus()
   }
 */}
+
   return (
     <header className="relative overflow-hidden">
       {/* Background with gradient */}
@@ -270,14 +273,17 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
                 </div>
               </Link>
 
-              <div className="hidden md:flex items-center space-x-6">
-                <Link href="/about" className="text-white/90 hover:text-white transition-colors text-sm font-medium">
-                  About
-                </Link>
-                <button className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all backdrop-blur-sm">
-                  Add Your Company
-                </button>
-              </div>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <a href="/about" className="text-sm font-medium text-white/90 hover:text-white">
+                    About
+                  </a>
+                  <a
+                    href={ADD_COMPANY_PATH}
+                    className="inline-flex items-center justify-center rounded-lg bg-white/90 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm ring-1 ring-white/70 backdrop-blur hover:bg-white"
+                  >
+                    Add Your Company
+                  </a>
+                </div>
 
               {/* Mobile menu button */}
               <div className="md:hidden flex items-center space-x-2">
