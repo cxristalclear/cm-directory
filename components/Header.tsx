@@ -273,7 +273,7 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
                 </div>
               </Link>
 
-                <div className="mt-6 flex flex-wrap items-center gap-3">
+                <div className="mt-4 flex flex-wrap items-center gap-6">
                   <a href="/about" className="text-sm font-medium text-white/90 hover:text-white">
                     About
                   </a>
@@ -312,7 +312,7 @@ export default function Header({ onSearchToggle, onFilterToggle, companies = [] 
                 Find Your Next Manufacturing Partner
               </h1>
               <p className="text-lg md:text-xl text-blue-100 mb-2 leading-relaxed">
-                Connect with verified contract manufacturers. Search by name, location, capabilities, and more.
+                Connect with verified contract manufacturers. Search by location, capabilities, and volume.
               </p>
               {/* Enhanced Search Bar
               <div className="max-w-2xl mx-auto mb-6" ref={searchRef}>

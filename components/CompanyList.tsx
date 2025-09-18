@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
 import { useFilters } from "../contexts/FilterContext"
-import { MapPin, Users, Award, ChevronRight, Building2, Globe } from "lucide-react"
+import { MapPin, Users, Award, ChevronRight, Building2,} from "lucide-react"
 import type { Company } from "../types/company"
 import { filterCompanies } from "../utils/filtering"
 import Pagination from "./Pagination"
