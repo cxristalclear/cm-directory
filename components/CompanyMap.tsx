@@ -190,7 +190,13 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     markers.current.forEach((marker) => marker.remove())
     markers.current = []
 
-    const facilities = filteredFacilities.facilities
+    const facilities = filteredFacilities.facilities.filter(
+      (facility): facility is FacilityWithCompany => 
+        facility.latitude != null && 
+        facility.longitude != null &&
+        !isNaN(facility.latitude) &&
+        !isNaN(facility.longitude)
+    )
 
     facilities.forEach((facility) => {
       const el = document.createElement("div")
