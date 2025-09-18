@@ -6,6 +6,8 @@ import { ChevronDown, X, Filter, Search, MapPin, Settings, Award, Building2, Use
 import type { Company } from '../types/company'
 import { getStateName } from '../utils/stateMapping'
 
+type FilterSection = 'location' | 'capabilities' | 'volume' | 'certifications' | 'industries' | 'employees'
+
 interface FilterSidebarProps {
   allCompanies: Company[]
 }
@@ -34,105 +36,11 @@ const getCountryName = (code: string): string => {
 export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
   const { filters, updateFilter, clearFilters } = useFilters()
   const [isOpen, setIsOpen] = useState(false)
-  const [expandedSections, setExpandedSections] = useState<string[]>(['location', 'capabilities'])
+  const [expandedSections, setExpandedSections] = useState<FilterSection[]>(['location', 'capabilities'])
 
-  // Calculate dynamic filter counts
-  const dynamicCounts = useMemo(() => {
-    // Helper function INSIDE useMemo to fix ESLint warning
-    const companyMatchesFilters = (
-      company: Company,
-      excludeFilterType?: keyof typeof filters
-    ): boolean => {
-      // Check search term (unless we're excluding it)
-      if (excludeFilterType !== 'searchTerm' && filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase()
-        const matches = 
-          company.company_name?.toLowerCase().includes(searchLower) ||
-          company.description?.toLowerCase().includes(searchLower)
-        if (!matches) return false
-      }
-      
-      // Check countries (unless we're excluding it)
-      if (excludeFilterType !== 'countries' && filters.countries.length > 0) {
-        const hasCountry = company.facilities?.some(f => 
-          filters.countries.includes(f.country || 'US')
-        )
-        if (!hasCountry) return false
-      }
-      
-      // Check states (unless we're excluding it)
-      if (excludeFilterType !== 'states' && filters.states.length > 0) {
-        const hasState = company.facilities?.some(f => 
-          filters.states.includes(f.state)
-        )
-        if (!hasState) return false
-      }
-      
-      // Check capabilities (unless we're excluding it)
-      if (excludeFilterType !== 'capabilities' && filters.capabilities.length > 0) {
-        if (!company.capabilities?.[0]) return false
-        
-        const cap = company.capabilities[0]
-        const hasCapability = filters.capabilities.some(selected => {
-          switch (selected) {
-            case 'smt': return cap.pcb_assembly_smt
-            case 'through_hole': return cap.pcb_assembly_through_hole
-            case 'cable_harness': return cap.cable_harness_assembly
-            case 'box_build': return cap.box_build_assembly
-            case 'prototyping': return cap.prototyping
-            default: return false
-          }
-        })
-        if (!hasCapability) return false
-      }
-      
-      // Check volume capability (unless we're excluding it)
-      if (excludeFilterType !== 'volumeCapability' && filters.volumeCapability.length > 0) {
-        if (!company.capabilities?.[0]) return false
-        
-        const cap = company.capabilities[0]
-        const hasVolume = filters.volumeCapability.some(volume => {
-          switch (volume) {
-            case 'low': return cap.low_volume_production
-            case 'medium': return cap.medium_volume_production
-            case 'high': return cap.high_volume_production
-            default: return false
-          }
-        })
-        if (!hasVolume) return false
-      }
-      
-      // Check certifications (unless we're excluding it)
-      if (excludeFilterType !== 'certifications' && filters.certifications.length > 0) {
-        const hasCert = company.certifications?.some(cert =>
-          filters.certifications.includes(
-            cert.certification_type.toLowerCase().replace(/\s+/g, '_')
-          )
-        )
-        if (!hasCert) return false
-      }
-      
-      // Check industries (unless we're excluding it)
-      if (excludeFilterType !== 'industries' && filters.industries.length > 0) {
-        const hasIndustry = company.industries?.some(ind =>
-          filters.industries.includes(
-            ind.industry_name.toLowerCase().replace(/\s+/g, '_')
-          )
-        )
-        if (!hasIndustry) return false
-      }
-      
-      // Check employee range (unless we're excluding it)
-      if (excludeFilterType !== 'employeeRange' && filters.employeeRange.length > 0) {
-        if (!filters.employeeRange.includes(company.employee_count_range)) {
-          return false
-        }
-      }
-      
-      return true
-    }
-
-    // Initialize counts
+// Calculate dynamic filter counts - OPTIMIZED VERSION
+const dynamicCounts = useMemo(() => {
+    // Initialize counts with Maps for better performance
     const counts = {
       countries: new Map<string, number>(),
       states: new Map<string, number>(),
@@ -142,140 +50,161 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       employeeRange: new Map<string, number>(),
       volumeCapability: new Map<string, number>()
     }
-    
-    // COUNTRIES - Count companies that match all filters except countries
+
+    // SINGLE PASS through companies - much faster!
     allCompanies.forEach(company => {
-      if (companyMatchesFilters(company, 'countries')) {
+      // Pre-calculate matching for each filter type (exclude itself)
+      const matchesSearch = !filters.searchTerm || 
+        company.company_name?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        company.description?.toLowerCase().includes(filters.searchTerm.toLowerCase())
+
+      const matchesCountries = filters.countries.length === 0 || 
+        company.facilities?.some(f => filters.countries.includes(f.country || 'US'))
+
+      const matchesStates = filters.states.length === 0 ||
+        company.facilities?.some(f => filters.states.includes(f.state))
+
+      const matchesCapabilities = filters.capabilities.length === 0 || 
+        (company.capabilities?.[0] && filters.capabilities.some(selected => {
+          const cap = company.capabilities![0]
+          switch (selected) {
+            case 'smt': return cap.pcb_assembly_smt
+            case 'through_hole': return cap.pcb_assembly_through_hole
+            case 'cable_harness': return cap.cable_harness_assembly
+            case 'box_build': return cap.box_build_assembly
+            case 'prototyping': return cap.prototyping
+            default: return false
+          }
+        }))
+
+      const matchesVolume = filters.volumeCapability.length === 0 ||
+        (company.capabilities?.[0] && filters.volumeCapability.some(volume => {
+          const cap = company.capabilities![0]
+          switch (volume) {
+            case 'low': return cap.low_volume_production
+            case 'medium': return cap.medium_volume_production
+            case 'high': return cap.high_volume_production
+            default: return false
+          }
+        }))
+
+      const matchesCertifications = filters.certifications.length === 0 ||
+        company.certifications?.some(cert =>
+          filters.certifications.includes(cert.certification_type.toLowerCase().replace(/\s+/g, '_'))
+        )
+
+      const matchesIndustries = filters.industries.length === 0 ||
+        company.industries?.some(ind =>
+          filters.industries.includes(ind.industry_name.toLowerCase().replace(/\s+/g, '_'))
+        )
+
+      const matchesEmployees = filters.employeeRange.length === 0 ||
+        filters.employeeRange.includes(company.employee_count_range)
+
+      // Count COUNTRIES (exclude countries filter)
+      if (matchesSearch && matchesStates && matchesCapabilities && matchesVolume && 
+          matchesCertifications && matchesIndustries && matchesEmployees) {
         company.facilities?.forEach(facility => {
           const country = facility.country || 'US'
           counts.countries.set(country, (counts.countries.get(country) || 0) + 1)
         })
       }
-    })
-    
-    // STATES - Count companies that match all filters except states
-    // If countries are selected, only show states from those countries
-    allCompanies.forEach(company => {
-      if (companyMatchesFilters(company, 'states')) {
+
+      // Count STATES (exclude states filter)
+      if (matchesSearch && matchesCountries && matchesCapabilities && matchesVolume && 
+          matchesCertifications && matchesIndustries && matchesEmployees) {
         company.facilities?.forEach(facility => {
-          // If countries filter is active, only count states from selected countries
           if (filters.countries.length === 0 || filters.countries.includes(facility.country || 'US')) {
             if (facility.state) {
-              counts.states.set(
-                facility.state,
-                (counts.states.get(facility.state) || 0) + 1
-              )
+              counts.states.set(facility.state, (counts.states.get(facility.state) || 0) + 1)
             }
           }
         })
       }
-    })
 
-    // CAPABILITIES - Count companies that match all filters except capabilities
-    allCompanies.forEach(company => {
-      if (companyMatchesFilters(company, 'capabilities')) {
+      // Count CAPABILITIES (exclude capabilities filter)
+      if (matchesSearch && matchesCountries && matchesStates && matchesVolume && 
+          matchesCertifications && matchesIndustries && matchesEmployees) {
         if (company.capabilities?.[0]) {
           const cap = company.capabilities[0]
-          
           if (cap.pcb_assembly_smt) {
-            counts.capabilities.set('smt',
-              (counts.capabilities.get('smt') || 0) + 1
-            )
+            counts.capabilities.set('smt', (counts.capabilities.get('smt') || 0) + 1)
           }
-          
           if (cap.pcb_assembly_through_hole) {
-            counts.capabilities.set('through_hole',
-              (counts.capabilities.get('through_hole') || 0) + 1
-            )
+            counts.capabilities.set('through_hole', (counts.capabilities.get('through_hole') || 0) + 1)
           }
-          
           if (cap.cable_harness_assembly) {
-            counts.capabilities.set('cable_harness',
-              (counts.capabilities.get('cable_harness') || 0) + 1
-            )
+            counts.capabilities.set('cable_harness', (counts.capabilities.get('cable_harness') || 0) + 1)
           }
-          
           if (cap.box_build_assembly) {
-            counts.capabilities.set('box_build',
-              (counts.capabilities.get('box_build') || 0) + 1
-            )
+            counts.capabilities.set('box_build', (counts.capabilities.get('box_build') || 0) + 1)
           }
-          
           if (cap.prototyping) {
-            counts.capabilities.set('prototyping',
-              (counts.capabilities.get('prototyping') || 0) + 1
-            )
+            counts.capabilities.set('prototyping', (counts.capabilities.get('prototyping') || 0) + 1)
           }
         }
       }
-    })
 
-    // VOLUME CAPABILITY - Count companies that match all filters except volume
-    allCompanies.forEach(company => {
-      if (companyMatchesFilters(company, 'volumeCapability')) {
+      // Count VOLUME (exclude volume filter)
+      if (matchesSearch && matchesCountries && matchesStates && matchesCapabilities && 
+          matchesCertifications && matchesIndustries && matchesEmployees) {
         if (company.capabilities?.[0]) {
           const cap = company.capabilities[0]
-          
           if (cap.low_volume_production) {
-            counts.volumeCapability.set('low',
-              (counts.volumeCapability.get('low') || 0) + 1
-            )
+            counts.volumeCapability.set('low', (counts.volumeCapability.get('low') || 0) + 1)
           }
-          
           if (cap.medium_volume_production) {
-            counts.volumeCapability.set('medium',
-              (counts.volumeCapability.get('medium') || 0) + 1
-            )
+            counts.volumeCapability.set('medium', (counts.volumeCapability.get('medium') || 0) + 1)
           }
-          
           if (cap.high_volume_production) {
-            counts.volumeCapability.set('high',
-              (counts.volumeCapability.get('high') || 0) + 1
-            )
+            counts.volumeCapability.set('high', (counts.volumeCapability.get('high') || 0) + 1)
           }
         }
       }
-    })
 
-    // CERTIFICATIONS - Count companies that match all filters except certifications
-    allCompanies.forEach(company => {
-      if (companyMatchesFilters(company, 'certifications')) {
+      // Count CERTIFICATIONS (exclude certifications filter)  
+      if (matchesSearch && matchesCountries && matchesStates && matchesCapabilities && 
+          matchesVolume && matchesIndustries && matchesEmployees) {
         company.certifications?.forEach(cert => {
           const certKey = cert.certification_type.toLowerCase().replace(/\s+/g, '_')
-          counts.certifications.set(certKey,
-            (counts.certifications.get(certKey) || 0) + 1
-          )
+          counts.certifications.set(certKey, (counts.certifications.get(certKey) || 0) + 1)
         })
       }
-    })
 
-    // INDUSTRIES - Count companies that match all filters except industries
-    allCompanies.forEach(company => {
-      if (companyMatchesFilters(company, 'industries')) {
+      // Count INDUSTRIES (exclude industries filter)
+      if (matchesSearch && matchesCountries && matchesStates && matchesCapabilities && 
+          matchesVolume && matchesCertifications && matchesEmployees) {
         company.industries?.forEach(ind => {
           const indKey = ind.industry_name.toLowerCase().replace(/\s+/g, '_')
-          counts.industries.set(indKey,
-            (counts.industries.get(indKey) || 0) + 1
-          )
+          counts.industries.set(indKey, (counts.industries.get(indKey) || 0) + 1)
         })
       }
-    })
 
-    // EMPLOYEE RANGE - Count companies that match all filters except employee range
-    allCompanies.forEach(company => {
-      if (companyMatchesFilters(company, 'employeeRange')) {
+      // Count EMPLOYEE RANGE (exclude employee range filter)
+      if (matchesSearch && matchesCountries && matchesStates && matchesCapabilities && 
+          matchesVolume && matchesCertifications && matchesIndustries) {
         if (company.employee_count_range) {
-          counts.employeeRange.set(company.employee_count_range,
-            (counts.employeeRange.get(company.employee_count_range) || 0) + 1
-          )
+          counts.employeeRange.set(company.employee_count_range, 
+            (counts.employeeRange.get(company.employee_count_range) || 0) + 1)
         }
       }
     })
-    
-    return counts
-  }, [allCompanies, filters])
 
-  const toggleSection = (section: string) => {
+    return counts
+  }, [
+  allCompanies, 
+  filters.searchTerm,
+  filters.countries,
+  filters.states, 
+  filters.capabilities,
+  filters.volumeCapability,
+  filters.certifications,
+  filters.industries,
+  filters.employeeRange
+]) // Keep all dependencies - ESLint will be happy
+
+
+  const toggleSection = (section: FilterSection) => {
     setExpandedSections(prev =>
       prev.includes(section)
         ? prev.filter(s => s !== section)
@@ -304,7 +233,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
     (filters.searchTerm ? 1 : 0)
 
 
-  const sectionIcons = {
+  const sectionIcons: Record<FilterSection, React.ReactElement> = {
     location: <MapPin className="w-4 h-4" />,
     capabilities: <Settings className="w-4 h-4" />,
     volume: <Layers className="w-4 h-4" />,

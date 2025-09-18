@@ -17,7 +17,7 @@ export interface Capabilities {
   id: string;
   pcb_assembly_smt: boolean;
   pcb_assembly_through_hole: boolean;
-  pcb_assembly_fine_pitch: boolean; // Added this field
+  pcb_assembly_fine_pitch: boolean;
   cable_harness_assembly: boolean;
   box_build_assembly: boolean;
   prototyping: boolean;
@@ -33,7 +33,7 @@ export interface Certification {
   certification_number?: string;
   issued_date?: string;
   expiration_date?: string;
-  status?: string; // Added status field
+  status?: string;
 }
 
 export interface Industry {
@@ -41,7 +41,6 @@ export interface Industry {
   industry_name: string;
 }
 
-// New interfaces for additional data
 export interface Contact {
   id: string;
   contact_type: string;
@@ -71,23 +70,23 @@ export interface Company {
   id: string;
   slug: string;
   company_name: string;
-  dba_name?: string; // Added field
+  dba_name?: string;
   description?: string;
   key_differentiators?: string;
   employee_count_range: string;
-  year_founded?: number; // Added field
-  annual_revenue_range?: string; // Added field
-  website_url?: string; // Added field
-  is_active?: boolean; // Added field
-  created_at?: string; // Added field
-  updated_at?: string; // Added field
+  year_founded?: number;
+  annual_revenue_range?: string;
+  website_url?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
   facilities?: Facility[];
   capabilities?: Capabilities[];
   certifications?: Certification[];
   industries?: Industry[];
-  contacts?: Contact[]; // Added relation
-  business_info?: BusinessInfo[]; // Added relation
-  technical_specs?: TechnicalSpec[]; // Added relation
+  contacts?: Contact[];
+  business_info?: BusinessInfo[];
+  technical_specs?: TechnicalSpec[];
 }
 
 export interface FacilityWithCompany extends Facility {
@@ -96,7 +95,7 @@ export interface FacilityWithCompany extends Facility {
 
 export interface FilterState {
   searchTerm: string;
-  countries: string[];  // Add this field
+  countries: string[];
   states: string[];
   capabilities: string[];
   certifications: string[];
@@ -109,15 +108,7 @@ export interface FilterContextType {
   filters: FilterState;
   updateFilter: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
   clearFilters: () => void;
+  filteredCount: number;
+  setFilteredCount: (count: number) => void;
   isPending: boolean;
-}
-
-export interface DynamicFilterCounts {
-  countries: Map<string, number>;
-  states: Map<string, number>;
-  capabilities: Map<string, number>;
-  certifications: Map<string, number>;
-  industries: Map<string, number>;
-  employeeRange: Map<string, number>;
-  volumeCapability: Map<string, number>;
 }
