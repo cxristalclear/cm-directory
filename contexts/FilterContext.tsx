@@ -24,6 +24,8 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     volumeCapability: [],
   })
 
+  const [filteredCount, setFilteredCount] = useState(0)
+
   // Load filters from URL on mount
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
@@ -118,6 +120,8 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     filters,
     updateFilter,
     clearFilters,
+    filteredCount,
+    setFilteredCount,
     isPending,
   }
 
