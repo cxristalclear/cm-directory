@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import CompanyMap from "../components/CompanyMap";
+import LazyCompanyMap from '@/components/LazyCompanyMap'
 import CompanyList from "../components/CompanyList";
 import FilterSidebar from "@/components/FilterSidebar";
 import FilterDebugger from '@/components/FilterDebugger'
@@ -88,10 +88,8 @@ export default async function Home() {
               </div>
 
               <div className="lg:col-span-9 space-y-4">
-                {/* Map */}
-                <Suspense fallback={<div>Loading map...</div>}>
-                  <CompanyMap allCompanies={companies} />
-                </Suspense>
+                {/* Map - No extra Suspense needed, LazyCompanyMap handles it internally */}
+                <LazyCompanyMap allCompanies={companies} />
 
                 {/* List */}
                 <div className="companies-directory">

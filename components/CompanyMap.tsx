@@ -8,6 +8,7 @@ import { MapPin, RotateCcw } from "lucide-react"
 import type { Company, FacilityWithCompany } from "../types/company"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 import { filterCompanies } from "../utils/filtering"
+import { useDebounce } from "../hooks/useDebounce"
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
@@ -24,8 +25,11 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const [isStyleLoaded, setIsStyleLoaded] = useState(false)
   const currentFacilitiesRef = useRef<FacilityWithCompany[]>([])
 
+  // Debounce filter changes for better performance
+  const debouncedFilters = useDebounce(filters, 300)
+
   const filteredFacilities = useMemo(() => {
-    const filteredCompanies = filterCompanies(allCompanies, filters)
+    const filteredCompanies = filterCompanies(allCompanies, debouncedFilters)
 
     // Extract facilities from filtered companies
     const facilities = filteredCompanies
@@ -44,7 +48,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       )
 
     return { facilities, filteredCount: filteredCompanies.length }
-  }, [filters, allCompanies])
+  }, [debouncedFilters, allCompanies])
 
   useEffect(() => {
     setFilteredCount(filteredFacilities.filteredCount)
@@ -53,7 +57,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   // Store current facilities for use in callbacks
   useEffect(() => {
     currentFacilitiesRef.current = filteredFacilities.facilities
-    console.log('Updated facilities ref:', filteredFacilities.facilities.length, 'facilities')
   }, [filteredFacilities.facilities])
 
   // Function to add clustering layers
@@ -61,16 +64,8 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     const facilities = facilitiesToAdd || currentFacilitiesRef.current
     
     if (!map.current || facilities.length === 0) {
-      console.log('Cannot add layers:', { 
-        hasMap: !!map.current, 
-        facilityCount: facilities.length,
-        facilitiesProvided: !!facilitiesToAdd
-      })
       return
     }
-
-    console.log('Adding clustering layers for', facilities.length, 'facilities')
-    console.log('First facility:', facilities[0])
 
     // Remove existing layers and source
     try {
@@ -87,7 +82,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       type: 'FeatureCollection' as const,
       features: facilities.map((facility) => {
         const coords = [facility.longitude, facility.latitude]
-        console.log('Facility coords:', facility.company?.company_name, coords)
         return {
           type: 'Feature' as const,
           properties: {
@@ -105,22 +99,15 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       })
     }
 
-    console.log('GeoJSON created with', geojson.features.length, 'features')
-
     // Check if source already exists and update it, or create new
     const existingSource = map.current.getSource('facilities') as mapboxgl.GeoJSONSource
     if (existingSource) {
-      console.log('Updating existing source')
       existingSource.setData(geojson)
       // Check if layers exist - if not, we need to add them
-      if (!map.current.getLayer('clusters')) {
-        console.log('Layers missing after source update, adding them')
-      } else {
-        console.log('Layers already exist, skipping layer addition')
+      if (map.current.getLayer('clusters')) {
         return // Only return if layers exist
       }
     } else {
-      console.log('Creating new source')
       // Add source
       map.current.addSource('facilities', {
         type: 'geojson',
@@ -190,8 +177,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         'circle-stroke-color': '#ffffff'
       }
     })
-
-    console.log('Clustering layers added successfully')
   }, [])
 
   // Initialize map
@@ -297,7 +282,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
     // Wait for initial load
     map.current.on('load', () => {
-      console.log('Map initial load complete')
       setIsLoading(false)
       setIsStyleLoaded(true)
       // Don't add layers here - wait for facilities data
@@ -305,7 +289,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
     // Handle style changes (this fires after style.load)
     map.current.on('style.load', () => {
-      console.log('Style loaded event fired')
       setIsStyleLoaded(true)
       // Re-add layers with current facilities
       if (currentFacilitiesRef.current.length > 0) {
@@ -326,16 +309,9 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   // Update layers when facilities change AND map is ready
   useEffect(() => {
     if (!map.current || !isStyleLoaded || isLoading || filteredFacilities.facilities.length === 0) {
-      console.log('Skipping layer update:', {
-        hasMap: !!map.current,
-        isStyleLoaded,
-        isLoading,
-        facilityCount: filteredFacilities.facilities.length
-      })
       return
     }
 
-    console.log('Map is ready, updating layers with', filteredFacilities.facilities.length, 'facilities')
     addClusteringLayers(filteredFacilities.facilities)
 
     // Fit bounds to show all facilities
@@ -360,7 +336,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
   const handleStyleChange = (newStyle: string) => {
     if (map.current && newStyle !== mapStyle) {
-      console.log('User changing style to:', newStyle)
       setMapStyle(newStyle)
       setIsStyleLoaded(false) // Reset style loaded state
       map.current.setStyle(newStyle)

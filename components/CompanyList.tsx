@@ -1,22 +1,45 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
 import { useFilters } from "../contexts/FilterContext"
 import { MapPin, Users, Award, ChevronRight, Building2, Globe } from "lucide-react"
 import type { Company } from "../types/company"
 import { filterCompanies } from "../utils/filtering"
+import Pagination from "./Pagination"
 
 interface CompanyListProps {
   allCompanies: Company[]
+  itemsPerPage?: number
 }
 
-export default function CompanyList({ allCompanies }: CompanyListProps) {
+export default function CompanyList({ allCompanies, itemsPerPage = 12 }: CompanyListProps) {
   const { filters } = useFilters()
+  const [currentPage, setCurrentPage] = useState(1)
 
   const filteredCompanies = useMemo(() => {
     return filterCompanies(allCompanies, filters)
   }, [filters, allCompanies])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters])
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentCompanies = filteredCompanies.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll to top of list when page changes
+    const listElement = document.querySelector('.companies-directory')
+    if (listElement) {
+      listElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -25,15 +48,18 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
         <h2 className="text-2xl font-bold text-gray-900 font-sans">Companies Directory</h2>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-600">
-            Showing <span className="font-semibold text-gray-900">{filteredCompanies.length}</span> of{" "}
-            <span className="font-semibold text-gray-900">{allCompanies.length}</span> companies
+            Showing{" "}
+            <span className="font-semibold text-gray-900">
+              {startIndex + 1}-{Math.min(endIndex, filteredCompanies.length)}
+            </span>{" "}
+            of <span className="font-semibold text-gray-900">{filteredCompanies.length}</span> companies
           </span>
         </div>
       </div>
 
       {/* Companies Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredCompanies.length === 0 ? (
+        {currentCompanies.length === 0 ? (
           <div className="col-span-full">
             <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-200">
               <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -45,7 +71,7 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
             </div>
           </div>
         ) : (
-          filteredCompanies.map((company) => (
+          currentCompanies.map((company) => (
             <Link
               key={company.id}
               href={`/companies/${company.slug}`}
@@ -200,6 +226,11 @@ export default function CompanyList({ allCompanies }: CompanyListProps) {
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      {filteredCompanies.length > itemsPerPage && (
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+      )}
 
       {/* Bottom spacing for mobile filter button */}
       <div className="h-20 lg:h-0" />

@@ -134,10 +134,10 @@ export default function AboutPage() {
             <Card>
               <SectionTitle title="Roadmap" />
               <ol className="mt-6 space-y-4">
-                <TimelineItem title="MVP" body="Map, filters, and deep profiles for speed and relevance." />
+                <TimelineItem title="NOW" body="Map, filters, and deep profiles for speed and relevance." />
                 <TimelineItem
                   title="Near-Term"
-                  body="Comparison, favorites, self-service updates, featured listings, and lead analytics."
+                  body="Comparison, favorites, and self-service updates."
                 />
                 <TimelineItem title="Ongoing" body="Data depth, coverage expansion, and verification tooling." />
               </ol>
