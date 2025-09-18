@@ -1,313 +1,208 @@
-"use client";
+"use client"
 
-import { useMemo, useState, useEffect } from "react";
-import Link from "next/link";
-import { useFilters } from "../contexts/FilterContext";
-import { MapPin, Users, Award, ChevronRight, Building2, Globe } from "lucide-react";
-import type { Company } from "../types/company";
-// import { getStateName } from '../utils/stateMapping'
-import Pagination from "./Pagination";
-import React from "react";
-import ActiveFiltersBar from "../components/ActiveFiltersBar";
+import { useMemo } from "react"
+import Link from "next/link"
+import { useFilters } from "../contexts/FilterContext"
+import { MapPin, Users, Award, ChevronRight, Building2, Globe } from "lucide-react"
+import type { Company } from "../types/company"
+import { filterCompanies } from "../utils/filtering"
 
 interface CompanyListProps {
-  allCompanies: Company[];
-}
-
-/** Clamp text to N lines without relying on Tailwind’s line-clamp plugin */
-function ClampText({
-  children,
-  lines = 3,
-  className = "",
-}: {
-  children: React.ReactNode;
-  lines?: number;
-  className?: string;
-}) {
-  const style: React.CSSProperties = {
-    display: "-webkit-box",
-    WebkitLineClamp: lines,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
-  };
-  return (
-    <span style={style} className={className}>
-      {children}
-    </span>
-  );
-}
-
-function CapabilityChip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-700">
-      {children}
-    </span>
-  );
+  allCompanies: Company[]
 }
 
 export default function CompanyList({ allCompanies }: CompanyListProps) {
-  const { filters } = useFilters();
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
-
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters]);
+  const { filters } = useFilters()
 
   const filteredCompanies = useMemo(() => {
-    let filtered = [...allCompanies];
-
-    // Apply same filtering logic as map
-    if (filters.searchTerm) {
-      const searchLower = filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (company) =>
-          company.company_name?.toLowerCase().includes(searchLower) ||
-          company.description?.toLowerCase().includes(searchLower),
-      );
-    }
-
-    if (filters.countries.length > 0) {
-      filtered = filtered.filter((company) =>
-        company.facilities?.some((f) => filters.countries.includes(f.country || "US")),
-      );
-    }
-
-    if (filters.states.length > 0) {
-      filtered = filtered.filter((company) => company.facilities?.some((f) => filters.states.includes(f.state)));
-    }
-
-    if (filters.capabilities.length > 0) {
-      filtered = filtered.filter((company) => {
-        if (!company.capabilities?.[0]) return false;
-        const cap = company.capabilities[0];
-        return filters.capabilities.some((filter) => {
-          switch (filter) {
-            case "smt":
-              return cap.pcb_assembly_smt;
-            case "through_hole":
-              return cap.pcb_assembly_through_hole;
-            case "cable_harness":
-              return cap.cable_harness_assembly;
-            case "box_build":
-              return cap.box_build_assembly;
-            case "prototyping":
-              return cap.prototyping;
-            default:
-              return false;
-          }
-        });
-      });
-    }
-
-    if (filters.volumeCapability.length > 0) {
-      filtered = filtered.filter((company) => {
-        if (!company.capabilities?.[0]) return false;
-        const cap = company.capabilities[0];
-        return filters.volumeCapability.some((vol) => {
-          switch (vol) {
-            case "low":
-              return cap.low_volume_production;
-            case "medium":
-              return cap.medium_volume_production;
-            case "high":
-              return cap.high_volume_production;
-            default:
-              return false;
-          }
-        });
-      });
-    }
-
-    // Certifications filter
-    if (filters.certifications.length > 0) {
-      filtered = filtered.filter((company) =>
-        company.certifications?.some((cert) =>
-          filters.certifications.includes(cert.certification_type.toLowerCase().replace(/\s+/g, "_")),
-        ),
-      );
-    }
-
-    // Industries filter
-    if (filters.industries.length > 0) {
-      filtered = filtered.filter((company) =>
-        company.industries?.some((ind) =>
-          filters.industries.includes(ind.industry_name.toLowerCase().replace(/\s+/g, "_")),
-        ),
-      );
-    }
-
-    // Employee range filter
-    if (filters.employeeRange.length > 0) {
-      filtered = filtered.filter((company) => filters.employeeRange.includes(company.employee_count_range));
-    }
-
-    return filtered;
-  }, [filters, allCompanies]);
-
-  const facilityCount = useMemo(() => {
-    return filteredCompanies.reduce(
-      (acc, company) => acc + (company.facilities?.filter((f) => f.latitude && f.longitude).length || 0),
-      0,
-    );
-  }, [filteredCompanies]);
-
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage);
-  const paginatedCompanies = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredCompanies.slice(startIndex, endIndex);
-  }, [filteredCompanies, currentPage, itemsPerPage]);
+    return filterCompanies(allCompanies, filters)
+  }, [filters, allCompanies])
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-6">
       {/* List Header */}
-      <div className="flex items-center justify-between p-2">
-        <div className="mb-4">
-          <ActiveFiltersBar />
-        </div>
+      <div className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-900 font-sans">Companies Directory</h2>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-600">
             Showing <span className="font-semibold text-gray-900">{filteredCompanies.length}</span> of{" "}
             <span className="font-semibold text-gray-900">{allCompanies.length}</span> companies
-            {facilityCount !== filteredCompanies.length && (
-              <span className="text-gray-500"> ({facilityCount} locations)</span>
-            )}
           </span>
         </div>
       </div>
 
       {/* Companies Grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredCompanies.length === 0 ? (
-          <div className="col-span-full rounded-xl border border-gray-200 bg-white py-16 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-              <Building2 className="h-8 w-8 text-gray-400" />
+          <div className="col-span-full">
+            <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-200">
+              <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">No companies found</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Try adjusting your filters to see more results. We have {allCompanies.length} companies in our
+                directory.
+              </p>
             </div>
-            <p className="text-lg font-semibold text-gray-900">No companies match your criteria</p>
-            <p className="text-sm text-gray-500">Try adjusting your filters or search terms</p>
           </div>
         ) : (
-          paginatedCompanies.map((company) => {
-            const locationCity = company.facilities?.[0]?.city;
-            const locationState = company.facilities?.[0]?.state;
-            const location =
-              locationCity && locationState ? `${locationCity}, ${locationState}` : locationCity || locationState || "";
-
-            // Build capability list from boolean flags
-            const cap = company.capabilities?.[0];
-            const capList = [
-              cap?.pcb_assembly_smt ? "SMT" : null,
-              cap?.cable_harness_assembly ? "Cable" : null,
-              cap?.box_build_assembly ? "Box Build" : null,
-              cap?.pcb_assembly_through_hole ? "Through Hole" : null,
-              cap?.prototyping ? "Prototyping" : null,
-            ].filter(Boolean) as string[];
-
-            const visibleCaps = capList.slice(0, 3);
-            const moreCaps = Math.max(0, capList.length - visibleCaps.length);
-
-            const locationCount = company.facilities?.filter((f) => f.latitude && f.longitude).length || 0;
-            const letter = company.company_name?.charAt(0) || "C";
-
-            return (
-              <Link key={company.id} href={`/companies/${company.slug}`} className="group block">
-                <div
-                  className="
-                    relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200
-                    bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl
-                  "
-                >
-                  {/* Gradient accent line */}
-                  <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-                  {/* Header */}
-                  <div className="mb-4 flex items-start justify-between">
-                    <div className="flex min-w-0 flex-1 items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                        <span className="text-sm font-bold">{letter}</span>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-sans text-[1.05rem] font-semibold leading-tight tracking-tight text-gray-900 group-hover:text-blue-600">
-                          <ClampText lines={2} className="break-words">
-                            {company.company_name}
-                          </ClampText>
-                        </h3>
-
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                          {location && (
-                            <span className="inline-flex items-center gap-1.5 text-sm text-gray-600">
-                              <MapPin className="h-3 w-3 text-gray-400" />
-                              <span className="truncate">{location}</span>
-                            </span>
-                          )}
-                          {locationCount > 1 && (
-                            <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-50 px-2 py-1 text-xs text-blue-700">
-                              <MapPin className="h-3 w-3" />
-                              {locationCount} locations
-                            </span>
-                          )}
-                        </div>
+          filteredCompanies.map((company) => (
+            <Link
+              key={company.id}
+              href={`/companies/${company.slug}`}
+              className="group block bg-white rounded-xl shadow-sm border border-gray-200/50 hover:shadow-lg hover:border-blue-200/50 transition-all duration-200 overflow-hidden"
+            >
+              <div className="p-6">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+                      <Building2 className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1 group-hover:text-blue-600 transition-colors duration-200 truncate">
+                        {company.company_name}
+                      </h3>
+                      {company.dba_name && (
+                        <p className="text-sm text-gray-500 mb-1 truncate">DBA: {company.dba_name}</p>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
+                          Active
+                        </span>
                       </div>
                     </div>
                   </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all duration-200 flex-shrink-0" />
+                </div>
 
-                  {/* Description */}
-                  {company.description && (
-                    <ClampText lines={3} className="mb-4 flex-grow text-sm leading-6 text-gray-700">
-                      {company.description}
-                    </ClampText>
-                  )}
+                {/* Description */}
+                {company.description && (
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">
+                    {company.description.length > 120
+                      ? `${company.description.substring(0, 120)}...`
+                      : company.description}
+                  </p>
+                )}
 
-                  {/* Stats */}
-                  <div className="mb-4 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-                    {company.employee_count_range && (
-                      <span className="inline-flex items-center gap-1.5">
-                        <Users className="h-4 w-4 text-gray-400" />
-                        {company.employee_count_range}
-                      </span>
-                    )}
-                    {company.certifications && company.certifications.length > 0 && (
-                      <span className="inline-flex items-center gap-1.5">
-                        <Award className="h-4 w-4 text-gray-400" />
-                        {company.certifications.length} Certs
-                      </span>
-                    )}
+                {/* Key Stats */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                    <div className="w-6 h-6 bg-blue-100 rounded-md flex items-center justify-center">
+                      <MapPin className="w-3 h-3 text-blue-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-gray-500 font-medium">Location</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {company.facilities?.[0]
+                          ? `${company.facilities[0].city}, ${company.facilities[0].state}`
+                          : "Multiple"}
+                      </p>
+                    </div>
                   </div>
-
-                  {/* Capabilities */}
-                  {visibleCaps.length > 0 && (
-                    <div className="mb-4 flex flex-wrap gap-1.5">
-                      {visibleCaps.map((label) => (
-                        <CapabilityChip key={label}>{label}</CapabilityChip>
-                      ))}
-                      {moreCaps > 0 && <CapabilityChip>+{moreCaps} more</CapabilityChip>}
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                    <div className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
+                      <Users className="w-3 h-3 text-purple-600" />
                     </div>
-                  )}
-
-                  {/* Footer */}
-                  <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-4">
-                    <div className="flex items-center space-x-1">
-                      {company.website_url && <Globe className="h-4 w-4 text-gray-400" />}
-                    </div>
-                    <div className="flex items-center text-blue-600 transition-colors group-hover:text-blue-700">
-                      <span className="text-xs font-medium">View Details</span>
-                      <ChevronRight className="ml-1 h-4 w-4" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-gray-500 font-medium">Employees</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {company.employee_count_range || "N/A"}
+                      </p>
                     </div>
                   </div>
                 </div>
-              </Link>
-            );
-          })
+
+                {/* Capabilities */}
+                {company.capabilities && company.capabilities.length > 0 && company.capabilities[0] && (
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                      Key Capabilities
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {company.capabilities[0].pcb_assembly_smt && (
+                        <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                          SMT
+                        </span>
+                      )}
+                      {company.capabilities[0].pcb_assembly_through_hole && (
+                        <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                          Through-Hole
+                        </span>
+                      )}
+                      {company.capabilities[0].box_build_assembly && (
+                        <span className="inline-flex items-center px-2 py-1 bg-indigo-100 text-indigo-800 rounded-md text-xs font-medium">
+                          Box Build
+                        </span>
+                      )}
+                      {company.capabilities[0].prototyping && (
+                        <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 rounded-md text-xs font-medium">
+                          Prototyping
+                        </span>
+                      )}
+                      {company.capabilities[0].cable_harness_assembly && (
+                        <span className="inline-flex items-center px-2 py-1 bg-indigo-100 text-indigo-800 rounded-md text-xs font-medium">
+                          Cable Harness
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Industries */}
+                {company.industries && company.industries.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Industries</p>
+                    <div className="flex flex-wrap gap-1">
+                      {company.industries.slice(0, 3).map((industry, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium"
+                        >
+                          {industry.industry_name}
+                        </span>
+                      ))}
+                      {company.industries.length > 3 && (
+                        <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
+                          +{company.industries.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Certifications */}
+                {company.certifications && company.certifications.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide flex items-center gap-1">
+                      <Award className="w-3 h-3" />
+                      Certifications
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {company.certifications.slice(0, 4).map((cert, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs font-medium"
+                        >
+                          {cert.certification_type}
+                        </span>
+                      ))}
+                      {company.certifications.length > 4 && (
+                        <span className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs font-medium">
+                          +{company.certifications.length - 4} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Link>
+          ))
         )}
       </div>
 
-      {/* Pagination */}
-      {filteredCompanies.length > itemsPerPage && (
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-      )}
+      {/* Bottom spacing for mobile filter button */}
+      <div className="h-20 lg:h-0" />
     </div>
-  );
+  )
 }
