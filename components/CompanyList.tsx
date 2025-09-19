@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
 import { useFilters } from "../contexts/FilterContext"
-import { MapPin, Users, Award, ChevronRight, Building2,} from "lucide-react"
+import { MapPin, Users, Award, ChevronRight, Building2, Globe } from "lucide-react"
 import type { Company } from "../types/company"
 import { filterCompanies } from "../utils/filtering"
 import Pagination from "./Pagination"
@@ -75,6 +75,7 @@ export default function CompanyList({ allCompanies, itemsPerPage = 12 }: Company
             <Link
               key={company.id}
               href={`/companies/${company.slug}`}
+              prefetch={true}
               className="group block bg-white rounded-xl shadow-sm border border-gray-200/50 hover:shadow-lg hover:border-blue-200/50 transition-all duration-200 overflow-hidden"
             >
               <div className="p-6">

@@ -73,6 +73,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       if (map.current.getLayer('cluster-count')) map.current.removeLayer('cluster-count')
       if (map.current.getLayer('unclustered-point')) map.current.removeLayer('unclustered-point')
       if (map.current.getSource('facilities')) map.current.removeSource('facilities')
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       // Layers might not exist yet, this is normal
     }
