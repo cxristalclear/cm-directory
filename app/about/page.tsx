@@ -227,16 +227,6 @@ function Badge({
   );
 }
 
-{/*
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/60 bg-white/70 p-4 text-center shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/50">
-      <div className="text-xs uppercase tracking-wide text-neutral-500">{label}</div>
-      <div className="mt-1 text-xl font-semibold text-neutral-900">{value}</div>
-    </div>
-  );
-}
-*/}
 
 function TimelineItem({ title, body }: { title: string; body: string }) {
   return (

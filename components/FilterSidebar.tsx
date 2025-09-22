@@ -62,7 +62,9 @@ const dynamicCounts = useMemo(() => {
         company.facilities?.some(f => filters.countries.includes(f.country || 'US'))
 
       const matchesStates = filters.states.length === 0 ||
-        company.facilities?.some(f => filters.states.includes(f.state))
+        company.facilities?.some(f =>
+          typeof f.state === 'string' && filters.states.includes(f.state)
+        )
 
       const matchesCapabilities = filters.capabilities.length === 0 || 
         (company.capabilities?.[0] && filters.capabilities.some(selected => {
@@ -99,7 +101,8 @@ const dynamicCounts = useMemo(() => {
         )
 
       const matchesEmployees = filters.employeeRange.length === 0 ||
-        filters.employeeRange.includes(company.employee_count_range)
+        (typeof company.employee_count_range === 'string' &&
+          filters.employeeRange.includes(company.employee_count_range))
 
       // Count COUNTRIES (exclude countries filter)
       if (matchesSearch && matchesStates && matchesCapabilities && matchesVolume && 
