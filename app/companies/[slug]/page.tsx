@@ -1,77 +1,124 @@
-import { notFound } from 'next/navigation'
-import { cache } from 'react'
-import { supabase } from '@/lib/supabase'
-import CompanyDetailClient from './CompanyDetailClient'
+import { supabase } from "@/lib/supabase"
+import { notFound } from "next/navigation"
 import type { Metadata } from 'next'
-import { CompanySchema } from '@/components/CompanySchema'
+import type { CompanyWithRelations } from "@/types/company"
+import { CompanySchema } from "@/components/CompanySchema"
+import CompanyDetailClient from "./CompanyDetailClient"
 
+// Generate dynamic metadata for SEO
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}): Promise<Metadata> {
+  const { slug } = await params
+  
+  const { data: company } = await supabase
+    .from("companies")
+    .select(`
+      company_name,
+      description,
+      facilities (city, state),
+      capabilities (*),
+      certifications (certification_type)
+    `)
+    .eq("slug", slug)
+    .single()
+  
+  if (!company) {
+    return {
+      title: 'Company Not Found | CM Directory',
+      description: 'The requested manufacturer profile could not be found.',
+    }
+  }
+  
+  const location = company.facilities?.[0] 
+    ? `${company.facilities[0].city}, ${company.facilities[0].state}` 
+    : ''
+  
+  // Get key capabilities for description
+  const capabilities = []
+  if (company.capabilities?.[0]) {
+    const cap = company.capabilities[0]
+    if (cap.pcb_assembly_smt) capabilities.push('SMT Assembly')
+    if (cap.cable_harness_assembly) capabilities.push('Cable Assembly')
+    if (cap.box_build_assembly) capabilities.push('Box Build')
+  }
+  
+  const certifications = company.certifications?.map(c => c.certification_type).slice(0, 3).join(', ')
+  
+  return {
+    title: `${company.company_name} - Contract Manufacturer${location ? ` in ${location}` : ''} | CM Directory`,
+    description: company.description || 
+      `${company.company_name} is a contract manufacturer${location ? ` located in ${location}` : ''}. ${
+        capabilities.length > 0 ? `Capabilities include ${capabilities.join(', ')}.` : ''
+      } ${certifications ? `Certifications: ${certifications}.` : ''} View full profile and contact information.`,
+    
+    openGraph: {
+      title: `${company.company_name} - Contract Manufacturer`,
+      description: company.description || `Contract manufacturing services by ${company.company_name}`,
+      type: 'website',
+      url: `https://yourdomain.com/companies/${slug}`,
+      siteName: 'CM Directory',
+    },
+    
+    twitter: {
+      card: 'summary_large_image',
+      title: `${company.company_name} - Contract Manufacturer`,
+      description: company.description?.substring(0, 160),
+    },
+    
+    alternates: {
+      canonical: `https://yourdomain.com/companies/${slug}`,
+    },
+    
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-image-preview': 'large',
+      },
+    },
+  }
+}
 
-// Cache the company fetch function
-const getCompany = cache(async (slug: string) => {
-  const { data: company, error } = await supabase
-    .from('companies')
+// Main page component - Server Component
+export default async function CompanyPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+
+  // Fetch all company data
+  const { data: company } = await supabase
+    .from("companies")
     .select(`
       *,
       facilities (*),
       capabilities (*),
+      industries (industry_name),
       certifications (*),
-      industries (*),
-      contacts (*),
       technical_specs (*),
       business_info (*),
-      verification_data (*)
+      contacts (*)
     `)
-    .eq('slug', slug)
-    .single()
+    .eq("slug", slug)
+    .single<CompanyWithRelations>()
 
-  if (error || !company) {
-    return null
+  if (!company) {
+    notFound()
   }
-
-  return company
-})
-
-// Generate static params for all companies (Static Generation)
-export async function generateStaticParams() {
-  const { data: companies } = await supabase
-    .from('companies')
-    .select('slug')
-    .limit(100) // Adjust based on your needs
-
-  return companies?.map((company: { slug: string }) => ({
-    slug: company.slug,
-  })) || []
-}
-
-// Generate metadata for SEO
-export async function generateMetadata(
-  { params }: { params: Promise<{ slug: string }> }
-): Promise<Metadata> {
-  const { slug } = await params;              // ✅ await params
-  const company = await getCompany(slug);
-
-  if (!company) return { title: 'Company Not Found' };
-
-  return {
-    title: `${company.company_name || 'Company'} - Contract Manufacturer`,
-    description: company.description || `Learn more about ${company.company_name || 'this company'}`,
-  };
-}
-
-// Main page component (Server Component)
-export default async function CompanyPage(
-  { params }: { params: Promise<{ slug: string }> }
-) {
-  const { slug } = await params;              // ✅ await params
-  if (!slug) notFound();
-
-  const company = await getCompany(slug);
-  if (!company) notFound();
 
   return (
     <>
-      <CompanyDetailClient company={company} />
+      {/* JSON-LD Schema for SEO */}
       <CompanySchema company={company} />
+      
+      {/* Client Component for interactivity */}
+      <CompanyDetailClient company={company} />
     </>
-  );
+  )
 }
