@@ -23,8 +23,10 @@ export function filterCompanies(companies: Company[], filters: FilterState): Com
 
   // States filter
   if (filters.states.length > 0) {
-    filtered = filtered.filter((company) => 
-      company.facilities?.some((f) => filters.states.includes(f.state))
+    filtered = filtered.filter((company) =>
+      company.facilities?.some((f) =>
+        typeof f.state === 'string' && filters.states.includes(f.state)
+      )
     )
   }
 
@@ -92,7 +94,8 @@ export function filterCompanies(companies: Company[], filters: FilterState): Com
 
   // Employee range filter
   if (filters.employeeRange.length > 0) {
-    filtered = filtered.filter((company) => 
+    filtered = filtered.filter((company) =>
+      typeof company.employee_count_range === 'string' &&
       filters.employeeRange.includes(company.employee_count_range)
     )
   }
