@@ -275,7 +275,7 @@ export interface VerificationData {
 
 // Extended type for facilities with company reference (for map)
 export interface FacilityWithCompany extends Facility {
-  company?: Company
+  company: Company
 }
 
 // Enum types for validation

@@ -5,21 +5,10 @@ import Link from "next/link";
 import { FilterProvider } from "@/contexts/FilterContext";
 import CompanyList from "@/components/CompanyList";
 import Script from "next/script";
+import type { Company } from "@/types/company";
 
-interface Facility { city?: string | null; state?: string | null }
-interface Certification { certification_type: string }
-interface CompanyLite {
-  id: string;
-  slug: string;
-  company_name: string;
-  facilities?: Facility[] | null;
-  certifications?: Certification[] | null;
-  capabilities?: Record<string, boolean>[] | null;
-  industries?: { industry_name: string }[] | null;
-}
-
-async function getCompanies(): Promise<CompanyLite[]> {
-  const { data: companies, error } = await supabase
+async function getCompanies(): Promise<Company[]> {
+  const { data, error } = await supabase
     .from("companies")
     .select(`
       *,
@@ -30,7 +19,7 @@ async function getCompanies(): Promise<CompanyLite[]> {
     `)
     .eq("is_active", true);
   if (error || !data) return [];
-  return data as CompanyLite[];
+  return data as Company[];
 }
 
 function normalizeCertParam(param: string) {
@@ -55,12 +44,15 @@ export async function generateMetadata({ params }: { params: { cert: string } })
 export default async function CertManufacturers({ params }: { params: { cert: string } }) {
   const companies = await getCompanies();
   const certNice = normalizeCertParam(params.cert);
+  const certLower = certNice.toLowerCase();
 
-  const byCert = companies.filter((c) =>
-    (c.certifications ?? []).some((x) =>
-        x.certification_type?.toLowerCase() === certNice.toLowerCase()
-    )
-    );
+  const byCert = companies.filter((company) =>
+    (company.certifications ?? []).some(
+      (certification) =>
+        typeof certification?.certification_type === "string" &&
+        certification.certification_type.toLowerCase() === certLower,
+    ),
+  );
 
   const jsonLd = {
     "@context": "https://schema.org",

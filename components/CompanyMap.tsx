@@ -5,6 +5,7 @@ import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { useFilters } from "../contexts/FilterContext"
 import { MapPin, RotateCcw } from "lucide-react"
+import type { FeatureCollection, Point } from "geojson"
 import type { Company, FacilityWithCompany } from "../types/company"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 import { filterCompanies } from "../utils/filtering"
@@ -16,6 +17,19 @@ interface CompanyMapProps {
   allCompanies: Company[]
 }
 
+type FacilityWithCoordinates = FacilityWithCompany & {
+  latitude: number
+  longitude: number
+}
+
+type FacilityFeatureProperties = {
+  company_name: string
+  company_slug: string
+  city: string
+  state: string
+  facility_type: string
+}
+
 export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
@@ -23,7 +37,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/light-v11")
   const [isLoading, setIsLoading] = useState(true)
   const [isStyleLoaded, setIsStyleLoaded] = useState(false)
-  const currentFacilitiesRef = useRef<FacilityWithCompany[]>([])
+  const currentFacilitiesRef = useRef<FacilityWithCoordinates[]>([])
 
   // Debounce filter changes for better performance
   const debouncedFilters = useDebounce(filters, 300)
@@ -33,19 +47,22 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
     // Extract facilities from filtered companies
     const facilities = filteredCompanies
-      .flatMap(
-        (company) =>
-          company.facilities?.map((facility) => ({
-            ...facility,
-            company: company,
-          })) || [],
+      .flatMap((company) =>
+        (company.facilities ?? []).map((facility) => ({
+          ...facility,
+          company,
+        })),
       )
-      .filter((f): f is FacilityWithCompany => 
-        f.latitude != null && 
-        f.longitude != null &&
-        !isNaN(f.latitude) &&
-        !isNaN(f.longitude)
-      )
+      .filter((facility): facility is FacilityWithCoordinates => {
+        const { latitude, longitude, company } = facility
+        return (
+          Boolean(company) &&
+          typeof latitude === 'number' &&
+          Number.isFinite(latitude) &&
+          typeof longitude === 'number' &&
+          Number.isFinite(longitude)
+        )
+      })
 
     return { facilities, filteredCount: filteredCompanies.length }
   }, [debouncedFilters, allCompanies])
@@ -60,7 +77,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   }, [filteredFacilities.facilities])
 
   // Function to add clustering layers
-  const addClusteringLayers = useCallback((facilitiesToAdd?: FacilityWithCompany[]) => {
+  const addClusteringLayers = useCallback((facilitiesToAdd?: FacilityWithCoordinates[]) => {
     const facilities = facilitiesToAdd || currentFacilitiesRef.current
     
     if (!map.current || facilities.length === 0) {
@@ -79,25 +96,22 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     }
 
     // Create GeoJSON
-    const geojson = {
-      type: 'FeatureCollection' as const,
-      features: facilities.map((facility) => {
-        const coords = [facility.longitude, facility.latitude]
-        return {
-          type: 'Feature' as const,
-          properties: {
-            company_name: facility.company?.company_name || 'Unknown Company',
-            company_slug: facility.company?.slug || '',
-            city: facility.city || 'Unknown City',
-            state: facility.state || 'Unknown State',
-            facility_type: facility.facility_type || 'Manufacturing Facility'
-          },
-          geometry: {
-            type: 'Point' as const,
-            coordinates: coords
-          }
-        }
-      })
+    const geojson: FeatureCollection<Point, FacilityFeatureProperties> = {
+      type: 'FeatureCollection',
+      features: facilities.map((facility) => ({
+        type: 'Feature',
+        properties: {
+          company_name: facility.company.company_name || 'Unknown Company',
+          company_slug: facility.company.slug || '',
+          city: facility.city || 'Unknown City',
+          state: facility.state || 'Unknown State',
+          facility_type: facility.facility_type || 'Manufacturing Facility',
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [facility.longitude, facility.latitude],
+        },
+      })),
     }
 
     // Check if source already exists and update it, or create new
