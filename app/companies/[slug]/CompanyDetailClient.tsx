@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from 'react'
-import { Building2, Globe, Award, Users, Briefcase, Calendar, DollarSign, Factory, CheckCircle, MapPin } from 'lucide-react'
+import { Building2, Globe, Users, Calendar, DollarSign, CheckCircle, MapPin } from 'lucide-react'
 import type { Company } from '@/types/company'
 import CompanyHeader from '@/components/CompanyHeader'
-import type { CompanyWithRelations } from '@/types/company'
+import { Breadcrumbs } from '@/components/Breadcrumbs'
 
 interface CompanyDetailClientProps {
   company: Company
@@ -15,7 +15,6 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
   const [activeTab, setActiveTab] = useState<'overview' | 'capabilities' | 'certifications' | 'technical'>('overview')
 
   // Safely access properties with optional chaining
-  const primaryFacility = company?.facilities?.[0]
   const capabilities = company?.capabilities?.[0]
   const companyName = company?.company_name
 
@@ -26,6 +25,13 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
       {/* Hero Header Section */}
       <div className="bg-gradient-to-br from-white-600 via-white-700 to-white-800">
         <div className="container mx-auto px-4 py-6">
+          <Breadcrumbs 
+          items={[
+            { name: 'Home', url: '/' },
+            { name: company.company_name, url: `/companies/${company.slug}` }
+          ]}
+          className="mb-6 text-blue-100" // For dark backgrounds
+        />
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 bg-blue-500 backdrop-blur-sm rounded-xl flex items-center justify-center">
