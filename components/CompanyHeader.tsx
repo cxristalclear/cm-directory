@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { Building2, } from "lucide-react"
+import { Building2} from 'lucide-react'
+
 
 interface CompanyHeaderProps {
   companyName?: string

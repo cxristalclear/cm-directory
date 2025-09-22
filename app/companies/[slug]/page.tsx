@@ -3,6 +3,8 @@ import { cache } from 'react'
 import { supabase } from '@/lib/supabase'
 import CompanyDetailClient from './CompanyDetailClient'
 import type { Metadata } from 'next'
+import { CompanySchema } from '@/components/CompanySchema'
+
 
 // Cache the company fetch function
 const getCompany = cache(async (slug: string) => {
@@ -66,5 +68,10 @@ export default async function CompanyPage(
   const company = await getCompany(slug);
   if (!company) notFound();
 
-  return <CompanyDetailClient company={company} />;
+  return (
+    <>
+      <CompanyDetailClient company={company} />
+      <CompanySchema company={company} />
+    </>
+  );
 }
