@@ -2,8 +2,9 @@ import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { MapPin, Building2, Award, Users, ArrowRight } from "lucide-react"
+import { MapPin, ArrowRight } from "lucide-react"
 import CompanyList from "@/components/CompanyList"
+import type { Company } from "@/types/company"
 
 // State data with SEO-friendly names and info
 const STATE_DATA: Record<string, { 
@@ -46,21 +47,28 @@ export async function generateStaticParams() {
     .from('facilities')
     .select('state')
     .not('state', 'is', null)
-  
-  const uniqueStates = [...new Set(facilities?.map(f => f.state.toLowerCase()) || [])]
-  
+
+  const uniqueStates = [
+    ...new Set(
+      (facilities ?? [])
+        .map((facility) => facility?.state)
+        .filter((state): state is string => typeof state === 'string' && state.length > 0)
+        .map((state) => state.toLowerCase()),
+    ),
+  ]
+
   return uniqueStates
-    .filter(state => STATE_DATA[state]) // Only states we have data for
-    .map(state => ({ state }))
+    .filter((state) => STATE_DATA[state]) // Only states we have data for
+    .map((state) => ({ state }))
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ 
-  params 
-}: { 
-  params: Promise<{ state: string }> 
+  params,
+}: {
+  params: { state: string }
 }): Promise<Metadata> {
-  const { state } = await params
+  const { state } = params
   const stateData = STATE_DATA[state.toLowerCase()]
   
   if (!stateData) {
@@ -95,9 +103,9 @@ export async function generateMetadata({
 export default async function StateManufacturersPage({
   params,
 }: {
-  params: Promise<{ state: string }>
+  params: { state: string }
 }) {
-  const { state } = await params
+  const { state } = params
   const stateData = STATE_DATA[state.toLowerCase()]
   
   if (!stateData) {
@@ -105,7 +113,7 @@ export default async function StateManufacturersPage({
   }
   
   // Fetch all companies in this state
-  const { data: companies } = await supabase
+  const { data } = await supabase
     .from('companies')
     .select(`
       *,
@@ -119,24 +127,42 @@ export default async function StateManufacturersPage({
     `)
     .eq('facilities.state', stateData.name)
     .eq('is_active', true)
+
+    const companies: Company[] = (data ?? []) as Company[]
   
   // Get aggregated stats
   const stats = {
-    totalCompanies: companies?.length || 0,
-    certifications: [...new Set(companies?.flatMap(c => 
-      c.certifications?.map(cert => cert.certification_type) || []
-    ))],
-    capabilities: [...new Set(companies?.flatMap(c => {
-      const caps = []
-      const cap = c.capabilities?.[0]
-      if (cap?.pcb_assembly_smt) caps.push('SMT Assembly')
-      if (cap?.cable_harness_assembly) caps.push('Cable Assembly')
-      if (cap?.box_build_assembly) caps.push('Box Build')
-      return caps
-    }))],
-    cities: [...new Set(companies?.flatMap(c => 
-      c.facilities?.map(f => f.city) || []
-    ))]
+    totalCompanies: companies.length,
+    certifications: [
+      ...new Set(
+        companies.flatMap((company) =>
+          (company.certifications ?? [])
+            .map((certification) => certification?.certification_type)
+            .filter((cert): cert is string => typeof cert === 'string' && cert.length > 0),
+        ),
+      ),
+    ],
+    capabilities: [
+      ...new Set(
+        companies.flatMap((company) => {
+          const cap = company.capabilities?.[0]
+          const caps: string[] = []
+          if (cap?.pcb_assembly_smt) caps.push('SMT Assembly')
+          if (cap?.cable_harness_assembly) caps.push('Cable Assembly')
+          if (cap?.box_build_assembly) caps.push('Box Build')
+          return caps
+        }),
+      ),
+    ],
+    cities: [
+      ...new Set(
+        companies.flatMap((company) =>
+          (company.facilities ?? [])
+            .map((facility) => facility?.city)
+            .filter((city): city is string => typeof city === 'string' && city.length > 0),
+        ),
+      ),
+    ],
   }
   
   // Schema for state page
@@ -253,9 +279,7 @@ export default async function StateManufacturersPage({
               
               <h3 className="text-lg font-semibold mt-6 mb-3">Industries Served</h3>
               <p>
-                The state's manufacturing sector supports critical industries with specialized
-                requirements. From prototype development to high-volume production, {stateData.fullName}'s
-                contract manufacturers provide scalable solutions for companies of all sizes.
+                The state&apos;s manufacturing sector supports critical industries with specialized requirements. From prototype development to high-volume production, {stateData.fullName}&apos;s contract manufacturers provide scalable solutions for companies of all sizes.
               </p>
             </div>
             
