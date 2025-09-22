@@ -32,6 +32,18 @@ export interface Company {
   verification_data?: VerificationData | null
 }
 
+// Extended Company type with all relations (used for detailed pages)
+export interface CompanyWithRelations extends Company {
+  contacts?: Contact[]
+  business_info?: BusinessInfo[]
+  technical_specs?: TechnicalSpecs[]
+  // These are already in Company but we're being explicit
+  facilities?: Facility[]
+  capabilities?: Capabilities[]
+  certifications?: Certification[]
+  industries?: Industry[]
+}
+
 export interface Facility {
   id: string // UUID
   company_id: string
