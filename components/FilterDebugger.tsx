@@ -37,8 +37,8 @@ export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
     // Apply state filter
     if (filters.states.length > 0) {
       filtered = filtered.filter(company =>
-        company.facilities?.some(f => 
-          filters.states.includes(f.state)
+        company.facilities?.some(f =>
+          typeof f.state === 'string' && filters.states.includes(f.state)
         )
       )
     }
@@ -102,6 +102,7 @@ export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
     // Apply employee range filter
     if (filters.employeeRange.length > 0) {
       filtered = filtered.filter(company =>
+        typeof company.employee_count_range === 'string' &&
         filters.employeeRange.includes(company.employee_count_range)
       )
     }

@@ -1,40 +1,45 @@
 import { Suspense } from "react";
-import CompanyMap from "../components/CompanyMap";
+import LazyCompanyMap from '@/components/LazyCompanyMap'
 import CompanyList from "../components/CompanyList";
 import FilterSidebar from "@/components/FilterSidebar";
 import FilterDebugger from '@/components/FilterDebugger'
 import Header from "@/components/Header";
 import { FilterProvider } from "../contexts/FilterContext";
 import { supabase } from "../lib/supabase";
+import Script from "next/script";
+
+export const metadata = {
+  title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
+  description:
+    "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities (SMT, Through-Hole, Box Build), certifications (ISO 13485, AS9100), industries, and state.",
+  alternates: { canonical: "https://www.example.com/" },
+  openGraph: {
+    title: "CM Directory — Electronics Contract Manufacturers",
+    description:
+      "Find and compare PCB assembly partners by capability, certification, and location.",
+    url: "https://www.example.com/",
+    siteName: "CM Directory",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "CM Directory — Electronics Contract Manufacturers",
+    description:
+      "Filter verified manufacturers by capability, certification, and location.",
+  },
+};
 
 const SHOW_DEBUG = process.env.NEXT_PUBLIC_SHOW_DEBUG === "true";
 
-
-// Ad Placeholder Component
-const AdPlaceholder = ({
-  width,
-  height,
-  label,
-  className = "",
-}: {
-  width: string
-  height: string
-  label: string
-  className?: string
-}) => (
-  <div
-    className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`}
-    style={{ width, height }}
-  >
+const AdPlaceholder = ({ width, height, label, className = "" }: { width: string; height: string; label: string; className?: string }) => (
+  <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} style={{ width, height }}>
     <div className="text-center text-gray-500">
       <div className="text-sm font-medium">{label}</div>
-      <div className="text-xs mt-1">
-        {width} × {height}
-      </div>
+      <div className="text-xs mt-1">{width} × {height}</div>
       <div className="text-xs text-gray-400 mt-1">Advertisement</div>
     </div>
   </div>
-)
+);
 
 async function getData() {
   const { data: companies, error } = await supabase
@@ -51,12 +56,25 @@ async function getData() {
   return companies || [];
 }
 
-
 export default async function Home() {
-  const companies = await getData()
+  const companies = await getData();
 
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
+      {/* Website JSON-LD */}
+      <Script id="website-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "CM Directory",
+          url: "https://www.example.com/",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://www.example.com/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        })
+      }} />
       <FilterProvider>
         <div className="min-h-screen bg-gray-50">
           <Header companies={companies} />
@@ -88,10 +106,8 @@ export default async function Home() {
               </div>
 
               <div className="lg:col-span-9 space-y-4">
-                {/* Map */}
-                <Suspense fallback={<div>Loading map...</div>}>
-                  <CompanyMap allCompanies={companies} />
-                </Suspense>
+                {/* Map - No extra Suspense needed, LazyCompanyMap handles it internally */}
+                <LazyCompanyMap allCompanies={companies} />
 
                 {/* List */}
                 <div className="companies-directory">
