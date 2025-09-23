@@ -1,3 +1,5 @@
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
 // Mock mapboxgl
 jest.mock('mapbox-gl', () => ({
   Popup: jest.fn(() => ({
