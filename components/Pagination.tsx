@@ -1,58 +1,45 @@
-"use client"
+'use client'
 
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 
-interface PaginationProps {
-  currentPage: number
-  totalPages: number
-  onPageChange: (page: number) => void
+type PaginationProps = {
+  hasNext: boolean
+  hasPrev: boolean
+  nextCursor?: string | null
+  prevCursor?: string | null
+  onCursorChange: (cursor: string | null) => void
 }
 
-export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+export default function Pagination({
+  hasNext,
+  hasPrev,
+  nextCursor,
+  prevCursor,
+  onCursorChange,
+}: PaginationProps) {
+  const previousCursor = prevCursor ?? null
+  const upcomingCursor = nextCursor ?? null
+
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-white rounded-xl shadow-sm">
-      <div className="flex-1 flex justify-between sm:hidden">
-        <button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Previous
-        </button>
-        <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next
-        </button>
-      </div>
-      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm text-gray-700">
-            Page <span className="font-medium">{currentPage}</span> of{" "}
-            <span className="font-medium">{totalPages}</span>
-          </p>
-        </div>
-        <div>
-          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-            <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeftIcon className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRightIcon className="h-5 w-5" />
-            </button>
-          </nav>
-        </div>
-      </div>
+    <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm">
+      <button
+        type="button"
+        onClick={() => onCursorChange(previousCursor)}
+        disabled={!hasPrev}
+        className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <ChevronLeftIcon className="mr-2 h-4 w-4" />
+        Previous
+      </button>
+      <button
+        type="button"
+        onClick={() => onCursorChange(upcomingCursor)}
+        disabled={!hasNext}
+        className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Next
+        <ChevronRightIcon className="ml-2 h-4 w-4" />
+      </button>
     </div>
   )
 }
