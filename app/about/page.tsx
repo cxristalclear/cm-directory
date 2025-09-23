@@ -134,10 +134,10 @@ export default function AboutPage() {
             <Card>
               <SectionTitle title="Roadmap" />
               <ol className="mt-6 space-y-4">
-                <TimelineItem title="MVP" body="Map, filters, and deep profiles for speed and relevance." />
+                <TimelineItem title="NOW" body="Map, filters, and deep profiles for speed and relevance." />
                 <TimelineItem
                   title="Near-Term"
-                  body="Comparison, favorites, self-service updates, featured listings, and lead analytics."
+                  body="Comparison, favorites, and self-service updates."
                 />
                 <TimelineItem title="Ongoing" body="Data depth, coverage expansion, and verification tooling." />
               </ol>
@@ -227,16 +227,6 @@ function Badge({
   );
 }
 
-{/*
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/60 bg-white/70 p-4 text-center shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/50">
-      <div className="text-xs uppercase tracking-wide text-neutral-500">{label}</div>
-      <div className="mt-1 text-xl font-semibold text-neutral-900">{value}</div>
-    </div>
-  );
-}
-*/}
 
 function TimelineItem({ title, body }: { title: string; body: string }) {
   return (
