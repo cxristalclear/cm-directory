@@ -70,3 +70,20 @@ describe('Create Popup From Facility', () => {
     expect(popup).toBeDefined()
   })
 })
+
+beforeEach(() => {
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  (console.warn as jest.Mock).mockRestore();
+  (console.error as jest.Mock).mockRestore();
+});
+
+it('blocks javascript: and data: URLs', () => {
+  const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  sanitizeUrl('javascript:void(0)');
+  sanitizeUrl('data:text/html,<h1>Test</h1>');
+  expect(warnSpy).toHaveBeenCalledTimes(2);
+});
