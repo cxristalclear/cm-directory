@@ -1,8 +1,10 @@
 import { Suspense } from "react"
 import Script from "next/script"
+import ActiveFiltersBar from "@/components/ActiveFiltersBar"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import Header from "@/components/Header"
+import LazyCompanyMap from "@/components/LazyCompanyMap"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
@@ -31,17 +33,28 @@ export default async function PcbAssemblyManufacturers({
 
   return (
     <FilterProvider initialFilters={initialFilters}>
-      <Header companies={companies} />
-      <main className="container mx-auto grid grid-cols-1 gap-6 px-4 py-8 lg:grid-cols-12">
-        <div className="lg:col-span-4">
-          <FilterSidebar allCompanies={companies} />
-        </div>
-        <div className="lg:col-span-8 space-y-6">
-          <Suspense fallback={<div className="rounded-xl border border-dashed border-gray-300 p-6">Loading companies…</div>}>
-            <CompanyList allCompanies={companies} />
-          </Suspense>
-        </div>
-      </main>
+      <div className="min-h-screen bg-gray-50">
+        <Header companies={companies} />
+        <main className="container mx-auto px-4 py-8">
+          <div className="mb-6">
+            <ActiveFiltersBar />
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-4 space-y-4">
+              <Suspense fallback={<div>Loading filters...</div>}>
+                <FilterSidebar allCompanies={companies} />
+              </Suspense>
+            </div>
+            <div className="lg:col-span-8 space-y-6">
+              <LazyCompanyMap allCompanies={companies} />
+              <Suspense fallback={<div className="rounded-xl border border-dashed border-gray-300 p-6">Loading companies…</div>}>
+                <CompanyList allCompanies={companies} />
+              </Suspense>
+            </div>
+          </div>
+        </main>
+      </div>
       <Script
         id="pcb-assembly-schema"
         type="application/ld+json"

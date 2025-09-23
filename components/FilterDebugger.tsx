@@ -24,35 +24,42 @@ export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
   }, [allCompanies])
 
   return (
-    <div className="rounded-xl border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-700">
-      <h3 className="mb-2 font-semibold text-gray-900">Debug panel</h3>
-      <dl className="space-y-1">
+    <div className="fixed bottom-20 right-4 z-50 max-w-md rounded-lg border-2 border-blue-500 bg-white p-4 shadow-xl">
+      <h3 className="mb-2 text-sm font-bold text-blue-700">Filter Debug Info</h3>
+
+      <div className="space-y-2 text-xs">
         <div className="flex justify-between">
-          <dt>Active states</dt>
-          <dd>{filters.states.join(", ") || "(none)"}</dd>
+          <span className="font-semibold">Filtered companies:</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{filteredCount}</span>
         </div>
         <div className="flex justify-between">
-          <dt>Active capabilities</dt>
-          <dd>{filters.capabilities.join(", ") || "(none)"}</dd>
+          <span className="font-semibold">Active states:</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">
+            {filters.states.length > 0 ? filters.states.join(", ") : "(none)"}
+          </span>
         </div>
         <div className="flex justify-between">
-          <dt>Production volume</dt>
-          <dd>{filters.productionVolume ?? "(none)"}</dd>
+          <span className="font-semibold">Active capabilities:</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">
+            {filters.capabilities.length > 0 ? filters.capabilities.join(", ") : "(none)"}
+          </span>
         </div>
         <div className="flex justify-between">
-          <dt>Filtered company count</dt>
-          <dd>{filteredCount}</dd>
+          <span className="font-semibold">Production volume:</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{filters.productionVolume ?? "(none)"}</span>
         </div>
-      </dl>
-      <hr className="my-3 border-dashed" />
-      <p className="text-xs text-gray-500">Known companies by state:</p>
-      <ul className="mt-1 grid grid-cols-2 gap-1 text-xs text-gray-500">
-        {Array.from(companiesByState.entries()).map(([state, count]) => (
-          <li key={state}>
-            {state}: {count}
-          </li>
-        ))}
-      </ul>
+
+        <div className="border-t pt-2">
+          <div className="mb-1 font-semibold text-blue-700">Known companies by state</div>
+          <ul className="grid grid-cols-2 gap-1 text-gray-700">
+            {Array.from(companiesByState.entries()).map(([state, count]) => (
+              <li key={state}>
+                {state}: {count}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
   )
 }

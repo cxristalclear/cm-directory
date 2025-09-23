@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { Award } from "lucide-react"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
@@ -134,8 +133,8 @@ export default async function CertificationPage({
           </nav>
           
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <Award className="w-8 h-8" />
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-2xl font-semibold">
+              {certData.name.split(" ")[0]}
             </div>
             <div>
               <h1 className="text-4xl font-bold mb-3">{certData.title}</h1>

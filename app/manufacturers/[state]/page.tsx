@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { MapPin, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
@@ -231,8 +231,8 @@ export default async function StateManufacturersPage({
             </nav>
             
             <div className="flex items-start gap-4 mb-6">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                <MapPin className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-2xl font-semibold">
+                {stateData.abbreviation}
               </div>
               <div>
                 <h1 className="text-4xl font-bold mb-3">
