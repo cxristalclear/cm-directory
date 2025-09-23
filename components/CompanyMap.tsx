@@ -3,21 +3,20 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
-import { useFilters } from "../contexts/FilterContext"
 import { MapPin, RotateCcw } from "lucide-react"
 import type { FeatureCollection, Point } from "geojson"
-import type { Company, FacilityWithCompany } from "../types/company"
+import type { CompanyListItem } from "../types/company"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
-import { filterCompanies } from "../utils/filtering"
-import { useDebounce } from "../hooks/useDebounce"
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
 interface CompanyMapProps {
-  allCompanies: Company[]
+  companies: CompanyListItem[]
 }
 
-type FacilityWithCoordinates = FacilityWithCompany & {
+type CompanyFacility = NonNullable<CompanyListItem['facilities']>[number]
+
+type FacilityWithCoordinates = (CompanyFacility & { company: CompanyListItem }) & {
   latitude: number
   longitude: number
 }
@@ -30,51 +29,36 @@ type FacilityFeatureProperties = {
   facility_type: string
 }
 
-export default function CompanyMap({ allCompanies }: CompanyMapProps) {
+export default function CompanyMap({ companies }: CompanyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
-  const { filters, setFilteredCount } = useFilters()
   const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/light-v11")
   const [isLoading, setIsLoading] = useState(true)
   const [isStyleLoaded, setIsStyleLoaded] = useState(false)
   const currentFacilitiesRef = useRef<FacilityWithCoordinates[]>([])
-
-  // Debounce filter changes for better performance
-  const debouncedFilters = useDebounce(filters, 300)
-
-  const filteredFacilities = useMemo(() => {
-    const filteredCompanies = filterCompanies(allCompanies, debouncedFilters)
-
-    // Extract facilities from filtered companies
-    const facilities = filteredCompanies
-      .flatMap((company) =>
-        (company.facilities ?? []).map((facility) => ({
+  const facilities = useMemo(() => {
+    return companies
+      .flatMap(company =>
+        (company.facilities ?? []).map(facility => ({
           ...facility,
           company,
         })),
       )
       .filter((facility): facility is FacilityWithCoordinates => {
-        const { latitude, longitude, company } = facility
+        const { latitude, longitude } = facility
         return (
-          Boolean(company) &&
           typeof latitude === 'number' &&
           Number.isFinite(latitude) &&
           typeof longitude === 'number' &&
           Number.isFinite(longitude)
         )
       })
-
-    return { facilities, filteredCount: filteredCompanies.length }
-  }, [debouncedFilters, allCompanies])
-
-  useEffect(() => {
-    setFilteredCount(filteredFacilities.filteredCount)
-  }, [filteredFacilities.filteredCount, setFilteredCount])
+  }, [companies])
 
   // Store current facilities for use in callbacks
   useEffect(() => {
-    currentFacilitiesRef.current = filteredFacilities.facilities
-  }, [filteredFacilities.facilities])
+    currentFacilitiesRef.current = facilities
+  }, [facilities])
 
   // Function to add clustering layers
   const addClusteringLayers = useCallback((facilitiesToAdd?: FacilityWithCoordinates[]) => {
@@ -323,16 +307,16 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
   // Update layers when facilities change AND map is ready
   useEffect(() => {
-    if (!map.current || !isStyleLoaded || isLoading || filteredFacilities.facilities.length === 0) {
+    if (!map.current || !isStyleLoaded || isLoading || facilities.length === 0) {
       return
     }
 
-    addClusteringLayers(filteredFacilities.facilities)
+    addClusteringLayers(facilities)
 
     // Fit bounds to show all facilities
-    if (filteredFacilities.facilities.length > 0) {
+    if (facilities.length > 0) {
       const bounds = new mapboxgl.LngLatBounds()
-      filteredFacilities.facilities.forEach((facility) => {
+      facilities.forEach(facility => {
         bounds.extend([facility.longitude, facility.latitude])
       })
 
@@ -347,7 +331,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         }
       }, 100)
     }
-  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers])
+  }, [facilities, isStyleLoaded, isLoading, addClusteringLayers])
 
   const handleStyleChange = (newStyle: string) => {
     if (map.current && newStyle !== mapStyle) {
@@ -380,7 +364,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
             Map visualization requires a Mapbox access token. The filtered companies would be displayed as interactive markers on a US map.
           </p>
           <div className="mt-4 text-xs text-gray-400">
-            Showing {filteredFacilities.filteredCount} companies
+            Showing {companies.length} companies
           </div>
         </div>
       </div>
@@ -441,10 +425,10 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
           <div className="flex items-center gap-2 text-sm">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-              <span className="font-medium text-gray-900">{filteredFacilities.facilities.length}</span>
+              <span className="font-medium text-gray-900">{facilities.length}</span>
             </div>
             <span className="text-gray-600">
-              {filteredFacilities.facilities.length === 1 ? "facility" : "facilities"}
+              {facilities.length === 1 ? "facility" : "facilities"}
             </span>
           </div>
         </div>
