@@ -1,118 +1,106 @@
-'use client'
+"use client"
 
-import { X } from 'lucide-react'
-
-import { useFilters } from '../contexts/FilterContext'
-import type { ProductionVolume } from '../types/company'
+import type { ReactNode } from "react"
+import { X } from "lucide-react"
+import { useFilters } from "@/contexts/FilterContext"
+import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 
 type ChipProps = {
   label: string
-  onRemove: () => void
+  onRemove?: () => void
 }
 
 function Chip({ label, onRemove }: ChipProps) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-800">
       {label}
-      <button
-        aria-label={`Remove ${label}`}
-        onClick={event => {
-          event.preventDefault()
-          event.stopPropagation()
-          onRemove()
-        }}
-        className="rounded-full p-1 text-neutral-500 hover:bg-neutral-200/60 hover:text-neutral-700"
-      >
-        <X className="h-3.5 w-3.5" />
-      </button>
+      {onRemove && (
+        <button
+          aria-label={`Remove ${label}`}
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            onRemove()
+          }}
+          className="rounded-full p-1 text-neutral-500 hover:bg-neutral-200/60 hover:text-neutral-700"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
     </span>
   )
 }
 
-function formatCapability(key: string) {
-  switch (key) {
-    case 'smt':
-      return 'SMT'
-    case 'through_hole':
-      return 'Through Hole'
-    case 'cable_harness':
-      return 'Cable Harness'
-    case 'box_build':
-      return 'Box Build'
-    case 'prototyping':
-      return 'Prototyping'
-    default:
-      return key
-  }
+const CAPABILITY_LABELS: Record<CapabilitySlug, string> = {
+  smt: "SMT",
+  through_hole: "Through-Hole",
+  cable_harness: "Cable Harness",
+  box_build: "Box Build",
+  prototyping: "Prototyping",
 }
 
-function formatVolume(volume: ProductionVolume) {
-  switch (volume) {
-    case 'low':
-      return 'Low Volume'
-    case 'medium':
-      return 'Medium Volume'
-    case 'high':
-      return 'High Volume'
-    default:
-      return volume
-  }
+const VOLUME_LABELS: Record<ProductionVolume, string> = {
+  low: "Low volume",
+  medium: "Medium volume",
+  high: "High volume",
 }
 
 export default function ActiveFiltersBar() {
   const { filters, updateFilter, clearFilters } = useFilters()
-  const { states, capabilities, productionVolume } = filters
-
-  const hasStates = states.length > 0
-  const hasCapabilities = capabilities.length > 0
-  const hasVolume = productionVolume !== null
-  const hasAny = hasStates || hasCapabilities || hasVolume
 
   const removeState = (state: string) => {
+    updateFilter("states", filters.states.filter((value) => value !== state))
+  }
+
+  const removeCapability = (capability: CapabilitySlug) => {
     updateFilter(
-      'states',
-      states.filter(entry => entry !== state),
+      "capabilities",
+      filters.capabilities.filter((value) => value !== capability),
     )
   }
 
-  const removeCapability = (capability: string) => {
-    updateFilter(
-      'capabilities',
-      capabilities.filter(entry => entry !== capability),
+  const clearVolume = () => {
+    updateFilter("productionVolume", null)
+  }
+
+  const chips: ReactNode[] = []
+
+  for (const state of filters.states) {
+    chips.push(<Chip key={`state:${state}`} label={state} onRemove={() => removeState(state)} />)
+  }
+
+  for (const capability of filters.capabilities) {
+    chips.push(
+      <Chip
+        key={`capability:${capability}`}
+        label={CAPABILITY_LABELS[capability]}
+        onRemove={() => removeCapability(capability)}
+      />,
     )
   }
 
-  const removeVolume = () => {
-    updateFilter('productionVolume', null)
+  if (filters.productionVolume) {
+    chips.push(
+      <Chip
+        key="volume"
+        label={VOLUME_LABELS[filters.productionVolume]}
+        onRemove={clearVolume}
+      />,
+    )
   }
+
+  const hasActiveFilters = chips.length > 0
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
-        {!hasAny && <span className="text-sm text-neutral-500">No active filters</span>}
-        {states.map(state => (
-          <Chip key={`state-${state}`} label={state} onRemove={() => removeState(state)} />
-        ))}
-        {capabilities.map(capability => (
-          <Chip
-            key={`cap-${capability}`}
-            label={formatCapability(capability)}
-            onRemove={() => removeCapability(capability)}
-          />
-        ))}
-        {productionVolume && (
-          <Chip
-            key="volume"
-            label={formatVolume(productionVolume)}
-            onRemove={removeVolume}
-          />
-        )}
+        {hasActiveFilters ? chips : <span className="text-sm text-neutral-500">No active filters</span>}
       </div>
-      {hasAny && (
+      {hasActiveFilters && (
         <button
+          type="button"
           onClick={clearFilters}
           className="text-sm font-medium text-blue-700 hover:text-blue-800"
-          aria-label="Clear all filters"
         >
           Clear all
         </button>
