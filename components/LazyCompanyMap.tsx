@@ -3,13 +3,13 @@
 import { lazy, Suspense } from 'react'
 import { MapErrorBoundary } from './MapErrorBoundary'
 import { MapPin } from 'lucide-react'
-import type { CompanyListItem } from '@/types/company'
+import type { Company } from '../types/company'
 
 // Lazy load the map component
 const CompanyMap = lazy(() => import('./CompanyMap'))
 
 interface LazyCompanyMapProps {
-  companies: CompanyListItem[]
+  allCompanies: Company[]
 }
 
 // Loading placeholder component
@@ -30,11 +30,11 @@ const MapLoadingFallback = () => (
   </div>
 )
 
-export default function LazyCompanyMap({ companies }: LazyCompanyMapProps) {
+export default function LazyCompanyMap({ allCompanies }: LazyCompanyMapProps) {
   return (
     <MapErrorBoundary>
       <Suspense fallback={<MapLoadingFallback />}>
-        <CompanyMap companies={companies} />
+        <CompanyMap allCompanies={allCompanies} />
       </Suspense>
     </MapErrorBoundary>
   )
