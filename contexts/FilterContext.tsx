@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode, useTransition, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { useDebouncedCallback } from "use-debounce"
+import { parseFiltersFromSearchParams, serializeFiltersToSearchParams } from "@/lib/filters/url"
 import type { FilterState, FilterContextType } from "../types/company"
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
@@ -29,16 +30,18 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   // Load filters from URL on mount
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
+    const parsedUrlFilters = parseFiltersFromSearchParams(searchParams)
+    const volumeCapability = parsedUrlFilters.productionVolume ? [parsedUrlFilters.productionVolume] : []
 
     const newFilters: FilterState = {
       searchTerm: params.get("search") || "",
       countries: params.get("countries")?.split(",").filter(Boolean) || [],
-      states: params.get("states")?.split(",").filter(Boolean) || [],
-      capabilities: params.get("capabilities")?.split(",").filter(Boolean) || [],
+      states: parsedUrlFilters.states,
+      capabilities: parsedUrlFilters.capabilities,
       certifications: params.get("certifications")?.split(",").filter(Boolean) || [],
       industries: params.get("industries")?.split(",").filter(Boolean) || [],
       employeeRange: params.get("employees")?.split(",").filter(Boolean) || [],
-      volumeCapability: params.get("volume")?.split(",").filter(Boolean) || [],
+      volumeCapability,
     }
 
     setFilters((prevFilters) => {
@@ -49,16 +52,17 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
   const updateURLParams = useCallback(
     (newFilters: FilterState) => {
-      const params = new URLSearchParams()
+      const params = serializeFiltersToSearchParams({
+        states: newFilters.states,
+        capabilities: newFilters.capabilities,
+        productionVolume: newFilters.volumeCapability[0] ?? null,
+      })
 
       if (newFilters.searchTerm) params.set("search", newFilters.searchTerm)
       if (newFilters.countries.length) params.set("countries", newFilters.countries.join(","))
-      if (newFilters.states.length) params.set("states", newFilters.states.join(","))
-      if (newFilters.capabilities.length) params.set("capabilities", newFilters.capabilities.join(","))
       if (newFilters.certifications.length) params.set("certifications", newFilters.certifications.join(","))
       if (newFilters.industries.length) params.set("industries", newFilters.industries.join(","))
       if (newFilters.employeeRange.length) params.set("employees", newFilters.employeeRange.join(","))
-      if (newFilters.volumeCapability.length) params.set("volume", newFilters.volumeCapability.join(","))
 
       const newUrl = `${pathname}${params.toString() ? "?" + params.toString() : ""}`
       
