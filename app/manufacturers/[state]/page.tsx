@@ -10,32 +10,37 @@ import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
 // State data with SEO-friendly names and info
-const STATE_DATA: Record<string, { 
+const STATE_DATA: Record<string, {
   name: string
+  abbreviation: string
   fullName: string
   description: string
   majorCities: string[]
 }> = {
   'california': {
     name: 'California',
+    abbreviation: 'CA',
     fullName: 'California',
     description: 'Silicon Valley and Southern California host advanced electronics and medical device manufacturers',
     majorCities: ['Los Angeles', 'San Diego', 'San Jose', 'San Francisco']
   },
   'texas': {
     name: 'Texas',
+    abbreviation: 'TX',
     fullName: 'Texas',
     description: 'Major manufacturing hub with aerospace, defense, and energy sector specializations',
     majorCities: ['Houston', 'Dallas', 'Austin', 'San Antonio']
   },
   'ohio': {
     name: 'Ohio',
-    fullName: 'Ohio', 
+    abbreviation: 'OH',
+    fullName: 'Ohio',
     description: 'Traditional manufacturing powerhouse with automotive and industrial expertise',
     majorCities: ['Columbus', 'Cleveland', 'Cincinnati', 'Dayton']
   },
   'michigan': {
     name: 'Michigan',
+    abbreviation: 'MI',
     fullName: 'Michigan',
     description: 'Automotive manufacturing capital with growing medical device and aerospace sectors',
     majorCities: ['Detroit', 'Grand Rapids', 'Warren', 'Sterling Heights']
@@ -85,7 +90,7 @@ export async function generateMetadata({
   const { count } = await supabase
     .from('facilities')
     .select('*', { count: 'exact', head: true })
-    .eq('state', stateData.name)
+    .eq('state', stateData.abbreviation)
   
   return {
     title: `Contract Manufacturers in ${stateData.fullName} | ${count || 0}+ Verified Companies`,
@@ -131,7 +136,7 @@ export default async function StateManufacturersPage({
       certifications (certification_type),
       industries (industry_name)
     `)
-    .eq('facilities.state', stateData.name)
+    .eq('facilities.state', stateData.abbreviation)
     .eq('is_active', true)
 
     const companies: Company[] = (data ?? []) as Company[]
