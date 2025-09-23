@@ -1,22 +1,15 @@
 'use client'
 
-import { useMemo } from 'react'
-
 import { useFilters } from '../contexts/FilterContext'
-import type { Company } from '../types/company'
-import { filterCompanies } from '../utils/filtering'
+import type { CompanyListItem } from '../types/company'
 
 interface FilterDebuggerProps {
-  allCompanies: Company[]
+  companies: CompanyListItem[]
+  totalCount: number
 }
 
-export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
-  const { filters } = useFilters()
-
-  const filteredCompanies = useMemo(
-    () => filterCompanies(allCompanies, filters),
-    [allCompanies, filters],
-  )
+export default function FilterDebugger({ companies, totalCount }: FilterDebuggerProps) {
+  const { filters, filteredCount } = useFilters()
 
   const activeStates = filters.states
   const activeCapabilities = filters.capabilities
@@ -29,7 +22,17 @@ export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
       <div className="space-y-2 text-xs">
         <div className="flex justify-between">
           <span className="font-semibold">Companies (filtered):</span>
-          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{filteredCompanies.length}</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{filteredCount}</span>
+        </div>
+
+        <div className="flex justify-between">
+          <span className="font-semibold">Page companies:</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{companies.length}</span>
+        </div>
+
+        <div className="flex justify-between">
+          <span className="font-semibold">Total available:</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{totalCount}</span>
         </div>
 
         <div className="border-t pt-2">
