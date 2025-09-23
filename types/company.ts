@@ -1,21 +1,18 @@
 import type { Dispatch, SetStateAction } from "react"
+import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 
-import type { ProductionVolume } from "@/lib/filters/url"
+// Database-accurate type definitions based on your PostgreSQL schema
 
-export type { ProductionVolume }
-
-export interface FilterState {
+export type FilterState = {
   states: string[]
-  capabilities: string[]
+  capabilities: CapabilitySlug[]
   productionVolume: ProductionVolume | null
 }
 
-export type SetFiltersAction = FilterState | ((previous: FilterState) => FilterState)
-
-export interface FilterContextType {
+export type FilterContextType = {
   filters: FilterState
+  setFilters: Dispatch<SetStateAction<FilterState>>
   updateFilter: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void
-  setFilters: (value: SetFiltersAction) => void
   clearFilters: () => void
   filteredCount: number
   setFilteredCount: Dispatch<SetStateAction<number>>
@@ -163,49 +160,10 @@ export interface Certification {
   updated_at?: string
 }
 
-export type CompanyListItem = {
-  id: string
-  slug: string
-  company_name: string
-  dba_name?: string | null
-  description?: string | null
-  employee_count_range?: string | null
-  facilities?: Array<
-    Pick<
-      Facility,
-      'id' | 'city' | 'state' | 'latitude' | 'longitude' | 'facility_type'
-    >
-  > | null
-  capabilities?: Array<
-    Pick<
-      Capabilities,
-      | 'pcb_assembly_smt'
-      | 'pcb_assembly_through_hole'
-      | 'cable_harness_assembly'
-      | 'box_build_assembly'
-      | 'prototyping'
-      | 'low_volume_production'
-      | 'medium_volume_production'
-      | 'high_volume_production'
-    >
-  > | null
-  industries?: Array<Pick<Industry, 'id' | 'company_id' | 'industry_name'>> | null
-  certifications?: Array<
-    Pick<Certification, 'id' | 'company_id' | 'certification_type'>
-  > | null
-}
-
-export interface PageInfo {
-  hasNext: boolean
-  hasPrev: boolean
-  nextCursor?: string | null
-  prevCursor?: string | null
-}
-
 export interface TechnicalSpecs {
   id: string // UUID
   company_id: string
-
+  
   // Component Capabilities
   smallest_component_size?: string | null // '0201', '0402', etc.
   finest_pitch_capability?: string | null

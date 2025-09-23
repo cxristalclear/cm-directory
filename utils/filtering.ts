@@ -1,36 +1,34 @@
-import type { Company, FilterState } from '../types/company'
+import type { Company, FilterState } from "../types/company"
 
 export function filterCompanies(companies: Company[], filters: FilterState): Company[] {
-  const { states, capabilities, productionVolume } = filters
-
-  return companies.filter(company => {
-    if (states.length > 0) {
-      const matchesState = company.facilities?.some(
-        facility => typeof facility.state === 'string' && states.includes(facility.state),
-      )
-      if (!matchesState) {
+  return companies.filter((company) => {
+    if (filters.states.length > 0) {
+      const hasState = company.facilities?.some((facility) => {
+        return typeof facility?.state === "string" && filters.states.includes(facility.state)
+      })
+      if (!hasState) {
         return false
       }
     }
 
-    if (capabilities.length > 0) {
+    if (filters.capabilities.length > 0) {
       const capabilityRecord = company.capabilities?.[0]
       if (!capabilityRecord) {
         return false
       }
 
-      const matchesCapability = capabilities.some(capability => {
+      const matchesCapability = filters.capabilities.some((capability) => {
         switch (capability) {
-          case 'smt':
-            return capabilityRecord.pcb_assembly_smt
-          case 'through_hole':
-            return capabilityRecord.pcb_assembly_through_hole
-          case 'cable_harness':
-            return capabilityRecord.cable_harness_assembly
-          case 'box_build':
-            return capabilityRecord.box_build_assembly
-          case 'prototyping':
-            return capabilityRecord.prototyping
+          case "smt":
+            return Boolean(capabilityRecord.pcb_assembly_smt)
+          case "through_hole":
+            return Boolean(capabilityRecord.pcb_assembly_through_hole)
+          case "cable_harness":
+            return Boolean(capabilityRecord.cable_harness_assembly)
+          case "box_build":
+            return Boolean(capabilityRecord.box_build_assembly)
+          case "prototyping":
+            return Boolean(capabilityRecord.prototyping)
           default:
             return false
         }
@@ -41,21 +39,21 @@ export function filterCompanies(companies: Company[], filters: FilterState): Com
       }
     }
 
-    if (productionVolume) {
+    if (filters.productionVolume) {
       const capabilityRecord = company.capabilities?.[0]
       if (!capabilityRecord) {
         return false
       }
 
-      switch (productionVolume) {
-        case 'low':
+      switch (filters.productionVolume) {
+        case "low":
           return Boolean(capabilityRecord.low_volume_production)
-        case 'medium':
+        case "medium":
           return Boolean(capabilityRecord.medium_volume_production)
-        case 'high':
+        case "high":
           return Boolean(capabilityRecord.high_volume_production)
         default:
-          return true
+          return false
       }
     }
 

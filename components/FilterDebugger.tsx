@@ -1,59 +1,58 @@
-'use client'
+"use client"
 
-import { useFilters } from '../contexts/FilterContext'
-import type { CompanyListItem } from '../types/company'
+import { useMemo } from "react"
+import { useFilters } from "@/contexts/FilterContext"
+import type { Company } from "@/types/company"
 
 interface FilterDebuggerProps {
-  companies: CompanyListItem[]
-  totalCount: number
+  allCompanies: Company[]
 }
 
-export default function FilterDebugger({ companies, totalCount }: FilterDebuggerProps) {
+export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
   const { filters, filteredCount } = useFilters()
 
-  const activeStates = filters.states
-  const activeCapabilities = filters.capabilities
-  const hasVolume = filters.productionVolume !== null
+  const companiesByState = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const company of allCompanies) {
+      for (const facility of company.facilities ?? []) {
+        if (facility?.state) {
+          counts.set(facility.state, (counts.get(facility.state) ?? 0) + 1)
+        }
+      }
+    }
+    return counts
+  }, [allCompanies])
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 max-w-md rounded-lg border-2 border-blue-500 bg-white p-4 shadow-xl">
-      <h3 className="mb-2 text-sm font-bold text-blue-700">Filter Debug Info</h3>
-
-      <div className="space-y-2 text-xs">
+    <div className="rounded-xl border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-700">
+      <h3 className="mb-2 font-semibold text-gray-900">Debug panel</h3>
+      <dl className="space-y-1">
         <div className="flex justify-between">
-          <span className="font-semibold">Companies (filtered):</span>
-          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{filteredCount}</span>
+          <dt>Active states</dt>
+          <dd>{filters.states.join(", ") || "(none)"}</dd>
         </div>
-
         <div className="flex justify-between">
-          <span className="font-semibold">Page companies:</span>
-          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{companies.length}</span>
+          <dt>Active capabilities</dt>
+          <dd>{filters.capabilities.join(", ") || "(none)"}</dd>
         </div>
-
         <div className="flex justify-between">
-          <span className="font-semibold">Total available:</span>
-          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{totalCount}</span>
+          <dt>Production volume</dt>
+          <dd>{filters.productionVolume ?? "(none)"}</dd>
         </div>
-
-        <div className="border-t pt-2">
-          <div className="mb-1 font-semibold">Active Filters</div>
-          {activeStates.length === 0 && activeCapabilities.length === 0 && !hasVolume ? (
-            <div className="text-gray-500">None</div>
-          ) : (
-            <ul className="space-y-1 text-gray-700">
-              {activeStates.map(state => (
-                <li key={`state-${state}`}>State: {state}</li>
-              ))}
-              {activeCapabilities.map(capability => (
-                <li key={`cap-${capability}`}>Capability: {capability}</li>
-              ))}
-              {hasVolume && filters.productionVolume && (
-                <li>Production Volume: {filters.productionVolume}</li>
-              )}
-            </ul>
-          )}
+        <div className="flex justify-between">
+          <dt>Filtered company count</dt>
+          <dd>{filteredCount}</dd>
         </div>
-      </div>
+      </dl>
+      <hr className="my-3 border-dashed" />
+      <p className="text-xs text-gray-500">Known companies by state:</p>
+      <ul className="mt-1 grid grid-cols-2 gap-1 text-xs text-gray-500">
+        {Array.from(companiesByState.entries()).map(([state, count]) => (
+          <li key={state}>
+            {state}: {count}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

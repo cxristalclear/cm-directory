@@ -5,155 +5,122 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState,
   useTransition,
   type ReactNode,
-} from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-
-import {
-  parseFiltersFromSearchParams,
-  serializeFiltersToSearchParams,
-  type FilterUrlState,
-} from '@/lib/filters/url'
-import type { FilterContextType, FilterState, SetFiltersAction } from '@/types/company'
-
-const EMPTY_FILTERS: FilterState = {
-  states: [],
-  capabilities: [],
-  productionVolume: null,
-}
+} from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useDebouncedCallback } from "use-debounce"
+import { parseFiltersFromSearchParams, serializeFiltersToSearchParams } from "@/lib/filters/url"
+import type { FilterContextType, FilterState } from "@/types/company"
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
 type FilterProviderProps = {
   children: ReactNode
-  initialFilters?: Partial<FilterState>
-  initialFilteredCount?: number
+  initialFilters?: FilterState
 }
 
-function arraysEqual(first: string[], second: string[]): boolean {
-  if (first.length !== second.length) return false
-  return first.every((value, index) => value === second[index])
-}
-
-function toUrlFilterState(filters?: Partial<FilterState>): FilterUrlState {
-  const record: Record<string, string | string[]> = {}
-
-  if (filters?.states && filters.states.length > 0) {
-    record.state = filters.states
-  }
-
-  if (filters?.capabilities && filters.capabilities.length > 0) {
-    record.capability = filters.capabilities
-  }
-
-  if (filters?.productionVolume) {
-    record.volume = filters.productionVolume
-  }
-
-  return parseFiltersFromSearchParams(record)
-}
-
-function normalizeFilters(filters?: Partial<FilterState>): FilterState {
-  const normalized = toUrlFilterState(filters)
+function createDefaultFilters(): FilterState {
   return {
-    states: [...normalized.states],
-    capabilities: [...normalized.capabilities],
-    productionVolume: normalized.productionVolume,
+    states: [],
+    capabilities: [],
+    productionVolume: null,
   }
 }
 
-export function FilterProvider({ children, initialFilters, initialFilteredCount }: FilterProviderProps) {
+function filtersEqual(a: FilterState, b: FilterState): boolean {
+  if (a.productionVolume !== b.productionVolume) {
+    return false
+  }
+  if (a.states.length !== b.states.length || a.capabilities.length !== b.capabilities.length) {
+    return false
+  }
+  return a.states.every((value, index) => value === b.states[index]) &&
+    a.capabilities.every((value, index) => value === b.capabilities[index])
+}
+
+export function FilterProvider({ children, initialFilters }: FilterProviderProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
-  const [filters, setFiltersState] = useState<FilterState>(() =>
-    normalizeFilters(initialFilters ?? EMPTY_FILTERS),
-  )
-  const [filteredCount, setFilteredCount] = useState(initialFilteredCount ?? 0)
+
+  const [filters, setFiltersState] = useState<FilterState>(() => initialFilters ?? createDefaultFilters())
+  const [filteredCount, setFilteredCount] = useState<number>(0)
 
   useEffect(() => {
-    const normalized = normalizeFilters(initialFilters ?? EMPTY_FILTERS)
-
-    setFiltersState(previous => {
-      if (
-        arraysEqual(previous.states, normalized.states) &&
-        arraysEqual(previous.capabilities, normalized.capabilities) &&
-        previous.productionVolume === normalized.productionVolume
-      ) {
-        return previous
-      }
-      return normalized
+    const parsed = parseFiltersFromSearchParams(searchParams)
+    setFiltersState((previous) => {
+      return filtersEqual(previous, parsed) ? previous : parsed
     })
-  }, [initialFilters])
+  }, [searchParams])
 
-  const updateURLParams = useCallback(
+  const replaceUrl = useCallback(
     (nextFilters: FilterState) => {
-      const urlFilters = toUrlFilterState(nextFilters)
-      const params = serializeFiltersToSearchParams(urlFilters)
+      const params = serializeFiltersToSearchParams(nextFilters)
       const query = params.toString()
-      const target = query ? `${pathname}?${query}` : pathname
+      const nextUrl = query ? `${pathname}?${query}` : pathname
 
       startTransition(() => {
-        router.replace(target, { scroll: false })
+        router.replace(nextUrl, { scroll: false })
       })
     },
     [pathname, router, startTransition],
   )
 
-  const setFilters = useCallback(
-    (value: SetFiltersAction) => {
-      setFiltersState(previous => {
-        const resolved =
-          typeof value === 'function' ? (value as (input: FilterState) => FilterState)(previous) : value
-        const normalized = normalizeFilters(resolved)
+  const debouncedReplace = useDebouncedCallback((next: FilterState) => {
+    replaceUrl(next)
+  }, 150)
 
-        setTimeout(() => {
-          updateURLParams(normalized)
-        }, 0)
-
-        return normalized
-      })
+  const setFilters = useCallback<FilterContextType["setFilters"]>(
+    (value) => {
+      if (typeof value === "function") {
+        setFiltersState((previous) => {
+          const next = value(previous)
+          debouncedReplace(next)
+          return next
+        })
+      } else {
+        setFiltersState(value)
+        debouncedReplace(value)
+      }
     },
-    [updateURLParams],
+    [debouncedReplace],
   )
 
   const updateFilter = useCallback(
     <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
-      setFilters(current => ({
-        ...current,
-        [key]: value,
-      }))
+      setFilters((previous) => ({ ...previous, [key]: Array.isArray(value) ? [...value] : value }))
     },
     [setFilters],
   )
 
   const clearFilters = useCallback(() => {
-    setFilters(() => EMPTY_FILTERS)
-  }, [setFilters])
+    debouncedReplace.cancel()
+    setFiltersState(createDefaultFilters())
+    startTransition(() => {
+      router.replace(pathname, { scroll: false })
+    })
+  }, [debouncedReplace, pathname, router, startTransition])
 
-  const contextValue = useMemo<FilterContextType>(
-    () => ({
-      filters,
-      updateFilter,
-      setFilters,
-      clearFilters,
-      filteredCount,
-      setFilteredCount,
-      isPending,
-    }),
-    [filters, updateFilter, setFilters, clearFilters, filteredCount, setFilteredCount, isPending],
-  )
+  const contextValue: FilterContextType = {
+    filters,
+    setFilters,
+    updateFilter,
+    clearFilters,
+    filteredCount,
+    setFilteredCount,
+    isPending,
+  }
 
   return <FilterContext.Provider value={contextValue}>{children}</FilterContext.Provider>
 }
 
-export function useFilters() {
+export function useFilters(): FilterContextType {
   const context = useContext(FilterContext)
   if (!context) {
-    throw new Error('useFilters must be used within FilterProvider')
+    throw new Error("useFilters must be used within FilterProvider")
   }
   return context
 }
