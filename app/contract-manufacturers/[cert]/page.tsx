@@ -79,7 +79,10 @@ export default async function CertManufacturers({ params }: { params: { cert: st
         <h1 className="text-3xl font-bold mb-1">{certNice} Contract Manufacturers</h1>
         <p className="text-gray-600 mb-4">Medical, aerospace, and regulated industries often require {certNice}. Compare verified partners and contact directly.</p>
 
-        <FilterProvider>
+        <FilterProvider
+          initialFilters={{ states: [], capabilities: [], productionVolume: null }}
+          initialFilteredCount={byCert.length}
+        >
           <div className="companies-directory">
             <CompanyList allCompanies={byCert} />
           </div>

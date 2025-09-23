@@ -1,133 +1,151 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, type ReactNode, useTransition, useCallback } from "react"
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { useDebouncedCallback } from "use-debounce"
-import { parseFiltersFromSearchParams, serializeFiltersToSearchParams } from "@/lib/filters/url"
-import type { FilterState, FilterContextType } from "../types/company"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+} from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+
+import {
+  parseFiltersFromSearchParams,
+  serializeFiltersToSearchParams,
+  type FilterUrlState,
+} from '@/lib/filters/url'
+import type { FilterContextType, FilterState, SetFiltersAction } from '@/types/company'
+
+const EMPTY_FILTERS: FilterState = {
+  states: [],
+  capabilities: [],
+  productionVolume: null,
+}
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
-export function FilterProvider({ children }: { children: ReactNode }) {
+type FilterProviderProps = {
+  children: ReactNode
+  initialFilters?: Partial<FilterState>
+  initialFilteredCount?: number
+}
+
+function arraysEqual(first: string[], second: string[]): boolean {
+  if (first.length !== second.length) return false
+  return first.every((value, index) => value === second[index])
+}
+
+function toUrlFilterState(filters?: Partial<FilterState>): FilterUrlState {
+  const record: Record<string, string | string[]> = {}
+
+  if (filters?.states && filters.states.length > 0) {
+    record.state = filters.states
+  }
+
+  if (filters?.capabilities && filters.capabilities.length > 0) {
+    record.capability = filters.capabilities
+  }
+
+  if (filters?.productionVolume) {
+    record.volume = filters.productionVolume
+  }
+
+  return parseFiltersFromSearchParams(record)
+}
+
+function normalizeFilters(filters?: Partial<FilterState>): FilterState {
+  const normalized = toUrlFilterState(filters)
+  return {
+    states: [...normalized.states],
+    capabilities: [...normalized.capabilities],
+    productionVolume: normalized.productionVolume,
+  }
+}
+
+export function FilterProvider({ children, initialFilters, initialFilteredCount }: FilterProviderProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
+  const [filters, setFiltersState] = useState<FilterState>(() =>
+    normalizeFilters(initialFilters ?? EMPTY_FILTERS),
+  )
+  const [filteredCount, setFilteredCount] = useState(initialFilteredCount ?? 0)
 
-  const [filters, setFilters] = useState<FilterState>({
-    searchTerm: "",
-    countries: [],
-    states: [],
-    capabilities: [],
-    certifications: [],
-    industries: [],
-    employeeRange: [],
-    volumeCapability: [],
-  })
-
-  const [filteredCount, setFilteredCount] = useState(0)
-
-  // Load filters from URL on mount
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
-    const parsedUrlFilters = parseFiltersFromSearchParams(searchParams)
-    const volumeCapability = parsedUrlFilters.productionVolume ? [parsedUrlFilters.productionVolume] : []
+    const normalized = normalizeFilters(initialFilters ?? EMPTY_FILTERS)
 
-    const newFilters: FilterState = {
-      searchTerm: params.get("search") || "",
-      countries: params.get("countries")?.split(",").filter(Boolean) || [],
-      states: parsedUrlFilters.states,
-      capabilities: parsedUrlFilters.capabilities,
-      certifications: params.get("certifications")?.split(",").filter(Boolean) || [],
-      industries: params.get("industries")?.split(",").filter(Boolean) || [],
-      employeeRange: params.get("employees")?.split(",").filter(Boolean) || [],
-      volumeCapability,
-    }
-
-    setFilters((prevFilters) => {
-      const hasChanged = JSON.stringify(prevFilters) !== JSON.stringify(newFilters)
-      return hasChanged ? newFilters : prevFilters
+    setFiltersState(previous => {
+      if (
+        arraysEqual(previous.states, normalized.states) &&
+        arraysEqual(previous.capabilities, normalized.capabilities) &&
+        previous.productionVolume === normalized.productionVolume
+      ) {
+        return previous
+      }
+      return normalized
     })
-  }, [searchParams])
+  }, [initialFilters])
 
   const updateURLParams = useCallback(
-    (newFilters: FilterState) => {
-      const params = serializeFiltersToSearchParams({
-        states: newFilters.states,
-        capabilities: newFilters.capabilities,
-        productionVolume: newFilters.volumeCapability[0] ?? null,
+    (nextFilters: FilterState) => {
+      const urlFilters = toUrlFilterState(nextFilters)
+      const params = serializeFiltersToSearchParams(urlFilters)
+      const query = params.toString()
+      const target = query ? `${pathname}?${query}` : pathname
+
+      startTransition(() => {
+        router.replace(target, { scroll: false })
       })
-
-      if (newFilters.searchTerm) params.set("search", newFilters.searchTerm)
-      if (newFilters.countries.length) params.set("countries", newFilters.countries.join(","))
-      if (newFilters.certifications.length) params.set("certifications", newFilters.certifications.join(","))
-      if (newFilters.industries.length) params.set("industries", newFilters.industries.join(","))
-      if (newFilters.employeeRange.length) params.set("employees", newFilters.employeeRange.join(","))
-
-      const newUrl = `${pathname}${params.toString() ? "?" + params.toString() : ""}`
-      
-      // Defer the router update to avoid updating during render
-      setTimeout(() => {
-        startTransition(() => {
-          router.replace(newUrl, { scroll: false })
-        })
-      }, 0)
     },
-    [router, pathname]
+    [pathname, router, startTransition],
   )
 
-  const debouncedUpdateURL = useDebouncedCallback(updateURLParams, 300)
+  const setFilters = useCallback(
+    (value: SetFiltersAction) => {
+      setFiltersState(previous => {
+        const resolved =
+          typeof value === 'function' ? (value as (input: FilterState) => FilterState)(previous) : value
+        const normalized = normalizeFilters(resolved)
+
+        setTimeout(() => {
+          updateURLParams(normalized)
+        }, 0)
+
+        return normalized
+      })
+    },
+    [updateURLParams],
+  )
 
   const updateFilter = useCallback(
     <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
-      setFilters((prevFilters) => {
-        const newFilters = { ...prevFilters, [key]: value }
-        
-        // Defer URL update to after render
-        setTimeout(() => {
-          if (key === "searchTerm") {
-            debouncedUpdateURL(newFilters)
-          } else {
-            updateURLParams(newFilters)
-          }
-        }, 0)
-        
-        return newFilters
-      })
+      setFilters(current => ({
+        ...current,
+        [key]: value,
+      }))
     },
-    [debouncedUpdateURL, updateURLParams]
+    [setFilters],
   )
 
   const clearFilters = useCallback(() => {
-    const defaultFilters: FilterState = {
-      searchTerm: "",
-      countries: [],
-      states: [],
-      capabilities: [],
-      certifications: [],
-      industries: [],
-      employeeRange: [],
-      volumeCapability: [],
-    }
-    
-    setFilters(defaultFilters)
-    
-    // Defer the router update to avoid updating during render
-    setTimeout(() => {
-      startTransition(() => {
-        router.replace(pathname, { scroll: false })
-      })
-    }, 0)
-  }, [router, pathname])
+    setFilters(() => EMPTY_FILTERS)
+  }, [setFilters])
 
-  const contextValue: FilterContextType = {
-    filters,
-    updateFilter,
-    clearFilters,
-    filteredCount,
-    setFilteredCount,
-    isPending,
-  }
+  const contextValue = useMemo<FilterContextType>(
+    () => ({
+      filters,
+      updateFilter,
+      setFilters,
+      clearFilters,
+      filteredCount,
+      setFilteredCount,
+      isPending,
+    }),
+    [filters, updateFilter, setFilters, clearFilters, filteredCount, setFilteredCount, isPending],
+  )
 
   return <FilterContext.Provider value={contextValue}>{children}</FilterContext.Provider>
 }
@@ -135,7 +153,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 export function useFilters() {
   const context = useContext(FilterContext)
   if (!context) {
-    throw new Error("useFilters must be used within FilterProvider")
+    throw new Error('useFilters must be used within FilterProvider')
   }
   return context
 }

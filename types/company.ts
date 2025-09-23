@@ -1,26 +1,25 @@
 import type { Dispatch, SetStateAction } from "react"
 
+import type { ProductionVolume } from "@/lib/filters/url"
 
-// Database-accurate type definitions based on your PostgreSQL schema
+export type { ProductionVolume }
 
 export interface FilterState {
-searchTerm: string
-countries: string[]
-states: string[]
-capabilities: string[]
-certifications: string[]
-industries: string[]
-employeeRange: string[]
-volumeCapability: string[]
+  states: string[]
+  capabilities: string[]
+  productionVolume: ProductionVolume | null
 }
 
+export type SetFiltersAction = FilterState | ((previous: FilterState) => FilterState)
+
 export interface FilterContextType {
-filters: FilterState
-updateFilter: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void
-clearFilters: () => void
-filteredCount: number
-setFilteredCount: Dispatch<SetStateAction<number>>
-isPending: boolean
+  filters: FilterState
+  updateFilter: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void
+  setFilters: (value: SetFiltersAction) => void
+  clearFilters: () => void
+  filteredCount: number
+  setFilteredCount: Dispatch<SetStateAction<number>>
+  isPending: boolean
 }
 
 export interface Company {
