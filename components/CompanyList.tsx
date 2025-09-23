@@ -1,182 +1,196 @@
-'use client'
+"use client"
 
-import { useCallback, useEffect } from 'react'
-import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Award, Building2, ChevronRight, MapPin, Users } from 'lucide-react'
+import { useMemo, useState, useEffect } from "react"
+import Link from "next/link"
+import { useFilters } from "../contexts/FilterContext"
+import { MapPin, Users, Award, ChevronRight, Building2, Globe } from "lucide-react"
+import type { Company } from "../types/company"
+import { filterCompanies } from "../utils/filtering"
+import Pagination from "./Pagination"
 
-import { useFilters } from '@/contexts/FilterContext'
-import type { CompanyListItem, PageInfo } from '@/types/company'
-
-import Pagination from './Pagination'
-
-type CompanyListProps = {
-  companies: CompanyListItem[]
-  totalCount: number
-  pageInfo: PageInfo
+interface CompanyListProps {
+  allCompanies: Company[]
+  itemsPerPage?: number
 }
 
-function createSummary(totalCount: number, currentCount: number): string {
-  if (totalCount === 0) {
-    return 'No results'
-  }
+export default function CompanyList({ allCompanies, itemsPerPage = 12 }: CompanyListProps) {
+  const { filters } = useFilters()
+  const [currentPage, setCurrentPage] = useState(1)
 
-  if (totalCount === currentCount) {
-    return `${totalCount} results`
-  }
+  const filteredCompanies = useMemo(() => {
+    return filterCompanies(allCompanies, filters)
+  }, [filters, allCompanies])
 
-  return `${currentCount} of ${totalCount} results`
-}
-
-export default function CompanyList({ companies, totalCount, pageInfo }: CompanyListProps) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const { setFilteredCount } = useFilters()
-
+  // Reset to page 1 when filters change
   useEffect(() => {
-    setFilteredCount(totalCount)
-  }, [setFilteredCount, totalCount])
+    setCurrentPage(1)
+  }, [filters])
 
-  const handleCursorChange = useCallback(
-    (cursor: string | null) => {
-      const params = new URLSearchParams(searchParams?.toString() ?? '')
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentCompanies = filteredCompanies.slice(startIndex, endIndex)
 
-      if (cursor && cursor.length > 0) {
-        params.set('cursor', cursor)
-      } else {
-        params.delete('cursor')
-      }
-
-      const query = params.toString()
-      const target = query ? `${pathname}?${query}` : pathname
-
-      router.replace(target, { scroll: false })
-    },
-    [pathname, router, searchParams],
-  )
-
-  const summary = createSummary(totalCount, companies.length)
-  const showPagination = pageInfo.hasNext || pageInfo.hasPrev
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll to top of list when page changes
+    const listElement = document.querySelector('.companies-directory')
+    if (listElement) {
+      listElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
-        <h2 className="text-2xl font-bold text-gray-900">Companies Directory</h2>
-        <span className="text-sm font-medium text-gray-600">{summary}</span>
+      {/* List Header */}
+      <div className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-900 font-sans">Companies Directory</h2>
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-gray-600">
+            Showing{" "}
+            <span className="font-semibold text-gray-900">
+              {startIndex + 1}-{Math.min(endIndex, filteredCompanies.length)}
+            </span>{" "}
+            of <span className="font-semibold text-gray-900">{filteredCompanies.length}</span> companies
+          </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {companies.length === 0 ? (
+      {/* Companies Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {currentCompanies.length === 0 ? (
           <div className="col-span-full">
-            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-white py-12 text-center">
-              <Building2 className="mb-4 h-12 w-12 text-gray-400" />
-              <h3 className="mb-2 text-lg font-semibold text-gray-600">No companies found</h3>
-              <p className="max-w-md text-sm text-gray-500">
-                Adjust your filters or clear them to explore additional manufacturing partners.
+            <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-200">
+              <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">No companies found</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Try adjusting your filters to see more results. We have {allCompanies.length} companies in our
+                directory.
               </p>
             </div>
           </div>
         ) : (
-          companies.map(company => (
+          currentCompanies.map((company) => (
             <Link
               key={company.id}
               href={`/companies/${company.slug}`}
-              prefetch
-              className="group block overflow-hidden rounded-xl border border-gray-200/50 bg-white shadow-sm transition hover:border-blue-200/50 hover:shadow-lg"
+              prefetch={true}
+              className="group block bg-white rounded-xl shadow-sm border border-gray-200/50 hover:shadow-lg hover:border-blue-200/50 transition-all duration-200 overflow-hidden"
             >
               <div className="p-6">
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="flex min-w-0 flex-1 items-start gap-3">
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 transition group-hover:scale-105">
-                      <Building2 className="h-6 w-6 text-white" />
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+                      <Building2 className="w-6 h-6 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="mb-1 truncate text-lg font-bold text-gray-900 transition-colors group-hover:text-blue-600">
+                      <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1 group-hover:text-blue-600 transition-colors duration-200 truncate">
                         {company.company_name}
                       </h3>
                       {company.dba_name && (
-                        <p className="truncate text-sm text-gray-500">DBA: {company.dba_name}</p>
+                        <p className="text-sm text-gray-500 mb-1 truncate">DBA: {company.dba_name}</p>
                       )}
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                          <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
                           Active
                         </span>
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 flex-shrink-0 text-gray-400 transition group-hover:translate-x-1 group-hover:text-blue-600" />
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all duration-200 flex-shrink-0" />
                 </div>
 
+                {/* Description */}
                 {company.description && (
-                  <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-gray-600">{company.description}</p>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">
+                    {company.description.length > 120
+                      ? `${company.description.substring(0, 120)}...`
+                      : company.description}
+                  </p>
                 )}
 
-                <div className="mb-4 grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-100">
-                      <MapPin className="h-3 w-3 text-blue-600" />
+                {/* Key Stats */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                    <div className="w-6 h-6 bg-blue-100 rounded-md flex items-center justify-center">
+                      <MapPin className="w-3 h-3 text-blue-600" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-500">Location</p>
-                      <p className="truncate text-sm font-semibold text-gray-900">
-                        {company.facilities?.[0]?.city && company.facilities?.[0]?.state
+                      <p className="text-xs text-gray-500 font-medium">Location</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {company.facilities?.[0]
                           ? `${company.facilities[0].city}, ${company.facilities[0].state}`
-                          : 'Multiple'}
+                          : "Multiple"}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-purple-100">
-                      <Users className="h-3 w-3 text-purple-600" />
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                    <div className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
+                      <Users className="w-3 h-3 text-purple-600" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-500">Employees</p>
-                      <p className="truncate text-sm font-semibold text-gray-900">
-                        {company.employee_count_range ?? 'N/A'}
+                      <p className="text-xs text-gray-500 font-medium">Employees</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {company.employee_count_range || "N/A"}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {company.capabilities?.[0] && (
+                {/* Capabilities */}
+                {company.capabilities && company.capabilities.length > 0 && company.capabilities[0] && (
                   <div className="mb-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Key Capabilities</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                      Key Capabilities
+                    </p>
                     <div className="flex flex-wrap gap-1">
                       {company.capabilities[0].pcb_assembly_smt && (
-                        <span className="rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">SMT</span>
+                        <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                          SMT
+                        </span>
                       )}
                       {company.capabilities[0].pcb_assembly_through_hole && (
-                        <span className="rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">Through-Hole</span>
+                        <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                          Through-Hole
+                        </span>
                       )}
                       {company.capabilities[0].box_build_assembly && (
-                        <span className="rounded-md bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-800">Box Build</span>
+                        <span className="inline-flex items-center px-2 py-1 bg-indigo-100 text-indigo-800 rounded-md text-xs font-medium">
+                          Box Build
+                        </span>
                       )}
                       {company.capabilities[0].prototyping && (
-                        <span className="rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-800">Prototyping</span>
+                        <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 rounded-md text-xs font-medium">
+                          Prototyping
+                        </span>
                       )}
                       {company.capabilities[0].cable_harness_assembly && (
-                        <span className="rounded-md bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-800">Cable Harness</span>
+                        <span className="inline-flex items-center px-2 py-1 bg-indigo-100 text-indigo-800 rounded-md text-xs font-medium">
+                          Cable Harness
+                        </span>
                       )}
                     </div>
                   </div>
                 )}
 
+                {/* Industries */}
                 {company.industries && company.industries.length > 0 && (
                   <div className="mb-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Industries</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Industries</p>
                     <div className="flex flex-wrap gap-1">
-                      {company.industries.slice(0, 3).map(industry => (
+                      {company.industries.slice(0, 3).map((industry, index) => (
                         <span
-                          key={`${company.id}-industry-${industry.id ?? industry.industry_name}`}
-                          className="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700"
+                          key={index}
+                          className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium"
                         >
                           {industry.industry_name}
                         </span>
                       ))}
                       {company.industries.length > 3 && (
-                        <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
+                        <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
                           +{company.industries.length - 3} more
                         </span>
                       )}
@@ -184,23 +198,24 @@ export default function CompanyList({ companies, totalCount, pageInfo }: Company
                   </div>
                 )}
 
+                {/* Certifications */}
                 {company.certifications && company.certifications.length > 0 && (
                   <div>
-                    <p className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      <Award className="h-3 w-3" />
+                    <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide flex items-center gap-1">
+                      <Award className="w-3 h-3" />
                       Certifications
                     </p>
                     <div className="flex flex-wrap gap-1">
-                      {company.certifications.slice(0, 4).map(certification => (
+                      {company.certifications.slice(0, 4).map((cert, index) => (
                         <span
-                          key={`${company.id}-cert-${certification.id ?? certification.certification_type}`}
-                          className="rounded-md bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800"
+                          key={index}
+                          className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs font-medium"
                         >
-                          {certification.certification_type}
+                          {cert.certification_type}
                         </span>
                       ))}
                       {company.certifications.length > 4 && (
-                        <span className="rounded-md bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">
+                        <span className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs font-medium">
                           +{company.certifications.length - 4} more
                         </span>
                       )}
@@ -213,16 +228,12 @@ export default function CompanyList({ companies, totalCount, pageInfo }: Company
         )}
       </div>
 
-      {showPagination && (
-        <Pagination
-          hasNext={pageInfo.hasNext}
-          hasPrev={pageInfo.hasPrev}
-          nextCursor={pageInfo.nextCursor}
-          prevCursor={pageInfo.prevCursor}
-          onCursorChange={handleCursorChange}
-        />
+      {/* Pagination */}
+      {filteredCompanies.length > itemsPerPage && (
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
       )}
 
+      {/* Bottom spacing for mobile filter button */}
       <div className="h-20 lg:h-0" />
     </div>
   )

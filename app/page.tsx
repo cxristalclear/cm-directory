@@ -1,25 +1,15 @@
-import { Suspense } from "react"
-import Script from "next/script"
-
-import ActiveFiltersBar from "@/components/ActiveFiltersBar"
-import CompanyList from "@/components/CompanyList"
-import FilterDebugger from "@/components/FilterDebugger"
-import FilterSidebar from "@/components/FilterSidebar"
-import Header from "@/components/Header"
-import LazyCompanyMap from "@/components/LazyCompanyMap"
-import { FilterProvider } from "@/contexts/FilterContext"
-import { fetchCompaniesStub } from "@/lib/companies/stubData"
-import {
-  parseFiltersFromSearchParams,
-  resolveURLSearchParams,
-  type SearchParamsInput,
-} from "@/lib/filters/url"
-import type { ProductionVolume } from "@/types/company"
-import { getStateName } from "@/utils/stateMapping"
+import { Suspense } from "react";
+import LazyCompanyMap from '@/components/LazyCompanyMap'
+import CompanyList from "../components/CompanyList";
+import FilterSidebar from "@/components/FilterSidebar";
+import FilterDebugger from '@/components/FilterDebugger'
+import Header from "@/components/Header";
+import { FilterProvider } from "../contexts/FilterContext";
+import { supabase } from "../lib/supabase";
+import Script from "next/script";
 
 export const metadata = {
-  title:
-    "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
+  title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
   description:
     "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities (SMT, Through-Hole, Box Build), certifications (ISO 13485, AS9100), industries, and state.",
   alternates: { canonical: "https://www.example.com/" },
@@ -37,128 +27,60 @@ export const metadata = {
     description:
       "Filter verified manufacturers by capability, certification, and location.",
   },
-}
+};
 
-const SHOW_DEBUG = process.env.NEXT_PUBLIC_SHOW_DEBUG === "true"
+const SHOW_DEBUG = process.env.NEXT_PUBLIC_SHOW_DEBUG === "true";
 
-const CAPABILITY_LABELS: Record<string, string> = {
-  smt: "SMT",
-  through_hole: "Through-Hole",
-  cable_harness: "Cable Harness",
-  box_build: "Box Build",
-  prototyping: "Prototyping",
-}
-
-const VOLUME_LABELS: Record<ProductionVolume, string> = {
-  low: "Low Volume",
-  medium: "Medium Volume",
-  high: "High Volume",
-}
-
-type FilterOption<T extends string> = {
-  value: T
-  label: string
-  count: number
-}
-
-const AdPlaceholder = ({
-  width,
-  height,
-  label,
-  className = "",
-}: {
-  width: string
-  height: string
-  label: string
-  className?: string
-}) => (
-  <div
-    className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`}
-    style={{ width, height }}
-  >
+const AdPlaceholder = ({ width, height, label, className = "" }: { width: string; height: string; label: string; className?: string }) => (
+  <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} style={{ width, height }}>
     <div className="text-center text-gray-500">
       <div className="text-sm font-medium">{label}</div>
       <div className="text-xs mt-1">{width} × {height}</div>
       <div className="text-xs text-gray-400 mt-1">Advertisement</div>
     </div>
   </div>
-)
+);
 
-function buildStateOptions(counts: Record<string, number>): FilterOption<string>[] {
-  return Object.entries(counts)
-    .map(([code, count]) => ({
-      value: code,
-      label: getStateName(code),
-      count,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label))
+async function getData() {
+  const { data: companies, error } = await supabase
+    .from("companies")
+    .select(`
+      *,
+      facilities(*),
+      capabilities(*),
+      certifications(*),
+      industries(*)
+    `)
+    .eq("is_active", true);
+  if (error) return [];
+  return companies || [];
 }
 
-function buildCapabilityOptions(
-  counts: Record<string, number>,
-): FilterOption<string>[] {
-  return Object.entries(counts)
-    .map(([key, count]) => ({
-      value: key,
-      label: CAPABILITY_LABELS[key] ?? key,
-      count,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label))
-}
-
-function buildVolumeOptions(
-  counts: Record<ProductionVolume, number>,
-): FilterOption<ProductionVolume>[] {
-  return (Object.keys(VOLUME_LABELS) as ProductionVolume[]).map(volume => ({
-    value: volume,
-    label: VOLUME_LABELS[volume],
-    count: counts[volume] ?? 0,
-  }))
-}
-
-export default async function Home({
-  searchParams,
-}: {
-  searchParams?: SearchParamsInput
-}) {
-  const params = await resolveURLSearchParams(searchParams)
-  const filters = parseFiltersFromSearchParams(params)
-  const cursor = params.get("cursor")
-
-  const { companies, totalCount, facetCounts, pageInfo } = await fetchCompaniesStub(filters, cursor)
-
-  const stateOptions = buildStateOptions(facetCounts.states)
-  const capabilityOptions = buildCapabilityOptions(facetCounts.capabilities)
-  const volumeOptions = buildVolumeOptions(facetCounts.productionVolume)
+export default async function Home() {
+  const companies = await getData();
 
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
-      <Script
-        id="website-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            name: "CM Directory",
-            url: "https://www.example.com/",
-            potentialAction: {
-              "@type": "SearchAction",
-              target: "https://www.example.com/?q={search_term_string}",
-              "query-input": "required name=search_term_string",
-            },
-          }),
-        }}
-      />
-      <FilterProvider initialFilters={filters} initialFilteredCount={totalCount}>
+      {/* Website JSON-LD */}
+      <Script id="website-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "CM Directory",
+          url: "https://www.example.com/",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://www.example.com/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        })
+      }} />
+      <FilterProvider>
         <div className="min-h-screen bg-gray-50">
-          <Header />
+          <Header companies={companies} />
 
           <main className="container mx-auto px-4 py-6">
-            <div className="mb-6">
-              <ActiveFiltersBar />
-            </div>
-
+            {/* Top Content Ad - Native/Sponsored */}
             <div className="mb-6 bg-white rounded-xl shadow-xl p-4">
               <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Featured Partner</div>
               <AdPlaceholder
@@ -169,29 +91,32 @@ export default async function Home({
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-              <div className="space-y-4 lg:col-span-3">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Filter Sidebar */}
+              <div className="lg:col-span-3 space-y-4">
                 <Suspense fallback={<div>Loading filters...</div>}>
-                  <FilterSidebar
-                    stateOptions={stateOptions}
-                    capabilityOptions={capabilityOptions}
-                    volumeOptions={volumeOptions}
-                  />
-                  {SHOW_DEBUG && <FilterDebugger companies={companies} totalCount={totalCount} />}
+                  <FilterSidebar allCompanies={companies} />
+                  {SHOW_DEBUG && (
+                  <FilterDebugger allCompanies={companies} />
+                  )}
                 </Suspense>
 
+                {/* Bottom Sidebar Ad */}
                 <AdPlaceholder width="100%" height="250px" label="Sidebar Skyscraper" />
               </div>
 
-              <div className="space-y-4 lg:col-span-9">
-                <LazyCompanyMap companies={companies} />
+              <div className="lg:col-span-9 space-y-4">
+                {/* Map - No extra Suspense needed, LazyCompanyMap handles it internally */}
+                <LazyCompanyMap allCompanies={companies} />
 
+                {/* List */}
                 <div className="companies-directory">
                   <Suspense fallback={<div>Loading companies...</div>}>
-                    <CompanyList companies={companies} totalCount={totalCount} pageInfo={pageInfo} />
+                    <CompanyList allCompanies={companies} />
                   </Suspense>
                 </div>
 
+                {/* Bottom Content Ad */}
                 <div className="bg-white rounded-xl shadow-xl p-4">
                   <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide text-center">Sponsored</div>
                   <AdPlaceholder
@@ -207,5 +132,5 @@ export default async function Home({
         </div>
       </FilterProvider>
     </Suspense>
-  )
+  );
 }
