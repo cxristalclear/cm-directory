@@ -1,211 +1,63 @@
-// components/FilterDebugger.tsx
-'use client'
+"use client"
 
-import { useFilters } from '../contexts/FilterContext'
-import type { Company } from '../types/company'
-import { useMemo } from 'react'
+import { useMemo } from "react"
+import { useFilters } from "@/contexts/FilterContext"
+import type { Company } from "@/types/company"
 
 interface FilterDebuggerProps {
   allCompanies: Company[]
 }
 
 export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
-  const { filters } = useFilters()
-  
-  // Calculate filtered companies (same logic as CompanyMap)
-  const filteredCompanies = useMemo(() => {
-    let filtered = [...allCompanies]
-    
-    // Apply search filter
-    if (filters.searchTerm) {
-      const searchLower = filters.searchTerm.toLowerCase()
-      filtered = filtered.filter(company =>
-        company.company_name?.toLowerCase().includes(searchLower) ||
-        company.description?.toLowerCase().includes(searchLower)
-      )
-    }
-    
-    // Apply country filter
-    if (filters.countries && filters.countries.length > 0) {
-      filtered = filtered.filter(company =>
-        company.facilities?.some(f => 
-          filters.countries.includes(f.country || 'US')
-        )
-      )
-    }
-    
-    // Apply state filter
-    if (filters.states.length > 0) {
-      filtered = filtered.filter(company =>
-        company.facilities?.some(f =>
-          typeof f.state === 'string' && filters.states.includes(f.state)
-        )
-      )
-    }
-    
-    // Apply capabilities filter
-    if (filters.capabilities.length > 0) {
-      filtered = filtered.filter(company => {
-        if (!company.capabilities?.[0]) return false
-        const cap = company.capabilities[0]
-        return filters.capabilities.some(filter => {
-          switch (filter) {
-            case 'smt': return cap.pcb_assembly_smt
-            case 'through_hole': return cap.pcb_assembly_through_hole
-            case 'cable_harness': return cap.cable_harness_assembly
-            case 'box_build': return cap.box_build_assembly
-            case 'prototyping': return cap.prototyping
-            default: return false
-          }
-        })
-      })
-    }
-    
-    // Apply volume capability filter
-    if (filters.volumeCapability.length > 0) {
-      filtered = filtered.filter(company => {
-        if (!company.capabilities?.[0]) return false
-        const cap = company.capabilities[0]
-        return filters.volumeCapability.some(vol => {
-          switch (vol) {
-            case 'low': return cap.low_volume_production
-            case 'medium': return cap.medium_volume_production
-            case 'high': return cap.high_volume_production
-            default: return false
-          }
-        })
-      })
-    }
-    
-    // Apply certifications filter
-    if (filters.certifications.length > 0) {
-      filtered = filtered.filter(company =>
-        company.certifications?.some(cert =>
-          filters.certifications.includes(
-            cert.certification_type.toLowerCase().replace(/\s+/g, '_')
-          )
-        )
-      )
-    }
-    
-    // Apply industries filter
-    if (filters.industries.length > 0) {
-      filtered = filtered.filter(company =>
-        company.industries?.some(ind =>
-          filters.industries.includes(
-            ind.industry_name.toLowerCase().replace(/\s+/g, '_')
-          )
-        )
-      )
-    }
-    
-    // Apply employee range filter
-    if (filters.employeeRange.length > 0) {
-      filtered = filtered.filter(company =>
-        typeof company.employee_count_range === 'string' &&
-        filters.employeeRange.includes(company.employee_count_range)
-      )
-    }
-    
-    return filtered
-  }, [allCompanies, filters])
-  
-  // Calculate map markers (locations)
-  type MapMarker = {
-    company: string;
-    facility: string;
-    lat: number;
-    lng: number;
-  }
+  const { filters, filteredCount } = useFilters()
 
-  const mapMarkers = useMemo(() => {
-    const markers: MapMarker[] = []
-    
-    filteredCompanies.forEach(company => {
-      company.facilities?.forEach(facility => {
-        if (facility.latitude && facility.longitude) {
-          markers.push({
-            company: company.company_name,
-            facility: `${facility.city}, ${facility.state}`,
-            lat: facility.latitude,
-            lng: facility.longitude
-          })
+  const companiesByState = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const company of allCompanies) {
+      for (const facility of company.facilities ?? []) {
+        if (facility?.state) {
+          counts.set(facility.state, (counts.get(facility.state) ?? 0) + 1)
         }
-      })
-    })
-    
-    return markers
-  }, [filteredCompanies])
-  
-  // Count unique locations vs companies
-  const uniqueCompanies = filteredCompanies.length
-  const totalFacilities = mapMarkers.length
-  
-  // Debug: Check for companies without valid facilities
-  const companiesWithoutValidFacilities = filteredCompanies.filter(company => {
-    const hasFacility = company.facilities?.some(f => f.latitude && f.longitude)
-    return !hasFacility
-  })
-  
-  // Debug: Check for companies with multiple facilities
-  const companiesWithMultipleFacilities = filteredCompanies.filter(company => {
-    const validFacilities = company.facilities?.filter(f => f.latitude && f.longitude) || []
-    return validFacilities.length > 1
-  })
-  
+      }
+    }
+    return counts
+  }, [allCompanies])
+
   return (
-    <div className="fixed bottom-20 right-4 z-50 bg-white p-4 rounded-lg shadow-xl border-2 border-blue-500 max-w-md">
-      <h3 className="font-bold text-sm mb-2 text-blue-700">Filter Debug Info</h3>
-      
+    <div className="fixed bottom-20 right-4 z-50 max-w-md rounded-lg border-2 border-blue-500 bg-white p-4 shadow-xl">
+      <h3 className="mb-2 text-sm font-bold text-blue-700">Filter Debug Info</h3>
+
       <div className="space-y-2 text-xs">
         <div className="flex justify-between">
-          <span className="font-semibold">Companies (filtered):</span>
-          <span className="font-mono bg-gray-100 px-2 py-1 rounded">{uniqueCompanies}</span>
+          <span className="font-semibold">Filtered companies:</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{filteredCount}</span>
         </div>
-        
         <div className="flex justify-between">
-          <span className="font-semibold">Map Markers (facilities):</span>
-          <span className="font-mono bg-gray-100 px-2 py-1 rounded">{totalFacilities}</span>
+          <span className="font-semibold">Active states:</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">
+            {filters.states.length > 0 ? filters.states.join(", ") : "(none)"}
+          </span>
         </div>
-        
-        {companiesWithMultipleFacilities.length > 0 && (
-          <div className="border-t pt-2 mt-2">
-            <div className="text-orange-600 font-semibold">
-              Companies with Multiple Locations: {companiesWithMultipleFacilities.length}
-            </div>
-            <div className="max-h-20 overflow-y-auto text-xs text-gray-600 mt-1">
-              {companiesWithMultipleFacilities.slice(0, 5).map(c => (
-                <div key={c.id}>
-                  • {c.company_name} ({c.facilities?.filter(f => f.latitude && f.longitude).length} locations)
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {companiesWithoutValidFacilities.length > 0 && (
-          <div className="border-t pt-2 mt-2">
-            <div className="text-red-600 font-semibold">
-              Companies Missing Coordinates: {companiesWithoutValidFacilities.length}
-            </div>
-            <div className="max-h-20 overflow-y-auto text-xs text-gray-600 mt-1">
-              {companiesWithoutValidFacilities.slice(0, 5).map(c => (
-                <div key={c.id}>• {c.company_name}</div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        <div className="border-t pt-2 mt-2 text-xs">
-          <div className="font-semibold mb-1">Active Filters:</div>
-          {filters.searchTerm && <div>• Search: &quot;{filters.searchTerm}&quot;</div>}
-          {filters.countries?.length > 0 && <div>• Countries: {filters.countries.join(', ')}</div>}
-          {filters.states.length > 0 && <div>• States: {filters.states.join(', ')}</div>}
-          {filters.capabilities.length > 0 && <div>• Capabilities: {filters.capabilities.join(', ')}</div>}
-          {filters.certifications.length > 0 && <div>• Certs: {filters.certifications.length}</div>}
-          {filters.industries.length > 0 && <div>• Industries: {filters.industries.length}</div>}
-          {filters.employeeRange.length > 0 && <div>• Size: {filters.employeeRange.join(', ')}</div>}
-          {filters.volumeCapability.length > 0 && <div>• Volume: {filters.volumeCapability.join(', ')}</div>}
+        <div className="flex justify-between">
+          <span className="font-semibold">Active capabilities:</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">
+            {filters.capabilities.length > 0 ? filters.capabilities.join(", ") : "(none)"}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-semibold">Production volume:</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{filters.productionVolume ?? "(none)"}</span>
+        </div>
+
+        <div className="border-t pt-2">
+          <div className="mb-1 font-semibold text-blue-700">Known companies by state</div>
+          <ul className="grid grid-cols-2 gap-1 text-gray-700">
+            {Array.from(companiesByState.entries()).map(([state, count]) => (
+              <li key={state}>
+                {state}: {count}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </div>
