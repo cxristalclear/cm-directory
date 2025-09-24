@@ -1,11 +1,12 @@
 // app/contract-manufacturers/[cert]/page.tsx
-import type { Metadata } from "next";
-import { supabase } from "@/lib/supabase";
-import Link from "next/link";
-import { FilterProvider } from "@/contexts/FilterContext";
-import CompanyList from "@/components/CompanyList";
-import Script from "next/script";
-import type { Company } from "@/types/company";
+import type { Metadata } from "next"
+import Link from "next/link"
+import Script from "next/script"
+import CompanyList from "@/components/CompanyList"
+import { FilterProvider } from "@/contexts/FilterContext"
+import { parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { supabase } from "@/lib/supabase"
+import type { Company } from "@/types/company"
 
 async function getCompanies(): Promise<Company[]> {
   const { data, error } = await supabase
@@ -27,11 +28,16 @@ function normalizeCertParam(param: string) {
   return param.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-export async function generateMetadata({ params }: { params: { cert: string } }): Promise<Metadata> {
-  const certNice = normalizeCertParam(params.cert);
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ cert: string }>
+}): Promise<Metadata> {
+  const { cert } = await params
+  const certNice = normalizeCertParam(cert)
   const title = `${certNice} Contract Manufacturers | CM Directory`;
   const description = `Browse verified electronics manufacturers with ${certNice}. Compare capabilities (SMT, Through-Hole, Box Build) and locations.`;
-  const canonical = `https://www.example.com/contract-manufacturers/${params.cert}`;
+  const canonical = `https://www.example.com/contract-manufacturers/${cert}`;
   return {
     title,
     description,
@@ -41,9 +47,17 @@ export async function generateMetadata({ params }: { params: { cert: string } })
   };
 }
 
-export default async function CertManufacturers({ params }: { params: { cert: string } }) {
+export default async function CertManufacturers({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ cert: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const [{ cert }, sp] = await Promise.all([params, searchParams])
+  const initialFilters = parseFiltersFromSearchParams(sp)
   const companies = await getCompanies();
-  const certNice = normalizeCertParam(params.cert);
+  const certNice = normalizeCertParam(cert);
   const certLower = certNice.toLowerCase();
 
   const byCert = companies.filter((company) =>
@@ -58,7 +72,7 @@ export default async function CertManufacturers({ params }: { params: { cert: st
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: `${certNice} Contract Manufacturers`,
-    url: `https://www.example.com/contract-manufacturers/${params.cert}`,
+    url: `https://www.example.com/contract-manufacturers/${cert}`,
   };
 
   return (
@@ -79,7 +93,7 @@ export default async function CertManufacturers({ params }: { params: { cert: st
         <h1 className="text-3xl font-bold mb-1">{certNice} Contract Manufacturers</h1>
         <p className="text-gray-600 mb-4">Medical, aerospace, and regulated industries often require {certNice}. Compare verified partners and contact directly.</p>
 
-        <FilterProvider>
+        <FilterProvider initialFilters={initialFilters}>
           <div className="companies-directory">
             <CompanyList allCompanies={byCert} />
           </div>

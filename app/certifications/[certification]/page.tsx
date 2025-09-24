@@ -1,10 +1,12 @@
-import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import type { Company } from "@/types/company"
 import CompanyList from "@/components/CompanyList"
-import { Award } from "lucide-react"
+import FilterSidebar from "@/components/FilterSidebar"
+import { FilterProvider } from "@/contexts/FilterContext"
+import { parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { supabase } from "@/lib/supabase"
+import type { Company } from "@/types/company"
 
 const CERTIFICATION_DATA: Record<string, {
   name: string
@@ -87,10 +89,13 @@ export async function generateMetadata({
 
 export default async function CertificationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ certification: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const { certification } = await params
+  const [{ certification }, sp] = await Promise.all([params, searchParams])
+  const initialFilters = parseFiltersFromSearchParams(sp)
   const certData = CERTIFICATION_DATA[certification]
   
   if (!certData) {
@@ -114,7 +119,8 @@ export default async function CertificationPage({
   const typedCompanies = companies as Company[] | null
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <FilterProvider initialFilters={initialFilters}>
+      <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
         <div className="container mx-auto px-4 py-12">
@@ -127,8 +133,8 @@ export default async function CertificationPage({
           </nav>
           
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <Award className="w-8 h-8" />
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-2xl font-semibold">
+              {certData.name.split(" ")[0]}
             </div>
             <div>
               <h1 className="text-4xl font-bold mb-3">{certData.title}</h1>
@@ -171,8 +177,16 @@ export default async function CertificationPage({
         <h2 className="text-2xl font-bold mb-6">
           {certData.name} Certified Manufacturers
         </h2>
-        <CompanyList allCompanies={typedCompanies || []} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-4">
+            <FilterSidebar allCompanies={typedCompanies || []} />
+          </div>
+          <div className="lg:col-span-8">
+            <CompanyList allCompanies={typedCompanies || []} />
+          </div>
+        </div>
       </div>
     </div>
+    </FilterProvider>
   )
 }
