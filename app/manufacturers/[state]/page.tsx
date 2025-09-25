@@ -6,6 +6,7 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { companySearch } from "@/lib/queries/companySearch"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
@@ -123,27 +124,16 @@ export default async function StateManufacturersPage({
     notFound()
   }
   
-  // Fetch all companies in this state
-  const { data } = await supabase
-    .from('companies')
-    .select(`
-      *,
-      facilities!inner (
-        state,
-        city
-      ),
-      capabilities (*),
-      certifications (certification_type),
-      industries (industry_name)
-    `)
-    .eq('facilities.state', stateData.abbreviation)
-    .eq('is_active', true)
+  const searchResult = await companySearch({
+    filters: initialFilters,
+    routeDefaults: { state: stateData.abbreviation },
+  })
 
-    const companies: Company[] = (data ?? []) as Company[]
+  const companies: Company[] = searchResult.companies
   
   // Get aggregated stats
   const stats = {
-    totalCompanies: companies.length,
+    totalCompanies: searchResult.totalCount,
     certifications: [
       ...new Set(
         companies.flatMap((company) =>
@@ -327,10 +317,10 @@ export default async function StateManufacturersPage({
           
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-4">
-              <FilterSidebar allCompanies={companies || []} />
+              <FilterSidebar allCompanies={companies || []} facetCounts={searchResult.facetCounts ?? undefined} />
             </div>
             <div className="lg:col-span-8">
-              <CompanyList allCompanies={companies || []} />
+              <CompanyList companies={companies || []} totalCount={searchResult.totalCount} />
             </div>
           </div>
 

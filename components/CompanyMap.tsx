@@ -33,7 +33,7 @@ type FacilityFeatureProperties = {
 export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
-  const { filters, setFilteredCount } = useFilters()
+  const { filters } = useFilters()
   const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/light-v11")
   const [isLoading, setIsLoading] = useState(true)
   const [isStyleLoaded, setIsStyleLoaded] = useState(false)
@@ -66,10 +66,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
     return { facilities, filteredCount: filteredCompanies.length }
   }, [debouncedFilters, allCompanies])
-
-  useEffect(() => {
-    setFilteredCount(filteredFacilities.filteredCount)
-  }, [filteredFacilities.filteredCount, setFilteredCount])
 
   // Store current facilities for use in callbacks
   useEffect(() => {

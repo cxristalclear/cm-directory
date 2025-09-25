@@ -5,23 +5,7 @@ import Script from "next/script"
 import CompanyList from "@/components/CompanyList"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { supabase } from "@/lib/supabase"
-import type { Company } from "@/types/company"
-
-async function getCompanies(): Promise<Company[]> {
-  const { data, error } = await supabase
-    .from("companies")
-    .select(`
-      *,
-      facilities(*),
-      capabilities(*),
-      certifications(*),
-      industries(*)
-    `)
-    .eq("is_active", true);
-  if (error || !data) return [];
-  return data as Company[];
-}
+import { companySearch } from "@/lib/queries/companySearch"
 
 function normalizeCertParam(param: string) {
   // map dashed route to human-readable (e.g., iso-13485 -> ISO 13485)
@@ -56,17 +40,12 @@ export default async function CertManufacturers({
 }) {
   const [{ cert }, sp] = await Promise.all([params, searchParams])
   const initialFilters = parseFiltersFromSearchParams(sp)
-  const companies = await getCompanies();
+  const searchResult = await companySearch({
+    filters: initialFilters,
+    routeDefaults: { certSlug: cert },
+  })
+  const companies = searchResult.companies
   const certNice = normalizeCertParam(cert);
-  const certLower = certNice.toLowerCase();
-
-  const byCert = companies.filter((company) =>
-    (company.certifications ?? []).some(
-      (certification) =>
-        typeof certification?.certification_type === "string" &&
-        certification.certification_type.toLowerCase() === certLower,
-    ),
-  );
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -95,7 +74,7 @@ export default async function CertManufacturers({
 
         <FilterProvider initialFilters={initialFilters}>
           <div className="companies-directory">
-            <CompanyList allCompanies={byCert} />
+            <CompanyList companies={companies} totalCount={searchResult.totalCount} />
           </div>
         </FilterProvider>
       </main>

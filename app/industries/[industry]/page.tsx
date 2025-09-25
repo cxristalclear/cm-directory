@@ -178,7 +178,7 @@ export default async function IndustryPage({
             <FilterSidebar allCompanies={typedCompanies || []} />
           </div>
           <div className="lg:col-span-8">
-            <CompanyList allCompanies={typedCompanies || []} />
+            <CompanyList companies={typedCompanies || []} totalCount={typedCompanies?.length ?? 0} />
           </div>
         </div>
       </div>

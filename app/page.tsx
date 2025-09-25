@@ -8,7 +8,7 @@ import FilterDebugger from "@/components/FilterDebugger"
 import Header from "@/components/Header"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { supabase } from "@/lib/supabase"
+import { companySearch } from "@/lib/queries/companySearch"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -43,21 +43,6 @@ const AdPlaceholder = ({ width, height, label, className = "" }: { width: string
   </div>
 );
 
-async function getData() {
-  const { data: companies, error } = await supabase
-    .from("companies")
-    .select(`
-      *,
-      facilities(*),
-      capabilities(*),
-      certifications(*),
-      industries(*)
-    `)
-    .eq("is_active", true);
-  if (error) return [];
-  return companies || [];
-}
-
 export default async function Home({
   searchParams,
 }: {
@@ -65,7 +50,8 @@ export default async function Home({
 }) {
   const sp = await searchParams
   const initialFilters = parseFiltersFromSearchParams(sp)
-  const companies = await getData()
+  const searchResult = await companySearch({ filters: initialFilters })
+  const companies = searchResult.companies
 
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
@@ -85,7 +71,7 @@ export default async function Home({
       }} />
       <FilterProvider initialFilters={initialFilters}>
         <div className="min-h-screen bg-gray-50">
-          <Header companies={companies} />
+          <Header totalCompanies={searchResult.totalCount} />
 
           <main className="container mx-auto px-4 py-6">
             <div className="mb-6">
@@ -107,7 +93,7 @@ export default async function Home({
               {/* Filter Sidebar */}
               <div className="lg:col-span-3 space-y-4">
                 <Suspense fallback={<div>Loading filters...</div>}>
-                  <FilterSidebar allCompanies={companies} />
+                  <FilterSidebar allCompanies={companies} facetCounts={searchResult.facetCounts ?? undefined} />
                   {SHOW_DEBUG && <FilterDebugger allCompanies={companies} />}
                 </Suspense>
 
@@ -122,7 +108,7 @@ export default async function Home({
                 {/* List */}
                 <div className="companies-directory">
                   <Suspense fallback={<div>Loading companies...</div>}>
-                    <CompanyList allCompanies={companies} />
+                    <CompanyList companies={companies} totalCount={searchResult.totalCount} />
                   </Suspense>
                 </div>
 
