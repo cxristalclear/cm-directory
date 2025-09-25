@@ -16,6 +16,8 @@ import type {
 const CAPABILITY_SLUGS: CapabilitySlug[] = [
   "smt",
   "through_hole",
+  "mixed",
+  "fine_pitch",
   "cable_harness",
   "box_build",
   "prototyping",
@@ -51,6 +53,7 @@ function sanitizeCapability(capability: Capabilities | null | undefined): Listin
     id: capability.id,
     pcb_assembly_smt: Boolean(capability.pcb_assembly_smt),
     pcb_assembly_through_hole: Boolean(capability.pcb_assembly_through_hole),
+    pcb_assembly_mixed: Boolean(capability.pcb_assembly_mixed),
     pcb_assembly_fine_pitch: Boolean(capability.pcb_assembly_fine_pitch),
     cable_harness_assembly: Boolean(capability.cable_harness_assembly),
     box_build_assembly: Boolean(capability.box_build_assembly),
@@ -138,6 +141,12 @@ export function computeFacetCountsFromCompanies(companies: ListingCompany[]): Co
       }
       if (capability.pcb_assembly_through_hole) {
         capabilityCounts.set("through_hole", (capabilityCounts.get("through_hole") ?? 0) + 1)
+      }
+      if (capability.pcb_assembly_mixed) {
+        capabilityCounts.set("mixed", (capabilityCounts.get("mixed") ?? 0) + 1)
+      }
+      if (capability.pcb_assembly_fine_pitch) {
+        capabilityCounts.set("fine_pitch", (capabilityCounts.get("fine_pitch") ?? 0) + 1)
       }
       if (capability.cable_harness_assembly) {
         capabilityCounts.set("cable_harness", (capabilityCounts.get("cable_harness") ?? 0) + 1)

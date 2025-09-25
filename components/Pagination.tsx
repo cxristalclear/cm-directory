@@ -4,11 +4,17 @@ import { useCallback } from "react"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-import type { CompanySearchPageInfo } from "@/lib/queries/companySearch"
+export type PaginationCursor = {
+  hasNext: boolean
+  hasPrev: boolean
+  nextCursor: string | null
+  prevCursor: string | null
+}
+
 import { buildCursorUrl } from "./paginationUtils"
 
 interface PaginationProps {
-  pageInfo: CompanySearchPageInfo
+  pageInfo: PaginationCursor
 }
 
 export default function Pagination({ pageInfo }: PaginationProps) {

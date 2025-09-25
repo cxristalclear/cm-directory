@@ -1,10 +1,9 @@
-import type { ReactNode } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { beforeEach, describe, expect, it } from "@jest/globals"
 
 const mockCompanyList = jest.fn((props: unknown) => null)
 const mockFilterSidebar = jest.fn((props: unknown) => null)
-const mockFilterProvider = jest.fn(({ children }: { children: ReactNode }) => children)
+const mockLazyCompanyMap = jest.fn((props: unknown) => null)
+const mockHeader = jest.fn((props: unknown) => null)
 
 jest.mock("@/components/CompanyList", () => ({
   __esModule: true,
@@ -16,8 +15,14 @@ jest.mock("@/components/FilterSidebar", () => ({
   default: mockFilterSidebar,
 }))
 
-jest.mock("@/contexts/FilterContext", () => ({
-  FilterProvider: (props: { children: ReactNode }) => mockFilterProvider(props),
+jest.mock("@/components/LazyCompanyMap", () => ({
+  __esModule: true,
+  default: mockLazyCompanyMap,
+}))
+
+jest.mock("@/components/Header", () => ({
+  __esModule: true,
+  default: mockHeader,
 }))
 
 jest.mock("@/lib/queries/companySearch", () => {
@@ -32,60 +37,56 @@ const { companySearch } = jest.requireMock("@/lib/queries/companySearch") as {
   companySearch: jest.Mock
 }
 
-const mockResult = {
-  companies: [
+const baseCompanies = Array.from({ length: 3 }).map((_, index) => ({
+  id: `company-${index}`,
+  company_name: `Company ${index}`,
+  slug: `company-${index}`,
+  facilities: [
     {
-      id: "company-1",
-      company_name: "Golden State Manufacturing",
-      slug: "golden-state",
-      facilities: [
-        {
-          id: "facility-1",
-          company_id: "company-1",
-          city: "San Jose",
-          state: "CA",
-          latitude: 37.3382,
-          longitude: -121.8863,
-          is_primary: true,
-        },
-      ],
-      capabilities: [
-        {
-          id: "cap-1",
-          company_id: "company-1",
-          pcb_assembly_smt: true,
-          box_build_assembly: true,
-          cable_harness_assembly: false,
-          prototyping: true,
-          pcb_assembly_through_hole: false,
-          pcb_assembly_mixed: false,
-          pcb_assembly_fine_pitch: false,
-          low_volume_production: true,
-          medium_volume_production: false,
-          high_volume_production: false,
-        },
-      ],
-      certifications: [],
+      id: `facility-${index}`,
+      company_id: `company-${index}`,
+      city: "Austin",
+      state: "TX",
+      latitude: 30.2672,
+      longitude: -97.7431,
+      is_primary: true,
     },
   ],
-  totalCount: 12,
-  pageInfo: {
-    hasNext: false,
-    hasPrev: false,
-    nextCursor: null,
-    prevCursor: null,
-  },
+  capabilities: [
+    {
+      id: `cap-${index}`,
+      company_id: `company-${index}`,
+      pcb_assembly_smt: true,
+      pcb_assembly_mixed: true,
+      low_volume_production: true,
+      medium_volume_production: false,
+      high_volume_production: false,
+      box_build_assembly: false,
+      cable_harness_assembly: false,
+      pcb_assembly_through_hole: false,
+      pcb_assembly_fine_pitch: false,
+      prototyping: false,
+    },
+  ],
+  certifications: [],
+}))
+
+const mockResult = {
+  companies: baseCompanies,
+  totalCount: 18,
+  hasNext: false,
+  hasPrev: false,
+  nextCursor: null,
+  prevCursor: null,
   facetCounts: {
-    states: [{ code: "CA", count: 12 }],
+    states: [{ code: "TX", count: 18 }],
     capabilities: [
-      { slug: "smt", count: 12 },
-      { slug: "box_build", count: 6 },
-      { slug: "cable_harness", count: 0 },
-      { slug: "through_hole", count: 0 },
-      { slug: "prototyping", count: 12 },
+      { slug: "smt", count: 18 },
+      { slug: "mixed", count: 18 },
+      { slug: "box_build", count: 9 },
     ],
     productionVolume: [
-      { level: "low", count: 12 },
+      { level: "low", count: 18 },
       { level: "medium", count: 0 },
       { level: "high", count: 0 },
     ],
@@ -98,45 +99,51 @@ beforeEach(() => {
 })
 
 describe("state landing page SSR", () => {
-  it("[state-landing] seeds the default state filter from the route", async () => {
+  it("hydrates filters and forwards data to components", async () => {
     const { default: StatePage } = await import("@/app/manufacturers/[state]/page")
 
     const element = await StatePage({
-      params: Promise.resolve({ state: "california" }),
-      searchParams: Promise.resolve({}),
+      params: Promise.resolve({ state: "texas" }),
+      searchParams: Promise.resolve({ capability: "smt" }),
     })
 
     renderToStaticMarkup(element)
 
     expect(companySearch).toHaveBeenCalledWith(
       expect.objectContaining({
-        filters: expect.objectContaining({ states: ["CA"] }),
-        routeDefaults: expect.objectContaining({ state: "CA" }),
+        filters: {
+          states: ["TX"],
+          capabilities: ["smt"],
+          productionVolume: null,
+        },
+        routeDefaults: { state: "TX" },
       }),
     )
 
-    expect(mockFilterProvider).toHaveBeenCalledWith(
-      expect.objectContaining({
-        initialFilters: expect.objectContaining({ states: ["CA"] }),
-      }),
-    )
-  })
-
-  it("[state-landing] allows URL state filter overrides", async () => {
-    const { default: StatePage } = await import("@/app/manufacturers/[state]/page")
-
-    const element = await StatePage({
-      params: Promise.resolve({ state: "california" }),
-      searchParams: Promise.resolve({ state: "TX" }),
+    const headerProps = mockHeader.mock.calls.at(-1)?.[0] as Record<string, unknown>
+    expect(headerProps).toMatchObject({
+      totalCount: mockResult.totalCount,
+      visibleCount: mockResult.companies.length,
+      clearHref: "/manufacturers/texas",
     })
 
-    renderToStaticMarkup(element)
+    const sidebarProps = mockFilterSidebar.mock.calls.at(-1)?.[0] as Record<string, unknown>
+    expect(sidebarProps).toMatchObject({
+      basePath: "/manufacturers/texas",
+      filters: { states: ["TX"], capabilities: ["smt"], productionVolume: null },
+      facetCounts: mockResult.facetCounts,
+    })
 
-    expect(companySearch).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        filters: expect.objectContaining({ states: ["TX"] }),
-        routeDefaults: expect.objectContaining({ state: "CA" }),
-      }),
-    )
+    const listProps = mockCompanyList.mock.calls.at(-1)?.[0] as Record<string, unknown>
+    expect(listProps).toMatchObject({
+      totalCount: mockResult.totalCount,
+      hasNext: false,
+    })
+    expect(Array.isArray(listProps.companies)).toBe(true)
+    expect((listProps.companies as unknown[]).length).toBe(mockResult.companies.length)
+
+    const mapProps = mockLazyCompanyMap.mock.calls.at(-1)?.[0] as Record<string, unknown>
+    expect(Array.isArray(mapProps?.companies)).toBe(true)
+    expect((mapProps?.companies as unknown[]).length).toBe(mockResult.companies.length)
   })
 })

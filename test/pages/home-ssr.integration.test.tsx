@@ -1,14 +1,11 @@
-import type { ReactNode } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it, beforeEach } from "@jest/globals"
+
 import { serializeCursor } from "@/lib/queries/companySearch"
 
 const mockCompanyList = jest.fn((props: unknown) => null)
 const mockFilterSidebar = jest.fn((props: unknown) => null)
 const mockLazyCompanyMap = jest.fn((props: unknown) => null)
 const mockHeader = jest.fn((props: unknown) => null)
-const mockActiveFiltersBar = jest.fn(() => null)
-const mockFilterProvider = jest.fn(({ children }: { children: ReactNode }) => children)
 
 jest.mock("@/components/CompanyList", () => ({
   __esModule: true,
@@ -28,15 +25,6 @@ jest.mock("@/components/LazyCompanyMap", () => ({
 jest.mock("@/components/Header", () => ({
   __esModule: true,
   default: mockHeader,
-}))
-
-jest.mock("@/components/ActiveFiltersBar", () => ({
-  __esModule: true,
-  default: () => mockActiveFiltersBar(),
-}))
-
-jest.mock("@/contexts/FilterContext", () => ({
-  FilterProvider: (props: { children: ReactNode }) => mockFilterProvider(props),
 }))
 
 jest.mock("@/lib/queries/companySearch", () => {
@@ -88,12 +76,10 @@ const baseCompanies = Array.from({ length: 9 }).map((_, index) => ({
 const mockResult = {
   companies: baseCompanies,
   totalCount: 42,
-  pageInfo: {
-    hasNext: true,
-    hasPrev: false,
-    nextCursor: serializeCursor({ name: "Company 8", id: "company-8" }),
-    prevCursor: null,
-  },
+  hasNext: true,
+  hasPrev: false,
+  nextCursor: "next",
+  prevCursor: null,
   facetCounts: {
     states: [{ code: "TX", count: 42 }],
     capabilities: [
@@ -117,7 +103,7 @@ beforeEach(() => {
 })
 
 describe("home page SSR", () => {
-  it("[home-ssr] loads filters from search params and passes server data to UI", async () => {
+  it("loads filters from search params and passes server data to UI", async () => {
     const { default: HomePage } = await import("@/app/page")
 
     const element = await HomePage({
@@ -137,33 +123,45 @@ describe("home page SSR", () => {
       }),
     )
 
+    const headerProps = mockHeader.mock.calls.at(-1)?.[0] as Record<string, unknown>
+    expect(headerProps).toMatchObject({
+      totalCount: mockResult.totalCount,
+      visibleCount: mockResult.companies.length,
+      activeFilterCount: 2,
+    })
+
     const companyListProps = mockCompanyList.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(companyListProps).toMatchObject({
-      companies: mockResult.companies,
       totalCount: mockResult.totalCount,
-      pageInfo: mockResult.pageInfo,
+      hasNext: true,
+      nextCursor: "next",
     })
+    expect(Array.isArray(companyListProps.companies)).toBe(true)
+    expect((companyListProps.companies as unknown[]).length).toBe(mockResult.companies.length)
 
     const filterSidebarProps = mockFilterSidebar.mock.calls.at(-1)?.[0] as Record<string, unknown>
-    expect(filterSidebarProps).toMatchObject({ facetCounts: mockResult.facetCounts })
-
-    const mapProps = mockLazyCompanyMap.mock.calls.at(-1)?.[0] as Record<string, unknown>
-    expect(mapProps).toMatchObject({ companies: mockResult.companies })
-  })
-
-  it("[home-ssr] decodes cursor from the URL", async () => {
-    const { default: HomePage } = await import("@/app/page")
-    const cursorParam = serializeCursor({ name: "Cursor Company", id: "cursor-1" })
-
-    const element = await HomePage({
-      searchParams: Promise.resolve({ cursor: cursorParam ?? undefined }),
+    expect(filterSidebarProps).toMatchObject({
+      basePath: "/",
+      filters: { states: ["TX"], capabilities: ["smt"], productionVolume: null },
+      facetCounts: mockResult.facetCounts,
     })
 
-    renderToStaticMarkup(element)
+    const mapProps = mockLazyCompanyMap.mock.calls.at(-1)?.[0] as Record<string, unknown>
+    expect(Array.isArray(mapProps?.companies)).toBe(true)
+    expect((mapProps?.companies as unknown[]).length).toBe(mockResult.companies.length)
+  })
+
+  it("decodes cursor from the URL", async () => {
+    const { default: HomePage } = await import("@/app/page")
+    const encodedCursor = serializeCursor({ name: "Company 5", id: "company-5" })
+
+    await HomePage({
+      searchParams: Promise.resolve({ cursor: encodedCursor ?? undefined }),
+    })
 
     expect(companySearch).toHaveBeenCalledWith(
       expect.objectContaining({
-        cursor: { name: "Cursor Company", id: "cursor-1" },
+        cursor: { name: "Company 5", id: "company-5" },
       }),
     )
   })

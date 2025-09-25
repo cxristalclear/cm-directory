@@ -11,7 +11,7 @@ import { createPopupFromFacility } from "../lib/mapbox-utils"
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
 interface CompanyMapProps {
-  allCompanies: ListingCompany[]
+  companies: ListingCompany[]
 }
 
 type FacilityWithCoordinates = ListingFacilityWithCompany & {
@@ -36,23 +36,23 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
   const currentFacilitiesRef = useRef<FacilityWithCoordinates[]>([])
 
   const facilities = useMemo(() => {
-    return companies
-      .flatMap((company) =>
+    const withCompany = companies
+      .flatMap((company: ListingCompany) =>
         company.facilities.map((facility) => ({
           ...facility,
           company,
         })),
+      ) as ListingFacilityWithCompany[]
+
+    return withCompany.filter((facility): facility is FacilityWithCoordinates => {
+      const { latitude, longitude } = facility
+      return (
+        typeof latitude === "number" &&
+        Number.isFinite(latitude) &&
+        typeof longitude === "number" &&
+        Number.isFinite(longitude)
       )
-      .filter((facility): facility is FacilityWithCoordinates => {
-        const { latitude, longitude, company } = facility
-        return (
-          Boolean(company) &&
-          typeof latitude === "number" &&
-          Number.isFinite(latitude) &&
-          typeof longitude === "number" &&
-          Number.isFinite(longitude)
-        )
-      })
+    })
   }, [companies])
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
 
     const geojson: FeatureCollection<Point, FacilityFeatureProperties> = {
       type: "FeatureCollection",
-      features: facilitiesForMap.map((facility) => ({
+      features: facilitiesForMap.map((facility: FacilityWithCoordinates) => ({
         type: "Feature",
         properties: {
           company_name: facility.company.company_name || "Unknown Company",
@@ -291,7 +291,7 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
     addClusteringLayers(facilities)
 
     const bounds = new mapboxgl.LngLatBounds()
-    facilities.forEach((facility) => {
+    facilities.forEach((facility: FacilityWithCoordinates) => {
       bounds.extend([facility.longitude, facility.latitude])
     })
 

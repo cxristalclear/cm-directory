@@ -34,6 +34,8 @@ function Chip({ label, onRemove }: ChipProps) {
 const CAPABILITY_LABELS: Record<CapabilitySlug, string> = {
   smt: "SMT",
   through_hole: "Through-Hole",
+  mixed: "Mixed Tech",
+  fine_pitch: "Fine Pitch",
   cable_harness: "Cable Harness",
   box_build: "Box Build",
   prototyping: "Prototyping",

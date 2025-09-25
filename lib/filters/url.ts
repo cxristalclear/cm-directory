@@ -5,6 +5,8 @@ const US_STATE_CODES = new Set(Object.keys(STATE_NAMES))
 const CAPABILITIES = [
   "smt",
   "through_hole",
+  "mixed",
+  "fine_pitch",
   "cable_harness",
   "box_build",
   "prototyping",

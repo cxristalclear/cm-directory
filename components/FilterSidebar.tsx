@@ -1,60 +1,54 @@
-'use client'
+import Link from "next/link"
 
-import { useMemo, useState, type ReactNode } from 'react'
-import {
-  ChevronDown,
-  Filter as FilterIcon,
-  MapPin,
-  Settings,
-  Layers,
-  X,
-} from 'lucide-react'
-
-
-import { useFilters } from "@/contexts/FilterContext"
 import type { CompanyFacetCounts } from "@/lib/queries/companySearch"
-import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
+import { serializeFiltersToSearchParams, type FilterUrlState, type CapabilitySlug, type ProductionVolume } from "@/lib/filters/url"
 import { STATE_NAMES, getStateName } from "@/utils/stateMapping"
 
-interface FilterSidebarProps {
+type FilterSidebarProps = {
+  basePath: string
+  filters: FilterUrlState
   facetCounts?: CompanyFacetCounts | null
+  clearHref?: string
 }
-
-type FilterSection = 'states' | 'capabilities' | 'volume'
 
 type FilterOption<T extends string> = {
   value: T
   label: string
   count: number
+  selected: boolean
 }
 
 const CAPABILITY_LABELS: Record<CapabilitySlug, string> = {
-  smt: 'SMT',
-  through_hole: 'Through-Hole',
-  cable_harness: 'Cable Harness',
-  box_build: 'Box Build',
-  prototyping: 'Prototyping',
+  smt: "SMT",
+  through_hole: "Through-Hole",
+  mixed: "Mixed Tech",
+  fine_pitch: "Fine Pitch",
+  cable_harness: "Cable Harness",
+  box_build: "Box Build",
+  prototyping: "Prototyping",
 }
 
 const VOLUME_LABELS: Record<ProductionVolume, string> = {
-  low: 'Low Volume',
-  medium: 'Medium Volume',
-  high: 'High Volume',
+  low: "Low Volume",
+  medium: "Medium Volume",
+  high: "High Volume",
 }
 
-export function createStateOptions(
-  facetCounts: CompanyFacetCounts | null | undefined,
-  selectedStates: string[],
-): FilterOption<string>[] {
-  const counts = new Map<string, number>()
+function buildUrl(basePath: string, filters: FilterUrlState): string {
+  const params = serializeFiltersToSearchParams(filters)
+  const query = params.toString()
+  return query ? `${basePath}?${query}` : basePath
+}
 
+function buildStateOptions(filters: FilterUrlState, facetCounts?: CompanyFacetCounts | null): FilterOption<string>[] {
+  const counts = new Map<string, number>()
   if (facetCounts) {
     for (const { code, count } of facetCounts.states) {
       counts.set(code.toUpperCase(), count)
     }
   }
 
-  for (const state of selectedStates) {
+  for (const state of filters.states) {
     const normalized = state.toUpperCase()
     if (!counts.has(normalized)) {
       counts.set(normalized, 0)
@@ -71,347 +65,190 @@ export function createStateOptions(
 
   return Array.from(counts.entries())
     .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([state, count]) => ({
-      value: state,
-      label: getStateName(state) ?? state,
+    .map(([code, count]) => ({
+      value: code,
+      label: getStateName(code) ?? code,
       count,
+      selected: filters.states.includes(code),
     }))
 }
 
-export function createCapabilityOptions(
-  facetCounts: CompanyFacetCounts | null | undefined,
-  selectedCapabilities: CapabilitySlug[],
+function buildCapabilityOptions(
+  filters: FilterUrlState,
+  facetCounts?: CompanyFacetCounts | null,
 ): FilterOption<CapabilitySlug>[] {
   const counts = new Map<CapabilitySlug, number>()
-
   if (facetCounts) {
     for (const { slug, count } of facetCounts.capabilities) {
       counts.set(slug, count)
     }
   }
 
-  for (const capability of selectedCapabilities) {
+  for (const capability of filters.capabilities) {
     if (!counts.has(capability)) {
       counts.set(capability, 0)
     }
   }
 
-  return (Object.keys(CAPABILITY_LABELS) as CapabilitySlug[]).map(value => ({
-    value,
-    label: CAPABILITY_LABELS[value],
-    count: counts.get(value) ?? 0,
+  return (Object.keys(CAPABILITY_LABELS) as CapabilitySlug[]).map((slug) => ({
+    value: slug,
+    label: CAPABILITY_LABELS[slug],
+    count: counts.get(slug) ?? 0,
+    selected: filters.capabilities.includes(slug),
   }))
 }
 
-export function createVolumeOptions(
-  facetCounts: CompanyFacetCounts | null | undefined,
-  selectedVolume: ProductionVolume | null,
+function buildVolumeOptions(
+  filters: FilterUrlState,
+  facetCounts?: CompanyFacetCounts | null,
 ): FilterOption<ProductionVolume>[] {
   const counts = new Map<ProductionVolume, number>()
-
   if (facetCounts) {
     for (const { level, count } of facetCounts.productionVolume) {
       counts.set(level, count)
     }
   }
 
-  if (selectedVolume && !counts.has(selectedVolume)) {
-    counts.set(selectedVolume, 0)
+  if (filters.productionVolume && !counts.has(filters.productionVolume)) {
+    counts.set(filters.productionVolume, 0)
   }
 
-  return (Object.keys(VOLUME_LABELS) as ProductionVolume[]).map(value => ({
-    value,
-    label: VOLUME_LABELS[value],
-    count: counts.get(value) ?? 0,
+  return (Object.keys(VOLUME_LABELS) as ProductionVolume[]).map((level) => ({
+    value: level,
+    label: VOLUME_LABELS[level],
+    count: counts.get(level) ?? 0,
+    selected: filters.productionVolume === level,
   }))
 }
 
-export default function FilterSidebar({ facetCounts }: FilterSidebarProps) {
-  const { filters, updateFilter, clearFilters } = useFilters()
-  const [expandedSections, setExpandedSections] = useState<Record<FilterSection, boolean>>({
-    states: true,
-    capabilities: true,
-    volume: true,
-  })
+export default function FilterSidebar({ basePath, filters, facetCounts, clearHref }: FilterSidebarProps) {
+  const stateOptions = buildStateOptions(filters, facetCounts)
+  const capabilityOptions = buildCapabilityOptions(filters, facetCounts)
+  const volumeOptions = buildVolumeOptions(filters, facetCounts)
 
-  const stateOptions = useMemo(
-    () => createStateOptions(facetCounts, filters.states),
-    [facetCounts, filters.states],
-  )
+  const hasActiveFilters =
+    filters.states.length > 0 || filters.capabilities.length > 0 || filters.productionVolume !== null
 
-  const capabilityOptions = useMemo(
-    () => createCapabilityOptions(facetCounts, filters.capabilities),
-    [facetCounts, filters.capabilities],
-  )
+  const clearUrl = clearHref ?? basePath
 
-  const volumeOptions = useMemo(
-    () => createVolumeOptions(facetCounts, filters.productionVolume),
-    [facetCounts, filters.productionVolume],
-  )
-
-  const toggleSection = (section: FilterSection) => {
-    setExpandedSections(previous => ({
-      ...previous,
-      [section]: !previous[section],
-    }))
+  const toggleState = (state: string) => {
+    const normalized = state.toUpperCase()
+    const selected = filters.states.includes(normalized)
+    const nextStates = selected
+      ? filters.states.filter((value) => value !== normalized)
+      : [...filters.states, normalized]
+    return buildUrl(basePath, { ...filters, states: nextStates })
   }
 
-  // === NEW behavior: updateFilter calls ===
-  const toggleState = (value: string) => {
-    const next = filters.states.includes(value)
-      ? filters.states.filter(v => v !== value)
-      : [...filters.states, value]
-    updateFilter('states', next)
+  const toggleCapability = (slug: CapabilitySlug) => {
+    const selected = filters.capabilities.includes(slug)
+    const nextCapabilities = selected
+      ? filters.capabilities.filter((value) => value !== slug)
+      : [...filters.capabilities, slug]
+    return buildUrl(basePath, { ...filters, capabilities: nextCapabilities })
   }
 
-  const toggleCapability = (value: CapabilitySlug) => {
-    const next = filters.capabilities.includes(value)
-      ? filters.capabilities.filter(v => v !== value)
-      : [...filters.capabilities, value]
-    updateFilter('capabilities', next)
+  const selectVolume = (level: ProductionVolume) => {
+    const nextVolume = filters.productionVolume === level ? null : level
+    return buildUrl(basePath, { ...filters, productionVolume: nextVolume })
   }
-
-  const selectProductionVolume = (value: ProductionVolume) => {
-    updateFilter('productionVolume', filters.productionVolume === value ? null : value)
-  }
-
-  const activeFilterCount =
-    filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
-
-  const sectionIcon: Record<FilterSection, ReactNode> = {
-    states: <MapPin className="h-4 w-4" />,
-    capabilities: <Settings className="h-4 w-4" />,
-    volume: <Layers className="h-4 w-4" />,
-  }
-
-  const Section = ({
-    id,
-    title,
-    subtitleCount,
-    children,
-  }: {
-    id: FilterSection
-    title: string
-    subtitleCount?: number
-    children: React.ReactNode
-  }) => (
-    <div className="rounded-xl bg-gray-50 p-4 transition-all hover:bg-gray-100">
-      <button
-        type="button"
-        onClick={() => setExpanded(prev => ({ ...prev, [id]: !prev[id] }))}
-        className="flex w-full items-center justify-between text-left"
-      >
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-white p-2 shadow-sm">
-            {sectionIcon[id]}
-          </div>
-          <div>
-            <span className="font-semibold text-gray-900">{title}</span>
-            {subtitleCount ? (
-              <p className="text-xs text-blue-600">{subtitleCount} selected</p>
-            ) : null}
-          </div>
-        </div>
-        <ChevronDown
-          className={`h-5 w-5 text-gray-400 transition-transform ${expanded[id] ? 'rotate-180' : ''}`}
-        />
-      </button>
-      {expanded[id] && <div className="mt-4 space-y-2">{children}</div>}
-    </div>
-  )
 
   return (
-    <>
-      {/* OLD-style: Mobile toggle with badge */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 left-4 z-30 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white shadow-xl transition-all hover:shadow-2xl lg:hidden"
-        aria-label="Open filters"
-      >
-        <FilterIcon className="h-6 w-6" />
-        {activeFilterCount > 0 && (
-          <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-            {activeFilterCount}
-          </span>
-        )}
-      </button>
-
-      {/* Drawer/Sidebar container */}
-      <aside
-        className={`fixed top-0 left-0 z-20 h-auto w-80 -translate-x-full border-r border-gray-100 bg-white shadow-xl transition-transform duration-300 ease-out lg:relative lg:w-full lg:translate-x-0 lg:rounded-xl lg:shadow-lg ${
-          isOpen ? 'translate-x-0' : ''
-        }`}
-      >
-        <div className="h-full overflow-y-auto p-6">
-          {/* Header with Clear all */}
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 p-2 shadow-sm">
-                <FilterIcon className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Filters</h2>
-                {activeFilterCount > 0 && (
-                  <p className="text-xs text-gray-500">{activeFilterCount} active</p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="rounded-lg px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700"
-                >
-                  Clear all
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="rounded-lg p-1.5 transition-colors hover:bg-gray-100 lg:hidden"
-                aria-label="Close filters"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
-            </div>
-          </div>
-
-          {/* Keep NEW component that shows/removes active filters */}
-          <div className="mb-6">
-            <ActiveFiltersBar />
-          </div>
-
-          {/* Sections with OLD look, NEW data/behavior */}
-          <div className="space-y-2">
-            <Section id="states" title="States" subtitleCount={filters.states.length || undefined}>
-              {stateOptions.map(({ value, label, count }) => {
-                const checked = filters.states.includes(value)
-                const disabled = count === 0 && !checked
-                return (
-                  <label
-                    key={value}
-                    className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
-                      disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-white'
-                    }`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={disabled}
-                        onChange={() => !disabled && toggleState(value)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className={`text-sm font-medium ${disabled ? 'text-gray-400' : 'text-gray-700'}`}>
-                        {label}
-                      </span>
-                    </span>
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs transition-colors ${
-                        checked
-                          ? 'bg-blue-100 font-semibold text-blue-700'
-                          : disabled
-                          ? 'bg-gray-50 text-gray-400'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  </label>
-                )
-              })}
-            </Section>
-
-            <Section id="capabilities" title="Capabilities" subtitleCount={filters.capabilities.length || undefined}>
-              {capabilityOptions.map(({ value, label, count }) => {
-                const checked = filters.capabilities.includes(value)
-                const disabled = count === 0 && !checked
-                return (
-                  <label
-                    key={value}
-                    className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
-                      disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-white'
-                    }`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={disabled}
-                        onChange={() => !disabled && toggleCapability(value)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className={`text-sm font-medium ${disabled ? 'text-gray-400' : 'text-gray-700'}`}>
-                        {label}
-                      </span>
-                    </span>
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs transition-colors ${
-                        checked
-                          ? 'bg-blue-100 font-semibold text-blue-700'
-                          : disabled
-                          ? 'bg-gray-50 text-gray-400'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  </label>
-                )
-              })}
-            </Section>
-
-            <Section id="volume" title="Production Volume" subtitleCount={filters.productionVolume ? 1 : undefined}>
-              {volumeOptions.map(({ value, label, count }) => {
-                const checked = filters.productionVolume === value
-                const disabled = count === 0 && !checked
-                return (
-                  <label
-                    key={value}
-                    className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
-                      disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-white'
-                    }`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        checked={checked}
-                        disabled={disabled}
-                        onChange={() => !disabled && selectProductionVolume(value)}
-                        className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className={`text-sm font-medium ${disabled ? 'text-gray-400' : 'text-gray-700'}`}>
-                        {label}
-                      </span>
-                    </span>
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs transition-colors ${
-                        checked
-                          ? 'bg-blue-100 font-semibold text-blue-700'
-                          : disabled
-                          ? 'bg-gray-50 text-gray-400'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  </label>
-                )
-              })}
-            </Section>
-          </div>
+    <aside className="space-y-6">
+      <div className="rounded-xl bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+          {hasActiveFilters && (
+            <Link
+              href={clearUrl}
+              scroll={false}
+              className="text-sm font-medium text-blue-600 hover:text-blue-700"
+            >
+              Clear all
+            </Link>
+          )}
         </div>
-      </aside>
+      </div>
 
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-10 bg-black/50 backdrop-blur-sm transition-opacity lg:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-    </>
+      <section className="space-y-4 rounded-xl bg-white p-4 shadow-sm">
+        <header>
+          <h3 className="text-sm font-semibold text-gray-900">States</h3>
+          <p className="text-xs text-gray-500">Select one or more locations</p>
+        </header>
+        <ul className="flex flex-col gap-2">
+          {stateOptions.map((option) => (
+            <li key={option.value}>
+              <Link
+                href={toggleState(option.value)}
+                scroll={false}
+                className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition ${
+                  option.selected
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-blue-200 hover:bg-blue-50"
+                }`}
+              >
+                <span>{option.label}</span>
+                <span className="text-xs font-semibold text-gray-500">{option.count}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="space-y-4 rounded-xl bg-white p-4 shadow-sm">
+        <header>
+          <h3 className="text-sm font-semibold text-gray-900">Capabilities</h3>
+          <p className="text-xs text-gray-500">Stack filters to refine results</p>
+        </header>
+        <ul className="flex flex-col gap-2">
+          {capabilityOptions.map((option) => (
+            <li key={option.value}>
+              <Link
+                href={toggleCapability(option.value)}
+                scroll={false}
+                className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition ${
+                  option.selected
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-blue-200 hover:bg-blue-50"
+                }`}
+              >
+                <span>{option.label}</span>
+                <span className="text-xs font-semibold text-gray-500">{option.count}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="space-y-4 rounded-xl bg-white p-4 shadow-sm">
+        <header>
+          <h3 className="text-sm font-semibold text-gray-900">Production volume</h3>
+          <p className="text-xs text-gray-500">Pick one</p>
+        </header>
+        <div className="grid grid-cols-1 gap-2">
+          {volumeOptions.map((option) => (
+            <Link
+              key={option.value}
+              href={selectVolume(option.value)}
+              scroll={false}
+              className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition ${
+                option.selected
+                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-blue-200 hover:bg-blue-50"
+              }`}
+            >
+              <span>{option.label}</span>
+              <span className="text-xs font-semibold text-gray-500">{option.count}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+    </aside>
   )
+}
+
+export {
+  buildStateOptions as createStateOptions,
+  buildCapabilityOptions as createCapabilityOptions,
+  buildVolumeOptions as createVolumeOptions,
 }

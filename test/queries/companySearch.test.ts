@@ -1,5 +1,12 @@
 import { randomUUID } from "crypto"
-import { companySearch, deserializeCursor } from "@/lib/queries/companySearch"
+
+import {
+  COMPANY_SEARCH_FUNCTION,
+  companySearch,
+  deserializeCursor,
+  parseCursor,
+  serializeCursor,
+} from "@/lib/queries/companySearch"
 import type {
   Capabilities,
   Certification,
@@ -10,14 +17,12 @@ import type {
 
 jest.mock("@/lib/supabase", () => ({
   supabase: {
-    from: jest.fn(),
+    rpc: jest.fn(),
   },
 }))
 
 const { supabase } = jest.requireMock("@/lib/supabase") as {
-  supabase: {
-    from: jest.Mock
-  }
+  supabase: { rpc: jest.Mock }
 }
 
 type MockCompany = Company & {
@@ -28,12 +33,8 @@ type MockCompany = Company & {
 }
 
 type CapabilityOverrides = Partial<Capabilities>
-
 type FacilityOverrides = Partial<Facility>
-
 type CompanyOverrides = Partial<MockCompany>
-
-let mockData: MockCompany[] = []
 
 function createCapabilities(overrides: CapabilityOverrides = {}): Capabilities {
   return {
@@ -80,7 +81,7 @@ function createFacility(overrides: FacilityOverrides = {}): Facility {
     facility_size_sqft: null,
     employees_at_location: null,
     key_capabilities: null,
-    is_primary: undefined,
+    is_primary: true,
     created_at: undefined,
     updated_at: undefined,
     ...overrides,
@@ -114,366 +115,232 @@ function createCompany(overrides: CompanyOverrides = {}): MockCompany {
   }
 }
 
-function setSupabaseData(data: MockCompany[]) {
-  mockData = data
-  const builder = {
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockImplementation(async () => ({ data: mockData, error: null })),
-  }
-  supabase.from.mockReturnValue(builder)
+const baseCompanies: MockCompany[] = [
+  createCompany({
+    id: "c01",
+    company_name: "Alpha Manufacturing",
+    slug: "alpha-manufacturing",
+    facilities: [
+      createFacility({
+        company_id: "c01",
+        city: "San Jose",
+        state: "CA",
+        latitude: 37.33,
+        longitude: -121.9,
+      }),
+    ],
+    capabilities: [
+      createCapabilities({
+        company_id: "c01",
+        pcb_assembly_smt: true,
+        medium_volume_production: true,
+      }),
+    ],
+  }),
+  createCompany({
+    id: "c02",
+    company_name: "Beta Electronics",
+    slug: "beta-electronics",
+    facilities: [
+      createFacility({
+        company_id: "c02",
+        city: "Austin",
+        state: "TX",
+        latitude: 30.27,
+        longitude: -97.74,
+      }),
+    ],
+    capabilities: [
+      createCapabilities({
+        company_id: "c02",
+        box_build_assembly: true,
+        high_volume_production: true,
+      }),
+    ],
+  }),
+]
+
+type MockRpcData = {
+  companies: MockCompany[]
+  total_count: number
+  has_next: boolean
+  has_prev: boolean
+  next_cursor: { name: string; id: string } | null
+  prev_cursor: { name: string; id: string } | null
+  facet_counts: {
+    states: Array<{ code: string; count: number }>
+    capabilities: Array<{ slug: string; count: number }>
+    production_volume: Array<{ level: string; count: number }>
+  } | null
+}
+
+function setRpcResponse(data: MockRpcData, error: Error | null = null) {
+  supabase.rpc.mockResolvedValue({ data, error })
 }
 
 beforeEach(() => {
   jest.clearAllMocks()
-  setSupabaseData([])
+  setRpcResponse({
+    companies: baseCompanies,
+    total_count: 42,
+    has_next: true,
+    has_prev: false,
+    next_cursor: { name: "Gamma Industries", id: "c03" },
+    prev_cursor: null,
+    facet_counts: {
+      states: [
+        { code: "CA", count: 21 },
+        { code: "TX", count: 21 },
+      ],
+      capabilities: [
+        { slug: "smt", count: 21 },
+        { slug: "box_build", count: 10 },
+      ],
+      production_volume: [
+        { level: "low", count: 5 },
+        { level: "medium", count: 21 },
+      ],
+    },
+  })
 })
 
-const BASE_COMPANIES: MockCompany[] = (() => {
-  const companies: MockCompany[] = []
-
-  companies.push(
-    createCompany({
-      id: "c01",
-      company_name: "Alpha Manufacturing",
-      slug: "alpha-manufacturing",
-      facilities: [
-        createFacility({ company_id: "c01", city: "San Jose", state: "CA" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c01",
-          pcb_assembly_smt: true,
-          medium_volume_production: true,
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c02",
-      company_name: "Beta Electronics",
-      slug: "beta-electronics",
-      facilities: [
-        createFacility({ company_id: "c02", city: "Austin", state: "TX" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c02",
-          box_build_assembly: true,
-          high_volume_production: true,
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c03",
-      company_name: "Gamma Industries",
-      slug: "gamma-industries",
-      facilities: [
-        createFacility({ company_id: "c03", city: "Buffalo", state: "NY" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c03",
-          pcb_assembly_smt: true,
-          low_volume_production: true,
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c04",
-      company_name: "Delta Systems",
-      slug: "delta-systems",
-      facilities: [
-        createFacility({ company_id: "c04", city: "Los Angeles", state: "CA" }),
-        createFacility({ company_id: "c04", city: "Dallas", state: "TX" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c04",
-          pcb_assembly_smt: true,
-          box_build_assembly: true,
-          medium_volume_production: true,
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c05",
-      company_name: "Echo Labs",
-      slug: "echo-labs",
-      facilities: [
-        createFacility({ company_id: "c05", city: "Houston", state: "TX" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c05",
-          cable_harness_assembly: true,
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c06",
-      company_name: "Foxtrot Manufacturing",
-      slug: "foxtrot-manufacturing",
-      facilities: [
-        createFacility({ company_id: "c06", city: "San Diego", state: "CA" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c06",
-          pcb_assembly_smt: true,
-          medium_volume_production: true,
-          high_volume_production: true,
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c07",
-      company_name: "Golf Tech",
-      slug: "golf-tech",
-      facilities: [
-        createFacility({ company_id: "c07", city: "Miami", state: "FL" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c07",
-          box_build_assembly: true,
-          low_volume_production: true,
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c08",
-      company_name: "Hotel Works",
-      slug: "hotel-works",
-      facilities: [
-        createFacility({ company_id: "c08", city: "Sacramento", state: "CA" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c08",
-          pcb_assembly_smt: true,
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c09",
-      company_name: "India Solutions",
-      slug: "india-solutions",
-      facilities: [
-        createFacility({ company_id: "c09", city: "Plano", state: "TX" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c09",
-          box_build_assembly: true,
-          medium_volume_production: true,
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c10",
-      company_name: "Juliet Fabrication",
-      slug: "juliet-fabrication",
-      facilities: [
-        createFacility({ company_id: "c10", city: "Fresno", state: "CA" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c10",
-          pcb_assembly_smt: true,
-          medium_volume_production: true,
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c11",
-      company_name: "Kilo Assembly",
-      slug: "kilo-assembly",
-      facilities: [
-        createFacility({ company_id: "c11", city: "Seattle", state: "WA" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c11",
-        }),
-      ],
-    }),
-  )
-
-  companies.push(
-    createCompany({
-      id: "c12",
-      company_name: "Lima Manufacturing",
-      slug: "lima-manufacturing",
-      facilities: [
-        createFacility({ company_id: "c12", city: "Portland", state: "OR" }),
-      ],
-      capabilities: [
-        createCapabilities({
-          company_id: "c12",
-          pcb_assembly_smt: true,
-          high_volume_production: true,
-        }),
-      ],
-    }),
-  )
-
-  return companies
-})()
-
 describe("companySearch", () => {
-  beforeEach(() => {
-    setSupabaseData(BASE_COMPANIES)
-  })
-
-  it("filters companies by state OR logic", async () => {
+  it("calls the Supabase RPC with normalized filters and returns formatted results", async () => {
     const result = await companySearch({
-      filters: { states: ["CA", "TX"], capabilities: [], productionVolume: null },
+      filters: { states: ["ca", "TX"], capabilities: ["smt"], productionVolume: "medium" },
+      cursor: { name: "Alpha Manufacturing", id: "c01" },
+      pageSize: 12,
+      includeFacetCounts: true,
     })
 
-    expect(result.totalCount).toBe(8)
-    expect(result.companies).toHaveLength(8)
-    const names = result.companies.map((company) => company.company_name)
-    expect(names).toEqual([
-      "Alpha Manufacturing",
-      "Beta Electronics",
-      "Delta Systems",
-      "Echo Labs",
-      "Foxtrot Manufacturing",
-      "Hotel Works",
-      "India Solutions",
-      "Juliet Fabrication",
-    ])
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      COMPANY_SEARCH_FUNCTION,
+      expect.objectContaining({
+        filter_states: expect.arrayContaining(["CA", "TX"]),
+        filter_capabilities: ["smt"],
+        filter_volume: "medium",
+        cursor_name: "Alpha Manufacturing",
+        cursor_id: "c01",
+        page_size: 12,
+        include_facets: true,
+      }),
+    )
+
+    expect(result.totalCount).toBe(42)
+    expect(result.companies).toHaveLength(baseCompanies.length)
+    expect(result.hasNext).toBe(true)
+    expect(result.hasPrev).toBe(false)
+    expect(result.nextCursor).toBe(
+      serializeCursor({ name: "Gamma Industries", id: "c03" }),
+    )
+    expect(result.prevCursor).toBeNull()
+    expect(result.facetCounts?.capabilities.find((entry) => entry.slug === "smt")?.count).toBe(21)
   })
 
-  it("filters companies by capability OR logic", async () => {
-    const result = await companySearch({
-      filters: { states: [], capabilities: ["smt", "box_build"], productionVolume: null },
-      pageSize: 9,
+  it("omits facet counts when includeFacetCounts is false", async () => {
+    await companySearch({
+      filters: { states: [], capabilities: [], productionVolume: null },
+      includeFacetCounts: false,
     })
 
-    expect(result.totalCount).toBe(10)
-    expect(result.companies).toHaveLength(9)
-    expect(result.pageInfo.hasNext).toBe(true)
-    expect(result.pageInfo.nextCursor).not.toBeNull()
-    expect(result.companies[0]?.company_name).toBe("Alpha Manufacturing")
-    expect(result.companies[8]?.company_name).toBe("Juliet Fabrication")
-  })
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      COMPANY_SEARCH_FUNCTION,
+      expect.objectContaining({ include_facets: false }),
+    )
 
-  it("filters by production volume", async () => {
     const result = await companySearch({
-      filters: { states: [], capabilities: [], productionVolume: "medium" },
+      filters: { states: [], capabilities: [], productionVolume: null },
+      includeFacetCounts: false,
     })
 
-    expect(result.totalCount).toBe(5)
-    const names = result.companies.map((company) => company.company_name)
-    expect(names.sort()).toEqual([
-      "Alpha Manufacturing",
-      "Delta Systems",
-      "Foxtrot Manufacturing",
-      "India Solutions",
-      "Juliet Fabrication",
-    ])
+    expect(result.facetCounts).toBeNull()
   })
 
-  it("applies AND logic across facets", async () => {
-    const result = await companySearch({
-      filters: {
-        states: ["CA"],
-        capabilities: ["smt"],
-        productionVolume: "medium",
+  it("fills missing capability and volume facet counts with zeros", async () => {
+    setRpcResponse({
+      companies: baseCompanies,
+      total_count: 2,
+      has_next: false,
+      has_prev: false,
+      next_cursor: null,
+      prev_cursor: null,
+      facet_counts: {
+        states: [],
+        capabilities: [{ slug: "smt", count: 2 }],
+        production_volume: [{ level: "medium", count: 2 }],
       },
     })
 
-    expect(result.totalCount).toBe(4)
-    const names = result.companies.map((company) => company.company_name)
-    expect(new Set(names)).toEqual(
-      new Set([
-        "Alpha Manufacturing",
-        "Delta Systems",
-        "Foxtrot Manufacturing",
-        "Juliet Fabrication",
-      ]),
+    const result = await companySearch({
+      filters: { states: [], capabilities: [], productionVolume: null },
+    })
+
+    const capabilityCounts = result.facetCounts?.capabilities ?? []
+    expect(capabilityCounts).toHaveLength(7)
+    expect(capabilityCounts.find((entry) => entry.slug === "box_build")?.count).toBe(0)
+
+    const volumeCounts = result.facetCounts?.productionVolume ?? []
+    expect(volumeCounts).toHaveLength(3)
+    expect(volumeCounts.find((entry) => entry.level === "low")?.count).toBe(0)
+  })
+
+  it("passes bounding box filters to the RPC payload", async () => {
+    await companySearch({
+      filters: { states: [], capabilities: [], productionVolume: null },
+      bbox: { minLng: -123.5, minLat: 30.5, maxLng: -97.0, maxLat: 38.0 },
+    })
+
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      COMPANY_SEARCH_FUNCTION,
+      expect.objectContaining({
+        bbox: {
+          min_lng: -123.5,
+          min_lat: 30.5,
+          max_lng: -97.0,
+          max_lat: 38.0,
+        },
+      }),
     )
   })
 
-  it("deduplicates companies with multiple facilities", async () => {
-    const result = await companySearch({
-      filters: { states: ["TX"], capabilities: [], productionVolume: null },
+  it("normalizes route defaults and certification slugs", async () => {
+    await companySearch({
+      filters: { states: [], capabilities: [], productionVolume: null },
+      routeDefaults: { state: "ny", certSlug: "iso-13485" },
     })
 
-    expect(result.totalCount).toBe(4)
-    const ids = result.companies.map((company) => company.id)
-    expect(ids).toEqual(["c02", "c04", "c05", "c09"])
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      COMPANY_SEARCH_FUNCTION,
+      expect.objectContaining({
+        filter_states: ["NY"],
+        route_state: "NY",
+        required_certification: "ISO 13485",
+      }),
+    )
   })
 
-  it("paginates using the provided cursor", async () => {
-    const firstPage = await companySearch({
-      filters: { states: [], capabilities: [], productionVolume: null },
-      pageSize: 9,
-    })
+  it("throws when Supabase returns an error", async () => {
+    const error = new Error("RPC failure")
+    supabase.rpc.mockResolvedValue({ data: null, error })
 
-    expect(firstPage.companies).toHaveLength(9)
-    expect(firstPage.pageInfo.hasNext).toBe(true)
-    expect(firstPage.pageInfo.nextCursor).not.toBeNull()
+    await expect(
+      companySearch({
+        filters: { states: [], capabilities: [], productionVolume: null },
+      }),
+    ).rejects.toThrow("RPC failure")
+  })
+})
 
-    const secondPage = await companySearch({
-      filters: { states: [], capabilities: [], productionVolume: null },
-      cursor: deserializeCursor(firstPage.pageInfo.nextCursor),
-      pageSize: 9,
-    })
-
-    expect(secondPage.companies.map((company) => company.company_name)).toEqual([
-      "Juliet Fabrication",
-      "Kilo Assembly",
-      "Lima Manufacturing",
-    ])
-    expect(secondPage.pageInfo.hasNext).toBe(false)
-    expect(secondPage.pageInfo.hasPrev).toBe(true)
+describe("cursor helpers", () => {
+  it("serializes and deserializes cursors", () => {
+    const cursor = serializeCursor({ name: "Test", id: "123" })
+    expect(cursor).toBeTruthy()
+    expect(deserializeCursor(cursor)).toEqual({ name: "Test", id: "123" })
   })
 
-  it("computes facet counts with capability and volume filters", async () => {
-    const result = await companySearch({
-      filters: { states: [], capabilities: ["smt"], productionVolume: "medium" },
-    })
-
-    expect(result.facetCounts).not.toBeNull()
-    const counts = result.facetCounts!
-    expect(counts.states).toEqual([
-      { code: "CA", count: 4 },
-      { code: "TX", count: 1 },
-    ])
-    const boxBuild = counts.capabilities.find((entry) => entry.slug === "box_build")
-    expect(boxBuild?.count).toBe(2)
-    const mediumVolume = counts.productionVolume.find((entry) => entry.level === "medium")
-    expect(mediumVolume?.count).toBe(4)
+  it("parses cursors from search params", () => {
+    const encoded = serializeCursor({ name: "Company", id: "abc" })
+    const parsed = parseCursor({ cursor: encoded ?? undefined })
+    expect(parsed).toEqual({ name: "Company", id: "abc" })
   })
 })
