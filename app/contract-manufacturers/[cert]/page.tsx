@@ -3,10 +3,12 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import Script from "next/script"
 import CompanyList from "@/components/CompanyList"
+import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch } from "@/lib/queries/companySearch"
 import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
+
 
 function normalizeCertParam(param: string) {
   // map dashed route to human-readable (e.g., iso-13485 -> ISO 13485)
@@ -40,11 +42,14 @@ export default async function CertManufacturers({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const [{ cert }, sp] = await Promise.all([params, searchParams])
-  const initialFilters = parseFiltersFromSearchParams(sp)
+  const filters = parseFiltersFromSearchParams(sp)
+  const cursor = parseCursor(sp)
   const searchResult = await companySearch({
-    filters: initialFilters,
+    filters,
     routeDefaults: { certSlug: cert },
+    cursor,
   })
+  
   const companies = sanitizeCompaniesForListing(searchResult.companies)
   const certNice = normalizeCertParam(cert);
 
@@ -73,9 +78,14 @@ export default async function CertManufacturers({
         <h1 className="text-3xl font-bold mb-1">{certNice} Contract Manufacturers</h1>
         <p className="text-gray-600 mb-4">Medical, aerospace, and regulated industries often require {certNice}. Compare verified partners and contact directly.</p>
 
-        <FilterProvider initialFilters={initialFilters}>
-          <div className="companies-directory">
-            <CompanyList companies={companies} totalCount={searchResult.totalCount} />
+        <FilterProvider initialFilters={filters}>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <FilterSidebar facetCounts={facetCounts ?? undefined} />
+            </div>
+            <div className="lg:col-span-8">
+              <CompanyList companies={companies} totalCount={totalCount} pageInfo={pageInfo} />
+            </div>
           </div>
         </FilterProvider>
       </main>

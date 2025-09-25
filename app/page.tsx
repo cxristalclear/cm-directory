@@ -1,10 +1,8 @@
 import { Suspense } from "react"
 import Script from "next/script"
-import ActiveFiltersBar from "@/components/ActiveFiltersBar"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
-import FilterDebugger from "@/components/FilterDebugger"
 import Header from "@/components/Header"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
@@ -31,8 +29,6 @@ export const metadata = {
       "Filter verified manufacturers by capability, certification, and location.",
   },
 };
-
-const SHOW_DEBUG = process.env.NEXT_PUBLIC_SHOW_DEBUG === "true";
 
 const AdPlaceholder = ({ width, height, label, className = "" }: { width: string; height: string; label: string; className?: string }) => (
   <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} style={{ width, height }}>
@@ -70,14 +66,11 @@ export default async function Home({
           }
         })
       }} />
-      <FilterProvider initialFilters={initialFilters}>
+      <FilterProvider initialFilters={filters}>
         <div className="min-h-screen bg-gray-50">
-          <Header totalCompanies={searchResult.totalCount} />
+          <Header totalCompanies={totalCount} />
 
           <main className="container mx-auto px-4 py-6">
-            <div className="mb-6">
-              <ActiveFiltersBar />
-            </div>
 
             {/* Top Content Ad - Native/Sponsored */}
             <div className="mb-6 bg-white rounded-xl shadow-xl p-4">
@@ -89,7 +82,6 @@ export default async function Home({
                 className="border-blue-200"
               />
             </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Filter Sidebar */}
               <div className="lg:col-span-3 space-y-4">
@@ -109,12 +101,12 @@ export default async function Home({
 
               <div className="lg:col-span-9 space-y-4">
                 {/* Map - No extra Suspense needed, LazyCompanyMap handles it internally */}
-                <LazyCompanyMap allCompanies={companies} />
+                <LazyCompanyMap companies={companies} />
 
                 {/* List */}
                 <div className="companies-directory">
                   <Suspense fallback={<div>Loading companies...</div>}>
-                    <CompanyList companies={companies} totalCount={searchResult.totalCount} />
+                    <CompanyList companies={companies} totalCount={totalCount} pageInfo={pageInfo} />
                   </Suspense>
                 </div>
 

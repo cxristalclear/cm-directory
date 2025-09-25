@@ -1,7 +1,15 @@
-"use client"
+'use client'
 
-import { useMemo, useState } from "react"
-import { ChevronDown, Filter as FilterIcon } from "lucide-react"
+import { useMemo, useState, type ReactNode } from 'react'
+import {
+  ChevronDown,
+  Filter as FilterIcon,
+  MapPin,
+  Settings,
+  Layers,
+  X,
+} from 'lucide-react'
+
 
 import { useFilters } from "@/contexts/FilterContext"
 import type { CompanyFacetCounts } from "@/lib/queries/companySearch"
@@ -12,7 +20,7 @@ interface FilterSidebarProps {
   facetCounts?: CompanyFacetCounts | null
 }
 
-type FilterSection = "states" | "capabilities" | "volume"
+type FilterSection = 'states' | 'capabilities' | 'volume'
 
 type FilterOption<T extends string> = {
   value: T
@@ -21,17 +29,17 @@ type FilterOption<T extends string> = {
 }
 
 const CAPABILITY_LABELS: Record<CapabilitySlug, string> = {
-  smt: "SMT",
-  through_hole: "Through-Hole",
-  cable_harness: "Cable Harness",
-  box_build: "Box Build",
-  prototyping: "Prototyping",
+  smt: 'SMT',
+  through_hole: 'Through-Hole',
+  cable_harness: 'Cable Harness',
+  box_build: 'Box Build',
+  prototyping: 'Prototyping',
 }
 
 const VOLUME_LABELS: Record<ProductionVolume, string> = {
-  low: "Low Volume",
-  medium: "Medium Volume",
-  high: "High Volume",
+  low: 'Low Volume',
+  medium: 'Medium Volume',
+  high: 'High Volume',
 }
 
 export function createStateOptions(
@@ -148,170 +156,262 @@ export default function FilterSidebar({ facetCounts }: FilterSidebarProps) {
     }))
   }
 
+  // === NEW behavior: updateFilter calls ===
   const toggleState = (value: string) => {
-    const nextStates = filters.states.includes(value)
-      ? filters.states.filter(entry => entry !== value)
+    const next = filters.states.includes(value)
+      ? filters.states.filter(v => v !== value)
       : [...filters.states, value]
-    updateFilter("states", nextStates)
+    updateFilter('states', next)
   }
 
   const toggleCapability = (value: CapabilitySlug) => {
-    const nextCapabilities = filters.capabilities.includes(value)
-      ? filters.capabilities.filter(entry => entry !== value)
+    const next = filters.capabilities.includes(value)
+      ? filters.capabilities.filter(v => v !== value)
       : [...filters.capabilities, value]
-    updateFilter("capabilities", nextCapabilities)
+    updateFilter('capabilities', next)
   }
 
   const selectProductionVolume = (value: ProductionVolume) => {
-    updateFilter("productionVolume", filters.productionVolume === value ? null : value)
+    updateFilter('productionVolume', filters.productionVolume === value ? null : value)
   }
 
   const activeFilterCount =
     filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
 
-  return (
-    <aside className="space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-gray-900">
-            <FilterIcon className="h-5 w-5 text-blue-600" />
-            <span className="text-lg font-semibold">Filters</span>
+  const sectionIcon: Record<FilterSection, ReactNode> = {
+    states: <MapPin className="h-4 w-4" />,
+    capabilities: <Settings className="h-4 w-4" />,
+    volume: <Layers className="h-4 w-4" />,
+  }
+
+  const Section = ({
+    id,
+    title,
+    subtitleCount,
+    children,
+  }: {
+    id: FilterSection
+    title: string
+    subtitleCount?: number
+    children: React.ReactNode
+  }) => (
+    <div className="rounded-xl bg-gray-50 p-4 transition-all hover:bg-gray-100">
+      <button
+        type="button"
+        onClick={() => setExpanded(prev => ({ ...prev, [id]: !prev[id] }))}
+        className="flex w-full items-center justify-between text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-white p-2 shadow-sm">
+            {sectionIcon[id]}
           </div>
-          {activeFilterCount > 0 && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              Clear all
-            </button>
-          )}
+          <div>
+            <span className="font-semibold text-gray-900">{title}</span>
+            {subtitleCount ? (
+              <p className="text-xs text-blue-600">{subtitleCount} selected</p>
+            ) : null}
+          </div>
         </div>
+        <ChevronDown
+          className={`h-5 w-5 text-gray-400 transition-transform ${expanded[id] ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {expanded[id] && <div className="mt-4 space-y-2">{children}</div>}
+    </div>
+  )
 
-        <section>
-          <button
-            type="button"
-            onClick={() => toggleSection("states")}
-            className="flex w-full items-center justify-between py-2 text-left"
-          >
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">States</h3>
-              {filters.states.length > 0 && (
-                <p className="text-xs text-blue-600">{filters.states.length} selected</p>
-              )}
+  return (
+    <>
+      {/* OLD-style: Mobile toggle with badge */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-4 left-4 z-30 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white shadow-xl transition-all hover:shadow-2xl lg:hidden"
+        aria-label="Open filters"
+      >
+        <FilterIcon className="h-6 w-6" />
+        {activeFilterCount > 0 && (
+          <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+            {activeFilterCount}
+          </span>
+        )}
+      </button>
+
+      {/* Drawer/Sidebar container */}
+      <aside
+        className={`fixed top-0 left-0 z-20 h-auto w-80 -translate-x-full border-r border-gray-100 bg-white shadow-xl transition-transform duration-300 ease-out lg:relative lg:w-full lg:translate-x-0 lg:rounded-xl lg:shadow-lg ${
+          isOpen ? 'translate-x-0' : ''
+        }`}
+      >
+        <div className="h-full overflow-y-auto p-6">
+          {/* Header with Clear all */}
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 p-2 shadow-sm">
+                <FilterIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Filters</h2>
+                {activeFilterCount > 0 && (
+                  <p className="text-xs text-gray-500">{activeFilterCount} active</p>
+                )}
+              </div>
             </div>
-            <ChevronDown
-              className={`h-4 w-4 text-gray-500 transition-transform ${
-                expandedSections.states ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-          {expandedSections.states && (
-            <div className="space-y-2">
-              {stateOptions.map(option => {
-                const checked = filters.states.includes(option.value)
+            <div className="flex items-center gap-2">
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="rounded-lg px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700"
+                >
+                  Clear all
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="rounded-lg p-1.5 transition-colors hover:bg-gray-100 lg:hidden"
+                aria-label="Close filters"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+          </div>
+
+          {/* Keep NEW component that shows/removes active filters */}
+          <div className="mb-6">
+            <ActiveFiltersBar />
+          </div>
+
+          {/* Sections with OLD look, NEW data/behavior */}
+          <div className="space-y-2">
+            <Section id="states" title="States" subtitleCount={filters.states.length || undefined}>
+              {stateOptions.map(({ value, label, count }) => {
+                const checked = filters.states.includes(value)
+                const disabled = count === 0 && !checked
                 return (
-                  <label key={option.value} className="flex items-center justify-between text-sm text-gray-700">
-                    <span className="flex items-center gap-2">
+                  <label
+                    key={value}
+                    className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
+                      disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-white'
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
                       <input
                         type="checkbox"
                         checked={checked}
-                        value={option.value}
-                        onChange={() => toggleState(option.value)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={disabled}
+                        onChange={() => !disabled && toggleState(value)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
                       />
-                      {option.label}
+                      <span className={`text-sm font-medium ${disabled ? 'text-gray-400' : 'text-gray-700'}`}>
+                        {label}
+                      </span>
                     </span>
-                    <span className="text-xs text-gray-500">{option.count}</span>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs transition-colors ${
+                        checked
+                          ? 'bg-blue-100 font-semibold text-blue-700'
+                          : disabled
+                          ? 'bg-gray-50 text-gray-400'
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}
+                    >
+                      {count}
+                    </span>
                   </label>
                 )
               })}
-            </div>
-          )}
-        </section>
+            </Section>
 
-        <section className="mt-4">
-          <button
-            type="button"
-            onClick={() => toggleSection("capabilities")}
-            className="flex w-full items-center justify-between py-2 text-left"
-          >
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Capabilities</h3>
-              {filters.capabilities.length > 0 && (
-                <p className="text-xs text-blue-600">{filters.capabilities.length} selected</p>
-              )}
-            </div>
-            <ChevronDown
-              className={`h-4 w-4 text-gray-500 transition-transform ${
-                expandedSections.capabilities ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-          {expandedSections.capabilities && (
-            <div className="space-y-2">
-              {capabilityOptions.map(option => {
-                const checked = filters.capabilities.includes(option.value)
+            <Section id="capabilities" title="Capabilities" subtitleCount={filters.capabilities.length || undefined}>
+              {capabilityOptions.map(({ value, label, count }) => {
+                const checked = filters.capabilities.includes(value)
+                const disabled = count === 0 && !checked
                 return (
-                  <label key={option.value} className="flex items-center justify-between text-sm text-gray-700">
-                    <span className="flex items-center gap-2">
+                  <label
+                    key={value}
+                    className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
+                      disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-white'
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
                       <input
                         type="checkbox"
                         checked={checked}
-                        value={option.value}
-                        onChange={() => toggleCapability(option.value)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={disabled}
+                        onChange={() => !disabled && toggleCapability(value)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
                       />
-                      {option.label}
+                      <span className={`text-sm font-medium ${disabled ? 'text-gray-400' : 'text-gray-700'}`}>
+                        {label}
+                      </span>
                     </span>
-                    <span className="text-xs text-gray-500">{option.count}</span>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs transition-colors ${
+                        checked
+                          ? 'bg-blue-100 font-semibold text-blue-700'
+                          : disabled
+                          ? 'bg-gray-50 text-gray-400'
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}
+                    >
+                      {count}
+                    </span>
                   </label>
                 )
               })}
-            </div>
-          )}
-        </section>
+            </Section>
 
-        <section className="mt-4">
-          <button
-            type="button"
-            onClick={() => toggleSection("volume")}
-            className="flex w-full items-center justify-between py-2 text-left"
-          >
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Production Volume</h3>
-              {filters.productionVolume && <p className="text-xs text-blue-600">1 selected</p>}
-            </div>
-            <ChevronDown
-              className={`h-4 w-4 text-gray-500 transition-transform ${
-                expandedSections.volume ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-          {expandedSections.volume && (
-            <div className="space-y-2">
-              {volumeOptions.map(option => {
-                const checked = filters.productionVolume === option.value
+            <Section id="volume" title="Production Volume" subtitleCount={filters.productionVolume ? 1 : undefined}>
+              {volumeOptions.map(({ value, label, count }) => {
+                const checked = filters.productionVolume === value
+                const disabled = count === 0 && !checked
                 return (
-                  <label key={option.value} className="flex items-center justify-between text-sm text-gray-700">
-                    <span className="flex items-center gap-2">
+                  <label
+                    key={value}
+                    className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
+                      disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-white'
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
                       <input
                         type="radio"
                         checked={checked}
-                        value={option.value}
-                        onChange={() => selectProductionVolume(option.value)}
-                        className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={disabled}
+                        onChange={() => !disabled && selectProductionVolume(value)}
+                        className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
                       />
-                      {option.label}
+                      <span className={`text-sm font-medium ${disabled ? 'text-gray-400' : 'text-gray-700'}`}>
+                        {label}
+                      </span>
                     </span>
-                    <span className="text-xs text-gray-500">{option.count}</span>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs transition-colors ${
+                        checked
+                          ? 'bg-blue-100 font-semibold text-blue-700'
+                          : disabled
+                          ? 'bg-gray-50 text-gray-400'
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}
+                    >
+                      {count}
+                    </span>
                   </label>
                 )
               })}
-            </div>
-          )}
-        </section>
-      </div>
-    </aside>
+            </Section>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-10 bg-black/50 backdrop-blur-sm transition-opacity lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </>
   )
 }

@@ -117,23 +117,31 @@ export default async function StateManufacturersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const [{ state }, sp] = await Promise.all([params, searchParams])
-  const initialFilters = parseFiltersFromSearchParams(sp)
+  const parsedFilters = parseFiltersFromSearchParams(sp)
+  const cursor = parseCursor(sp)
   const stateData = STATE_DATA[state.toLowerCase()]
-  
+
   if (!stateData) {
     notFound()
   }
-  
+
+  const filters = {
+    ...parsedFilters,
+    states: parsedFilters.states.length > 0 ? parsedFilters.states : [stateData.abbreviation],
+  }
+
   const searchResult = await companySearch({
-    filters: initialFilters,
+    filters,
     routeDefaults: { state: stateData.abbreviation },
+    cursor,
   })
 
+
   const companies = sanitizeCompaniesForListing(searchResult.companies)
-  
+
   // Get aggregated stats
   const stats = {
-    totalCompanies: searchResult.totalCount,
+    totalCompanies: totalCount,
     certifications: [
       ...new Set(
         companies.flatMap((company) =>
@@ -200,7 +208,7 @@ export default async function StateManufacturersPage({
   }
   
   return (
-    <FilterProvider initialFilters={initialFilters}>
+    <FilterProvider initialFilters={filters}>
       <>
         <script
           type="application/ld+json"
@@ -320,7 +328,7 @@ export default async function StateManufacturersPage({
               <FilterSidebar facetCounts={searchResult.facetCounts ?? undefined} />
             </div>
             <div className="lg:col-span-8">
-              <CompanyList companies={companies || []} totalCount={searchResult.totalCount} />
+              <CompanyList companies={companies || []} totalCount={totalCount} pageInfo={pageInfo} />
             </div>
           </div>
 

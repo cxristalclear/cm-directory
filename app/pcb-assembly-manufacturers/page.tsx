@@ -39,13 +39,13 @@ export default async function PcbAssemblyManufacturers({
               <Suspense fallback={<div>Loading filters...</div>}>
                 <FilterSidebar facetCounts={searchResult.facetCounts ?? undefined} />
               </Suspense>
-            </div>
-            <div className="lg:col-span-8 space-y-6">
-              <LazyCompanyMap allCompanies={companies} />
+          </div>
+          <div className="lg:col-span-8 space-y-6">
+              <LazyCompanyMap companies={companies} />
               <Suspense fallback={<div className="rounded-xl border border-dashed border-gray-300 p-6">Loading companies…</div>}>
-                <CompanyList companies={companies} totalCount={searchResult.totalCount} />
+                <CompanyList companies={companies} totalCount={searchResult.totalCount} pageInfo={searchResult.pageInfo} />
               </Suspense>
-            </div>
+          </div>
           </div>
         </main>
       </div>
