@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { supabase } from '@/lib/supabase'
+import type { Capabilities, Certification, Facility } from '@/types/company'
 
 export async function generateMetadata({ 
   params 
@@ -26,7 +27,7 @@ export async function generateMetadata({
       certifications (certification_type)
     `)
     .eq('slug', slug)
-    .single()
+    .single<MetadataCompany>()
   
   if (!company) {
     return {
@@ -36,9 +37,11 @@ export async function generateMetadata({
   }
   
   // Build location string
-  const location = company.facilities?.[0] 
-    ? `${company.facilities[0].city}, ${company.facilities[0].state}` 
-    : ''
+  const primaryFacility = company.facilities?.[0]
+  const locationParts = [primaryFacility?.city, primaryFacility?.state].filter(
+    (value): value is string => typeof value === 'string' && value.length > 0,
+  )
+  const location = locationParts.join(', ')
   
   // Get top capabilities
   const capabilityRecord = company.capabilities?.[0]
@@ -49,12 +52,18 @@ export async function generateMetadata({
   if (capabilityRecord?.box_build_assembly) capabilityLabels.push('Box Build Assembly')
   if (capabilityRecord?.prototyping) capabilityLabels.push('Prototyping Services')
   const topCapabilities = capabilityLabels.slice(0, 3).join(', ')
-  
+
   const capabilitiesDescription = topCapabilities ? `Capabilities include ${topCapabilities}.` : ''
+
+  const certificationList = company.certifications?.map((cert) => cert.certification_type) ?? []
+  const certifications = certificationList
+    .filter((value) => typeof value === 'string' && value.length > 0)
+    .slice(0, 3)
+    .join(', ')
 
   return {
     title: `${company.company_name} - Contract Manufacturer ${location ? `in ${location}` : ''}`,
-    description: `${company.description || `${company.company_name} provides contract manufacturing services`}. ${capabilitiesDescription} View full profile, certifications, and contact information.`.trim(),
+    description: `${company.description || `${company.company_name} provides contract manufacturing services`}. ${capabilitiesDescription} ${certifications ? `Certifications: ${certifications}.` : ''}View full profile, certifications, and contact information.`.trim(),
     
     // Open Graph
     openGraph: {
@@ -86,4 +95,22 @@ export async function generateMetadata({
       },
     },
   }
+}
+
+type MetadataCompany = {
+  company_name: string
+  description: string | null
+  logo_url: string | null
+  facilities: Array<Pick<Facility, 'city' | 'state'>> | null
+  capabilities: Array<
+    Pick<
+      Capabilities,
+      | 'pcb_assembly_smt'
+      | 'pcb_assembly_through_hole'
+      | 'cable_harness_assembly'
+      | 'box_build_assembly'
+      | 'prototyping'
+    >
+  > | null
+  certifications: Array<Pick<Certification, 'certification_type'>> | null
 }

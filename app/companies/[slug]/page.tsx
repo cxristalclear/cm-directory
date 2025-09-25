@@ -1,18 +1,23 @@
 import { supabase } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import type { Metadata } from 'next'
-import type { CompanyWithRelations } from "@/types/company"
+import type {
+  Capabilities,
+  Certification,
+  CompanyWithRelations,
+  Facility,
+} from "@/types/company"
 import { CompanySchema } from "@/components/CompanySchema"
 import CompanyDetailClient from "./CompanyDetailClient"
 
 // Generate dynamic metadata for SEO
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: Promise<{ slug: string }> 
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  
+
   const { data: company } = await supabase
     .from("companies")
     .select(`
@@ -29,19 +34,21 @@ export async function generateMetadata({
       certifications (certification_type)
     `)
     .eq("slug", slug)
-    .single()
-  
+    .single<MetadataCompany>()
+
   if (!company) {
     return {
       title: 'Company Not Found | CM Directory',
       description: 'The requested manufacturer profile could not be found.',
     }
   }
-  
-  const location = company.facilities?.[0] 
-    ? `${company.facilities[0].city}, ${company.facilities[0].state}` 
-    : ''
-  
+
+  const primaryFacility = company.facilities?.[0]
+  const locationParts = [primaryFacility?.city, primaryFacility?.state].filter(
+    (value): value is string => typeof value === "string" && value.length > 0,
+  )
+  const location = locationParts.join(', ')
+
   // Get key capabilities for description
   const capabilities: string[] = []
   const capabilityRecord = company.capabilities?.[0]
@@ -50,8 +57,12 @@ export async function generateMetadata({
   if (capabilityRecord?.cable_harness_assembly) capabilities.push('Cable Assembly')
   if (capabilityRecord?.box_build_assembly) capabilities.push('Box Build')
   if (capabilityRecord?.prototyping) capabilities.push('Prototyping')
-  
-  const certifications = company.certifications?.map(c => c.certification_type).slice(0, 3).join(', ')
+
+  const certificationList = company.certifications?.map((cert) => cert.certification_type) ?? []
+  const certifications = certificationList
+    .filter((value) => typeof value === 'string' && value.length > 0)
+    .slice(0, 3)
+    .join(', ')
   
   return {
     title: `${company.company_name} - Contract Manufacturer${location ? ` in ${location}` : ''} | CM Directory`,
@@ -180,13 +191,32 @@ export default async function CompanyPage({
     notFound()
   }
 
+  const typedCompany: CompanyWithRelations = company
+
   return (
     <>
       {/* JSON-LD Schema for SEO */}
-      <CompanySchema company={company} />
-      
+      <CompanySchema company={typedCompany} />
+
       {/* Client Component for interactivity */}
-      <CompanyDetailClient company={company} />
+      <CompanyDetailClient company={typedCompany} />
     </>
   )
+}
+
+type MetadataCompany = {
+  company_name: string
+  description: string | null
+  facilities: Array<Pick<Facility, 'city' | 'state'>> | null
+  capabilities: Array<
+    Pick<
+      Capabilities,
+      | 'pcb_assembly_smt'
+      | 'pcb_assembly_through_hole'
+      | 'cable_harness_assembly'
+      | 'box_build_assembly'
+      | 'prototyping'
+    >
+  > | null
+  certifications: Array<Pick<Certification, 'certification_type'>> | null
 }

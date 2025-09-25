@@ -8,17 +8,41 @@ export const metadata: Metadata = {
   description: 'Find contract manufacturers across the United States. Browse by state to find local manufacturing partners with the capabilities and certifications you need.',
 }
 
+function normalizeStateCode(state: string | null | undefined): string | null {
+  if (typeof state !== "string") {
+    return null
+  }
+  const trimmed = state.trim()
+  if (!trimmed) {
+    return null
+  }
+  return trimmed.toUpperCase()
+}
+
 export default async function ManufacturersIndexPage() {
-  // Get counts by state
-  const { data: stateCounts } = await supabase
-    .from('facilities')
-    .select('state')
-    .not('state', 'is', null)
-  
-  const stateStats = stateCounts?.reduce((acc, { state }) => {
-    acc[state] = (acc[state] || 0) + 1
-    return acc
-  }, {} as Record<string, number>) || {}
+  let stateStats: Record<string, number> = {}
+
+  try {
+    const { data: stateCounts, error } = await supabase
+      .from("facilities")
+      .select("state")
+      .not("state", "is", null)
+
+    if (error) {
+      throw error
+    }
+
+    stateStats = (stateCounts ?? []).reduce<Record<string, number>>((acc, { state }) => {
+      const normalized = normalizeStateCode(state ?? null)
+      if (!normalized) {
+        return acc
+      }
+      acc[normalized] = (acc[normalized] ?? 0) + 1
+      return acc
+    }, {})
+  } catch (error) {
+    console.error("Failed to load manufacturer index stats", error)
+  }
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -34,7 +58,7 @@ export default async function ManufacturersIndexPage() {
             .map(([state, count]) => (
               <Link
                 key={state}
-                href={`/manufacturers/${state.toLowerCase()}`}
+                href={`/manufacturers/${state}`}
                 className="bg-white p-4 rounded-lg border hover:border-blue-500 hover:shadow-lg transition-all"
               >
                 <div className="flex items-start justify-between">

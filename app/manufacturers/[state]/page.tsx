@@ -11,58 +11,108 @@ import { companySearch, parseCursor } from "@/lib/queries/companySearch"
 import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 import { supabase } from "@/lib/supabase"
 
+type StateCode = "CA" | "TX" | "OH" | "MI"
+
+const STATE_NAME_TO_CODE: Record<string, StateCode> = {
+  california: "CA",
+  texas: "TX",
+  ohio: "OH",
+  michigan: "MI",
+}
+
 const STATE_DATA: Record<
-  string,
+  StateCode,
   {
     name: string
-    abbreviation: string
+    abbreviation: StateCode
+    slug: string
     fullName: string
     description: string
     majorCities: string[]
   }
 > = {
-  california: {
+  CA: {
     name: "California",
     abbreviation: "CA",
+    slug: "california",
     fullName: "California",
     description: "Silicon Valley and Southern California host advanced electronics and medical device manufacturers",
     majorCities: ["Los Angeles", "San Diego", "San Jose", "San Francisco"],
   },
-  texas: {
+  TX: {
     name: "Texas",
     abbreviation: "TX",
+    slug: "texas",
     fullName: "Texas",
     description: "Major manufacturing hub with aerospace, defense, and energy sector specializations",
     majorCities: ["Houston", "Dallas", "Austin", "San Antonio"],
   },
-  ohio: {
+  OH: {
     name: "Ohio",
     abbreviation: "OH",
+    slug: "ohio",
     fullName: "Ohio",
     description: "Traditional manufacturing powerhouse with automotive and industrial expertise",
     majorCities: ["Columbus", "Cleveland", "Cincinnati", "Dayton"],
   },
-  michigan: {
+  MI: {
     name: "Michigan",
     abbreviation: "MI",
+    slug: "michigan",
     fullName: "Michigan",
     description: "Automotive manufacturing capital with growing medical device and aerospace sectors",
     majorCities: ["Detroit", "Grand Rapids", "Warren", "Sterling Heights"],
   },
 }
 
-export async function generateStaticParams() {
-  const { data: facilities } = await supabase.from("facilities").select("state").not("state", "is", null)
-  const uniqueStates = [
-    ...new Set(
-      (facilities ?? [])
-        .map((facility) => facility?.state)
-        .filter((state): state is string => typeof state === "string" && state.length > 0)
-        .map((state) => state.toLowerCase()),
-    ),
-  ]
+function resolveStateData(raw: string | undefined): (typeof STATE_DATA)[StateCode] | null {
+  if (!raw) {
+    return null
+  }
+  const trimmed = raw.trim()
+  if (!trimmed) {
+    return null
+  }
+  const upper = trimmed.toUpperCase()
+  if (upper in STATE_DATA) {
+    return STATE_DATA[upper as StateCode]
+  }
+  const lower = trimmed.toLowerCase()
+  const code = STATE_NAME_TO_CODE[lower]
+  return code ? STATE_DATA[code] : null
+}
 
-  return uniqueStates.filter((state) => STATE_DATA[state]).map((state) => ({ state }))
+export async function generateStaticParams() {
+  try {
+    const { data: facilities, error } = await supabase
+      .from("facilities")
+      .select("state")
+      .not("state", "is", null)
+
+    if (error) {
+      throw error
+    }
+
+    const uniqueStates = new Set<string>()
+    for (const facility of facilities ?? []) {
+      const state = resolveStateData(facility?.state ?? undefined)
+      if (state) {
+        uniqueStates.add(state.abbreviation)
+        uniqueStates.add(state.slug)
+      }
+    }
+
+    if (uniqueStates.size > 0) {
+      return Array.from(uniqueStates).map((state) => ({ state }))
+    }
+  } catch (error) {
+    console.error("Failed to resolve state params", error)
+  }
+
+  return (Object.values(STATE_DATA) as Array<(typeof STATE_DATA)[StateCode]>).flatMap((state) => [
+    { state: state.slug },
+    { state: state.abbreviation },
+  ])
 }
 
 export async function generateMetadata({
@@ -71,7 +121,7 @@ export async function generateMetadata({
   params: Promise<{ state: string }>
 }): Promise<Metadata> {
   const { state } = await params
-  const stateData = STATE_DATA[state.toLowerCase()]
+  const stateData = resolveStateData(state)
 
   if (!stateData) {
     return {
@@ -80,21 +130,34 @@ export async function generateMetadata({
     }
   }
 
-  const { count } = await supabase
-    .from("facilities")
-    .select("id", { count: "exact", head: true })
-    .eq("state", stateData.abbreviation)
+  let facilityCount = 0
+  try {
+    const { count, error } = await supabase
+      .from("facilities")
+      .select("id", { count: "exact", head: true })
+      .eq("state", stateData.abbreviation)
+
+    if (error) {
+      throw error
+    }
+
+    facilityCount = count ?? 0
+  } catch (error) {
+    console.error("Failed to load facility count", { state: stateData.abbreviation }, error)
+  }
 
   return {
-    title: `Contract Manufacturers in ${stateData.fullName} | ${count || 0}+ Verified Companies`,
-    description: `Find ${count || ""} verified contract manufacturers in ${stateData.fullName}. ${stateData.description}. Compare capabilities, certifications, and get quotes from local manufacturing partners.`,
+    title: `Contract Manufacturers in ${stateData.fullName} | ${facilityCount}+ Verified Companies`,
+    description: `Find ${
+      facilityCount || ""
+    } verified contract manufacturers in ${stateData.fullName}. ${stateData.description}. Compare capabilities, certifications, and get quotes from local manufacturing partners.`,
     openGraph: {
       title: `${stateData.fullName} Contract Manufacturers Directory`,
       description: `Browse verified contract manufacturers in ${stateData.fullName}. ${stateData.description}`,
       type: "website",
     },
     alternates: {
-      canonical: `https://yourdomain.com/manufacturers/${state}`,
+      canonical: `https://yourdomain.com/manufacturers/${stateData.slug}`,
     },
   }
 }
@@ -107,13 +170,14 @@ export default async function StateManufacturersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const [{ state }, resolvedSearch] = await Promise.all([params, searchParams])
-  const stateData = STATE_DATA[state.toLowerCase()]
+  const stateData = resolveStateData(state)
 
   if (!stateData) {
     notFound()
   }
 
-  const basePath = `/manufacturers/${state}`
+  const stateSegment = stateData.slug
+  const basePath = `/manufacturers/${stateSegment}`
   const parsedFilters = parseFiltersFromSearchParams(resolvedSearch)
   const cursor = parseCursor(resolvedSearch)
 
