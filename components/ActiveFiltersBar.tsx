@@ -92,8 +92,8 @@ export default function ActiveFiltersBar() {
   const hasActiveFilters = chips.length > 0
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-800">
+      <div className="rounded-full p-1 text-neutral-500 hover:bg-neutral-200/60 hover:text-neutral-700">
         {hasActiveFilters ? chips : <span className="text-sm text-neutral-500">No active filters</span>}
       </div>
       {hasActiveFilters && (

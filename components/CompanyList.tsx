@@ -55,7 +55,16 @@ export default function CompanyList({ companies, totalCount, pageInfo }: Company
     setFilteredCount(totalCount)
   }, [setFilteredCount, totalCount])
 
+<<<<<<< HEAD
   if (companies.length === 0) {
+=======
+  const visibleCompanies = filteredCompanies.slice(0, limit)
+  const summary = createSummary(filteredCompanies.length, visibleCompanies.length)
+
+  
+
+  if (visibleCompanies.length === 0) {
+>>>>>>> 08b0051 (updated filter UI)
     return (
       <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
         <Building2 className="mb-4 inline h-12 w-12 text-gray-400" />

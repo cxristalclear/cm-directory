@@ -1,6 +1,5 @@
 import { Suspense } from "react"
 import Script from "next/script"
-import ActiveFiltersBar from "@/components/ActiveFiltersBar"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
@@ -72,9 +71,6 @@ export default async function Home({
           <Header totalCompanies={totalCount} />
 
           <main className="container mx-auto px-4 py-6">
-            <div className="mb-6">
-              <ActiveFiltersBar />
-            </div>
 
             {/* Top Content Ad - Native/Sponsored */}
             <div className="mb-6 bg-white rounded-xl shadow-xl p-4">
@@ -86,7 +82,6 @@ export default async function Home({
                 className="border-blue-200"
               />
             </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Filter Sidebar */}
               <div className="lg:col-span-3 space-y-4">
