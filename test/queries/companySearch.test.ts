@@ -323,6 +323,21 @@ describe("companySearch", () => {
     expect(result.facetCounts).toBeNull()
   })
 
+  it("returns all companies when no filters or cursor are provided", async () => {
+    const mainEntry = enqueueBuilder({ data: baseCompanies, count: 2, error: null }, "main")
+    enqueueBuilder({ data: [], error: null }, "state facets")
+    enqueueBuilder({ data: [], error: null }, "cap facets")
+    enqueueBuilder({ data: [], error: null }, "volume facets")
+
+    const result = await companySearch({
+      filters: { states: [], capabilities: [], productionVolume: null },
+    })
+
+    expect(mainEntry.builder.limit).not.toHaveBeenCalled()
+    expect(result.hasNext).toBe(false)
+    expect(result.companies).toHaveLength(baseCompanies.length)
+  })
+
   it("applies bounding box filters", async () => {
     const entry = enqueueBuilder({ data: baseCompanies.slice(0, 1), count: 1, error: null }, "main")
     enqueueBuilder({ data: [], error: null }, "state facets")

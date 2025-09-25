@@ -32,6 +32,8 @@ const CAPABILITY_COLUMN_MAP: Record<CapabilitySlug, CapabilityBooleanColumn> = {
 
 const PRODUCTION_VOLUMES: ProductionVolume[] = ["low", "medium", "high"]
 
+const DEFAULT_PAGE_SIZE = 9
+
 const VOLUME_COLUMN_MAP: Record<ProductionVolume, CapabilityBooleanColumn> = {
   low: "low_volume_production",
   medium: "medium_volume_production",
@@ -613,9 +615,36 @@ function normalizeFilters(options: CompanySearchOptions): NormalizedFilters {
   }
 }
 
+function hasActiveFilters(filters: NormalizedFilters): boolean {
+  return (
+    filters.states.length > 0 ||
+    filters.capabilities.length > 0 ||
+    filters.productionVolume !== null ||
+    filters.certification !== null ||
+    filters.bbox !== null
+  )
+}
+
+function resolvePageSize(
+  requested: CompanySearchOptions["pageSize"],
+  filters: NormalizedFilters,
+  cursor: CompanySearchCursor | null,
+): number | null {
+  if (typeof requested === "number") {
+    return requested
+  }
+
+  if (hasActiveFilters(filters) || cursor) {
+    return DEFAULT_PAGE_SIZE
+  }
+
+  return null
+}
+
 export async function companySearch(options: CompanySearchOptions): Promise<CompanySearchResult> {
-  const { cursor = null, pageSize = 9, includeFacetCounts = true } = options
+  const { cursor = null, includeFacetCounts = true } = options
   const filters = normalizeFilters(options)
+  const resolvedPageSize = resolvePageSize(options.pageSize, filters, cursor)
 
   try {
     const builder = supabase
@@ -627,7 +656,10 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
 
     builder.order("company_name", { ascending: true })
     builder.order("id", { ascending: true })
-    builder.limit(pageSize + 1)
+
+    if (resolvedPageSize !== null) {
+      builder.limit(resolvedPageSize + 1)
+    }
 
     const { data, count, error } = await builder
 
@@ -636,8 +668,8 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
     }
 
     const rows = (data ?? []) as CompanyRecord[]
-    const hasNext = rows.length > pageSize
-    const trimmedRows = hasNext ? rows.slice(0, pageSize) : rows
+    const hasNext = resolvedPageSize !== null ? rows.length > resolvedPageSize : false
+    const trimmedRows = hasNext && resolvedPageSize !== null ? rows.slice(0, resolvedPageSize) : rows
     const companies = trimmedRows.map((row) => coerceCompany(row))
 
     const lastCompany = companies.at(-1) ?? null
