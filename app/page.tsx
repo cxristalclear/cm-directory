@@ -6,7 +6,6 @@ import Header from "@/components/Header"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch, parseCursor } from "@/lib/queries/companySearch"
 import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
-import FilterDebugger from "@/components/FilterDebugger"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
