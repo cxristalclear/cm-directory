@@ -10,11 +10,11 @@ import {
   X,
 } from 'lucide-react'
 
-import { useFilters } from '@/contexts/FilterContext'
-import type { Company } from '@/types/company'
-import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
-import { getStateName } from '@/utils/stateMapping'
-import ActiveFiltersBar from './ActiveFiltersBar'
+
+import { useFilters } from "@/contexts/FilterContext"
+import type { CompanyFacetCounts } from "@/lib/queries/companySearch"
+import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
+import { STATE_NAMES, getStateName } from "@/utils/stateMapping"
 
 interface FilterSidebarProps {
   facetCounts?: CompanyFacetCounts | null
@@ -42,78 +42,119 @@ const VOLUME_LABELS: Record<ProductionVolume, string> = {
   high: 'High Volume',
 }
 
-export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
-  // === Keep NEW filter state + API ===
-  const { filters, updateFilter, clearFilters } = useFilters()
+export function createStateOptions(
+  facetCounts: CompanyFacetCounts | null | undefined,
+  selectedStates: string[],
+): FilterOption<string>[] {
+  const counts = new Map<string, number>()
 
-  // OLD-style: mobile drawer toggle + section expanders
-  const [isOpen, setIsOpen] = useState(false)
-  const [expanded, setExpanded] = useState<Record<FilterSection, boolean>>({
+  if (facetCounts) {
+    for (const { code, count } of facetCounts.states) {
+      counts.set(code.toUpperCase(), count)
+    }
+  }
+
+  for (const state of selectedStates) {
+    const normalized = state.toUpperCase()
+    if (!counts.has(normalized)) {
+      counts.set(normalized, 0)
+    }
+  }
+
+  if (!facetCounts) {
+    for (const code of Object.keys(STATE_NAMES)) {
+      if (!counts.has(code)) {
+        counts.set(code, 0)
+      }
+    }
+  }
+
+  return Array.from(counts.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([state, count]) => ({
+      value: state,
+      label: getStateName(state) ?? state,
+      count,
+    }))
+}
+
+export function createCapabilityOptions(
+  facetCounts: CompanyFacetCounts | null | undefined,
+  selectedCapabilities: CapabilitySlug[],
+): FilterOption<CapabilitySlug>[] {
+  const counts = new Map<CapabilitySlug, number>()
+
+  if (facetCounts) {
+    for (const { slug, count } of facetCounts.capabilities) {
+      counts.set(slug, count)
+    }
+  }
+
+  for (const capability of selectedCapabilities) {
+    if (!counts.has(capability)) {
+      counts.set(capability, 0)
+    }
+  }
+
+  return (Object.keys(CAPABILITY_LABELS) as CapabilitySlug[]).map(value => ({
+    value,
+    label: CAPABILITY_LABELS[value],
+    count: counts.get(value) ?? 0,
+  }))
+}
+
+export function createVolumeOptions(
+  facetCounts: CompanyFacetCounts | null | undefined,
+  selectedVolume: ProductionVolume | null,
+): FilterOption<ProductionVolume>[] {
+  const counts = new Map<ProductionVolume, number>()
+
+  if (facetCounts) {
+    for (const { level, count } of facetCounts.productionVolume) {
+      counts.set(level, count)
+    }
+  }
+
+  if (selectedVolume && !counts.has(selectedVolume)) {
+    counts.set(selectedVolume, 0)
+  }
+
+  return (Object.keys(VOLUME_LABELS) as ProductionVolume[]).map(value => ({
+    value,
+    label: VOLUME_LABELS[value],
+    count: counts.get(value) ?? 0,
+  }))
+}
+
+export default function FilterSidebar({ facetCounts }: FilterSidebarProps) {
+  const { filters, updateFilter, clearFilters } = useFilters()
+  const [expandedSections, setExpandedSections] = useState<Record<FilterSection, boolean>>({
     states: true,
     capabilities: true,
     volume: true,
   })
 
-  // === Keep NEW counting logic (no cross-filter dependency) ===
-  const stateOptions = useMemo((): FilterOption<string>[] => {
-    const counts = new Map<string, number>()
-    for (const company of allCompanies) {
-      for (const facility of company.facilities ?? []) {
-        const st = facility?.state?.toUpperCase()
-        if (!st) continue
-        counts.set(st, (counts.get(st) ?? 0) + 1)
-      }
-    }
-    return Array.from(counts.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([state, count]) => ({
-        value: state,
-        label: getStateName(state) ?? state,
-        count,
-      }))
-  }, [facetCounts, filters.states])
+  const stateOptions = useMemo(
+    () => createStateOptions(facetCounts, filters.states),
+    [facetCounts, filters.states],
+  )
 
-  const capabilityOptions = useMemo((): FilterOption<CapabilitySlug>[] => {
-    const counts = new Map<CapabilitySlug, number>()
-    for (const company of allCompanies) {
-      const cap = company.capabilities?.[0]
-      if (!cap) continue
-      if (cap.pcb_assembly_smt)
-        counts.set('smt', (counts.get('smt') ?? 0) + 1)
-      if (cap.pcb_assembly_through_hole)
-        counts.set('through_hole', (counts.get('through_hole') ?? 0) + 1)
-      if (cap.cable_harness_assembly)
-        counts.set('cable_harness', (counts.get('cable_harness') ?? 0) + 1)
-      if (cap.box_build_assembly)
-        counts.set('box_build', (counts.get('box_build') ?? 0) + 1)
-      if (cap.prototyping)
-        counts.set('prototyping', (counts.get('prototyping') ?? 0) + 1)
-    }
-    return (Object.keys(CAPABILITY_LABELS) as CapabilitySlug[]).map(value => ({
-      value,
-      label: CAPABILITY_LABELS[value],
-      count: counts.get(value) ?? 0,
-    }))
-  }, [facetCounts, filters.capabilities])
+  const capabilityOptions = useMemo(
+    () => createCapabilityOptions(facetCounts, filters.capabilities),
+    [facetCounts, filters.capabilities],
+  )
 
-  const volumeOptions = useMemo((): FilterOption<ProductionVolume>[] => {
-    const counts = new Map<ProductionVolume, number>()
-    for (const company of allCompanies) {
-      const cap = company.capabilities?.[0]
-      if (!cap) continue
-      if (cap.low_volume_production)
-        counts.set('low', (counts.get('low') ?? 0) + 1)
-      if (cap.medium_volume_production)
-        counts.set('medium', (counts.get('medium') ?? 0) + 1)
-      if (cap.high_volume_production)
-        counts.set('high', (counts.get('high') ?? 0) + 1)
-    }
-    return (Object.keys(VOLUME_LABELS) as ProductionVolume[]).map(value => ({
-      value,
-      label: VOLUME_LABELS[value],
-      count: counts.get(value) ?? 0,
+  const volumeOptions = useMemo(
+    () => createVolumeOptions(facetCounts, filters.productionVolume),
+    [facetCounts, filters.productionVolume],
+  )
+
+  const toggleSection = (section: FilterSection) => {
+    setExpandedSections(previous => ({
+      ...previous,
+      [section]: !previous[section],
     }))
-  }, [allCompanies])
+  }
 
   // === NEW behavior: updateFilter calls ===
   const toggleState = (value: string) => {

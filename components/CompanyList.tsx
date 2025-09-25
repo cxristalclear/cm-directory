@@ -5,12 +5,10 @@ import Link from "next/link"
 import { Building2, ChevronRight, MapPin } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
-import type { Company } from "@/types/company"
-import type { CompanySearchPageInfo } from "@/lib/queries/companySearch"
-import Pagination from "./Pagination"
+import type { ListingCompany } from "@/types/company"
 
 interface CompanyListProps {
-  companies: Company[]
+  companies: ListingCompany[]
   totalCount: number
   pageInfo?: CompanySearchPageInfo
 }
@@ -55,16 +53,8 @@ export default function CompanyList({ companies, totalCount, pageInfo }: Company
     setFilteredCount(totalCount)
   }, [setFilteredCount, totalCount])
 
-<<<<<<< HEAD
   if (companies.length === 0) {
-=======
-  const visibleCompanies = filteredCompanies.slice(0, limit)
-  const summary = createSummary(filteredCompanies.length, visibleCompanies.length)
 
-  
-
-  if (visibleCompanies.length === 0) {
->>>>>>> 08b0051 (updated filter UI)
     return (
       <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
         <Building2 className="mb-4 inline h-12 w-12 text-gray-400" />
@@ -86,9 +76,13 @@ export default function CompanyList({ companies, totalCount, pageInfo }: Company
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {companies.map((company) => {
-          const location = primaryLocation(company)
-          const badges = capabilityBadges(company)
+
+        {visibleCompanies.map(company => {
+          const facility = company.facilities[0]
+          const location = facility?.city && facility?.state ? `${facility.city}, ${facility.state}` : "Multiple"
+          const capabilityRecord = company.capabilities[0]
+          const industries = company.industries
+          const certifications = company.certifications
 
           return (
             <Link

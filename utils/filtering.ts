@@ -1,10 +1,10 @@
-import type { Company, FilterState } from "../types/company"
+import type { FilterState, ListingCompany } from "../types/company"
 
-export function filterCompanies(companies: Company[], filters: FilterState): Company[] {
+export function filterCompanies(companies: ListingCompany[], filters: FilterState): ListingCompany[] {
   return companies.filter((company) => {
     if (filters.states.length > 0) {
-      const hasState = company.facilities?.some((facility) => {
-        return typeof facility?.state === "string" && filters.states.includes(facility.state)
+      const hasState = company.facilities.some((facility) => {
+        return typeof facility.state === "string" && filters.states.includes(facility.state)
       })
       if (!hasState) {
         return false
@@ -12,7 +12,7 @@ export function filterCompanies(companies: Company[], filters: FilterState): Com
     }
 
     if (filters.capabilities.length > 0) {
-      const capabilityRecord = company.capabilities?.[0]
+      const capabilityRecord = company.capabilities[0]
       if (!capabilityRecord) {
         return false
       }
@@ -40,7 +40,7 @@ export function filterCompanies(companies: Company[], filters: FilterState): Com
     }
 
     if (filters.productionVolume) {
-      const capabilityRecord = company.capabilities?.[0]
+      const capabilityRecord = company.capabilities[0]
       if (!capabilityRecord) {
         return false
       }

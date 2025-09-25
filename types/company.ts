@@ -63,6 +63,55 @@ export interface CompanyWithRelations extends Company {
   industries?: Industry[]
 }
 
+export type ListingFacility = Pick<
+  Facility,
+  | "id"
+  | "facility_type"
+  | "street_address"
+  | "city"
+  | "state"
+  | "zip_code"
+  | "country"
+  | "latitude"
+  | "longitude"
+  | "is_primary"
+>
+
+export type ListingCapability = Pick<
+  Capabilities,
+  | "id"
+  | "pcb_assembly_smt"
+  | "pcb_assembly_through_hole"
+  | "pcb_assembly_fine_pitch"
+  | "cable_harness_assembly"
+  | "box_build_assembly"
+  | "prototyping"
+  | "low_volume_production"
+  | "medium_volume_production"
+  | "high_volume_production"
+>
+
+export type ListingIndustry = Pick<Industry, "id" | "industry_name">
+
+export type ListingCertification = Pick<Certification, "id" | "certification_type">
+
+export type ListingCompany = Pick<
+  Company,
+  | "id"
+  | "company_name"
+  | "slug"
+  | "dba_name"
+  | "description"
+  | "employee_count_range"
+  | "website_url"
+  | "annual_revenue_range"
+> & {
+  facilities: ListingFacility[]
+  capabilities: ListingCapability[]
+  industries: ListingIndustry[]
+  certifications: ListingCertification[]
+}
+
 export interface Facility {
   id: string // UUID
   company_id: string
@@ -272,6 +321,10 @@ export interface VerificationData {
 // Extended type for facilities with company reference (for map)
 export interface FacilityWithCompany extends Facility {
   company: Company
+}
+
+export interface ListingFacilityWithCompany extends ListingFacility {
+  company: ListingCompany
 }
 
 // Enum types for validation

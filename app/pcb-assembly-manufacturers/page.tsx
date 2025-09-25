@@ -8,6 +8,7 @@ import LazyCompanyMap from "@/components/LazyCompanyMap"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch } from "@/lib/queries/companySearch"
+import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 
 export const metadata = {
   title: "PCB Assembly Manufacturers | CM Directory",
@@ -22,7 +23,7 @@ export default async function PcbAssemblyManufacturers({
   const sp = await searchParams
   const initialFilters = parseFiltersFromSearchParams(sp)
   const searchResult = await companySearch({ filters: initialFilters })
-  const companies = searchResult.companies
+  const companies = sanitizeCompaniesForListing(searchResult.companies)
 
   return (
     <FilterProvider initialFilters={initialFilters}>

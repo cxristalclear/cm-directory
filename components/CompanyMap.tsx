@@ -5,16 +5,16 @@ import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { MapPin, RotateCcw } from "lucide-react"
 import type { FeatureCollection, Point } from "geojson"
-import type { Company, FacilityWithCompany } from "../types/company"
+import type { ListingCompany, ListingFacilityWithCompany } from "../types/company"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
 interface CompanyMapProps {
-  companies: Company[]
+  allCompanies: ListingCompany[]
 }
 
-type FacilityWithCoordinates = FacilityWithCompany & {
+type FacilityWithCoordinates = ListingFacilityWithCompany & {
   latitude: number
   longitude: number
 }
@@ -38,7 +38,7 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
   const facilities = useMemo(() => {
     return companies
       .flatMap((company) =>
-        (company.facilities ?? []).map((facility) => ({
+        company.facilities.map((facility) => ({
           ...facility,
           company,
         })),

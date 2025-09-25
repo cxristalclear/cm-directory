@@ -6,7 +6,9 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { companySearch, parseCursor } from "@/lib/queries/companySearch"
+import { companySearch } from "@/lib/queries/companySearch"
+import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
+
 
 function normalizeCertParam(param: string) {
   // map dashed route to human-readable (e.g., iso-13485 -> ISO 13485)
@@ -47,7 +49,8 @@ export default async function CertManufacturers({
     routeDefaults: { certSlug: cert },
     cursor,
   })
-  const { companies, totalCount, pageInfo, facetCounts } = searchResult
+  
+  const companies = sanitizeCompaniesForListing(searchResult.companies)
   const certNice = normalizeCertParam(cert);
 
   const jsonLd = {

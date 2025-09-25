@@ -5,21 +5,19 @@ import { useMemo } from "react"
 import { Building2 } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
-import type { Company } from "@/types/company"
 
 interface HeaderProps {
-  companies?: Company[]
-  totalCompanies?: number
+  totalCompanies: number
 }
 
-export default function Header({ companies = [], totalCompanies }: HeaderProps) {
+export default function Header({ totalCompanies }: HeaderProps) {
   const { filters, filteredCount, clearFilters } = useFilters()
 
   const activeFilterCount = useMemo(() => {
     return filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
   }, [filters.capabilities.length, filters.productionVolume, filters.states.length])
 
-  const total = typeof totalCompanies === "number" ? totalCompanies : companies.length
+  const total = totalCompanies
   const hasActiveFilters = activeFilterCount > 0
 
   return (
