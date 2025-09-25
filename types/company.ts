@@ -82,6 +82,7 @@ export type ListingCapability = Pick<
   | "id"
   | "pcb_assembly_smt"
   | "pcb_assembly_through_hole"
+  | "pcb_assembly_mixed"
   | "pcb_assembly_fine_pitch"
   | "cable_harness_assembly"
   | "box_build_assembly"

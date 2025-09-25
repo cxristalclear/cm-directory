@@ -1,11 +1,9 @@
-import type { ReactNode } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { beforeEach, describe, expect, it } from "@jest/globals"
-import { serializeCursor } from "@/lib/queries/companySearch"
 
 const mockCompanyList = jest.fn((props: unknown) => null)
 const mockFilterSidebar = jest.fn((props: unknown) => null)
-const mockFilterProvider = jest.fn(({ children }: { children: ReactNode }) => children)
+const mockLazyCompanyMap = jest.fn((props: unknown) => null)
+const mockHeader = jest.fn((props: unknown) => null)
 
 jest.mock("@/components/CompanyList", () => ({
   __esModule: true,
@@ -17,8 +15,14 @@ jest.mock("@/components/FilterSidebar", () => ({
   default: mockFilterSidebar,
 }))
 
-jest.mock("@/contexts/FilterContext", () => ({
-  FilterProvider: (props: { children: ReactNode }) => mockFilterProvider(props),
+jest.mock("@/components/LazyCompanyMap", () => ({
+  __esModule: true,
+  default: mockLazyCompanyMap,
+}))
+
+jest.mock("@/components/Header", () => ({
+  __esModule: true,
+  default: mockHeader,
 }))
 
 jest.mock("@/lib/queries/companySearch", () => {
@@ -33,68 +37,62 @@ const { companySearch } = jest.requireMock("@/lib/queries/companySearch") as {
   companySearch: jest.Mock
 }
 
-const mockResult = {
-  companies: [
+const baseCompanies = Array.from({ length: 2 }).map((_, index) => ({
+  id: `company-${index}`,
+  company_name: `Company ${index}`,
+  slug: `company-${index}`,
+  facilities: [
     {
-      id: "company-iso",
-      company_name: "ISO Experts",
-      slug: "iso-experts",
-      facilities: [
-        {
-          id: "facility-iso",
-          company_id: "company-iso",
-          city: "Austin",
-          state: "TX",
-          latitude: 30.2672,
-          longitude: -97.7431,
-          is_primary: true,
-        },
-      ],
-      capabilities: [
-        {
-          id: "cap-iso",
-          company_id: "company-iso",
-          pcb_assembly_smt: true,
-          box_build_assembly: true,
-          cable_harness_assembly: false,
-          prototyping: false,
-          pcb_assembly_through_hole: false,
-          pcb_assembly_mixed: false,
-          pcb_assembly_fine_pitch: false,
-          low_volume_production: true,
-          medium_volume_production: true,
-          high_volume_production: false,
-        },
-      ],
-      certifications: [
-        {
-          id: "cert-1",
-          company_id: "company-iso",
-          certification_type: "ISO 13485",
-          status: "Active",
-        },
-      ],
+      id: `facility-${index}`,
+      company_id: `company-${index}`,
+      city: "Boston",
+      state: "MA",
+      latitude: 42.36,
+      longitude: -71.05,
+      is_primary: true,
     },
   ],
-  totalCount: 5,
-  pageInfo: {
-    hasNext: true,
-    hasPrev: false,
-    nextCursor: serializeCursor({ name: "ISO Experts", id: "company-iso" }),
-    prevCursor: null,
-  },
+  capabilities: [
+    {
+      id: `cap-${index}`,
+      company_id: `company-${index}`,
+      pcb_assembly_smt: true,
+      box_build_assembly: true,
+      low_volume_production: true,
+      medium_volume_production: true,
+      high_volume_production: false,
+      pcb_assembly_mixed: false,
+      pcb_assembly_fine_pitch: false,
+      pcb_assembly_through_hole: false,
+      cable_harness_assembly: false,
+      prototyping: false,
+    },
+  ],
+  certifications: [
+    {
+      id: `cert-${index}`,
+      company_id: `company-${index}`,
+      certification_type: "ISO 13485",
+    },
+  ],
+}))
+
+const mockResult = {
+  companies: baseCompanies,
+  totalCount: 7,
+  hasNext: false,
+  hasPrev: false,
+  nextCursor: null,
+  prevCursor: null,
   facetCounts: {
-    states: [{ code: "TX", count: 5 }],
+    states: [{ code: "MA", count: 7 }],
     capabilities: [
-      { slug: "smt", count: 5 },
-      { slug: "box_build", count: 5 },
-      { slug: "cable_harness", count: 0 },
-      { slug: "through_hole", count: 0 },
-      { slug: "prototyping", count: 0 },
+      { slug: "smt", count: 7 },
+      { slug: "box_build", count: 7 },
     ],
     productionVolume: [
-      { level: "low", count: 5 },
-      { level: "medium", count: 5 },
+      { level: "low", count: 7 },
+      { level: "medium", count: 3 },
       { level: "high", count: 0 },
     ],
   },
@@ -106,50 +104,50 @@ beforeEach(() => {
 })
 
 describe("certification landing page SSR", () => {
-  it("[cert-landing] calls the builder with route defaults and passes props to UI", async () => {
+  it("uses certification slug defaults and forwards SSR data", async () => {
     const { default: CertPage } = await import("@/app/contract-manufacturers/[cert]/page")
 
     const element = await CertPage({
       params: Promise.resolve({ cert: "iso-13485" }),
-      searchParams: Promise.resolve({}),
+      searchParams: Promise.resolve({ volume: "low" }),
     })
 
     renderToStaticMarkup(element)
 
     expect(companySearch).toHaveBeenCalledWith(
       expect.objectContaining({
-        filters: expect.objectContaining({ capabilities: [], states: [] }),
-        routeDefaults: expect.objectContaining({ certSlug: "iso-13485" }),
-        cursor: null,
+        filters: {
+          states: [],
+          capabilities: [],
+          productionVolume: "low",
+        },
+        routeDefaults: { certSlug: "iso-13485" },
       }),
     )
 
-    const companyListProps = mockCompanyList.mock.calls.at(-1)?.[0] as Record<string, unknown>
-    expect(companyListProps).toMatchObject({
-      companies: mockResult.companies,
+    const headerProps = mockHeader.mock.calls.at(-1)?.[0] as Record<string, unknown>
+    expect(headerProps).toMatchObject({
       totalCount: mockResult.totalCount,
-      pageInfo: mockResult.pageInfo,
+      clearHref: "/contract-manufacturers/iso-13485",
     })
 
-    const filterSidebarProps = mockFilterSidebar.mock.calls.at(-1)?.[0] as Record<string, unknown>
-    expect(filterSidebarProps).toMatchObject({ facetCounts: mockResult.facetCounts })
-  })
-
-  it("[cert-landing] preserves capability overrides from the URL", async () => {
-    const { default: CertPage } = await import("@/app/contract-manufacturers/[cert]/page")
-
-    const element = await CertPage({
-      params: Promise.resolve({ cert: "iso-13485" }),
-      searchParams: Promise.resolve({ capability: "box_build" }),
+    const sidebarProps = mockFilterSidebar.mock.calls.at(-1)?.[0] as Record<string, unknown>
+    expect(sidebarProps).toMatchObject({
+      basePath: "/contract-manufacturers/iso-13485",
+      filters: { states: [], capabilities: [], productionVolume: "low" },
+      facetCounts: mockResult.facetCounts,
     })
 
-    renderToStaticMarkup(element)
+    const listProps = mockCompanyList.mock.calls.at(-1)?.[0] as Record<string, unknown>
+    expect(listProps).toMatchObject({
+      totalCount: mockResult.totalCount,
+      hasNext: false,
+    })
+    expect(Array.isArray(listProps.companies)).toBe(true)
+    expect((listProps.companies as unknown[]).length).toBe(mockResult.companies.length)
 
-    expect(companySearch).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        filters: expect.objectContaining({ capabilities: ["box_build"] }),
-        routeDefaults: expect.objectContaining({ certSlug: "iso-13485" }),
-      }),
-    )
+    const mapProps = mockLazyCompanyMap.mock.calls.at(-1)?.[0] as Record<string, unknown>
+    expect(Array.isArray(mapProps?.companies)).toBe(true)
+    expect((mapProps?.companies as unknown[]).length).toBe(mockResult.companies.length)
   })
 })

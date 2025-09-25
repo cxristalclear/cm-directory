@@ -1,13 +1,11 @@
-import { Suspense } from "react"
 import Script from "next/script"
-import ActiveFiltersBar from "@/components/ActiveFiltersBar"
+
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import Header from "@/components/Header"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
-import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { companySearch } from "@/lib/queries/companySearch"
+import { companySearch, parseCursor } from "@/lib/queries/companySearch"
 import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 
 export const metadata = {
@@ -20,35 +18,47 @@ export default async function PcbAssemblyManufacturers({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const sp = await searchParams
-  const initialFilters = parseFiltersFromSearchParams(sp)
-  const searchResult = await companySearch({ filters: initialFilters })
+  const resolvedParams = await searchParams
+  const filters = parseFiltersFromSearchParams(resolvedParams)
+  const cursor = parseCursor(resolvedParams)
+
+  const searchResult = await companySearch({ filters, cursor, includeFacetCounts: true })
   const companies = sanitizeCompaniesForListing(searchResult.companies)
+  const activeFilterCount = filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
 
   return (
-    <FilterProvider initialFilters={initialFilters}>
-      <div className="min-h-screen bg-gray-50">
-        <Header totalCompanies={searchResult.totalCount} />
-        <main className="container mx-auto px-4 py-8">
-          <div className="mb-6">
-            <ActiveFiltersBar />
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <Header
+        totalCount={searchResult.totalCount}
+        visibleCount={companies.length}
+        activeFilterCount={activeFilterCount}
+        clearHref="/pcb-assembly-manufacturers"
+      />
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-4 space-y-4">
-              <Suspense fallback={<div>Loading filters...</div>}>
-                <FilterSidebar facetCounts={searchResult.facetCounts ?? undefined} />
-              </Suspense>
+      <main className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-4 space-y-4">
+            <FilterSidebar
+              basePath="/pcb-assembly-manufacturers"
+              filters={filters}
+              facetCounts={searchResult.facetCounts}
+              clearHref="/pcb-assembly-manufacturers"
+            />
           </div>
           <div className="lg:col-span-8 space-y-6">
-              <LazyCompanyMap companies={companies} />
-              <Suspense fallback={<div className="rounded-xl border border-dashed border-gray-300 p-6">Loading companies…</div>}>
-                <CompanyList companies={companies} totalCount={searchResult.totalCount} pageInfo={searchResult.pageInfo} />
-              </Suspense>
+            <LazyCompanyMap companies={companies} />
+            <CompanyList
+              companies={companies}
+              totalCount={searchResult.totalCount}
+              hasNext={searchResult.hasNext}
+              hasPrev={searchResult.hasPrev}
+              nextCursor={searchResult.nextCursor}
+              prevCursor={searchResult.prevCursor}
+            />
           </div>
-          </div>
-        </main>
-      </div>
+        </div>
+      </main>
+
       <Script
         id="pcb-assembly-schema"
         type="application/ld+json"
@@ -61,6 +71,6 @@ export default async function PcbAssemblyManufacturers({
           }),
         }}
       />
-    </FilterProvider>
+    </div>
   )
 }

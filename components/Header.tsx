@@ -1,24 +1,16 @@
-"use client"
-
 import Link from "next/link"
-import { useMemo } from "react"
 import { Building2 } from "lucide-react"
 
-import { useFilters } from "@/contexts/FilterContext"
-
-interface HeaderProps {
-  totalCompanies: number
+type HeaderProps = {
+  totalCount: number
+  visibleCount: number
+  activeFilterCount: number
+  clearHref?: string
 }
 
-export default function Header({ totalCompanies }: HeaderProps) {
-  const { filters, filteredCount, clearFilters } = useFilters()
-
-  const activeFilterCount = useMemo(() => {
-    return filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
-  }, [filters.capabilities.length, filters.productionVolume, filters.states.length])
-
-  const total = totalCompanies
-  const hasActiveFilters = activeFilterCount > 0
+export default function Header({ totalCount, visibleCount, activeFilterCount, clearHref }: HeaderProps) {
+  const hasFilters = activeFilterCount > 0
+  const clearUrl = clearHref ?? "/"
 
   return (
     <header className="relative overflow-hidden">
@@ -59,17 +51,16 @@ export default function Header({ totalCompanies }: HeaderProps) {
               </p>
               <div className="flex flex-col items-center justify-center gap-3 text-white sm:flex-row sm:gap-4">
                 <span className="text-sm font-medium uppercase tracking-widest text-blue-100">
-                  Showing {filteredCount}
-                  {total > 0 ? ` of ${total}` : ""} manufacturers
+                  Showing {visibleCount} of {totalCount} manufacturers
                 </span>
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
+                {hasFilters && (
+                  <Link
+                    href={clearUrl}
+                    scroll={false}
                     className="rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
                   >
                     Clear filters ({activeFilterCount})
-                  </button>
+                  </Link>
                 )}
               </div>
             </div>

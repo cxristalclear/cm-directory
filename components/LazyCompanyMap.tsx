@@ -9,7 +9,7 @@ import type { ListingCompany } from '../types/company'
 const CompanyMap = lazy(() => import('./CompanyMap'))
 
 interface LazyCompanyMapProps {
-  allCompanies: ListingCompany[]
+  companies: ListingCompany[]
 }
 
 // Loading placeholder component

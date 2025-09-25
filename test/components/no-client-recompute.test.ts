@@ -22,7 +22,10 @@ describe("FilterSidebar option builders", () => {
   }
 
   it("no-client-recompute state options use facet counts", () => {
-    const options = createStateOptions(facetCounts, ["wa"])
+    const options = createStateOptions(
+      { states: ["WA"], capabilities: [], productionVolume: null },
+      facetCounts,
+    )
     const codes = options.map(option => option.value)
     expect(codes).toEqual(["CA", "TX", "WA"])
     const waOption = options.find(option => option.value === "WA")
@@ -30,7 +33,10 @@ describe("FilterSidebar option builders", () => {
   })
 
   it("no-client-recompute capability counts", () => {
-    const options = createCapabilityOptions(facetCounts, ["smt"])
+    const options = createCapabilityOptions(
+      { states: [], capabilities: ["smt"], productionVolume: null },
+      facetCounts,
+    )
     const smt = options.find(option => option.value === "smt")
     const throughHole = options.find(option => option.value === "through_hole")
     expect(smt?.count).toBe(4)
@@ -38,7 +44,10 @@ describe("FilterSidebar option builders", () => {
   })
 
   it("no-client-recompute volume counts respect selections", () => {
-    const options = createVolumeOptions(facetCounts, "medium")
+    const options = createVolumeOptions(
+      { states: [], capabilities: [], productionVolume: "medium" },
+      facetCounts,
+    )
     const medium = options.find(option => option.value === "medium")
     const high = options.find(option => option.value === "high")
     expect(medium?.count).toBe(1)
