@@ -8,6 +8,7 @@ import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch } from "@/lib/queries/companySearch"
 import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
+import FilterDebugger from "@/components/FilterDebugger"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
