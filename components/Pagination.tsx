@@ -1,52 +1,67 @@
 "use client"
 
+import { useCallback } from "react"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+
+import type { CompanySearchPageInfo } from "@/lib/queries/companySearch"
+import { buildCursorUrl } from "./paginationUtils"
 
 interface PaginationProps {
-  currentPage: number
-  totalPages: number
-  onPageChange: (page: number) => void
+  pageInfo: CompanySearchPageInfo
 }
 
-export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+export default function Pagination({ pageInfo }: PaginationProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const updateCursor = useCallback(
+    (cursor: string | null) => {
+      const params = new URLSearchParams(searchParams?.toString())
+      const nextUrl = buildCursorUrl(pathname, params, cursor)
+      router.replace(nextUrl, { scroll: false })
+    },
+    [pathname, router, searchParams],
+  )
+
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-white rounded-xl shadow-sm">
-      <div className="flex-1 flex justify-between sm:hidden">
+    <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm">
+      <div className="flex flex-1 justify-between sm:hidden">
         <button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          type="button"
+          onClick={() => updateCursor(pageInfo.prevCursor)}
+          disabled={!pageInfo.hasPrev}
+          className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
         </button>
         <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          type="button"
+          onClick={() => updateCursor(pageInfo.nextCursor)}
+          disabled={!pageInfo.hasNext}
+          className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next
         </button>
       </div>
-      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div className="hidden flex-1 items-center justify-between sm:flex">
+        <div className="text-sm text-gray-700">Use the arrows to load more companies</div>
         <div>
-          <p className="text-sm text-gray-700">
-            Page <span className="font-medium">{currentPage}</span> of{" "}
-            <span className="font-medium">{totalPages}</span>
-          </p>
-        </div>
-        <div>
-          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+          <nav className="inline-flex -space-x-px rounded-md shadow-sm">
             <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              onClick={() => updateCursor(pageInfo.prevCursor)}
+              disabled={!pageInfo.hasPrev}
+              className="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronLeftIcon className="h-5 w-5" />
             </button>
             <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              onClick={() => updateCursor(pageInfo.nextCursor)}
+              disabled={!pageInfo.hasNext}
+              className="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronRightIcon className="h-5 w-5" />
             </button>
