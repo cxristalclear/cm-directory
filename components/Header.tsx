@@ -9,16 +9,17 @@ import type { Company } from "@/types/company"
 
 interface HeaderProps {
   companies?: Company[]
+  totalCompanies?: number
 }
 
-export default function Header({ companies = [] }: HeaderProps) {
+export default function Header({ companies = [], totalCompanies }: HeaderProps) {
   const { filters, filteredCount, clearFilters } = useFilters()
 
   const activeFilterCount = useMemo(() => {
     return filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
   }, [filters.capabilities.length, filters.productionVolume, filters.states.length])
 
-  const totalCompanies = companies.length
+  const total = typeof totalCompanies === "number" ? totalCompanies : companies.length
   const hasActiveFilters = activeFilterCount > 0
 
   return (
@@ -61,7 +62,7 @@ export default function Header({ companies = [] }: HeaderProps) {
               <div className="flex flex-col items-center justify-center gap-3 text-white sm:flex-row sm:gap-4">
                 <span className="text-sm font-medium uppercase tracking-widest text-blue-100">
                   Showing {filteredCount}
-                  {totalCompanies > 0 ? ` of ${totalCompanies}` : ""} manufacturers
+                  {total > 0 ? ` of ${total}` : ""} manufacturers
                 </span>
                 {hasActiveFilters && (
                   <button

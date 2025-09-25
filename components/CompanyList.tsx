@@ -6,10 +6,9 @@ import { Award, Building2, ChevronRight, MapPin, Users } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
 import type { Company } from "@/types/company"
-import { filterCompanies } from "@/utils/filtering"
-
 interface CompanyListProps {
-  allCompanies: Company[]
+  companies: Company[]
+  totalCount: number
   limit?: number
 }
 
@@ -27,19 +26,18 @@ function createSummary(totalCount: number, visibleCount: number): string {
   return `${visibleCount} of ${totalCount} results`
 }
 
-export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: CompanyListProps) {
-  const { filters, setFilteredCount } = useFilters()
-
-  const filteredCompanies = useMemo(() => {
-    return filterCompanies(allCompanies, filters)
-  }, [allCompanies, filters])
+export default function CompanyList({ companies, totalCount, limit = DEFAULT_LIMIT }: CompanyListProps) {
+  const { setFilteredCount } = useFilters()
 
   useEffect(() => {
-    setFilteredCount(filteredCompanies.length)
-  }, [filteredCompanies.length, setFilteredCount])
+    setFilteredCount(totalCount)
+  }, [setFilteredCount, totalCount])
 
-  const visibleCompanies = filteredCompanies.slice(0, limit)
-  const summary = createSummary(filteredCompanies.length, visibleCompanies.length)
+  const visibleCompanies = useMemo(() => {
+    return companies.slice(0, limit)
+  }, [companies, limit])
+
+  const summary = createSummary(totalCount, visibleCompanies.length)
 
   if (visibleCompanies.length === 0) {
     return (

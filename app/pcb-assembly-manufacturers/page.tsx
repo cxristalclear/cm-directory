@@ -7,20 +7,11 @@ import Header from "@/components/Header"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { supabase } from "@/lib/supabase"
+import { companySearch } from "@/lib/queries/companySearch"
 
 export const metadata = {
   title: "PCB Assembly Manufacturers | CM Directory",
   description: "Browse contract manufacturers that offer SMT and through-hole PCB assembly services.",
-}
-
-async function getCompanies() {
-  const { data } = await supabase
-    .from("companies")
-    .select("*, capabilities(*), facilities(*)")
-    .eq("is_active", true)
-
-  return data ?? []
 }
 
 export default async function PcbAssemblyManufacturers({
@@ -28,13 +19,15 @@ export default async function PcbAssemblyManufacturers({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const [companies, sp] = await Promise.all([getCompanies(), searchParams])
+  const sp = await searchParams
   const initialFilters = parseFiltersFromSearchParams(sp)
+  const searchResult = await companySearch({ filters: initialFilters })
+  const companies = searchResult.companies
 
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
-        <Header companies={companies} />
+        <Header totalCompanies={searchResult.totalCount} />
         <main className="container mx-auto px-4 py-8">
           <div className="mb-6">
             <ActiveFiltersBar />
@@ -43,13 +36,13 @@ export default async function PcbAssemblyManufacturers({
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-4 space-y-4">
               <Suspense fallback={<div>Loading filters...</div>}>
-                <FilterSidebar allCompanies={companies} />
+                <FilterSidebar allCompanies={companies} facetCounts={searchResult.facetCounts ?? undefined} />
               </Suspense>
             </div>
             <div className="lg:col-span-8 space-y-6">
               <LazyCompanyMap allCompanies={companies} />
               <Suspense fallback={<div className="rounded-xl border border-dashed border-gray-300 p-6">Loading companies…</div>}>
-                <CompanyList allCompanies={companies} />
+                <CompanyList companies={companies} totalCount={searchResult.totalCount} />
               </Suspense>
             </div>
           </div>

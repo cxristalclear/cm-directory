@@ -5,8 +5,7 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { supabase } from "@/lib/supabase"
-import type { Company } from "@/types/company"
+import { companySearch } from "@/lib/queries/companySearch"
 
 const CERTIFICATION_DATA: Record<string, {
   name: string
@@ -102,22 +101,12 @@ export default async function CertificationPage({
     notFound()
   }
   
-  // Fetch companies with this certification
-  const { data: companies } = await supabase
-    .from('companies')
-    .select(`
-      *,
-      certifications!inner (*),
-      capabilities (*),
-      facilities (*),
-      industries (industry_name)
-    `)
-    .eq('certifications.certification_type', certData.dbName)
-    .eq('certifications.status', 'Active')
-    .eq('is_active', true)
-  
-  const typedCompanies = companies as Company[] | null
-  
+  const searchResult = await companySearch({
+    filters: initialFilters,
+    routeDefaults: { certSlug: certification },
+  })
+  const companies = searchResult.companies
+
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
@@ -144,7 +133,7 @@ export default async function CertificationPage({
           
           <div className="mt-8 flex gap-4">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
-              <span className="text-2xl font-bold">{typedCompanies?.length || 0}</span>
+              <span className="text-2xl font-bold">{searchResult.totalCount}</span>
               <span className="text-blue-100 ml-2">Certified Manufacturers</span>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
@@ -179,10 +168,10 @@ export default async function CertificationPage({
         </h2>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <FilterSidebar allCompanies={typedCompanies || []} />
+            <FilterSidebar allCompanies={companies} facetCounts={searchResult.facetCounts ?? undefined} />
           </div>
           <div className="lg:col-span-8">
-            <CompanyList allCompanies={typedCompanies || []} />
+            <CompanyList companies={companies} totalCount={searchResult.totalCount} />
           </div>
         </div>
       </div>
