@@ -6,6 +6,7 @@ import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
+import { computeFacetCountsFromCompanies, sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 import type { Company } from "@/types/company"
 
 const INDUSTRY_DATA: Record<string, {
@@ -106,16 +107,52 @@ export default async function IndustryPage({
   const { data: companies } = await supabase
     .from('companies')
     .select(`
-      *,
-      industries!inner (*),
-      capabilities (*),
-      certifications (*),
-      facilities (*)
+      id,
+      company_name,
+      slug,
+      dba_name,
+      description,
+      employee_count_range,
+      website_url,
+      annual_revenue_range,
+      facilities:facilities (
+        id,
+        facility_type,
+        street_address,
+        city,
+        state,
+        zip_code,
+        country,
+        latitude,
+        longitude,
+        is_primary
+      ),
+      capabilities:capabilities (
+        id,
+        pcb_assembly_smt,
+        pcb_assembly_through_hole,
+        pcb_assembly_fine_pitch,
+        cable_harness_assembly,
+        box_build_assembly,
+        prototyping,
+        low_volume_production,
+        medium_volume_production,
+        high_volume_production
+      ),
+      industries:industries!inner (
+        id,
+        industry_name
+      ),
+      certifications:certifications (
+        id,
+        certification_type
+      )
     `)
     .eq('industries.industry_name', industryData.dbName)
     .eq('is_active', true)
-  
-  const typedCompanies = companies as Company[] | null
+
+  const listingCompanies = sanitizeCompaniesForListing((companies as Company[] | null) ?? [])
+  const facetCounts = computeFacetCountsFromCompanies(listingCompanies)
   
   return (
     <FilterProvider initialFilters={initialFilters}>
@@ -143,7 +180,7 @@ export default async function IndustryPage({
           
           <div className="mt-8">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3 inline-block">
-              <span className="text-2xl font-bold">{typedCompanies?.length || 0}</span>
+              <span className="text-2xl font-bold">{listingCompanies.length}</span>
               <span className="text-blue-100 ml-2">Specialized Manufacturers</span>
             </div>
           </div>
@@ -175,10 +212,10 @@ export default async function IndustryPage({
         </h2>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <FilterSidebar allCompanies={typedCompanies || []} />
+            <FilterSidebar facetCounts={facetCounts} />
           </div>
           <div className="lg:col-span-8">
-            <CompanyList companies={typedCompanies || []} totalCount={typedCompanies?.length ?? 0} />
+            <CompanyList companies={listingCompanies} totalCount={listingCompanies.length} />
           </div>
         </div>
       </div>

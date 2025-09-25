@@ -7,8 +7,8 @@ import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch } from "@/lib/queries/companySearch"
+import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 import { supabase } from "@/lib/supabase"
-import type { Company } from "@/types/company"
 
 // State data with SEO-friendly names and info
 const STATE_DATA: Record<string, {
@@ -90,7 +90,7 @@ export async function generateMetadata({
   // Get company count for this state
   const { count } = await supabase
     .from('facilities')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('state', stateData.abbreviation)
   
   return {
@@ -129,7 +129,7 @@ export default async function StateManufacturersPage({
     routeDefaults: { state: stateData.abbreviation },
   })
 
-  const companies: Company[] = searchResult.companies
+  const companies = sanitizeCompaniesForListing(searchResult.companies)
   
   // Get aggregated stats
   const stats = {
@@ -137,8 +137,8 @@ export default async function StateManufacturersPage({
     certifications: [
       ...new Set(
         companies.flatMap((company) =>
-          (company.certifications ?? [])
-            .map((certification) => certification?.certification_type)
+          company.certifications
+            .map((certification) => certification.certification_type)
             .filter((cert): cert is string => typeof cert === 'string' && cert.length > 0),
         ),
       ),
@@ -146,7 +146,7 @@ export default async function StateManufacturersPage({
     capabilities: [
       ...new Set(
         companies.flatMap((company) => {
-          const cap = company.capabilities?.[0]
+          const cap = company.capabilities[0]
           const caps: string[] = []
           if (cap?.pcb_assembly_smt) caps.push('SMT Assembly')
           if (cap?.cable_harness_assembly) caps.push('Cable Assembly')
@@ -158,8 +158,8 @@ export default async function StateManufacturersPage({
     cities: [
       ...new Set(
         companies.flatMap((company) =>
-          (company.facilities ?? [])
-            .map((facility) => facility?.city)
+          company.facilities
+            .map((facility) => facility.city)
             .filter((city): city is string => typeof city === 'string' && city.length > 0),
         ),
       ),
@@ -317,7 +317,7 @@ export default async function StateManufacturersPage({
           
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-4">
-              <FilterSidebar allCompanies={companies || []} facetCounts={searchResult.facetCounts ?? undefined} />
+              <FilterSidebar facetCounts={searchResult.facetCounts ?? undefined} />
             </div>
             <div className="lg:col-span-8">
               <CompanyList companies={companies || []} totalCount={searchResult.totalCount} />

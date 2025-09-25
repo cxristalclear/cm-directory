@@ -6,7 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css"
 import { useFilters } from "../contexts/FilterContext"
 import { MapPin, RotateCcw } from "lucide-react"
 import type { FeatureCollection, Point } from "geojson"
-import type { Company, FacilityWithCompany } from "../types/company"
+import type { ListingCompany, ListingFacilityWithCompany } from "../types/company"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 import { filterCompanies } from "../utils/filtering"
 import { useDebounce } from "../hooks/useDebounce"
@@ -14,10 +14,10 @@ import { useDebounce } from "../hooks/useDebounce"
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
 interface CompanyMapProps {
-  allCompanies: Company[]
+  allCompanies: ListingCompany[]
 }
 
-type FacilityWithCoordinates = FacilityWithCompany & {
+type FacilityWithCoordinates = ListingFacilityWithCompany & {
   latitude: number
   longitude: number
 }
@@ -48,7 +48,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     // Extract facilities from filtered companies
     const facilities = filteredCompanies
       .flatMap((company) =>
-        (company.facilities ?? []).map((facility) => ({
+        company.facilities.map((facility) => ({
           ...facility,
           company,
         })),

@@ -6,6 +6,7 @@ import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch } from "@/lib/queries/companySearch"
+import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 
 const CERTIFICATION_DATA: Record<string, {
   name: string
@@ -105,7 +106,7 @@ export default async function CertificationPage({
     filters: initialFilters,
     routeDefaults: { certSlug: certification },
   })
-  const companies = searchResult.companies
+  const companies = sanitizeCompaniesForListing(searchResult.companies)
 
   return (
     <FilterProvider initialFilters={initialFilters}>
@@ -168,7 +169,7 @@ export default async function CertificationPage({
         </h2>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <FilterSidebar allCompanies={companies} facetCounts={searchResult.facetCounts ?? undefined} />
+            <FilterSidebar facetCounts={searchResult.facetCounts ?? undefined} />
           </div>
           <div className="lg:col-span-8">
             <CompanyList companies={companies} totalCount={searchResult.totalCount} />

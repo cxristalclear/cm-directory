@@ -18,8 +18,14 @@ export async function generateMetadata({
     .select(`
       company_name,
       description,
-      facilities (city, state),
-      capabilities (*),
+      facilities:facilities (city, state),
+      capabilities:capabilities (
+        pcb_assembly_smt,
+        pcb_assembly_through_hole,
+        cable_harness_assembly,
+        box_build_assembly,
+        prototyping
+      ),
       certifications (certification_type)
     `)
     .eq("slug", slug)
@@ -37,13 +43,13 @@ export async function generateMetadata({
     : ''
   
   // Get key capabilities for description
-  const capabilities = []
-  if (company.capabilities?.[0]) {
-    const cap = company.capabilities[0]
-    if (cap.pcb_assembly_smt) capabilities.push('SMT Assembly')
-    if (cap.cable_harness_assembly) capabilities.push('Cable Assembly')
-    if (cap.box_build_assembly) capabilities.push('Box Build')
-  }
+  const capabilities: string[] = []
+  const capabilityRecord = company.capabilities?.[0]
+  if (capabilityRecord?.pcb_assembly_smt) capabilities.push('SMT Assembly')
+  if (capabilityRecord?.pcb_assembly_through_hole) capabilities.push('Through-Hole Assembly')
+  if (capabilityRecord?.cable_harness_assembly) capabilities.push('Cable Assembly')
+  if (capabilityRecord?.box_build_assembly) capabilities.push('Box Build')
+  if (capabilityRecord?.prototyping) capabilities.push('Prototyping')
   
   const certifications = company.certifications?.map(c => c.certification_type).slice(0, 3).join(', ')
   
@@ -96,14 +102,76 @@ export default async function CompanyPage({
   const { data: company } = await supabase
     .from("companies")
     .select(`
-      *,
-      facilities (*),
-      capabilities (*),
-      industries (industry_name),
-      certifications (*),
-      technical_specs (*),
-      business_info (*),
-      contacts (*)
+      id,
+      company_name,
+      slug,
+      dba_name,
+      description,
+      website_url,
+      year_founded,
+      employee_count_range,
+      annual_revenue_range,
+      key_differentiators,
+      is_active,
+      is_verified,
+      logo_url,
+      facilities:facilities (
+        id,
+        facility_type,
+        street_address,
+        city,
+        state,
+        zip_code,
+        country,
+        latitude,
+        longitude,
+        is_primary
+      ),
+      capabilities:capabilities (
+        id,
+        pcb_assembly_smt,
+        pcb_assembly_through_hole,
+        pcb_assembly_fine_pitch,
+        cable_harness_assembly,
+        box_build_assembly,
+        prototyping,
+        low_volume_production,
+        medium_volume_production,
+        high_volume_production
+      ),
+      industries:industries (
+        id,
+        industry_name
+      ),
+      certifications:certifications (
+        id,
+        certification_type,
+        status,
+        certificate_number,
+        issued_date,
+        expiration_date
+      ),
+      technical_specs:technical_specs (
+        id,
+        max_pcb_layers,
+        max_pcb_size_inches,
+        smallest_component_size,
+        finest_pitch_capability,
+        smt_placement_accuracy
+      ),
+      business_info:business_info (
+        id,
+        min_order_qty,
+        prototype_lead_time,
+        production_lead_time,
+        payment_terms
+      ),
+      contacts:contacts (
+        id,
+        full_name,
+        email,
+        phone
+      )
     `)
     .eq("slug", slug)
     .single<CompanyWithRelations>()

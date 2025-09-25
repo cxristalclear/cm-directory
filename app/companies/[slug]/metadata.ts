@@ -15,8 +15,14 @@ export async function generateMetadata({
       company_name,
       description,
       logo_url,
-      facilities (city, state),
-      capabilities (capability_type),
+      facilities:facilities (city, state),
+      capabilities:capabilities (
+        pcb_assembly_smt,
+        pcb_assembly_through_hole,
+        cable_harness_assembly,
+        box_build_assembly,
+        prototyping
+      ),
       certifications (certification_type)
     `)
     .eq('slug', slug)
@@ -35,14 +41,20 @@ export async function generateMetadata({
     : ''
   
   // Get top capabilities
-  const topCapabilities = company.capabilities
-    ?.slice(0, 3)
-    .map(c => c.capability_type)
-    .join(', ') || ''
+  const capabilityRecord = company.capabilities?.[0]
+  const capabilityLabels: string[] = []
+  if (capabilityRecord?.pcb_assembly_smt) capabilityLabels.push('SMT Assembly')
+  if (capabilityRecord?.pcb_assembly_through_hole) capabilityLabels.push('Through-Hole Assembly')
+  if (capabilityRecord?.cable_harness_assembly) capabilityLabels.push('Cable Harness Assembly')
+  if (capabilityRecord?.box_build_assembly) capabilityLabels.push('Box Build Assembly')
+  if (capabilityRecord?.prototyping) capabilityLabels.push('Prototyping Services')
+  const topCapabilities = capabilityLabels.slice(0, 3).join(', ')
   
+  const capabilitiesDescription = topCapabilities ? `Capabilities include ${topCapabilities}.` : ''
+
   return {
     title: `${company.company_name} - Contract Manufacturer ${location ? `in ${location}` : ''}`,
-    description: `${company.description || `${company.company_name} provides contract manufacturing services`}. Capabilities include ${topCapabilities}. View full profile, certifications, and contact information.`,
+    description: `${company.description || `${company.company_name} provides contract manufacturing services`}. ${capabilitiesDescription} View full profile, certifications, and contact information.`.trim(),
     
     // Open Graph
     openGraph: {

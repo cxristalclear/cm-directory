@@ -9,6 +9,7 @@ import Header from "@/components/Header"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch } from "@/lib/queries/companySearch"
+import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -51,7 +52,7 @@ export default async function Home({
   const sp = await searchParams
   const initialFilters = parseFiltersFromSearchParams(sp)
   const searchResult = await companySearch({ filters: initialFilters })
-  const companies = searchResult.companies
+  const companies = sanitizeCompaniesForListing(searchResult.companies)
 
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
@@ -93,8 +94,13 @@ export default async function Home({
               {/* Filter Sidebar */}
               <div className="lg:col-span-3 space-y-4">
                 <Suspense fallback={<div>Loading filters...</div>}>
-                  <FilterSidebar allCompanies={companies} facetCounts={searchResult.facetCounts ?? undefined} />
-                  {SHOW_DEBUG && <FilterDebugger allCompanies={companies} />}
+                  <FilterSidebar facetCounts={searchResult.facetCounts ?? undefined} />
+                  {SHOW_DEBUG && (
+                    <FilterDebugger
+                      facetCounts={searchResult.facetCounts ?? undefined}
+                      totalCount={searchResult.totalCount}
+                    />
+                  )}
                 </Suspense>
 
                 {/* Bottom Sidebar Ad */}

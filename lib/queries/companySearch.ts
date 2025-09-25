@@ -409,15 +409,13 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
       dba_name,
       description,
       employee_count_range,
-      is_active,
       capabilities:capabilities (
         id,
-        company_id,
         ${RECOMMENDED_CAPABILITY_FIELDS.join(",\n        ")}
       ),
       facilities:facilities (
         id,
-        company_id,
+        facility_type,
         city,
         state,
         latitude,
@@ -425,14 +423,11 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
       ),
       industries:industries (
         id,
-        company_id,
         industry_name
       ),
       certifications:certifications (
         id,
-        company_id,
-        certification_type,
-        status
+        certification_type
       )
     `
     )
