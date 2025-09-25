@@ -6,9 +6,8 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { companySearch } from "@/lib/queries/companySearch"
+import { companySearch, parseCursor } from "@/lib/queries/companySearch"
 import { supabase } from "@/lib/supabase"
-import type { Company } from "@/types/company"
 
 // State data with SEO-friendly names and info
 const STATE_DATA: Record<string, {
@@ -117,23 +116,30 @@ export default async function StateManufacturersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const [{ state }, sp] = await Promise.all([params, searchParams])
-  const initialFilters = parseFiltersFromSearchParams(sp)
+  const parsedFilters = parseFiltersFromSearchParams(sp)
+  const cursor = parseCursor(sp)
   const stateData = STATE_DATA[state.toLowerCase()]
-  
+
   if (!stateData) {
     notFound()
   }
-  
+
+  const filters = {
+    ...parsedFilters,
+    states: parsedFilters.states.length > 0 ? parsedFilters.states : [stateData.abbreviation],
+  }
+
   const searchResult = await companySearch({
-    filters: initialFilters,
+    filters,
     routeDefaults: { state: stateData.abbreviation },
+    cursor,
   })
 
-  const companies: Company[] = searchResult.companies
-  
+  const { companies, totalCount, pageInfo, facetCounts } = searchResult
+
   // Get aggregated stats
   const stats = {
-    totalCompanies: searchResult.totalCount,
+    totalCompanies: totalCount,
     certifications: [
       ...new Set(
         companies.flatMap((company) =>
@@ -200,7 +206,7 @@ export default async function StateManufacturersPage({
   }
   
   return (
-    <FilterProvider initialFilters={initialFilters}>
+    <FilterProvider initialFilters={filters}>
       <>
         <script
           type="application/ld+json"
@@ -317,10 +323,10 @@ export default async function StateManufacturersPage({
           
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-4">
-              <FilterSidebar allCompanies={companies || []} facetCounts={searchResult.facetCounts ?? undefined} />
+              <FilterSidebar facetCounts={facetCounts ?? undefined} />
             </div>
             <div className="lg:col-span-8">
-              <CompanyList companies={companies || []} totalCount={searchResult.totalCount} />
+              <CompanyList companies={companies || []} totalCount={totalCount} pageInfo={pageInfo} />
             </div>
           </div>
 

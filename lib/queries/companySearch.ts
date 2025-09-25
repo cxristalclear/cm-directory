@@ -1,12 +1,6 @@
 import { supabase } from "@/lib/supabase"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
-import type {
-  Capabilities,
-  Certification,
-  Company,
-  Facility,
-  Industry,
-} from "@/types/company"
+import type { Capabilities, Certification, Company, Facility } from "@/types/company"
 
 const CAPABILITY_SLUGS: CapabilitySlug[] = [
   "smt",
@@ -29,6 +23,13 @@ const CERTIFICATION_SLUG_MAP: Record<string, string> = {
 export type CompanySearchCursor = {
   name: string
   id: string
+}
+
+export type CompanySearchPageInfo = {
+  hasNext: boolean
+  hasPrev: boolean
+  nextCursor: string | null
+  prevCursor: string | null
 }
 
 export type CompanyFacetCounts = {
@@ -61,17 +62,13 @@ export type CompanySearchOptions = {
 export type CompanySearchResult = {
   companies: Company[]
   totalCount: number
-  nextCursor: CompanySearchCursor | null
-  prevCursor: CompanySearchCursor | null
-  hasNext: boolean
-  hasPrev: boolean
+  pageInfo: CompanySearchPageInfo
   facetCounts: CompanyFacetCounts | null
 }
 
 type RawCompany = Company & {
   facilities: Facility[] | null
   capabilities: Capabilities[] | null
-  industries: Industry[] | null
   certifications: Certification[] | null
 }
 
@@ -93,6 +90,70 @@ const RECOMMENDED_CAPABILITY_FIELDS: Array<keyof Capabilities> = [
   "high_volume_production",
   "prototyping",
 ]
+
+function base64UrlEncode(value: string): string {
+  const encoded = Buffer.from(value, "utf8").toString("base64")
+  return encoded.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/u, "")
+}
+
+function base64UrlDecode(value: string): string {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/")
+  const padding = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4))
+  return Buffer.from(normalized + padding, "base64").toString("utf8")
+}
+
+export function serializeCursor(cursor: CompanySearchCursor | null): string | null {
+  if (!cursor) {
+    return null
+  }
+  return base64UrlEncode(JSON.stringify(cursor))
+}
+
+export function deserializeCursor(value: string | null | undefined): CompanySearchCursor | null {
+  if (!value) {
+    return null
+  }
+  try {
+    const decoded = base64UrlDecode(value)
+    const parsed = JSON.parse(decoded)
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      typeof parsed.name === "string" &&
+      typeof parsed.id === "string"
+    ) {
+      return { name: parsed.name, id: parsed.id }
+    }
+  } catch (error) {
+    console.warn("Failed to parse cursor", error)
+  }
+  return null
+}
+
+type SearchParamsInput = URLSearchParams | Record<string, string | string[] | undefined>
+
+function toURLSearchParams(input: SearchParamsInput): URLSearchParams {
+  if (input instanceof URLSearchParams) {
+    return input
+  }
+  const params = new URLSearchParams()
+  for (const [key, raw] of Object.entries(input)) {
+    if (Array.isArray(raw)) {
+      for (const value of raw) {
+        params.append(key, value)
+      }
+    } else if (typeof raw === "string") {
+      params.append(key, raw)
+    }
+  }
+  return params
+}
+
+export function parseCursor(searchParams: SearchParamsInput): CompanySearchCursor | null {
+  const params = toURLSearchParams(searchParams)
+  const raw = params.get("cursor")
+  return deserializeCursor(raw)
+}
 
 function normalizeStateCode(value: string | undefined): string | null {
   if (!value) {
@@ -167,7 +228,10 @@ function volumeMatches(capability: Capabilities | null, volume: ProductionVolume
   }
 }
 
-function facilityWithinBBox(facility: Facility | null | undefined, bbox: NonNullable<CompanySearchOptions["bbox"]>): boolean {
+function facilityWithinBBox(
+  facility: Facility | null | undefined,
+  bbox: NonNullable<CompanySearchOptions["bbox"]>,
+): boolean {
   if (!facility) {
     return false
   }
@@ -183,7 +247,10 @@ function facilityWithinBBox(facility: Facility | null | undefined, bbox: NonNull
   )
 }
 
-function companyWithinBBox(company: RawCompany, bbox: NonNullable<CompanySearchOptions["bbox"]>): boolean {
+function companyWithinBBox(
+  company: RawCompany,
+  bbox: NonNullable<CompanySearchOptions["bbox"]>,
+): boolean {
   for (const facility of company.facilities ?? []) {
     if (facilityWithinBBox(facility, bbox)) {
       return true
@@ -210,7 +277,10 @@ function applyFilters(
 
   if (requiredCertification) {
     const hasCert = (company.certifications ?? []).some((cert) => {
-      return typeof cert?.certification_type === "string" && cert.certification_type === requiredCertification
+      return (
+        typeof cert?.certification_type === "string" &&
+        cert.certification_type === requiredCertification
+      )
     })
     if (!hasCert) {
       return false
@@ -406,9 +476,6 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
       id,
       slug,
       company_name,
-      dba_name,
-      description,
-      employee_count_range,
       is_active,
       capabilities:capabilities (
         id,
@@ -421,12 +488,8 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
         city,
         state,
         latitude,
-        longitude
-      ),
-      industries:industries (
-        id,
-        company_id,
-        industry_name
+        longitude,
+        is_primary
       ),
       certifications:certifications (
         id,
@@ -434,7 +497,7 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
         certification_type,
         status
       )
-    `
+    `,
     )
     .eq("is_active", true)
 
@@ -485,13 +548,17 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
     ? buildFacetCounts(rawCompanies, filters, routeStateConstraint, requiredCertification, bbox ?? undefined)
     : null
 
+  const pageInfo: CompanySearchPageInfo = {
+    hasNext,
+    hasPrev,
+    nextCursor: serializeCursor(nextCursor),
+    prevCursor: serializeCursor(prevCursor),
+  }
+
   return {
     companies: paginatedCompanies,
     totalCount: sortedCompanies.length,
-    nextCursor,
-    prevCursor,
-    hasNext,
-    hasPrev,
+    pageInfo,
     facetCounts,
   }
 }

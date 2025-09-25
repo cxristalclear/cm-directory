@@ -175,7 +175,7 @@ export default async function IndustryPage({
         </h2>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <FilterSidebar allCompanies={typedCompanies || []} />
+            <FilterSidebar />
           </div>
           <div className="lg:col-span-8">
             <CompanyList companies={typedCompanies || []} totalCount={typedCompanies?.length ?? 0} />

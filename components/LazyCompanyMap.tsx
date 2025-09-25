@@ -9,7 +9,7 @@ import type { Company } from '../types/company'
 const CompanyMap = lazy(() => import('./CompanyMap'))
 
 interface LazyCompanyMapProps {
-  allCompanies: Company[]
+  companies: Company[]
 }
 
 // Loading placeholder component
@@ -30,11 +30,11 @@ const MapLoadingFallback = () => (
   </div>
 )
 
-export default function LazyCompanyMap({ allCompanies }: LazyCompanyMapProps) {
+export default function LazyCompanyMap({ companies }: LazyCompanyMapProps) {
   return (
     <MapErrorBoundary>
       <Suspense fallback={<MapLoadingFallback />}>
-        <CompanyMap allCompanies={allCompanies} />
+        <CompanyMap companies={companies} />
       </Suspense>
     </MapErrorBoundary>
   )

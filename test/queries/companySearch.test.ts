@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto"
-import { companySearch } from "@/lib/queries/companySearch"
+import { companySearch, deserializeCursor } from "@/lib/queries/companySearch"
 import type {
   Capabilities,
   Certification,
@@ -382,8 +382,8 @@ describe("companySearch", () => {
 
     expect(result.totalCount).toBe(10)
     expect(result.companies).toHaveLength(9)
-    expect(result.hasNext).toBe(true)
-    expect(result.nextCursor).not.toBeNull()
+    expect(result.pageInfo.hasNext).toBe(true)
+    expect(result.pageInfo.nextCursor).not.toBeNull()
     expect(result.companies[0]?.company_name).toBe("Alpha Manufacturing")
     expect(result.companies[8]?.company_name).toBe("Juliet Fabrication")
   })
@@ -442,12 +442,12 @@ describe("companySearch", () => {
     })
 
     expect(firstPage.companies).toHaveLength(9)
-    expect(firstPage.hasNext).toBe(true)
-    expect(firstPage.nextCursor).not.toBeNull()
+    expect(firstPage.pageInfo.hasNext).toBe(true)
+    expect(firstPage.pageInfo.nextCursor).not.toBeNull()
 
     const secondPage = await companySearch({
       filters: { states: [], capabilities: [], productionVolume: null },
-      cursor: firstPage.nextCursor,
+      cursor: deserializeCursor(firstPage.pageInfo.nextCursor),
       pageSize: 9,
     })
 
@@ -456,8 +456,8 @@ describe("companySearch", () => {
       "Kilo Assembly",
       "Lima Manufacturing",
     ])
-    expect(secondPage.hasNext).toBe(false)
-    expect(secondPage.hasPrev).toBe(true)
+    expect(secondPage.pageInfo.hasNext).toBe(false)
+    expect(secondPage.pageInfo.hasPrev).toBe(true)
   })
 
   it("computes facet counts with capability and volume filters", async () => {

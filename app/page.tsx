@@ -4,11 +4,10 @@ import ActiveFiltersBar from "@/components/ActiveFiltersBar"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
-import FilterDebugger from "@/components/FilterDebugger"
 import Header from "@/components/Header"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { companySearch } from "@/lib/queries/companySearch"
+import { companySearch, parseCursor } from "@/lib/queries/companySearch"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -31,8 +30,6 @@ export const metadata = {
   },
 };
 
-const SHOW_DEBUG = process.env.NEXT_PUBLIC_SHOW_DEBUG === "true";
-
 const AdPlaceholder = ({ width, height, label, className = "" }: { width: string; height: string; label: string; className?: string }) => (
   <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} style={{ width, height }}>
     <div className="text-center text-gray-500">
@@ -49,9 +46,10 @@ export default async function Home({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const sp = await searchParams
-  const initialFilters = parseFiltersFromSearchParams(sp)
-  const searchResult = await companySearch({ filters: initialFilters })
-  const companies = searchResult.companies
+  const filters = parseFiltersFromSearchParams(sp)
+  const cursor = parseCursor(sp)
+  const searchResult = await companySearch({ filters, cursor })
+  const { companies, totalCount, pageInfo, facetCounts } = searchResult
 
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
@@ -69,9 +67,9 @@ export default async function Home({
           }
         })
       }} />
-      <FilterProvider initialFilters={initialFilters}>
+      <FilterProvider initialFilters={filters}>
         <div className="min-h-screen bg-gray-50">
-          <Header totalCompanies={searchResult.totalCount} />
+          <Header totalCompanies={totalCount} />
 
           <main className="container mx-auto px-4 py-6">
             <div className="mb-6">
@@ -93,8 +91,7 @@ export default async function Home({
               {/* Filter Sidebar */}
               <div className="lg:col-span-3 space-y-4">
                 <Suspense fallback={<div>Loading filters...</div>}>
-                  <FilterSidebar allCompanies={companies} facetCounts={searchResult.facetCounts ?? undefined} />
-                  {SHOW_DEBUG && <FilterDebugger allCompanies={companies} />}
+                  <FilterSidebar facetCounts={facetCounts ?? undefined} />
                 </Suspense>
 
                 {/* Bottom Sidebar Ad */}
@@ -103,12 +100,12 @@ export default async function Home({
 
               <div className="lg:col-span-9 space-y-4">
                 {/* Map - No extra Suspense needed, LazyCompanyMap handles it internally */}
-                <LazyCompanyMap allCompanies={companies} />
+                <LazyCompanyMap companies={companies} />
 
                 {/* List */}
                 <div className="companies-directory">
                   <Suspense fallback={<div>Loading companies...</div>}>
-                    <CompanyList companies={companies} totalCount={searchResult.totalCount} />
+                    <CompanyList companies={companies} totalCount={totalCount} pageInfo={pageInfo} />
                   </Suspense>
                 </div>
 
