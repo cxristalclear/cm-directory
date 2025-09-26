@@ -1,4 +1,7 @@
+"use client"
+
 import Link from "next/link"
+import { useMemo } from "react"
 
 import type { CompanyFacetCounts } from "@/lib/queries/companySearch"
 import {
@@ -9,6 +12,7 @@ import {
   type FilterUrlState,
   type ProductionVolume,
 } from "@/lib/filters/url"
+import { useFilters } from "@/contexts/FilterContext"
 import { STATE_NAMES, getStateName } from "@/utils/stateMapping"
 
 type FilterSidebarProps = {
@@ -124,35 +128,49 @@ function buildVolumeOptions(
 }
 
 export default function FilterSidebar({ basePath, filters, facetCounts, clearHref }: FilterSidebarProps) {
-  const stateOptions = buildStateOptions(filters, facetCounts)
-  const capabilityOptions = buildCapabilityOptions(filters, facetCounts)
-  const volumeOptions = buildVolumeOptions(filters, facetCounts)
+  const { filters: liveFilters, updateFilter } = useFilters()
+  const currentFilters = liveFilters ?? filters
+
+  const stateOptions = useMemo(
+    () => buildStateOptions(currentFilters, facetCounts),
+    [currentFilters, facetCounts],
+  )
+  const capabilityOptions = useMemo(
+    () => buildCapabilityOptions(currentFilters, facetCounts),
+    [currentFilters, facetCounts],
+  )
+  const volumeOptions = useMemo(
+    () => buildVolumeOptions(currentFilters, facetCounts),
+    [currentFilters, facetCounts],
+  )
 
   const hasActiveFilters =
-    filters.states.length > 0 || filters.capabilities.length > 0 || filters.productionVolume !== null
+    currentFilters.states.length > 0 ||
+    currentFilters.capabilities.length > 0 ||
+    currentFilters.productionVolume !== null
 
   const clearUrl = clearHref ?? basePath
 
-  const toggleState = (state: string) => {
+  const handleStateToggle = (state: string) => {
     const normalized = state.toUpperCase()
-    const selected = filters.states.includes(normalized)
+    const selected = currentFilters.states.includes(normalized)
     const nextStates = selected
-      ? filters.states.filter((value) => value !== normalized)
-      : [...filters.states, normalized]
-    return buildFilterUrl(basePath, { ...filters, states: nextStates })
+      ? currentFilters.states.filter((value) => value !== normalized)
+      : [...currentFilters.states, normalized]
+    updateFilter("states", nextStates)
   }
 
   const toggleCapability = (slug: CanonicalCapability) => {
-    const selected = filters.capabilities.includes(slug)
+    const selected = currentFilters.capabilities.includes(slug)
     const nextCapabilities = selected
-      ? filters.capabilities.filter((value) => value !== slug)
-      : [...filters.capabilities, slug]
-    return buildFilterUrl(basePath, { ...filters, capabilities: nextCapabilities })
+      ? currentFilters.capabilities.filter((value) => value !== slug)
+      : [...currentFilters.capabilities, slug]
+    return buildFilterUrl(basePath, { ...currentFilters, capabilities: nextCapabilities })
   }
 
   const selectVolume = (level: ProductionVolume) => {
-    const nextVolume = filters.productionVolume === level ? null : level
-    return buildFilterUrl(basePath, { ...filters, productionVolume: nextVolume })
+    const nextVolume = currentFilters.productionVolume === level ? null : level
+    return buildFilterUrl(basePath, { ...currentFilters, productionVolume: nextVolume })
   }
 
   return (
@@ -178,22 +196,33 @@ export default function FilterSidebar({ basePath, filters, facetCounts, clearHre
           <p className="text-xs text-gray-500">Select one or more locations</p>
         </header>
         <ul className="flex flex-col gap-2">
-          {stateOptions.map((option) => (
-            <li key={option.value}>
-              <Link
-                href={toggleState(option.value)}
-                scroll={false}
-                className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition ${
-                  option.selected
-                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-blue-200 hover:bg-blue-50"
-                }`}
-              >
-                <span>{option.label}</span>
-                <span className="text-xs font-semibold text-gray-500">{option.count}</span>
-              </Link>
-            </li>
-          ))}
+          {stateOptions.map((option) => {
+            const checkboxId = `state-${option.value}`
+            return (
+              <li key={option.value}>
+                <label
+                  htmlFor={checkboxId}
+                  className={`flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2 text-sm transition ${
+                    option.selected
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-blue-200 hover:bg-blue-50"
+                  }`}
+                >
+                  <span>{option.label}</span>
+                  <span className="text-xs font-semibold text-gray-500">{option.count}</span>
+                  <input
+                    id={checkboxId}
+                    type="checkbox"
+                    className="sr-only"
+                    role="checkbox"
+                    aria-checked={option.selected}
+                    checked={option.selected}
+                    onChange={() => handleStateToggle(option.value)}
+                  />
+                </label>
+              </li>
+            )
+          })}
         </ul>
       </section>
 

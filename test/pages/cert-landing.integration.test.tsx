@@ -33,8 +33,15 @@ jest.mock("@/lib/queries/companySearch", () => {
   }
 })
 
+jest.mock("@/lib/queries/mapSearch", () => ({
+  companyFacilitiesForMap: jest.fn(),
+}))
+
 const { companySearch } = jest.requireMock("@/lib/queries/companySearch") as {
   companySearch: jest.Mock
+}
+const { companyFacilitiesForMap } = jest.requireMock("@/lib/queries/mapSearch") as {
+  companyFacilitiesForMap: jest.Mock
 }
 
 const baseCompanies = Array.from({ length: 2 }).map((_, index) => ({
@@ -103,9 +110,23 @@ const mockResult = {
   },
 }
 
+const mapFacilities = baseCompanies.flatMap((company) =>
+  company.facilities.map((facility) => ({
+    company_id: company.id,
+    company_name: company.company_name,
+    slug: company.slug,
+    facility_id: facility.id,
+    city: facility.city ?? null,
+    state: facility.state ?? null,
+    latitude: facility.latitude ?? 0,
+    longitude: facility.longitude ?? 0,
+  })),
+)
+
 beforeEach(() => {
   jest.clearAllMocks()
   companySearch.mockResolvedValue(mockResult)
+  companyFacilitiesForMap.mockResolvedValue({ facilities: mapFacilities, truncated: false })
 })
 
 describe("certification landing page SSR", () => {
@@ -152,7 +173,7 @@ describe("certification landing page SSR", () => {
     expect((listProps.companies as unknown[]).length).toBe(mockResult.companies.length)
 
     const mapProps = mockLazyCompanyMap.mock.calls.at(-1)?.[0] as Record<string, unknown>
-    expect(Array.isArray(mapProps?.companies)).toBe(true)
-    expect((mapProps?.companies as unknown[]).length).toBe(mockResult.companies.length)
+    expect(Array.isArray(mapProps?.initialFacilities)).toBe(true)
+    expect((mapProps?.initialFacilities as unknown[]).length).toBe(mapFacilities.length)
   })
 })

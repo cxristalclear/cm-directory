@@ -6,8 +6,10 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import Header from "@/components/Header"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
+import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch, parseCursor } from "@/lib/queries/companySearch"
+import { companyFacilitiesForMap } from "@/lib/queries/mapSearch"
 import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 
 const CERTIFICATION_DATA: Record<
@@ -108,68 +110,81 @@ export default async function CertificationPage({
   const filters = parseFiltersFromSearchParams(resolvedSearch)
   const cursor = parseCursor(resolvedSearch)
 
-  const searchResult = await companySearch({
-    filters,
-    routeDefaults: { certSlug: certification },
-    cursor,
-    includeFacetCounts: true,
-  })
+  const [searchResult, mapResult] = await Promise.all([
+    companySearch({
+      filters,
+      routeDefaults: { certSlug: certification },
+      cursor,
+      includeFacetCounts: true,
+    }),
+    companyFacilitiesForMap({
+      filters,
+      routeDefaults: { certSlug: certification },
+    }),
+  ])
 
   const companies = sanitizeCompaniesForListing(searchResult.companies)
   const activeFilterCount =
     filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
+  const mapFacilities = mapResult.facilities
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        filteredCount={searchResult.filteredCount}
-        visibleCount={companies.length}
-        activeFilterCount={activeFilterCount}
-        clearHref={basePath}
-      />
+    <FilterProvider initialFilters={filters}>
+      <div className="min-h-screen bg-gray-50">
+        <Header
+          filteredCount={searchResult.filteredCount}
+          visibleCount={companies.length}
+          activeFilterCount={activeFilterCount}
+          clearHref={basePath}
+        />
 
-      <main className="container mx-auto px-4 py-8">
-        <nav className="flex items-center gap-2 text-sm text-blue-100 mb-6">
-          <Link href="/" className="underline">
-            Home
-          </Link>
-          <span>/</span>
-          <Link href="/certifications" className="underline">
-            Certifications
-          </Link>
-          <span>/</span>
-          <span className="text-gray-500">{certData.name}</span>
-        </nav>
+        <main className="container mx-auto px-4 py-8">
+          <nav className="flex items-center gap-2 text-sm text-blue-100 mb-6">
+            <Link href="/" className="underline">
+              Home
+            </Link>
+            <span>/</span>
+            <Link href="/certifications" className="underline">
+              Certifications
+            </Link>
+            <span>/</span>
+            <span className="text-gray-500">{certData.name}</span>
+          </nav>
 
-        <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold mb-3">{certData.title}</h1>
-          <p className="text-xl text-gray-600">{certData.description}</p>
-          <div className="mt-4 flex gap-4">
-            <div className="rounded-lg bg-blue-50 px-6 py-3 text-blue-800">
-              <span className="text-2xl font-bold">{searchResult.filteredCount}</span>
-              <span className="ml-2 text-sm">Certified Manufacturers</span>
+          <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
+            <h1 className="text-3xl font-bold mb-3">{certData.title}</h1>
+            <p className="text-xl text-gray-600">{certData.description}</p>
+            <div className="mt-4 flex gap-4">
+              <div className="rounded-lg bg-blue-50 px-6 py-3 text-blue-800">
+                <span className="text-2xl font-bold">{searchResult.filteredCount}</span>
+                <span className="ml-2 text-sm">Certified Manufacturers</span>
+              </div>
+              <div className="rounded-lg bg-blue-50 px-6 py-3 text-blue-800">
+                <span className="text-sm">Industry Focus:</span>
+                <span className="ml-2 font-semibold">{certData.industry}</span>
+              </div>
             </div>
-            <div className="rounded-lg bg-blue-50 px-6 py-3 text-blue-800">
-              <span className="text-sm">Industry Focus:</span>
-              <span className="ml-2 font-semibold">{certData.industry}</span>
+          </section>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <FilterSidebar basePath={basePath} filters={filters} facetCounts={searchResult.facetCounts} clearHref={basePath} />
+            </div>
+            <div className="lg:col-span-8 space-y-4">
+              <LazyCompanyMap
+                initialFacilities={mapFacilities}
+                initialFilters={filters}
+                routeDefaults={{ certSlug: certification }}
+              />
+              <CompanyList
+                companies={companies}
+                filteredCount={searchResult.filteredCount}
+                pageInfo={searchResult.pageInfo}
+              />
             </div>
           </div>
-        </section>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <FilterSidebar basePath={basePath} filters={filters} facetCounts={searchResult.facetCounts} clearHref={basePath} />
-          </div>
-          <div className="lg:col-span-8 space-y-4">
-            <LazyCompanyMap companies={companies} />
-            <CompanyList
-              companies={companies}
-              filteredCount={searchResult.filteredCount}
-              pageInfo={searchResult.pageInfo}
-            />
-          </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </FilterProvider>
   )
 }

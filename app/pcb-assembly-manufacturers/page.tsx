@@ -4,8 +4,10 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import Header from "@/components/Header"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
+import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch, parseCursor } from "@/lib/queries/companySearch"
+import { companyFacilitiesForMap } from "@/lib/queries/mapSearch"
 import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 
 export const metadata = {
@@ -22,52 +24,58 @@ export default async function PcbAssemblyManufacturers({
   const filters = parseFiltersFromSearchParams(resolvedParams)
   const cursor = parseCursor(resolvedParams)
 
-  const searchResult = await companySearch({ filters, cursor, includeFacetCounts: true })
+  const [searchResult, mapResult] = await Promise.all([
+    companySearch({ filters, cursor, includeFacetCounts: true }),
+    companyFacilitiesForMap({ filters }),
+  ])
   const companies = sanitizeCompaniesForListing(searchResult.companies)
   const activeFilterCount = filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
+  const mapFacilities = mapResult.facilities
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        filteredCount={searchResult.filteredCount}
-        visibleCount={companies.length}
-        activeFilterCount={activeFilterCount}
-        clearHref="/pcb-assembly-manufacturers"
-      />
+    <FilterProvider initialFilters={filters}>
+      <div className="min-h-screen bg-gray-50">
+        <Header
+          filteredCount={searchResult.filteredCount}
+          visibleCount={companies.length}
+          activeFilterCount={activeFilterCount}
+          clearHref="/pcb-assembly-manufacturers"
+        />
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-4 space-y-4">
-            <FilterSidebar
-              basePath="/pcb-assembly-manufacturers"
-              filters={filters}
-              facetCounts={searchResult.facetCounts}
-              clearHref="/pcb-assembly-manufacturers"
-            />
+        <main className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-4 space-y-4">
+              <FilterSidebar
+                basePath="/pcb-assembly-manufacturers"
+                filters={filters}
+                facetCounts={searchResult.facetCounts}
+                clearHref="/pcb-assembly-manufacturers"
+              />
+            </div>
+            <div className="lg:col-span-8 space-y-6">
+              <LazyCompanyMap initialFacilities={mapFacilities} initialFilters={filters} />
+              <CompanyList
+                companies={companies}
+                filteredCount={searchResult.filteredCount}
+                pageInfo={searchResult.pageInfo}
+              />
+            </div>
           </div>
-          <div className="lg:col-span-8 space-y-6">
-            <LazyCompanyMap companies={companies} />
-            <CompanyList
-              companies={companies}
-              filteredCount={searchResult.filteredCount}
-              pageInfo={searchResult.pageInfo}
-            />
-          </div>
-        </div>
-      </main>
+        </main>
 
-      <Script
-        id="pcb-assembly-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
-            name: "PCB Assembly Manufacturers",
-            description: metadata.description,
-          }),
-        }}
-      />
-    </div>
+        <Script
+          id="pcb-assembly-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "CollectionPage",
+              name: "PCB Assembly Manufacturers",
+              description: metadata.description,
+            }),
+          }}
+        />
+      </div>
+    </FilterProvider>
   )
 }

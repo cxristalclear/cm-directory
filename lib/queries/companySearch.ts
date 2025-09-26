@@ -147,7 +147,7 @@ type BoundingBox = {
   maxLat: number
 } | null
 
-type NormalizedFilters = {
+export type NormalizedFilters = {
   states: string[]
   capabilities: CapabilitySlug[]
   productionVolume: ProductionVolume | null
@@ -321,7 +321,7 @@ function resolveCertificationSlug(slug: string | undefined): string | null {
   return CERTIFICATION_SLUG_MAP[lower] ?? null
 }
 
-function normalizeFilters(options: CompanySearchOptions): NormalizedFilters {
+export function normalizeFilters(options: CompanySearchOptions): NormalizedFilters {
   const routeDefaults = options.routeDefaults ?? {}
 
   return {
@@ -352,7 +352,7 @@ function applyCursor<Result>(
   )
 }
 
-function applyFilters<Result>(
+export function applyFilters<Result>(
   builder: CompanyFilterBuilder<Result>,
   filters: NormalizedFilters,
   skip: FilterSkipOptions = {},

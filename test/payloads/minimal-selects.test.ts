@@ -434,10 +434,6 @@ describe("listing page payloads", () => {
         "count": "number",
         "slug": "string",
       },
-      "6": {
-        "count": "number",
-        "slug": "string",
-      },
     },
     "productionVolume": {
       "0": {
@@ -623,10 +619,6 @@ describe("listing page payloads", () => {
         "count": "number",
         "slug": "string",
       },
-      "6": {
-        "count": "number",
-        "slug": "string",
-      },
     },
     "productionVolume": {
       "0": {
@@ -804,10 +796,6 @@ describe("listing page payloads", () => {
         "slug": "string",
       },
       "5": {
-        "count": "number",
-        "slug": "string",
-      },
-      "6": {
         "count": "number",
         "slug": "string",
       },

@@ -281,9 +281,9 @@ describe("companySearch", () => {
     }
 
     const stateCounts: Array<BuilderResult> = [{ count: 1 }, { count: 1 }]
-    for (const [index, result] of stateCounts.entries()) {
-      enqueueBuilder(result, "companies", `state-count-${index}`)
-    }
+    const stateCountEntries = stateCounts.map((result, index) =>
+      enqueueBuilder(result, "companies", `state-count-${index}`),
+    )
 
     const cursor = serializeCursor({ name: "Alpha Manufacturing", id: "c01" })
 
@@ -331,6 +331,13 @@ describe("companySearch", () => {
     expect(prevEntry.from.select).toHaveBeenCalledWith("id, company_name")
     expect(facilitiesEntry.from.select).toHaveBeenCalledWith("state")
     expect(facilitiesEntry.builder.not).toHaveBeenCalledWith("state", "is", null)
+
+    const stateFacetEntry = stateCountEntries[0]
+    expect(stateFacetEntry?.builder.or).toHaveBeenCalledWith("capabilities.pcb_assembly_smt.is.true", {
+      referencedTable: "capabilities",
+    })
+    expect(stateFacetEntry?.builder.eq).toHaveBeenCalledWith("capabilities.medium_volume_production", true)
+    expect(stateFacetEntry?.builder.eq).toHaveBeenCalledWith("facilities.state", "CA")
   })
 
   it("skips facet queries when includeFacetCounts is false", async () => {

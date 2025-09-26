@@ -1,22 +1,26 @@
 "use client"
 
-import { useEffect, useRef, useState, useMemo, useCallback } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { MapPin, RotateCcw } from "lucide-react"
 import type { FeatureCollection, Point } from "geojson"
-import type { ListingCompany, ListingFacilityWithCompany } from "../types/company"
+
+import { useFilters } from "@/contexts/FilterContext"
+import { serializeFiltersToSearchParams } from "@/lib/filters/url"
+import type { MapFacility, MapSearchResult } from "@/lib/queries/mapSearch"
+import type { FilterState } from "@/types/company"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
 interface CompanyMapProps {
-  companies: ListingCompany[]
-}
-
-type FacilityWithCoordinates = ListingFacilityWithCompany & {
-  latitude: number
-  longitude: number
+  initialFacilities: MapFacility[]
+  initialFilters: FilterState
+  routeDefaults?: {
+    state?: string
+    certSlug?: string
+  }
 }
 
 type FacilityFeatureProperties = {
@@ -24,68 +28,113 @@ type FacilityFeatureProperties = {
   company_slug: string
   city: string
   state: string
-  facility_type: string
 }
 
-export default function CompanyMap({ companies }: CompanyMapProps) {
-  const mapContainer = useRef<HTMLDivElement>(null)
-  const map = useRef<mapboxgl.Map | null>(null)
+function createQueryKey(filters: FilterState, routeDefaults?: CompanyMapProps["routeDefaults"]): string {
+  const params = serializeFiltersToSearchParams(filters)
+
+  if (routeDefaults?.certSlug) {
+    params.append("cert", routeDefaults.certSlug)
+  }
+
+  if (routeDefaults?.state) {
+    params.append("defaultState", routeDefaults.state)
+  }
+
+  return params.toString()
+}
+
+export default function CompanyMap({ initialFacilities, initialFilters, routeDefaults }: CompanyMapProps) {
+  const { filters: liveFilters } = useFilters()
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<mapboxgl.Map | null>(null)
+  const currentFacilitiesRef = useRef<MapFacility[]>(initialFacilities)
+  const pendingRequestRef = useRef<AbortController | null>(null)
+  const lastQueryKeyRef = useRef<string>(createQueryKey(initialFilters, routeDefaults))
+
+  const [facilities, setFacilities] = useState<MapFacility[]>(initialFacilities)
   const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/light-v11")
   const [isLoading, setIsLoading] = useState(true)
   const [isStyleLoaded, setIsStyleLoaded] = useState(false)
-  const currentFacilitiesRef = useRef<FacilityWithCoordinates[]>([])
+  const [isFetching, setIsFetching] = useState(false)
 
-  const facilities = useMemo(() => {
-    const withCompany = companies
-      .flatMap((company: ListingCompany) =>
-        company.facilities.map((facility) => ({
-          ...facility,
-          company,
-        })),
-      ) as ListingFacilityWithCompany[]
-
-    return withCompany.filter((facility): facility is FacilityWithCoordinates => {
-      const { latitude, longitude } = facility
-      return (
-        typeof latitude === "number" &&
-        Number.isFinite(latitude) &&
-        typeof longitude === "number" &&
-        Number.isFinite(longitude)
-      )
-    })
-  }, [companies])
+  const filters = liveFilters ?? initialFilters
 
   useEffect(() => {
     currentFacilitiesRef.current = facilities
   }, [facilities])
 
-  const addClusteringLayers = useCallback((facilitiesToAdd?: FacilityWithCoordinates[]) => {
-    const facilitiesForMap = facilitiesToAdd || currentFacilitiesRef.current
+  useEffect(() => {
+    const nextKey = createQueryKey(filters, routeDefaults)
+    if (nextKey === lastQueryKeyRef.current) {
+      return
+    }
 
-    if (!map.current || facilitiesForMap.length === 0) {
+    lastQueryKeyRef.current = nextKey
+    if (pendingRequestRef.current) {
+      pendingRequestRef.current.abort()
+    }
+
+    const controller = new AbortController()
+    pendingRequestRef.current = controller
+    setIsFetching(true)
+
+    fetch(`/api/map?${nextKey}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load map facilities: ${response.status}`)
+        }
+        return response.json() as Promise<MapSearchResult>
+      })
+      .then((payload) => {
+        if (Array.isArray(payload?.facilities)) {
+          setFacilities(payload.facilities)
+        } else {
+          setFacilities([])
+        }
+      })
+      .catch((error) => {
+        if ((error as Error).name === "AbortError") {
+          return
+        }
+        console.error("Map facilities fetch failed", error)
+        setFacilities([])
+      })
+      .finally(() => {
+        setIsFetching(false)
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [filters, routeDefaults])
+
+  const addClusteringLayers = useCallback((facilitiesToAdd?: MapFacility[]) => {
+    const facilitiesForMap = facilitiesToAdd ?? currentFacilitiesRef.current
+
+    if (!mapRef.current || facilitiesForMap.length === 0) {
       return
     }
 
     try {
-      if (map.current.getLayer("clusters")) map.current.removeLayer("clusters")
-      if (map.current.getLayer("cluster-count")) map.current.removeLayer("cluster-count")
-      if (map.current.getLayer("unclustered-point")) map.current.removeLayer("unclustered-point")
-      if (map.current.getSource("facilities")) map.current.removeSource("facilities")
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      if (mapRef.current.getLayer("clusters")) mapRef.current.removeLayer("clusters")
+      if (mapRef.current.getLayer("cluster-count")) mapRef.current.removeLayer("cluster-count")
+      if (mapRef.current.getLayer("unclustered-point")) mapRef.current.removeLayer("unclustered-point")
+      if (mapRef.current.getSource("facilities")) mapRef.current.removeSource("facilities")
     } catch (error) {
       // Layers may not exist yet
+      console.debug("Map layer cleanup skipped", error)
     }
 
     const geojson: FeatureCollection<Point, FacilityFeatureProperties> = {
       type: "FeatureCollection",
-      features: facilitiesForMap.map((facility: FacilityWithCoordinates) => ({
+      features: facilitiesForMap.map((facility) => ({
         type: "Feature",
         properties: {
-          company_name: facility.company.company_name || "Unknown Company",
-          company_slug: facility.company.slug || "",
+          company_name: facility.company_name || "Unknown Company",
+          company_slug: facility.slug || "",
           city: facility.city || "Unknown City",
           state: facility.state || "Unknown State",
-          facility_type: facility.facility_type || "Manufacturing Facility",
         },
         geometry: {
           type: "Point",
@@ -94,14 +143,14 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
       })),
     }
 
-    const existingSource = map.current.getSource("facilities") as mapboxgl.GeoJSONSource
+    const existingSource = mapRef.current.getSource("facilities") as mapboxgl.GeoJSONSource | undefined
     if (existingSource) {
       existingSource.setData(geojson)
-      if (map.current.getLayer("clusters")) {
+      if (mapRef.current.getLayer("clusters")) {
         return
       }
     } else {
-      map.current.addSource("facilities", {
+      mapRef.current.addSource("facilities", {
         type: "geojson",
         data: geojson,
         cluster: true,
@@ -110,7 +159,7 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
       })
     }
 
-    map.current.addLayer({
+    mapRef.current.addLayer({
       id: "clusters",
       type: "circle",
       source: "facilities",
@@ -139,7 +188,7 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
       },
     })
 
-    map.current.addLayer({
+    mapRef.current.addLayer({
       id: "cluster-count",
       type: "symbol",
       source: "facilities",
@@ -154,7 +203,7 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
       },
     })
 
-    map.current.addLayer({
+    mapRef.current.addLayer({
       id: "unclustered-point",
       type: "circle",
       source: "facilities",
@@ -169,16 +218,18 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
   }, [])
 
   useEffect(() => {
-    if (!mapContainer.current || map.current) return
+    if (!mapContainerRef.current || mapRef.current) {
+      return
+    }
 
     if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN === "pk.demo_token") {
       setIsLoading(false)
       return
     }
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
+    mapRef.current = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: mapStyle,
       center: [-98.5795, 39.8283],
       zoom: 3.5,
       pitch: 0,
@@ -187,7 +238,7 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
       fadeDuration: 300,
     })
 
-    map.current.addControl(
+    mapRef.current.addControl(
       new mapboxgl.NavigationControl({
         showCompass: true,
         showZoom: true,
@@ -195,13 +246,13 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
       }),
       "top-right",
     )
-    map.current.addControl(new mapboxgl.FullscreenControl(), "top-right")
-    map.current.addControl(new mapboxgl.ScaleControl(), "bottom-left")
+    mapRef.current.addControl(new mapboxgl.FullscreenControl(), "top-right")
+    mapRef.current.addControl(new mapboxgl.ScaleControl(), "bottom-left")
 
-    const handleClusterClick = (e: mapboxgl.MapMouseEvent) => {
-      if (!map.current) return
+    const handleClusterClick = (event: mapboxgl.MapMouseEvent) => {
+      if (!mapRef.current) return
 
-      const features = map.current.queryRenderedFeatures(e.point, {
+      const features = mapRef.current.queryRenderedFeatures(event.point, {
         layers: ["clusters"],
       })
 
@@ -210,27 +261,27 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
       const clusterId = features[0].properties?.cluster_id
       if (clusterId === undefined) return
 
-      const source = map.current.getSource("facilities") as mapboxgl.GeoJSONSource
-      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-        if (err || !map.current) return
+      const source = mapRef.current.getSource("facilities") as mapboxgl.GeoJSONSource
+      source.getClusterExpansionZoom(clusterId, (error, zoom) => {
+        if (error || !mapRef.current) return
 
-        map.current.easeTo({
-          center: (features[0].geometry as GeoJSON.Point).coordinates as [number, number],
-          zoom: zoom || 10,
+        mapRef.current.easeTo({
+          center: (features[0].geometry as Point).coordinates as [number, number],
+          zoom: zoom ?? 10,
         })
       })
     }
 
-    const handlePointClick = (e: mapboxgl.MapMouseEvent) => {
-      if (!map.current || !e.features?.[0]) return
+    const handlePointClick = (event: mapboxgl.MapMouseEvent) => {
+      if (!mapRef.current || !event.features?.[0]) return
 
-      const coordinates = (e.features[0].geometry as GeoJSON.Point).coordinates.slice() as [number, number]
-      const props = e.features[0].properties
+      const coordinates = (event.features[0].geometry as Point).coordinates.slice() as [number, number]
+      const props = event.features[0].properties as FacilityFeatureProperties | undefined
 
       if (!props) return
 
-      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
+      while (Math.abs(event.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += event.lngLat.lng > coordinates[0] ? 360 : -360
       }
 
       const popup = createPopupFromFacility({
@@ -242,34 +293,31 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
         state: props.state,
       })
 
-      popup.setLngLat(coordinates).addTo(map.current)
+      popup.setLngLat(coordinates).addTo(mapRef.current)
     }
 
-    map.current.on("click", "clusters", handleClusterClick)
-    map.current.on("click", "unclustered-point", handlePointClick)
+    mapRef.current.on("click", "clusters", handleClusterClick)
+    mapRef.current.on("click", "unclustered-point", handlePointClick)
 
-    map.current.on("mouseenter", "clusters", () => {
-      if (map.current) map.current.getCanvas().style.cursor = "pointer"
+    mapRef.current.on("mouseenter", "clusters", () => {
+      if (mapRef.current) mapRef.current.getCanvas().style.cursor = "pointer"
+    })
+    mapRef.current.on("mouseleave", "clusters", () => {
+      if (mapRef.current) mapRef.current.getCanvas().style.cursor = ""
+    })
+    mapRef.current.on("mouseenter", "unclustered-point", () => {
+      if (mapRef.current) mapRef.current.getCanvas().style.cursor = "pointer"
+    })
+    mapRef.current.on("mouseleave", "unclustered-point", () => {
+      if (mapRef.current) mapRef.current.getCanvas().style.cursor = ""
     })
 
-    map.current.on("mouseleave", "clusters", () => {
-      if (map.current) map.current.getCanvas().style.cursor = ""
-    })
-
-    map.current.on("mouseenter", "unclustered-point", () => {
-      if (map.current) map.current.getCanvas().style.cursor = "pointer"
-    })
-
-    map.current.on("mouseleave", "unclustered-point", () => {
-      if (map.current) map.current.getCanvas().style.cursor = ""
-    })
-
-    map.current.on("load", () => {
+    mapRef.current.on("load", () => {
       setIsLoading(false)
       setIsStyleLoaded(true)
     })
 
-    map.current.on("style.load", () => {
+    mapRef.current.on("style.load", () => {
       setIsStyleLoaded(true)
       if (currentFacilitiesRef.current.length > 0) {
         addClusteringLayers(currentFacilitiesRef.current)
@@ -277,47 +325,45 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
     })
 
     return () => {
-      if (map.current) {
-        map.current.remove()
-        map.current = null
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
       }
     }
-  }, [addClusteringLayers])
+  }, [addClusteringLayers, mapStyle])
 
   useEffect(() => {
-    if (!map.current || !isStyleLoaded || isLoading || facilities.length === 0) {
+    if (!mapRef.current || !isStyleLoaded || isLoading || facilities.length === 0) {
       return
     }
 
     addClusteringLayers(facilities)
 
     const bounds = new mapboxgl.LngLatBounds()
-    facilities.forEach((facility: FacilityWithCoordinates) => {
+    for (const facility of facilities) {
       bounds.extend([facility.longitude, facility.latitude])
-    })
+    }
 
-    setTimeout(() => {
-      if (map.current && facilities.length > 0) {
-        map.current.fitBounds(bounds, {
-          padding: { top: 50, bottom: 50, left: 50, right: 50 },
-          maxZoom: 10,
-          duration: 1000,
-        })
-      }
-    }, 100)
+    if (!bounds.isEmpty()) {
+      mapRef.current.fitBounds(bounds, {
+        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        maxZoom: 10,
+        duration: 600,
+      })
+    }
   }, [facilities, isStyleLoaded, isLoading, addClusteringLayers])
 
   const handleStyleChange = (newStyle: string) => {
-    if (map.current && newStyle !== mapStyle) {
+    if (mapRef.current && newStyle !== mapStyle) {
       setMapStyle(newStyle)
       setIsStyleLoaded(false)
-      map.current.setStyle(newStyle)
+      mapRef.current.setStyle(newStyle)
     }
   }
 
   const resetView = () => {
-    if (map.current) {
-      map.current.flyTo({
+    if (mapRef.current) {
+      mapRef.current.flyTo({
         center: [-98.5795, 39.8283],
         zoom: 3.5,
         pitch: 0,
@@ -334,9 +380,9 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
           <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 mb-2">Interactive Map</h3>
           <p className="text-gray-500 text-sm">
-            Map visualization requires a Mapbox access token. Filtered companies appear here when a token is configured.
+            Map visualization requires a Mapbox access token. Filtered facilities appear here when a token is configured.
           </p>
-          <div className="mt-4 text-xs text-gray-400">Showing {companies.length} companies</div>
+          <div className="mt-4 text-xs text-gray-400">Showing {facilities.length} facilities</div>
         </div>
       </div>
     )
@@ -397,20 +443,23 @@ export default function CompanyMap({ companies }: CompanyMapProps) {
               <span className="font-medium text-gray-900">{facilities.length}</span>
             </div>
             <span className="text-gray-600">{facilities.length === 1 ? "facility" : "facilities"}</span>
+            {isFetching && <span className="text-xs text-gray-400">Updating…</span>}
           </div>
         </div>
       </div>
 
-      {isLoading && (
-        <div className="absolute inset-0 bg-white/75 backdrop-blur-sm z-20 flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <span className="text-gray-600 font-medium">Loading map...</span>
+      {(isLoading || isFetching) && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-full border border-blue-100 bg-white px-4 py-2 shadow-sm">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            <span className="text-sm font-medium text-blue-700">
+              {isLoading ? "Loading map…" : "Refreshing facilities…"}
+            </span>
           </div>
         </div>
       )}
 
-      <div ref={mapContainer} className="w-full h-[500px]" />
+      <div ref={mapContainerRef} className="h-[600px] w-full" />
     </div>
   )
 }
