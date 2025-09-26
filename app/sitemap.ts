@@ -16,17 +16,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .select('state')
     .not('state', 'is', null)
   
-  const uniqueStates = [...new Set(states?.map(s => s.state) || [])]
+  const uniqueStates = [
+    ...new Set(
+      (states ?? [])
+        .map((entry) => entry.state)
+        .filter((state): state is string => typeof state === 'string' && state.length > 0),
+    ),
+  ]
   
   // Build sitemap entries
-  const companyUrls = companies?.map(company => ({
-    url: `${baseUrl}/companies/${company.slug}`,
-    lastModified: company.updated_at,
-    changeFrequency: 'weekly' as const,
-    priority: 0.8,
-  })) || []
+  const companyUrls =
+    companies?.map((company) => ({
+      url: `${baseUrl}/companies/${company.slug}`,
+      lastModified: company.updated_at ? new Date(company.updated_at) : undefined,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })) || []
   
-  const stateUrls = uniqueStates.map(state => ({
+  const stateUrls = uniqueStates.map((state) => ({
     url: `${baseUrl}/manufacturers/${state.toLowerCase()}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,

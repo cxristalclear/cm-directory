@@ -306,6 +306,7 @@ describe("listing page payloads", () => {
           "low_volume_production": "boolean",
           "medium_volume_production": "boolean",
           "pcb_assembly_fine_pitch": "boolean",
+          "pcb_assembly_mixed": "boolean",
           "pcb_assembly_smt": "boolean",
           "pcb_assembly_through_hole": "boolean",
           "prototyping": "boolean",
@@ -356,6 +357,7 @@ describe("listing page payloads", () => {
           "low_volume_production": "boolean",
           "medium_volume_production": "boolean",
           "pcb_assembly_fine_pitch": "boolean",
+          "pcb_assembly_mixed": "boolean",
           "pcb_assembly_smt": "boolean",
           "pcb_assembly_through_hole": "boolean",
           "prototyping": "boolean",
@@ -415,6 +417,14 @@ describe("listing page payloads", () => {
         "slug": "string",
       },
       "4": {
+        "count": "number",
+        "slug": "string",
+      },
+      "5": {
+        "count": "number",
+        "slug": "string",
+      },
+      "6": {
         "count": "number",
         "slug": "string",
       },
@@ -475,6 +485,7 @@ describe("listing page payloads", () => {
           "low_volume_production": "boolean",
           "medium_volume_production": "boolean",
           "pcb_assembly_fine_pitch": "boolean",
+          "pcb_assembly_mixed": "boolean",
           "pcb_assembly_smt": "boolean",
           "pcb_assembly_through_hole": "boolean",
           "prototyping": "boolean",
@@ -525,6 +536,7 @@ describe("listing page payloads", () => {
           "low_volume_production": "boolean",
           "medium_volume_production": "boolean",
           "pcb_assembly_fine_pitch": "boolean",
+          "pcb_assembly_mixed": "boolean",
           "pcb_assembly_smt": "boolean",
           "pcb_assembly_through_hole": "boolean",
           "prototyping": "boolean",
@@ -584,6 +596,14 @@ describe("listing page payloads", () => {
         "slug": "string",
       },
       "4": {
+        "count": "number",
+        "slug": "string",
+      },
+      "5": {
+        "count": "number",
+        "slug": "string",
+      },
+      "6": {
         "count": "number",
         "slug": "string",
       },
@@ -639,6 +659,7 @@ describe("listing page payloads", () => {
           "low_volume_production": "boolean",
           "medium_volume_production": "boolean",
           "pcb_assembly_fine_pitch": "boolean",
+          "pcb_assembly_mixed": "boolean",
           "pcb_assembly_smt": "boolean",
           "pcb_assembly_through_hole": "boolean",
           "prototyping": "boolean",
@@ -689,6 +710,7 @@ describe("listing page payloads", () => {
           "low_volume_production": "boolean",
           "medium_volume_production": "boolean",
           "pcb_assembly_fine_pitch": "boolean",
+          "pcb_assembly_mixed": "boolean",
           "pcb_assembly_smt": "boolean",
           "pcb_assembly_through_hole": "boolean",
           "prototyping": "boolean",
@@ -748,6 +770,14 @@ describe("listing page payloads", () => {
         "slug": "string",
       },
       "4": {
+        "count": "number",
+        "slug": "string",
+      },
+      "5": {
+        "count": "number",
+        "slug": "string",
+      },
+      "6": {
         "count": "number",
         "slug": "string",
       },

@@ -1,7 +1,6 @@
 import { randomUUID } from "crypto"
 
 import {
-  COMPANY_SEARCH_FUNCTION,
   companySearch,
   deserializeCursor,
   parseCursor,
@@ -17,12 +16,12 @@ import type {
 
 jest.mock("@/lib/supabase", () => ({
   supabase: {
-    rpc: jest.fn(),
+    from: jest.fn(),
   },
 }))
 
 const { supabase } = jest.requireMock("@/lib/supabase") as {
-  supabase: { rpc: jest.Mock }
+  supabase: { from: jest.Mock }
 }
 
 type MockCompany = Company & {
@@ -35,6 +34,29 @@ type MockCompany = Company & {
 type CapabilityOverrides = Partial<Capabilities>
 type FacilityOverrides = Partial<Facility>
 type CompanyOverrides = Partial<MockCompany>
+
+type BuilderResult = {
+  data?: unknown
+  count?: number
+  error?: Error | null
+}
+
+type MockBuilder = {
+  select: jest.Mock
+  filter: jest.Mock
+  or: jest.Mock
+  eq: jest.Mock
+  gte: jest.Mock
+  lte: jest.Mock
+  order: jest.Mock
+  limit: jest.Mock
+  then: jest.Mock
+}
+
+type BuilderEntry = {
+  from: { select: jest.Mock }
+  builder: MockBuilder
+}
 
 function createCapabilities(overrides: CapabilityOverrides = {}): Capabilities {
   return {
@@ -90,6 +112,9 @@ function createFacility(overrides: FacilityOverrides = {}): Facility {
 
 function createCompany(overrides: CompanyOverrides = {}): MockCompany {
   const id = overrides.id ?? randomUUID()
+  const capability = overrides.capabilities?.[0] ?? createCapabilities({ company_id: id })
+  const facility = overrides.facilities?.[0] ?? createFacility({ company_id: id })
+
   return {
     id,
     company_name: "Test Company",
@@ -107,10 +132,14 @@ function createCompany(overrides: CompanyOverrides = {}): MockCompany {
     last_verified_date: null,
     created_at: undefined,
     updated_at: undefined,
-    facilities: [createFacility({ company_id: id })],
-    capabilities: [createCapabilities({ company_id: id })],
+    facilities: [facility],
+    capabilities: [capability],
     industries: [],
     certifications: [],
+    technical_specs: null,
+    business_info: null,
+    contacts: null,
+    verification_data: null,
     ...overrides,
   }
 }
@@ -160,174 +189,202 @@ const baseCompanies: MockCompany[] = [
   }),
 ]
 
-type MockRpcData = {
-  companies: MockCompany[]
-  total_count: number
-  has_next: boolean
-  has_prev: boolean
-  next_cursor: { name: string; id: string } | null
-  prev_cursor: { name: string; id: string } | null
-  facet_counts: {
-    states: Array<{ code: string; count: number }>
-    capabilities: Array<{ slug: string; count: number }>
-    production_volume: Array<{ level: string; count: number }>
-  } | null
-}
+const builderQueue: BuilderEntry[] = []
 
-function setRpcResponse(data: MockRpcData, error: Error | null = null) {
-  supabase.rpc.mockResolvedValue({ data, error })
+function createBuilder(result: BuilderResult, label: string): BuilderEntry {
+  const response = {
+    data: result.data ?? null,
+    error: result.error ?? null,
+    count: result.count,
+  }
+
+  const builder: MockBuilder = {
+    select: jest.fn(() => builder),
+    filter: jest.fn(() => builder),
+    or: jest.fn(() => builder),
+    eq: jest.fn(() => builder),
+    gte: jest.fn(() => builder),
+    lte: jest.fn(() => builder),
+    order: jest.fn(() => builder),
+    limit: jest.fn(() => builder),
+    then: jest.fn((resolve, reject) => Promise.resolve(response).then(resolve, reject)),
+  }
+
+  const fromObject = {
+    select: jest.fn(() => builder),
+    label,
+  }
+
+  return { from: fromObject, builder }
 }
 
 beforeEach(() => {
   jest.clearAllMocks()
-  setRpcResponse({
-    companies: baseCompanies,
-    total_count: 42,
-    has_next: true,
-    has_prev: false,
-    next_cursor: { name: "Gamma Industries", id: "c03" },
-    prev_cursor: null,
-    facet_counts: {
-      states: [
-        { code: "CA", count: 21 },
-        { code: "TX", count: 21 },
-      ],
-      capabilities: [
-        { slug: "smt", count: 21 },
-        { slug: "box_build", count: 10 },
-      ],
-      production_volume: [
-        { level: "low", count: 5 },
-        { level: "medium", count: 21 },
-      ],
-    },
+  builderQueue.length = 0
+  supabase.from.mockImplementation(() => {
+    const next = builderQueue.shift()
+    if (!next) {
+      throw new Error("Unexpected supabase.from call")
+    }
+    return next.from
   })
 })
 
+function enqueueBuilder(result: BuilderResult, label: string): BuilderEntry {
+  const entry = createBuilder(result, label)
+  builderQueue.push(entry)
+  return entry
+}
+
 describe("companySearch", () => {
-  it("calls the Supabase RPC with normalized filters and returns formatted results", async () => {
+  it("normalizes filters and returns formatted results", async () => {
+    const mainEntry = enqueueBuilder({ data: baseCompanies, count: 42, error: null }, "main")
+    const prevEntry = enqueueBuilder({ data: [{ id: "c00", company_name: "Aardvark" }], error: null }, "prev")
+    const stateEntry = enqueueBuilder(
+      {
+        data: [
+          { id: "c01", facilities: [{ state: "CA" }] },
+          { id: "c02", facilities: [{ state: "TX" }] },
+        ],
+      },
+      "state facets",
+    )
+    const capabilityEntry = enqueueBuilder(
+      {
+        data: [
+          { id: "c01", capabilities: baseCompanies[0].capabilities },
+          { id: "c02", capabilities: baseCompanies[1].capabilities },
+        ],
+      },
+      "cap facets",
+    )
+    const volumeEntry = enqueueBuilder(
+      {
+        data: [
+          { id: "c01", capabilities: baseCompanies[0].capabilities },
+          { id: "c02", capabilities: baseCompanies[1].capabilities },
+        ],
+      },
+      "volume facets",
+    )
+
+    const cursor = serializeCursor({ name: "Alpha Manufacturing", id: "c01" })
+
     const result = await companySearch({
       filters: { states: ["ca", "TX"], capabilities: ["smt"], productionVolume: "medium" },
-      cursor: { name: "Alpha Manufacturing", id: "c01" },
-      pageSize: 12,
+      routeDefaults: { certSlug: "iso-13485" },
+      cursor: deserializeCursor(cursor),
       includeFacetCounts: true,
     })
 
-    expect(supabase.rpc).toHaveBeenCalledWith(
-      COMPANY_SEARCH_FUNCTION,
-      expect.objectContaining({
-        filter_states: expect.arrayContaining(["CA", "TX"]),
-        filter_capabilities: ["smt"],
-        filter_volume: "medium",
-        cursor_name: "Alpha Manufacturing",
-        cursor_id: "c01",
-        page_size: 12,
-        include_facets: true,
-      }),
+    expect(supabase.from).toHaveBeenCalledTimes(5)
+    expect(mainEntry.from.select).toHaveBeenCalledWith(expect.stringContaining("capabilities:capabilities"), {
+      count: "exact",
+    })
+    expect(mainEntry.builder.filter).toHaveBeenCalledWith("facilities.state", "in", "(\"CA\",\"TX\")")
+    expect(mainEntry.builder.or).toHaveBeenNthCalledWith(1, "capabilities.pcb_assembly_smt.is.true", {
+      referencedTable: "capabilities",
+    })
+    expect(mainEntry.builder.or).toHaveBeenNthCalledWith(2, expect.stringContaining("company_name.gt."))
+    expect(mainEntry.builder.eq).toHaveBeenCalledWith(
+      "certifications.certification_type",
+      "ISO 13485",
     )
 
     expect(result.totalCount).toBe(42)
-    expect(result.companies).toHaveLength(baseCompanies.length)
-    expect(result.hasNext).toBe(true)
-    expect(result.hasPrev).toBe(false)
-    expect(result.nextCursor).toBe(
-      serializeCursor({ name: "Gamma Industries", id: "c03" }),
-    )
-    expect(result.prevCursor).toBeNull()
-    expect(result.facetCounts?.capabilities.find((entry) => entry.slug === "smt")?.count).toBe(21)
+    expect(result.companies).toHaveLength(2)
+    expect(result.hasNext).toBe(false)
+    expect(result.hasPrev).toBe(true)
+    expect(result.prevCursor).toBeTruthy()
+    expect(result.nextCursor).toBeNull()
+
+    expect(result.facetCounts?.states).toEqual([
+      { code: "CA", count: 1 },
+      { code: "TX", count: 1 },
+    ])
+    expect(result.facetCounts?.capabilities.find((entry) => entry.slug === "smt")?.count).toBe(1)
+    expect(result.facetCounts?.productionVolume.find((entry) => entry.level === "high")?.count).toBe(1)
+
+    expect(prevEntry.from.select).toHaveBeenCalledWith("id, company_name")
+    expect(stateEntry.from.select).toHaveBeenCalled()
+    expect(capabilityEntry.from.select).toHaveBeenCalled()
+    expect(volumeEntry.from.select).toHaveBeenCalled()
   })
 
-  it("omits facet counts when includeFacetCounts is false", async () => {
-    await companySearch({
-      filters: { states: [], capabilities: [], productionVolume: null },
-      includeFacetCounts: false,
-    })
-
-    expect(supabase.rpc).toHaveBeenCalledWith(
-      COMPANY_SEARCH_FUNCTION,
-      expect.objectContaining({ include_facets: false }),
-    )
+  it("skips facet queries when includeFacetCounts is false", async () => {
+    enqueueBuilder({ data: baseCompanies.slice(0, 1), count: 1, error: null }, "main")
 
     const result = await companySearch({
       filters: { states: [], capabilities: [], productionVolume: null },
       includeFacetCounts: false,
     })
 
+    expect(supabase.from).toHaveBeenCalledTimes(1)
     expect(result.facetCounts).toBeNull()
   })
 
-  it("fills missing capability and volume facet counts with zeros", async () => {
-    setRpcResponse({
-      companies: baseCompanies,
-      total_count: 2,
-      has_next: false,
-      has_prev: false,
-      next_cursor: null,
-      prev_cursor: null,
-      facet_counts: {
-        states: [],
-        capabilities: [{ slug: "smt", count: 2 }],
-        production_volume: [{ level: "medium", count: 2 }],
-      },
-    })
+  it("returns all companies when no filters or cursor are provided", async () => {
+    const mainEntry = enqueueBuilder({ data: baseCompanies, count: 2, error: null }, "main")
+    enqueueBuilder({ data: [], error: null }, "state facets")
+    enqueueBuilder({ data: [], error: null }, "cap facets")
+    enqueueBuilder({ data: [], error: null }, "volume facets")
 
     const result = await companySearch({
       filters: { states: [], capabilities: [], productionVolume: null },
     })
 
-    const capabilityCounts = result.facetCounts?.capabilities ?? []
-    expect(capabilityCounts).toHaveLength(7)
-    expect(capabilityCounts.find((entry) => entry.slug === "box_build")?.count).toBe(0)
-
-    const volumeCounts = result.facetCounts?.productionVolume ?? []
-    expect(volumeCounts).toHaveLength(3)
-    expect(volumeCounts.find((entry) => entry.level === "low")?.count).toBe(0)
+    expect(mainEntry.builder.limit).not.toHaveBeenCalled()
+    expect(result.hasNext).toBe(false)
+    expect(result.companies).toHaveLength(baseCompanies.length)
   })
 
-  it("passes bounding box filters to the RPC payload", async () => {
+  it("applies bounding box filters", async () => {
+    const entry = enqueueBuilder({ data: baseCompanies.slice(0, 1), count: 1, error: null }, "main")
+    enqueueBuilder({ data: [], error: null }, "state facets")
+    enqueueBuilder({ data: [], error: null }, "cap facets")
+    enqueueBuilder({ data: [], error: null }, "volume facets")
+
     await companySearch({
       filters: { states: [], capabilities: [], productionVolume: null },
-      bbox: { minLng: -123.5, minLat: 30.5, maxLng: -97.0, maxLat: 38.0 },
+      bbox: { minLng: -130, minLat: 25, maxLng: -65, maxLat: 50 },
     })
 
-    expect(supabase.rpc).toHaveBeenCalledWith(
-      COMPANY_SEARCH_FUNCTION,
-      expect.objectContaining({
-        bbox: {
-          min_lng: -123.5,
-          min_lat: 30.5,
-          max_lng: -97.0,
-          max_lat: 38.0,
-        },
-      }),
-    )
+    expect(entry.builder.gte).toHaveBeenCalledWith("facilities.longitude", -130)
+    expect(entry.builder.lte).toHaveBeenCalledWith("facilities.latitude", 50)
   })
 
-  it("normalizes route defaults and certification slugs", async () => {
-    await companySearch({
+  it("logs and returns empty results when Supabase returns an error", async () => {
+    const error = new Error("Query failed")
+    enqueueBuilder({ data: null, error }, "main")
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {})
+
+    const result = await companySearch({
       filters: { states: [], capabilities: [], productionVolume: null },
-      routeDefaults: { state: "ny", certSlug: "iso-13485" },
     })
 
-    expect(supabase.rpc).toHaveBeenCalledWith(
-      COMPANY_SEARCH_FUNCTION,
-      expect.objectContaining({
-        filter_states: ["NY"],
-        route_state: "NY",
-        required_certification: "ISO 13485",
-      }),
-    )
-  })
+    expect(consoleSpy).toHaveBeenCalled()
+    expect(result).toEqual({
+      companies: [],
+      totalCount: 0,
+      hasNext: false,
+      hasPrev: false,
+      nextCursor: null,
+      prevCursor: null,
+      facetCounts: {
+        states: [],
+        capabilities: expect.arrayContaining([
+          expect.objectContaining({ slug: "smt", count: 0 }),
+          expect.objectContaining({ slug: "box_build", count: 0 }),
+        ]),
+        productionVolume: [
+          { level: "low", count: 0 },
+          { level: "medium", count: 0 },
+          { level: "high", count: 0 },
+        ],
+      },
+    })
 
-  it("throws when Supabase returns an error", async () => {
-    const error = new Error("RPC failure")
-    supabase.rpc.mockResolvedValue({ data: null, error })
-
-    await expect(
-      companySearch({
-        filters: { states: [], capabilities: [], productionVolume: null },
-      }),
-    ).rejects.toThrow("RPC failure")
+    consoleSpy.mockRestore()
   })
 })
 
