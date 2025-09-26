@@ -74,7 +74,7 @@ export default async function CertManufacturers({
       <Script id="cert-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <Header
-        totalCount={searchResult.totalCount}
+        filteredCount={searchResult.filteredCount}
         visibleCount={companies.length}
         activeFilterCount={activeFilterCount}
         clearHref={basePath}
@@ -116,11 +116,8 @@ export default async function CertManufacturers({
             <LazyCompanyMap companies={companies} />
             <CompanyList
               companies={companies}
-              totalCount={searchResult.totalCount}
-              hasNext={searchResult.hasNext}
-              hasPrev={searchResult.hasPrev}
-              nextCursor={searchResult.nextCursor}
-              prevCursor={searchResult.prevCursor}
+              filteredCount={searchResult.filteredCount}
+              pageInfo={searchResult.pageInfo}
             />
           </div>
         </div>

@@ -73,11 +73,16 @@ const baseCompanies = Array.from({ length: 3 }).map((_, index) => ({
 
 const mockResult = {
   companies: baseCompanies,
-  totalCount: 18,
-  hasNext: false,
-  hasPrev: false,
-  nextCursor: null,
-  prevCursor: null,
+  filteredCount: 18,
+  pageInfo: {
+    hasNextPage: false,
+    hasPreviousPage: false,
+    nextCursor: null,
+    prevCursor: null,
+    startCursor: null,
+    endCursor: null,
+    pageSize: 9,
+  },
   facetCounts: {
     states: [{ code: "TX", count: 18 }],
     capabilities: [
@@ -122,7 +127,7 @@ describe("state landing page SSR", () => {
 
     const headerProps = mockHeader.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(headerProps).toMatchObject({
-      totalCount: mockResult.totalCount,
+      filteredCount: mockResult.filteredCount,
       visibleCount: mockResult.companies.length,
       clearHref: "/manufacturers/texas",
     })
@@ -136,8 +141,8 @@ describe("state landing page SSR", () => {
 
     const listProps = mockCompanyList.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(listProps).toMatchObject({
-      totalCount: mockResult.totalCount,
-      hasNext: false,
+      filteredCount: mockResult.filteredCount,
+      pageInfo: expect.objectContaining({ hasNextPage: false }),
     })
     expect(Array.isArray(listProps.companies)).toBe(true)
     expect((listProps.companies as unknown[]).length).toBe(mockResult.companies.length)

@@ -122,7 +122,7 @@ export default async function CertificationPage({
   return (
     <div className="min-h-screen bg-gray-50">
       <Header
-        totalCount={searchResult.totalCount}
+        filteredCount={searchResult.filteredCount}
         visibleCount={companies.length}
         activeFilterCount={activeFilterCount}
         clearHref={basePath}
@@ -146,7 +146,7 @@ export default async function CertificationPage({
           <p className="text-xl text-gray-600">{certData.description}</p>
           <div className="mt-4 flex gap-4">
             <div className="rounded-lg bg-blue-50 px-6 py-3 text-blue-800">
-              <span className="text-2xl font-bold">{searchResult.totalCount}</span>
+              <span className="text-2xl font-bold">{searchResult.filteredCount}</span>
               <span className="ml-2 text-sm">Certified Manufacturers</span>
             </div>
             <div className="rounded-lg bg-blue-50 px-6 py-3 text-blue-800">
@@ -164,11 +164,8 @@ export default async function CertificationPage({
             <LazyCompanyMap companies={companies} />
             <CompanyList
               companies={companies}
-              totalCount={searchResult.totalCount}
-              hasNext={searchResult.hasNext}
-              hasPrev={searchResult.hasPrev}
-              nextCursor={searchResult.nextCursor}
-              prevCursor={searchResult.prevCursor}
+              filteredCount={searchResult.filteredCount}
+              pageInfo={searchResult.pageInfo}
             />
           </div>
         </div>

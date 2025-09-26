@@ -75,11 +75,16 @@ const baseCompanies = Array.from({ length: 9 }).map((_, index) => ({
 
 const mockResult = {
   companies: baseCompanies,
-  totalCount: 42,
-  hasNext: true,
-  hasPrev: false,
-  nextCursor: "next",
-  prevCursor: null,
+  filteredCount: 42,
+  pageInfo: {
+    hasNextPage: true,
+    hasPreviousPage: false,
+    nextCursor: "next",
+    prevCursor: null,
+    startCursor: "start",
+    endCursor: "end",
+    pageSize: 9,
+  },
   facetCounts: {
     states: [{ code: "TX", count: 42 }],
     capabilities: [
@@ -124,16 +129,18 @@ describe("home page SSR", () => {
 
     const headerProps = mockHeader.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(headerProps).toMatchObject({
-      totalCount: mockResult.totalCount,
+      filteredCount: mockResult.filteredCount,
       visibleCount: mockResult.companies.length,
       activeFilterCount: 2,
     })
 
     const companyListProps = mockCompanyList.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(companyListProps).toMatchObject({
-      totalCount: mockResult.totalCount,
-      hasNext: true,
-      nextCursor: "next",
+      filteredCount: mockResult.filteredCount,
+      pageInfo: expect.objectContaining({
+        hasNextPage: true,
+        nextCursor: "next",
+      }),
     })
     expect(Array.isArray(companyListProps.companies)).toBe(true)
     expect((companyListProps.companies as unknown[]).length).toBe(mockResult.companies.length)

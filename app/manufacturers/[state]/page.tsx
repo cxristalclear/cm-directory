@@ -198,7 +198,7 @@ export default async function StateManufacturersPage({
     mergedFilters.states.length + mergedFilters.capabilities.length + (mergedFilters.productionVolume ? 1 : 0)
 
   const stats = {
-    totalCompanies: searchResult.totalCount,
+    totalCompanies: searchResult.filteredCount,
     certifications: [
       ...new Set(
         companies.flatMap((company) =>
@@ -236,7 +236,7 @@ export default async function StateManufacturersPage({
   return (
     <div className="min-h-screen bg-gray-50">
       <Header
-        totalCount={searchResult.totalCount}
+        filteredCount={searchResult.filteredCount}
         visibleCount={companies.length}
         activeFilterCount={activeFilterCount}
         clearHref={basePath}
@@ -290,11 +290,8 @@ export default async function StateManufacturersPage({
             <LazyCompanyMap companies={companies} />
             <CompanyList
               companies={companies}
-              totalCount={searchResult.totalCount}
-              hasNext={searchResult.hasNext}
-              hasPrev={searchResult.hasPrev}
-              nextCursor={searchResult.nextCursor}
-              prevCursor={searchResult.prevCursor}
+              filteredCount={searchResult.filteredCount}
+              pageInfo={searchResult.pageInfo}
             />
           </div>
         </div>

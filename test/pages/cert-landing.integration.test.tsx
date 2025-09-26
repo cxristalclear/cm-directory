@@ -79,11 +79,16 @@ const baseCompanies = Array.from({ length: 2 }).map((_, index) => ({
 
 const mockResult = {
   companies: baseCompanies,
-  totalCount: 7,
-  hasNext: false,
-  hasPrev: false,
-  nextCursor: null,
-  prevCursor: null,
+  filteredCount: 7,
+  pageInfo: {
+    hasNextPage: false,
+    hasPreviousPage: false,
+    nextCursor: null,
+    prevCursor: null,
+    startCursor: null,
+    endCursor: null,
+    pageSize: 9,
+  },
   facetCounts: {
     states: [{ code: "MA", count: 7 }],
     capabilities: [
@@ -127,7 +132,7 @@ describe("certification landing page SSR", () => {
 
     const headerProps = mockHeader.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(headerProps).toMatchObject({
-      totalCount: mockResult.totalCount,
+      filteredCount: mockResult.filteredCount,
       clearHref: "/contract-manufacturers/iso-13485",
     })
 
@@ -140,8 +145,8 @@ describe("certification landing page SSR", () => {
 
     const listProps = mockCompanyList.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(listProps).toMatchObject({
-      totalCount: mockResult.totalCount,
-      hasNext: false,
+      filteredCount: mockResult.filteredCount,
+      pageInfo: expect.objectContaining({ hasNextPage: false }),
     })
     expect(Array.isArray(listProps.companies)).toBe(true)
     expect((listProps.companies as unknown[]).length).toBe(mockResult.companies.length)

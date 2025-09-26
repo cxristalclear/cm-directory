@@ -2,15 +2,13 @@ import Link from "next/link"
 import { Building2, MapPin } from "lucide-react"
 
 import Pagination from "@/components/Pagination"
+import type { CompanyPageInfo } from "@/lib/queries/companySearch"
 import type { ListingCapability, ListingCompany, ListingFacility } from "@/types/company"
 
 type CompanyListProps = {
   companies: ListingCompany[]
-  totalCount: number
-  hasNext: boolean
-  hasPrev: boolean
-  nextCursor: string | null
-  prevCursor: string | null
+  filteredCount: number
+  pageInfo: CompanyPageInfo
 }
 
 const CAPABILITY_BADGE_LABELS: Record<string, string> = {
@@ -71,15 +69,8 @@ function formatLocation(facility: ListingFacility | null): string {
   return "Location unavailable"
 }
 
-export default function CompanyList({
-  companies,
-  totalCount,
-  hasNext,
-  hasPrev,
-  nextCursor,
-  prevCursor,
-}: CompanyListProps) {
-  const paginationNeeded = hasNext || hasPrev
+export default function CompanyList({ companies, filteredCount, pageInfo }: CompanyListProps) {
+  const paginationNeeded = pageInfo.hasNextPage || pageInfo.hasPreviousPage
 
   if (companies.length === 0) {
     return (
@@ -98,7 +89,7 @@ export default function CompanyList({
       <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
         <h2 className="text-2xl font-bold text-gray-900">Companies Directory</h2>
         <span className="text-sm font-medium text-gray-600">
-          Showing {companies.length} of {totalCount} results
+          Showing {companies.length} of {filteredCount} results
         </span>
       </div>
 
@@ -162,11 +153,7 @@ export default function CompanyList({
         })}
       </div>
 
-      {paginationNeeded && (
-        <Pagination
-          pageInfo={{ hasNext, hasPrev, nextCursor, prevCursor }}
-        />
-      )}
+      {paginationNeeded && <Pagination pageInfo={pageInfo} />}
     </div>
   )
 }

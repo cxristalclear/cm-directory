@@ -91,7 +91,7 @@ export default async function Home({
       />
 
       <Header
-        totalCount={searchResult.totalCount}
+        filteredCount={searchResult.filteredCount}
         visibleCount={companies.length}
         activeFilterCount={activeFilterCount}
         clearHref="/"
@@ -121,11 +121,8 @@ export default async function Home({
             <div className="companies-directory">
               <CompanyList
                 companies={companies}
-                totalCount={searchResult.totalCount}
-                hasNext={searchResult.hasNext}
-                hasPrev={searchResult.hasPrev}
-                nextCursor={searchResult.nextCursor}
-                prevCursor={searchResult.prevCursor}
+                filteredCount={searchResult.filteredCount}
+                pageInfo={searchResult.pageInfo}
               />
             </div>
 

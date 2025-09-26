@@ -2,13 +2,13 @@ import Link from "next/link"
 import { Building2 } from "lucide-react"
 
 type HeaderProps = {
-  totalCount: number
+  filteredCount: number
   visibleCount: number
   activeFilterCount: number
   clearHref?: string
 }
 
-export default function Header({ totalCount, visibleCount, activeFilterCount, clearHref }: HeaderProps) {
+export default function Header({ filteredCount, visibleCount, activeFilterCount, clearHref }: HeaderProps) {
   const hasFilters = activeFilterCount > 0
   const clearUrl = clearHref ?? "/"
 
@@ -51,7 +51,7 @@ export default function Header({ totalCount, visibleCount, activeFilterCount, cl
               </p>
               <div className="flex flex-col items-center justify-center gap-3 text-white sm:flex-row sm:gap-4">
                 <span className="text-sm font-medium uppercase tracking-widest text-blue-100">
-                  Showing {visibleCount} of {totalCount} manufacturers
+                  Showing {visibleCount} of {filteredCount} manufacturers
                 </span>
                 {hasFilters && (
                   <Link

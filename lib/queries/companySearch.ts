@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase"
 import { CANONICAL_CAPABILITIES } from "@/lib/filters/url"
@@ -22,15 +23,15 @@ const CAPABILITY_COLUMN_MAP: Record<CapabilitySlug, CapabilityBooleanColumn> = {
   box_build: "box_build_assembly",
 }
 
-const PRODUCTION_VOLUMES: ProductionVolume[] = ["low", "medium", "high"]
-
-const DEFAULT_PAGE_SIZE = 9
-
 const VOLUME_COLUMN_MAP: Record<ProductionVolume, CapabilityBooleanColumn> = {
   low: "low_volume_production",
   medium: "medium_volume_production",
   high: "high_volume_production",
 }
+
+const PRODUCTION_VOLUMES: ProductionVolume[] = ["low", "medium", "high"]
+
+const DEFAULT_PAGE_SIZE = 9
 
 const CAPABILITY_BOOLEAN_COLUMNS = [
   "pcb_assembly_smt",
@@ -49,14 +50,6 @@ type CapabilityBooleanColumn = (typeof CAPABILITY_BOOLEAN_COLUMNS)[number]
 
 const CAPABILITIES_SELECT_FRAGMENT = ["id", ...CAPABILITY_BOOLEAN_COLUMNS].join(", ")
 
-const CERTIFICATION_SLUG_MAP: Record<string, string> = {
-  "iso-9001": "ISO 9001",
-  "iso-13485": "ISO 13485",
-  "as9100": "AS9100",
-  "iatf-16949": "IATF 16949",
-  itar: "ITAR",
-}
-
 const COMPANY_LIST_SELECT = `
   id,
   company_name,
@@ -74,10 +67,10 @@ const COMPANY_LIST_SELECT = `
   last_verified_date,
   created_at,
   updated_at,
-  capabilities:capabilities(
+  capabilities:capabilities!left(
     ${CAPABILITIES_SELECT_FRAGMENT}
   ),
-  facilities:facilities(
+  facilities:facilities!left(
     id,
     facility_type,
     street_address,
@@ -89,15 +82,22 @@ const COMPANY_LIST_SELECT = `
     longitude,
     is_primary
   ),
-  certifications:certifications(
+  certifications:certifications!left(
     id,
     certification_type
   ),
-  industries:industries(
+  industries:industries!left(
     id,
     industry_name
   )
 `
+
+type Schema = Database["public"]
+type CompanyRow = Schema["Tables"]["companies"]["Row"]
+type FacilityRow = Schema["Tables"]["facilities"]["Row"]
+type CapabilityRow = Schema["Tables"]["capabilities"]["Row"]
+type CertificationRow = Schema["Tables"]["certifications"]["Row"]
+type IndustryRow = Schema["Tables"]["industries"]["Row"]
 
 export type CompanySearchCursor = {
   name: string
@@ -131,23 +131,6 @@ export type CompanySearchOptions = {
   }
 }
 
-export type CompanySearchResult = {
-  companies: Company[]
-  totalCount: number
-  hasNext: boolean
-  hasPrev: boolean
-  nextCursor: string | null
-  prevCursor: string | null
-  facetCounts: CompanyFacetCounts | null
-}
-
-type Schema = Database["public"]
-type CompanyRow = Schema["Tables"]["companies"]["Row"]
-type FacilityRow = Schema["Tables"]["facilities"]["Row"]
-type CapabilityRow = Schema["Tables"]["capabilities"]["Row"]
-type CertificationRow = Schema["Tables"]["certifications"]["Row"]
-type IndustryRow = Schema["Tables"]["industries"]["Row"]
-
 type CompanyRecord = CompanyRow & {
   facilities: FacilityRow[] | null
   capabilities: CapabilityRow[] | null
@@ -156,16 +139,6 @@ type CompanyRecord = CompanyRow & {
 }
 
 type PrevRow = Pick<CompanyRow, "id" | "company_name">
-
-type StateFacetRow = {
-  id: string
-  facilities: Array<{ state: string | null }> | null
-}
-
-type CapabilityFacetRow = {
-  id: string
-  capabilities: CapabilityRow[] | null
-}
 
 type BoundingBox = {
   minLng: number
@@ -195,6 +168,37 @@ type CompanyFilterBuilder<Result> = PostgrestFilterBuilder<
   "companies"
 >
 
+type CompanyCountBuilder = CompanyFilterBuilder<null>
+
+type FacilityStateRow = {
+  state: string | null
+}
+
+export type CompanyPageInfo = {
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  startCursor: string | null
+  endCursor: string | null
+  nextCursor: string | null
+  prevCursor: string | null
+  pageSize: number
+}
+
+export type CompanySearchResult = {
+  companies: Company[]
+  filteredCount: number
+  facetCounts: CompanyFacetCounts | null
+  pageInfo: CompanyPageInfo
+}
+
+const CERTIFICATION_SLUG_MAP: Record<string, string> = {
+  "iso-9001": "ISO 9001",
+  "iso-13485": "ISO 13485",
+  "as9100": "AS9100",
+  "iatf-16949": "IATF 16949",
+  itar: "ITAR",
+}
+
 function base64UrlEncode(value: string): string {
   const encoded = Buffer.from(value, "utf8").toString("base64")
   return encoded.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/u, "")
@@ -210,6 +214,7 @@ export function serializeCursor(cursor: CompanySearchCursor | null): string | nu
   if (!cursor) {
     return null
   }
+
   return base64UrlEncode(JSON.stringify(cursor))
 }
 
@@ -217,6 +222,7 @@ export function deserializeCursor(value: string | null | undefined): CompanySear
   if (!value) {
     return null
   }
+
   try {
     const decoded = base64UrlDecode(value)
     const parsed = JSON.parse(decoded)
@@ -231,6 +237,7 @@ export function deserializeCursor(value: string | null | undefined): CompanySear
   } catch (error) {
     console.warn("Failed to parse cursor", error)
   }
+
   return null
 }
 
@@ -240,6 +247,7 @@ function toURLSearchParams(input: SearchParamsInput): URLSearchParams {
   if (input instanceof URLSearchParams) {
     return input
   }
+
   const params = new URLSearchParams()
   for (const [key, raw] of Object.entries(input)) {
     if (Array.isArray(raw)) {
@@ -250,23 +258,25 @@ function toURLSearchParams(input: SearchParamsInput): URLSearchParams {
       params.append(key, raw)
     }
   }
+
   return params
 }
 
 export function parseCursor(searchParams: SearchParamsInput): CompanySearchCursor | null {
   const params = toURLSearchParams(searchParams)
-  const raw = params.get("cursor")
-  return deserializeCursor(raw)
+  return deserializeCursor(params.get("cursor"))
 }
 
 function normalizeStateCode(value: string | null | undefined): string | null {
   if (typeof value !== "string") {
     return null
   }
+
   const trimmed = value.trim()
   if (!trimmed) {
     return null
   }
+
   return trimmed.toUpperCase()
 }
 
@@ -274,22 +284,57 @@ function normalizeFilterStates(states: string[], routeDefault?: string): string[
   const normalized = states
     .map((state) => normalizeStateCode(state))
     .filter((state): state is string => typeof state === "string")
+
   if (routeDefault) {
     const normalizedRoute = normalizeStateCode(routeDefault)
     if (normalizedRoute) {
       normalized.push(normalizedRoute)
     }
   }
+
   return Array.from(new Set(normalized))
 }
 
-function formatInFilter(values: string[]): string {
-  const sanitized = values.map((value) => `"${value.replace(/"/g, "")}"`)
-  return `(${sanitized.join(",")})`
+function normalizeBoundingBox(
+  bbox: CompanySearchOptions["bbox"] | null | undefined,
+): BoundingBox {
+  if (!bbox) {
+    return null
+  }
+
+  const { minLng, minLat, maxLng, maxLat } = bbox
+  if (
+    [minLng, minLat, maxLng, maxLat].some((value) => typeof value !== "number" || Number.isNaN(value))
+  ) {
+    return null
+  }
+
+  return { minLng, minLat, maxLng, maxLat }
 }
 
-function escapeFilterValue(value: string): string {
-  return encodeURIComponent(value)
+function resolveCertificationSlug(slug: string | undefined): string | null {
+  if (!slug) {
+    return null
+  }
+
+  const lower = slug.toLowerCase()
+  return CERTIFICATION_SLUG_MAP[lower] ?? null
+}
+
+function normalizeFilters(options: CompanySearchOptions): NormalizedFilters {
+  const routeDefaults = options.routeDefaults ?? {}
+
+  return {
+    states: normalizeFilterStates(options.filters.states, routeDefaults.state),
+    capabilities: Array.from(
+      new Set(
+        options.filters.capabilities.filter((slug) => (CAPABILITY_SLUGS as readonly string[]).includes(slug)),
+      ),
+    ),
+    productionVolume: options.filters.productionVolume ?? null,
+    certification: resolveCertificationSlug(routeDefaults.certSlug),
+    bbox: normalizeBoundingBox(options.bbox),
+  }
 }
 
 function applyCursor<Result>(
@@ -299,8 +344,9 @@ function applyCursor<Result>(
   if (!cursor) {
     return
   }
-  const encodedName = escapeFilterValue(cursor.name)
-  const encodedId = escapeFilterValue(cursor.id)
+
+  const encodedName = encodeURIComponent(cursor.name)
+  const encodedId = encodeURIComponent(cursor.id)
   builder.or(
     `company_name.gt.${encodedName},and(company_name.eq.${encodedName},id.gt.${encodedId})`,
   )
@@ -314,13 +360,18 @@ function applyFilters<Result>(
   const { skipStates = false, skipCapabilities = false, skipVolume = false } = skip
 
   if (!skipStates && filters.states.length > 0) {
-    builder.filter("facilities.state", "in", formatInFilter(filters.states))
+    const values = filters.states
+      .map((state) => state.replace(/"/g, ""))
+      .map((state) => `"${state}"`)
+      .join(",")
+    builder.filter("facilities.state", "in", `(${values})`)
   }
 
   if (!skipCapabilities && filters.capabilities.length > 0) {
     const orConditions = filters.capabilities
       .map((slug) => `capabilities.${CAPABILITY_COLUMN_MAP[slug]}.is.true`)
       .join(",")
+
     if (orConditions) {
       builder.or(orConditions, { referencedTable: "capabilities" })
     }
@@ -336,7 +387,7 @@ function applyFilters<Result>(
   }
 
   if (filters.bbox) {
-    const { minLng, minLat, maxLng, maxLat } = filters.bbox
+    const { minLng, maxLng, minLat, maxLat } = filters.bbox
     builder.gte("facilities.longitude", minLng)
     builder.lte("facilities.longitude", maxLng)
     builder.gte("facilities.latitude", minLat)
@@ -397,29 +448,6 @@ function coerceCompany(company: CompanyRecord): Company {
   }
 }
 
-function resolveCertificationSlug(slug: string | undefined): string | null {
-  if (!slug) {
-    return null
-  }
-  const lower = slug.toLowerCase()
-  return CERTIFICATION_SLUG_MAP[lower] ?? null
-}
-
-function normalizeBoundingBox(
-  bbox: CompanySearchOptions["bbox"] | null | undefined,
-): BoundingBox {
-  if (!bbox) {
-    return null
-  }
-  const { minLng, minLat, maxLng, maxLat } = bbox
-  if (
-    [minLng, minLat, maxLng, maxLat].some((value) => typeof value !== "number" || Number.isNaN(value))
-  ) {
-    return null
-  }
-  return { minLng, minLat, maxLng, maxLat }
-}
-
 function createEmptyFacetCounts(): CompanyFacetCounts {
   return {
     states: [],
@@ -432,6 +460,12 @@ function logSupabaseError(stage: string, filters: NormalizedFilters, error: unkn
   console.error(`companySearch ${stage} error`, { filters }, error)
 }
 
+function createCountBuilder(): CompanyCountBuilder {
+  return supabase
+    .from("companies")
+    .select("id", { head: true, count: "exact" }) as unknown as CompanyCountBuilder
+}
+
 async function fetchPreviousRow(
   filters: NormalizedFilters,
   firstCompany: Company,
@@ -442,201 +476,151 @@ async function fetchPreviousRow(
 
   applyFilters(builder, filters)
 
-  const encodedName = escapeFilterValue(firstCompany.company_name)
-  const encodedId = escapeFilterValue(firstCompany.id)
-
-  builder.or(
-    `company_name.lt.${encodedName},and(company_name.eq.${encodedName},id.lt.${encodedId})`,
-  )
+  const encodedName = encodeURIComponent(firstCompany.company_name)
+  const encodedId = encodeURIComponent(firstCompany.id)
 
   builder.order("company_name", { ascending: false })
   builder.order("id", { ascending: false })
+  builder.or(
+    `company_name.lt.${encodedName},and(company_name.eq.${encodedName},id.lt.${encodedId})`,
+  )
   builder.limit(1)
 
   const { data, error } = await builder
   if (error) {
     throw error
   }
-  return data?.[0] ?? null
+
+  const rows = (data ?? []) as PrevRow[]
+  return rows[0] ?? null
 }
 
-function countStates(rows: StateFacetRow[]): Array<{ code: string; count: number }> {
-  const stateMap = new Map<string, Set<string>>()
+async function fetchStateCandidates(filters: NormalizedFilters): Promise<string[]> {
+  const builder = supabase
+    .from("facilities")
+    .select("state")
+    .not("state", "is", null)
 
-  for (const row of rows) {
-    const facilities = Array.isArray(row.facilities) ? row.facilities : []
-    const statesForCompany = new Set<string>()
-    for (const facility of facilities) {
-      const state = normalizeStateCode(facility.state ?? null)
-      if (state) {
-        statesForCompany.add(state)
-      }
-    }
-    for (const state of statesForCompany) {
-      if (!stateMap.has(state)) {
-        stateMap.set(state, new Set())
-      }
-      stateMap.get(state)?.add(row.id)
-    }
+  if (filters.bbox) {
+    const { minLng, maxLng, minLat, maxLat } = filters.bbox
+    builder.gte("longitude", minLng)
+    builder.lte("longitude", maxLng)
+    builder.gte("latitude", minLat)
+    builder.lte("latitude", maxLat)
   }
 
-  return Array.from(stateMap.entries())
-    .map(([code, ids]) => ({ code, count: ids.size }))
-    .sort((a, b) => a.code.localeCompare(b.code))
+  const { data, error } = await builder
+  if (error) {
+    throw error
+  }
+
+  const fromFacilities = Array.isArray(data)
+    ? (data as FacilityStateRow[])
+        .map((row) => normalizeStateCode(row.state))
+        .filter((state): state is string => Boolean(state))
+    : []
+
+  const combined = new Set<string>([...fromFacilities, ...filters.states])
+  return Array.from(combined).sort((a, b) => a.localeCompare(b))
 }
 
-function countCapabilities(rows: CapabilityFacetRow[]): Array<{ slug: CapabilitySlug; count: number }> {
-  const counts = new Map<CapabilitySlug, Set<string>>()
+async function countCompaniesForState(
+  state: string,
+  filters: NormalizedFilters,
+): Promise<number> {
+  const builder = createCountBuilder()
+  applyFilters(builder, filters, { skipStates: true })
+  builder.eq("facilities.state", state)
 
-  for (const row of rows) {
-    const capabilityRecords = Array.isArray(row.capabilities) ? row.capabilities : []
-    const slugsForCompany = new Set<CapabilitySlug>()
-    for (const capability of capabilityRecords) {
-      for (const slug of CAPABILITY_SLUGS) {
-        const column = CAPABILITY_COLUMN_MAP[slug]
-        if (capability[column]) {
-          slugsForCompany.add(slug)
-        }
-      }
-    }
-    for (const slug of slugsForCompany) {
-      if (!counts.has(slug)) {
-        counts.set(slug, new Set())
-      }
-      counts.get(slug)?.add(row.id)
-    }
+  const { count, error } = await builder
+  if (error) {
+    throw error
   }
 
-  return CAPABILITY_SLUGS.map((slug) => ({ slug, count: counts.get(slug)?.size ?? 0 }))
-}
-
-function countVolumes(rows: CapabilityFacetRow[]): Array<{ level: ProductionVolume; count: number }> {
-  const counts = new Map<ProductionVolume, Set<string>>()
-
-  for (const row of rows) {
-    const capabilityRecords = Array.isArray(row.capabilities) ? row.capabilities : []
-    const volumesForCompany = new Set<ProductionVolume>()
-    for (const capability of capabilityRecords) {
-      for (const level of PRODUCTION_VOLUMES) {
-        const column = VOLUME_COLUMN_MAP[level]
-        if (capability[column]) {
-          volumesForCompany.add(level)
-        }
-      }
-    }
-    for (const level of volumesForCompany) {
-      if (!counts.has(level)) {
-        counts.set(level, new Set())
-      }
-      counts.get(level)?.add(row.id)
-    }
-  }
-
-  return PRODUCTION_VOLUMES.map((level) => ({ level, count: counts.get(level)?.size ?? 0 }))
+  return typeof count === "number" ? count : 0
 }
 
 async function fetchStateFacetCounts(filters: NormalizedFilters): Promise<Array<{ code: string; count: number }>> {
-  const builder = supabase
-    .from("companies")
-    .select("id, facilities:facilities(state)") as CompanyFilterBuilder<StateFacetRow[]>
-
-  applyFilters(builder, filters, { skipStates: true })
-
-  const { data, error } = await builder
-  if (error) {
-    throw error
+  const candidates = await fetchStateCandidates(filters)
+  if (candidates.length === 0) {
+    return []
   }
 
-  const rows = (data ?? []) as StateFacetRow[]
-  return countStates(rows)
+  const counts = await Promise.all(
+    candidates.map(async (state) => ({ code: state, count: await countCompaniesForState(state, filters) })),
+  )
+
+  return counts
+    .filter((entry) => entry.count > 0 || filters.states.includes(entry.code))
+    .sort((a, b) => a.code.localeCompare(b.code))
 }
 
-async function fetchCapabilityRows(
+async function countCompaniesForCapability(
+  slug: CapabilitySlug,
   filters: NormalizedFilters,
-  skip: FilterSkipOptions,
-): Promise<CapabilityFacetRow[]> {
-  const builder = supabase
-    .from("companies")
-    .select(
-      `
-        id,
-        capabilities:capabilities(${CAPABILITIES_SELECT_FRAGMENT}),
-        facilities:facilities(id)
-      `,
-    ) as CompanyFilterBuilder<CapabilityFacetRow[]>
+): Promise<number> {
+  const builder = createCountBuilder()
+  applyFilters(builder, filters, { skipCapabilities: true })
+  builder.eq(`capabilities.${CAPABILITY_COLUMN_MAP[slug]}`, true)
 
-  applyFilters(builder, filters, skip)
-
-  const { data, error } = await builder
+  const { count, error } = await builder
   if (error) {
     throw error
   }
 
-  return (data ?? []) as CapabilityFacetRow[]
+  return typeof count === "number" ? count : 0
+}
+
+async function fetchCapabilityFacetCounts(
+  filters: NormalizedFilters,
+): Promise<Array<{ slug: CapabilitySlug; count: number }>> {
+  const counts = await Promise.all(
+    CAPABILITY_SLUGS.map(async (slug) => ({ slug, count: await countCompaniesForCapability(slug, filters) })),
+  )
+
+  return counts
+}
+
+async function countCompaniesForVolume(
+  level: ProductionVolume,
+  filters: NormalizedFilters,
+): Promise<number> {
+  const builder = createCountBuilder()
+  applyFilters(builder, filters, { skipVolume: true })
+  builder.eq(`capabilities.${VOLUME_COLUMN_MAP[level]}`, true)
+
+  const { count, error } = await builder
+  if (error) {
+    throw error
+  }
+
+  return typeof count === "number" ? count : 0
+}
+
+async function fetchVolumeFacetCounts(
+  filters: NormalizedFilters,
+): Promise<Array<{ level: ProductionVolume; count: number }>> {
+  const counts = await Promise.all(
+    PRODUCTION_VOLUMES.map(async (level) => ({ level, count: await countCompaniesForVolume(level, filters) })),
+  )
+
+  return counts
 }
 
 async function fetchFacetCounts(filters: NormalizedFilters): Promise<CompanyFacetCounts> {
-  const [stateCounts, capabilityRows, volumeRows] = await Promise.all([
+  const [states, capabilities, productionVolume] = await Promise.all([
     fetchStateFacetCounts(filters),
-    fetchCapabilityRows(filters, { skipCapabilities: true }),
-    fetchCapabilityRows(filters, { skipVolume: true }),
+    fetchCapabilityFacetCounts(filters),
+    fetchVolumeFacetCounts(filters),
   ])
 
-  return {
-    states: stateCounts,
-    capabilities: countCapabilities(capabilityRows),
-    productionVolume: countVolumes(volumeRows),
-  }
-}
-
-function normalizeFilters(options: CompanySearchOptions): NormalizedFilters {
-  const routeDefaults = options.routeDefaults ?? {}
-  const normalizedStates = normalizeFilterStates(options.filters.states, routeDefaults.state)
-  const normalizedCapabilities = Array.from(
-    new Set(
-      options.filters.capabilities.filter((slug) => (CAPABILITY_SLUGS as readonly string[]).includes(slug)),
-    ),
-  )
-
-  return {
-    states: normalizedStates,
-    capabilities: normalizedCapabilities,
-    productionVolume: options.filters.productionVolume ?? null,
-    certification: resolveCertificationSlug(routeDefaults.certSlug),
-    bbox: normalizeBoundingBox(options.bbox),
-  }
-}
-
-function hasActiveFilters(filters: NormalizedFilters): boolean {
-  return (
-    filters.states.length > 0 ||
-    filters.capabilities.length > 0 ||
-    filters.productionVolume !== null ||
-    filters.certification !== null ||
-    filters.bbox !== null
-  )
-}
-
-function resolvePageSize(
-  requested: CompanySearchOptions["pageSize"],
-  filters: NormalizedFilters,
-  cursor: CompanySearchCursor | null,
-): number | null {
-  if (typeof requested === "number") {
-    return requested
-  }
-
-  if (hasActiveFilters(filters) || cursor) {
-    return DEFAULT_PAGE_SIZE
-  }
-
-  return null
+  return { states, capabilities, productionVolume }
 }
 
 export async function companySearch(options: CompanySearchOptions): Promise<CompanySearchResult> {
   const { cursor = null, includeFacetCounts = true } = options
   const filters = normalizeFilters(options)
-  const resolvedPageSize = resolvePageSize(options.pageSize, filters, cursor)
+  const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE
 
   try {
     const builder = supabase
@@ -648,37 +632,46 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
 
     builder.order("company_name", { ascending: true })
     builder.order("id", { ascending: true })
+    builder.limit(pageSize + 1)
 
-    if (resolvedPageSize !== null) {
-      builder.limit(resolvedPageSize + 1)
-    }
-
-    const { data, count, error } = await builder
-
+    const { data, error, count } = await builder
     if (error) {
       throw error
     }
 
     const rows = (data ?? []) as CompanyRecord[]
-    const hasNext = resolvedPageSize !== null ? rows.length > resolvedPageSize : false
-    const trimmedRows = hasNext && resolvedPageSize !== null ? rows.slice(0, resolvedPageSize) : rows
+    const hasNextPage = rows.length > pageSize
+    const trimmedRows = hasNextPage ? rows.slice(0, pageSize) : rows
     const companies = trimmedRows.map((row) => coerceCompany(row))
 
+    const firstCompany = companies[0] ?? null
     const lastCompany = companies.at(-1) ?? null
-    let prevCursor: string | null = null
-    let hasPrev = false
 
-    if (cursor && companies.length > 0) {
+    let prevCursor: string | null = null
+    let hasPreviousPage = false
+
+    if (cursor && firstCompany) {
       try {
-        const previousRow = await fetchPreviousRow(filters, companies[0]!)
+        const previousRow = await fetchPreviousRow(filters, firstCompany)
         if (previousRow) {
           prevCursor = serializeCursor({ name: previousRow.company_name, id: previousRow.id })
-          hasPrev = Boolean(prevCursor)
+          hasPreviousPage = Boolean(prevCursor)
         }
       } catch (previousError) {
         logSupabaseError("previous", filters, previousError)
       }
     }
+
+    const nextCursor = hasNextPage && lastCompany
+      ? serializeCursor({ name: lastCompany.company_name, id: lastCompany.id })
+      : null
+
+    const startCursor = firstCompany
+      ? serializeCursor({ name: firstCompany.company_name, id: firstCompany.id })
+      : null
+    const endCursor = lastCompany
+      ? serializeCursor({ name: lastCompany.company_name, id: lastCompany.id })
+      : null
 
     let facetCounts: CompanyFacetCounts | null = null
     if (includeFacetCounts) {
@@ -690,27 +683,38 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
       }
     }
 
+    const pageInfo: CompanyPageInfo = {
+      hasNextPage,
+      hasPreviousPage,
+      nextCursor,
+      prevCursor,
+      startCursor,
+      endCursor,
+      pageSize,
+    }
+
     return {
       companies,
-      totalCount: typeof count === "number" ? count : companies.length,
-      hasNext,
-      hasPrev,
-      nextCursor: hasNext && lastCompany
-        ? serializeCursor({ name: lastCompany.company_name, id: lastCompany.id })
-        : null,
-      prevCursor,
+      filteredCount: typeof count === "number" ? count : companies.length,
       facetCounts,
+      pageInfo,
     }
   } catch (error) {
     logSupabaseError("main", filters, error)
+
     return {
       companies: [],
-      totalCount: 0,
-      hasNext: false,
-      hasPrev: false,
-      nextCursor: null,
-      prevCursor: null,
+      filteredCount: 0,
       facetCounts: includeFacetCounts ? createEmptyFacetCounts() : null,
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        nextCursor: null,
+        prevCursor: null,
+        startCursor: null,
+        endCursor: null,
+        pageSize,
+      },
     }
   }
 }

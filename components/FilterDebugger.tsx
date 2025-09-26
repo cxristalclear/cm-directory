@@ -6,10 +6,10 @@ import type { CompanyFacetCounts } from "@/lib/queries/companySearch"
 
 interface FilterDebuggerProps {
   facetCounts?: CompanyFacetCounts | null
-  totalCount: number
+  filteredCount: number
 }
 
-export default function FilterDebugger({ facetCounts, totalCount }: FilterDebuggerProps) {
+export default function FilterDebugger({ facetCounts, filteredCount: serverFilteredCount }: FilterDebuggerProps) {
   const { filters, filteredCount } = useFilters()
 
   const stateEntries = useMemo(() => {
@@ -35,7 +35,7 @@ export default function FilterDebugger({ facetCounts, totalCount }: FilterDebugg
         </div>
         <div className="flex justify-between">
           <span className="font-semibold">Total available:</span>
-          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{totalCount}</span>
+          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{serverFilteredCount}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-semibold">Active states:</span>

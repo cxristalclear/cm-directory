@@ -29,7 +29,7 @@ export default async function PcbAssemblyManufacturers({
   return (
     <div className="min-h-screen bg-gray-50">
       <Header
-        totalCount={searchResult.totalCount}
+        filteredCount={searchResult.filteredCount}
         visibleCount={companies.length}
         activeFilterCount={activeFilterCount}
         clearHref="/pcb-assembly-manufacturers"
@@ -49,11 +49,8 @@ export default async function PcbAssemblyManufacturers({
             <LazyCompanyMap companies={companies} />
             <CompanyList
               companies={companies}
-              totalCount={searchResult.totalCount}
-              hasNext={searchResult.hasNext}
-              hasPrev={searchResult.hasPrev}
-              nextCursor={searchResult.nextCursor}
-              prevCursor={searchResult.prevCursor}
+              filteredCount={searchResult.filteredCount}
+              pageInfo={searchResult.pageInfo}
             />
           </div>
         </div>

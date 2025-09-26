@@ -4,17 +4,15 @@ import { useCallback } from "react"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-export type PaginationCursor = {
-  hasNext: boolean
-  hasPrev: boolean
-  nextCursor: string | null
-  prevCursor: string | null
-}
+import type { CompanyPageInfo } from "@/lib/queries/companySearch"
 
 import { buildCursorUrl } from "./paginationUtils"
 
 interface PaginationProps {
-  pageInfo: PaginationCursor
+  pageInfo: Pick<
+    CompanyPageInfo,
+    "hasNextPage" | "hasPreviousPage" | "nextCursor" | "prevCursor"
+  >
 }
 
 export default function Pagination({ pageInfo }: PaginationProps) {
@@ -37,7 +35,7 @@ export default function Pagination({ pageInfo }: PaginationProps) {
         <button
           type="button"
           onClick={() => updateCursor(pageInfo.prevCursor)}
-          disabled={!pageInfo.hasPrev}
+          disabled={!pageInfo.hasPreviousPage}
           className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
@@ -45,7 +43,7 @@ export default function Pagination({ pageInfo }: PaginationProps) {
         <button
           type="button"
           onClick={() => updateCursor(pageInfo.nextCursor)}
-          disabled={!pageInfo.hasNext}
+          disabled={!pageInfo.hasNextPage}
           className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next
@@ -58,7 +56,7 @@ export default function Pagination({ pageInfo }: PaginationProps) {
             <button
               type="button"
               onClick={() => updateCursor(pageInfo.prevCursor)}
-              disabled={!pageInfo.hasPrev}
+              disabled={!pageInfo.hasPreviousPage}
               className="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronLeftIcon className="h-5 w-5" />
@@ -66,7 +64,7 @@ export default function Pagination({ pageInfo }: PaginationProps) {
             <button
               type="button"
               onClick={() => updateCursor(pageInfo.nextCursor)}
-              disabled={!pageInfo.hasNext}
+              disabled={!pageInfo.hasNextPage}
               className="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronRightIcon className="h-5 w-5" />
