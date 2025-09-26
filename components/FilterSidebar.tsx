@@ -1,7 +1,14 @@
 import Link from "next/link"
 
 import type { CompanyFacetCounts } from "@/lib/queries/companySearch"
-import { serializeFiltersToSearchParams, type FilterUrlState, type CapabilitySlug, type ProductionVolume } from "@/lib/filters/url"
+import {
+  CANONICAL_CAPABILITIES,
+  buildFilterUrl,
+  isCanonicalCapability,
+  type CanonicalCapability,
+  type FilterUrlState,
+  type ProductionVolume,
+} from "@/lib/filters/url"
 import { STATE_NAMES, getStateName } from "@/utils/stateMapping"
 
 type FilterSidebarProps = {
@@ -18,26 +25,19 @@ type FilterOption<T extends string> = {
   selected: boolean
 }
 
-const CAPABILITY_LABELS: Record<CapabilitySlug, string> = {
+const CAPABILITY_LABELS: Record<CanonicalCapability, string> = {
   smt: "SMT",
   through_hole: "Through-Hole",
   mixed: "Mixed Tech",
   fine_pitch: "Fine Pitch",
   cable_harness: "Cable Harness",
   box_build: "Box Build",
-  prototyping: "Prototyping",
 }
 
 const VOLUME_LABELS: Record<ProductionVolume, string> = {
   low: "Low Volume",
   medium: "Medium Volume",
   high: "High Volume",
-}
-
-function buildUrl(basePath: string, filters: FilterUrlState): string {
-  const params = serializeFiltersToSearchParams(filters)
-  const query = params.toString()
-  return query ? `${basePath}?${query}` : basePath
 }
 
 function buildStateOptions(filters: FilterUrlState, facetCounts?: CompanyFacetCounts | null): FilterOption<string>[] {
@@ -76,11 +76,13 @@ function buildStateOptions(filters: FilterUrlState, facetCounts?: CompanyFacetCo
 function buildCapabilityOptions(
   filters: FilterUrlState,
   facetCounts?: CompanyFacetCounts | null,
-): FilterOption<CapabilitySlug>[] {
-  const counts = new Map<CapabilitySlug, number>()
+): FilterOption<CanonicalCapability>[] {
+  const counts = new Map<CanonicalCapability, number>()
   if (facetCounts) {
     for (const { slug, count } of facetCounts.capabilities) {
-      counts.set(slug, count)
+      if (isCanonicalCapability(slug)) {
+        counts.set(slug, count)
+      }
     }
   }
 
@@ -90,7 +92,7 @@ function buildCapabilityOptions(
     }
   }
 
-  return (Object.keys(CAPABILITY_LABELS) as CapabilitySlug[]).map((slug) => ({
+  return CANONICAL_CAPABILITIES.map((slug) => ({
     value: slug,
     label: CAPABILITY_LABELS[slug],
     count: counts.get(slug) ?? 0,
@@ -137,20 +139,20 @@ export default function FilterSidebar({ basePath, filters, facetCounts, clearHre
     const nextStates = selected
       ? filters.states.filter((value) => value !== normalized)
       : [...filters.states, normalized]
-    return buildUrl(basePath, { ...filters, states: nextStates })
+    return buildFilterUrl(basePath, { ...filters, states: nextStates })
   }
 
-  const toggleCapability = (slug: CapabilitySlug) => {
+  const toggleCapability = (slug: CanonicalCapability) => {
     const selected = filters.capabilities.includes(slug)
     const nextCapabilities = selected
       ? filters.capabilities.filter((value) => value !== slug)
       : [...filters.capabilities, slug]
-    return buildUrl(basePath, { ...filters, capabilities: nextCapabilities })
+    return buildFilterUrl(basePath, { ...filters, capabilities: nextCapabilities })
   }
 
   const selectVolume = (level: ProductionVolume) => {
     const nextVolume = filters.productionVolume === level ? null : level
-    return buildUrl(basePath, { ...filters, productionVolume: nextVolume })
+    return buildFilterUrl(basePath, { ...filters, productionVolume: nextVolume })
   }
 
   return (

@@ -11,7 +11,7 @@ import {
 } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useDebouncedCallback } from "use-debounce"
-import { parseFiltersFromSearchParams, serializeFiltersToSearchParams } from "@/lib/filters/url"
+import { buildFilterUrl, parseFiltersFromSearchParams } from "@/lib/filters/url"
 import type { FilterContextType, FilterState } from "@/types/company"
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
@@ -58,9 +58,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
 
   const replaceUrl = useCallback(
     (nextFilters: FilterState) => {
-      const params = serializeFiltersToSearchParams(nextFilters)
-      const query = params.toString()
-      const nextUrl = query ? `${pathname}?${query}` : pathname
+      const nextUrl = buildFilterUrl(pathname, nextFilters)
 
       startTransition(() => {
         router.replace(nextUrl, { scroll: false })

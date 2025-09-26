@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import { X } from "lucide-react"
 import { useFilters } from "@/contexts/FilterContext"
-import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
+import type { CanonicalCapability, ProductionVolume } from "@/lib/filters/url"
 
 type ChipProps = {
   label: string
@@ -31,14 +31,13 @@ function Chip({ label, onRemove }: ChipProps) {
   )
 }
 
-const CAPABILITY_LABELS: Record<CapabilitySlug, string> = {
+const CAPABILITY_LABELS: Record<CanonicalCapability, string> = {
   smt: "SMT",
   through_hole: "Through-Hole",
   mixed: "Mixed Tech",
   fine_pitch: "Fine Pitch",
   cable_harness: "Cable Harness",
   box_build: "Box Build",
-  prototyping: "Prototyping",
 }
 
 const VOLUME_LABELS: Record<ProductionVolume, string> = {
@@ -54,7 +53,7 @@ export default function ActiveFiltersBar() {
     updateFilter("states", filters.states.filter((value) => value !== state))
   }
 
-  const removeCapability = (capability: CapabilitySlug) => {
+  const removeCapability = (capability: CanonicalCapability) => {
     updateFilter(
       "capabilities",
       filters.capabilities.filter((value) => value !== capability),

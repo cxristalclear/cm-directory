@@ -2,28 +2,32 @@ import { STATE_NAMES } from "@/utils/stateMapping"
 
 const US_STATE_CODES = new Set(Object.keys(STATE_NAMES))
 
-const CAPABILITIES = [
+export const CANONICAL_CAPABILITIES = [
   "smt",
   "through_hole",
   "mixed",
   "fine_pitch",
   "cable_harness",
   "box_build",
-  "prototyping",
 ] as const
 
-export type CapabilitySlug = (typeof CAPABILITIES)[number]
+export type CanonicalCapability = (typeof CANONICAL_CAPABILITIES)[number]
+export type CapabilitySlug = CanonicalCapability
 
-function isCapabilitySlug(value: unknown): value is CapabilitySlug {
-  return typeof value === "string" && (CAPABILITIES as readonly string[]).includes(value)
+const CANONICAL_CAPABILITY_SET = new Set<string>(CANONICAL_CAPABILITIES)
+
+export function isCanonicalCapability(value: unknown): value is CanonicalCapability {
+  return typeof value === "string" && CANONICAL_CAPABILITY_SET.has(value)
 }
 
-const PRODUCTION_VOLUMES = ["low", "medium", "high"] as const
+export const CANONICAL_PRODUCTION_VOLUMES = ["low", "medium", "high"] as const
 
-export type ProductionVolume = (typeof PRODUCTION_VOLUMES)[number]
+export type ProductionVolume = (typeof CANONICAL_PRODUCTION_VOLUMES)[number]
+
+const CANONICAL_PRODUCTION_VOLUME_SET = new Set<string>(CANONICAL_PRODUCTION_VOLUMES)
 
 function isProductionVolume(value: unknown): value is ProductionVolume {
-  return typeof value === "string" && (PRODUCTION_VOLUMES as readonly string[]).includes(value)
+  return typeof value === "string" && CANONICAL_PRODUCTION_VOLUME_SET.has(value)
 }
 
 type SearchParamValue = string | string[] | undefined
@@ -31,7 +35,7 @@ type SearchParamInput = URLSearchParams | Record<string, SearchParamValue>
 
 export type FilterUrlState = {
   states: string[]
-  capabilities: CapabilitySlug[]
+  capabilities: CanonicalCapability[]
   productionVolume: ProductionVolume | null
 }
 
@@ -105,7 +109,7 @@ export function parseFiltersFromSearchParams(searchParams: SearchParamInput): Fi
 
   const states = sortAndDedupe(stateValues.filter((value): value is string => value !== null))
   const capabilities = sortAndDedupe(
-    capabilityValues.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
+    capabilityValues.filter((value): value is CanonicalCapability => isCanonicalCapability(value)),
   )
   const productionVolume = volumeValues.find((value): value is ProductionVolume => isProductionVolume(value)) ?? null
 
@@ -121,7 +125,7 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
       .filter((value): value is string => value !== null),
   )
   const normalizedCapabilities = sortAndDedupe(
-    filters.capabilities.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
+    filters.capabilities.filter((value): value is CanonicalCapability => isCanonicalCapability(value)),
   )
 
   normalizedStates.forEach((state) => params.append("state", state))
@@ -132,4 +136,10 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
   }
 
   return params
+}
+
+export function buildFilterUrl(basePath: string, filters: FilterUrlState): string {
+  const params = serializeFiltersToSearchParams(filters)
+  const query = params.toString()
+  return query ? `${basePath}?${query}` : basePath
 }

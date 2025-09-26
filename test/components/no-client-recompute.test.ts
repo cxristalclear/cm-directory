@@ -12,7 +12,6 @@ describe("FilterSidebar option builders", () => {
       { slug: "through_hole", count: 1 },
       { slug: "cable_harness", count: 2 },
       { slug: "box_build", count: 3 },
-      { slug: "prototyping", count: 2 },
     ],
     productionVolume: [
       { level: "low", count: 2 },
