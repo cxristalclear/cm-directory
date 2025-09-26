@@ -87,7 +87,6 @@ const mockResult = {
       { slug: "box_build", count: 21 },
       { slug: "cable_harness", count: 14 },
       { slug: "through_hole", count: 0 },
-      { slug: "prototyping", count: 11 },
     ],
     productionVolume: [
       { level: "low", count: 42 },

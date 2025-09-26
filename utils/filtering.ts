@@ -23,12 +23,14 @@ export function filterCompanies(companies: ListingCompany[], filters: FilterStat
             return Boolean(capabilityRecord.pcb_assembly_smt)
           case "through_hole":
             return Boolean(capabilityRecord.pcb_assembly_through_hole)
+          case "mixed":
+            return Boolean(capabilityRecord.pcb_assembly_mixed)
+          case "fine_pitch":
+            return Boolean(capabilityRecord.pcb_assembly_fine_pitch)
           case "cable_harness":
             return Boolean(capabilityRecord.cable_harness_assembly)
           case "box_build":
             return Boolean(capabilityRecord.box_build_assembly)
-          case "prototyping":
-            return Boolean(capabilityRecord.prototyping)
           default:
             return false
         }

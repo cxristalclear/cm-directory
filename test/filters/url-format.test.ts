@@ -1,54 +1,53 @@
-import { parseFiltersFromSearchParams, serializeFiltersToSearchParams } from '../../lib/filters/url'
+import {
+  CANONICAL_CAPABILITIES,
+  parseFiltersFromSearchParams,
+  serializeFiltersToSearchParams,
+} from '../../lib/filters/url'
 
-describe('filter URL helpers', () => {
-  it('round-trips state, capability, and volume selections', () => {
+describe('url-format filter helpers', () => {
+  it('url-format round-trips canonical filters with deterministic serialization', () => {
     const params = serializeFiltersToSearchParams({
       states: ['tx', 'CA'],
-      capabilities: ['prototyping', 'smt'],
+      capabilities: ['through_hole', 'smt'],
       productionVolume: 'high',
     })
 
     expect(params.toString()).toBe(
-      'state=CA&state=TX&capability=prototyping&capability=smt&volume=high',
+      'state=CA&state=TX&capability=smt&capability=through_hole&volume=high',
     )
 
     const parsed = parseFiltersFromSearchParams(params)
 
     expect(parsed).toEqual({
       states: ['CA', 'TX'],
-      capabilities: ['prototyping', 'smt'],
+      capabilities: ['smt', 'through_hole'],
       productionVolume: 'high',
     })
   })
 
-  it('dedupes and sorts multi-select query params', () => {
-    const parsed = parseFiltersFromSearchParams(new URLSearchParams('state=TX&state=CA&state=TX'))
+  it('url-format ignores unknown filter values safely', () => {
+    const parsed = parseFiltersFromSearchParams(
+      new URLSearchParams('state=ZZ&capability=prototyping&capability=smt&volume=foo'),
+    )
+
+    expect(parsed).toEqual({ states: [], capabilities: ['smt'], productionVolume: null })
+  })
+
+  it('url-format dedupes and sorts multi-select query params deterministically', () => {
+    const parsed = parseFiltersFromSearchParams(
+      new URLSearchParams(
+        'state=TX&state=CA&state=TX&capability=mixed&capability=Mixed&capability=through_hole',
+      ),
+    )
 
     expect(parsed.states).toEqual(['CA', 'TX'])
+    expect(parsed.capabilities).toEqual(['mixed', 'through_hole'])
   })
 
-  it('ignores unknown filter values safely', () => {
-    const parsed = parseFiltersFromSearchParams(new URLSearchParams('state=ZZ&capability=unknown&volume=foo'))
-
-    expect(parsed).toEqual({ states: [], capabilities: [], productionVolume: null })
-  })
-
-  it('produces stable query parameter ordering', () => {
-    const params = serializeFiltersToSearchParams({
-      states: ['TX', 'CA'],
-      capabilities: ['smt', 'prototyping'],
-      productionVolume: 'medium',
-    })
-
-    expect(params.toString()).toBe(
-      'state=CA&state=TX&capability=prototyping&capability=smt&volume=medium',
-    )
-  })
-
-  it('parses from plain record inputs', () => {
+  it('url-format parses from plain record inputs', () => {
     const parsed = parseFiltersFromSearchParams({
       state: ['ca', 'ny'],
-      capability: ['SMT', 'through_hole'],
+      capability: [CANONICAL_CAPABILITIES[0], 'THROUGH_HOLE'],
       volume: 'LOW',
     })
 

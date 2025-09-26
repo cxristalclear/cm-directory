@@ -1,3 +1,4 @@
+import { CANONICAL_CAPABILITIES } from "@/lib/filters/url"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 import type { CompanyFacetCounts } from "@/lib/queries/companySearch"
 import type {
@@ -13,15 +14,7 @@ import type {
   ListingIndustry,
 } from "@/types/company"
 
-const CAPABILITY_SLUGS: CapabilitySlug[] = [
-  "smt",
-  "through_hole",
-  "mixed",
-  "fine_pitch",
-  "cable_harness",
-  "box_build",
-  "prototyping",
-]
+const CAPABILITY_SLUGS: readonly CapabilitySlug[] = CANONICAL_CAPABILITIES
 
 const PRODUCTION_VOLUMES: ProductionVolume[] = ["low", "medium", "high"]
 
@@ -153,9 +146,6 @@ export function computeFacetCountsFromCompanies(companies: ListingCompany[]): Co
       }
       if (capability.box_build_assembly) {
         capabilityCounts.set("box_build", (capabilityCounts.get("box_build") ?? 0) + 1)
-      }
-      if (capability.prototyping) {
-        capabilityCounts.set("prototyping", (capabilityCounts.get("prototyping") ?? 0) + 1)
       }
       if (capability.low_volume_production) {
         volumeCounts.set("low", (volumeCounts.get("low") ?? 0) + 1)

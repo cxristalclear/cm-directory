@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase"
+import { CANONICAL_CAPABILITIES } from "@/lib/filters/url"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 import type {
   Capabilities,
@@ -10,15 +11,7 @@ import type {
 } from "@/types/company"
 import type { PostgrestFilterBuilder } from "@supabase/postgrest-js"
 
-const CAPABILITY_SLUGS: CapabilitySlug[] = [
-  "smt",
-  "through_hole",
-  "mixed",
-  "fine_pitch",
-  "cable_harness",
-  "box_build",
-  "prototyping",
-]
+const CAPABILITY_SLUGS: readonly CapabilitySlug[] = CANONICAL_CAPABILITIES
 
 const CAPABILITY_COLUMN_MAP: Record<CapabilitySlug, CapabilityBooleanColumn> = {
   smt: "pcb_assembly_smt",
@@ -27,7 +20,6 @@ const CAPABILITY_COLUMN_MAP: Record<CapabilitySlug, CapabilityBooleanColumn> = {
   fine_pitch: "pcb_assembly_fine_pitch",
   cable_harness: "cable_harness_assembly",
   box_build: "box_build_assembly",
-  prototyping: "prototyping",
 }
 
 const PRODUCTION_VOLUMES: ProductionVolume[] = ["low", "medium", "high"]
