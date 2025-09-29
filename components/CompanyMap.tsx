@@ -8,7 +8,7 @@ import type { FeatureCollection, Point } from "geojson"
 
 import { useFilters } from "@/contexts/FilterContext"
 import { serializeFiltersToSearchParams } from "@/lib/filters/url"
-import type { MapFacility, MapSearchResult } from "@/lib/queries/mapSearch"
+import type { MapFacility } from "@/lib/queries/mapSearch"
 import type { FilterState } from "@/types/company"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 
@@ -30,18 +30,27 @@ type FacilityFeatureProperties = {
   state: string
 }
 
-function createQueryKey(filters: FilterState, routeDefaults?: CompanyMapProps["routeDefaults"]): string {
+type MapApiResponse = {
+  clusters: Array<{ id: string; coordinates: [number, number]; point_count: number }>
+  leaves: MapFacility[]
+  totalCount: number
+}
+
+function buildFilterParams(
+  filters: FilterState,
+  routeDefaults?: CompanyMapProps["routeDefaults"],
+): URLSearchParams {
   const params = serializeFiltersToSearchParams(filters)
 
   if (routeDefaults?.certSlug) {
-    params.append("cert", routeDefaults.certSlug)
+    params.set("cert", routeDefaults.certSlug)
   }
 
   if (routeDefaults?.state) {
-    params.append("defaultState", routeDefaults.state)
+    params.set("defaultState", routeDefaults.state)
   }
 
-  return params.toString()
+  return params
 }
 
 export default function CompanyMap({ initialFacilities, initialFilters, routeDefaults }: CompanyMapProps) {
@@ -50,9 +59,10 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const currentFacilitiesRef = useRef<MapFacility[]>(initialFacilities)
   const pendingRequestRef = useRef<AbortController | null>(null)
-  const lastQueryKeyRef = useRef<string>(createQueryKey(initialFilters, routeDefaults))
+  const lastQuerySignatureRef = useRef<string | null>(null)
 
   const [facilities, setFacilities] = useState<MapFacility[]>(initialFacilities)
+  const [totalFacilities, setTotalFacilities] = useState<number>(initialFacilities.length)
   const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/light-v11")
   const [isLoading, setIsLoading] = useState(true)
   const [isStyleLoaded, setIsStyleLoaded] = useState(false)
@@ -60,54 +70,101 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
 
   const filters = liveFilters ?? initialFilters
 
+  const buildParams = useCallback(() => buildFilterParams(filters, routeDefaults), [filters, routeDefaults])
+
+  const requestFacilities = useCallback(
+    (force = false) => {
+      if (!mapRef.current || !isStyleLoaded || isLoading) {
+        return
+      }
+
+      const bounds = mapRef.current.getBounds()
+      const zoom = mapRef.current.getZoom()
+
+      if (!bounds || !Number.isFinite(zoom)) {
+        return
+      }
+
+      const params = buildParams()
+      params.set(
+        "bbox",
+        `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`,
+      )
+      params.set("zoom", `${Math.max(0, Math.round(zoom))}`)
+
+      const queryString = params.toString()
+      if (!force && queryString === lastQuerySignatureRef.current) {
+        return
+      }
+
+      lastQuerySignatureRef.current = queryString
+
+      if (pendingRequestRef.current) {
+        pendingRequestRef.current.abort()
+      }
+
+      const controller = new AbortController()
+      pendingRequestRef.current = controller
+      setIsFetching(true)
+
+      fetch(`/api/map?${queryString}`, { signal: controller.signal })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Failed to load map facilities: ${response.status}`)
+          }
+          return response.json() as Promise<MapApiResponse>
+        })
+        .then((payload) => {
+          if (Array.isArray(payload?.leaves)) {
+            setFacilities(payload.leaves)
+            currentFacilitiesRef.current = payload.leaves
+          } else {
+            setFacilities([])
+            currentFacilitiesRef.current = []
+          }
+
+          if (typeof payload?.totalCount === "number") {
+            setTotalFacilities(payload.totalCount)
+          } else {
+            setTotalFacilities(Array.isArray(payload?.leaves) ? payload.leaves.length : 0)
+          }
+        })
+        .catch((error) => {
+          if ((error as Error).name === "AbortError") {
+            return
+          }
+          console.error("Map facilities fetch failed", error)
+          setFacilities([])
+          currentFacilitiesRef.current = []
+          setTotalFacilities(0)
+        })
+        .finally(() => {
+          setIsFetching(false)
+          if (pendingRequestRef.current === controller) {
+            pendingRequestRef.current = null
+          }
+        })
+    },
+    [buildParams, isLoading, isStyleLoaded],
+  )
+
   useEffect(() => {
     currentFacilitiesRef.current = facilities
   }, [facilities])
 
   useEffect(() => {
-    const nextKey = createQueryKey(filters, routeDefaults)
-    if (nextKey === lastQueryKeyRef.current) {
-      return
-    }
+    lastQuerySignatureRef.current = null
+    requestFacilities(true)
+  }, [buildParams, requestFacilities])
 
-    lastQueryKeyRef.current = nextKey
-    if (pendingRequestRef.current) {
-      pendingRequestRef.current.abort()
-    }
-
-    const controller = new AbortController()
-    pendingRequestRef.current = controller
-    setIsFetching(true)
-
-    fetch(`/api/map?${nextKey}`, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to load map facilities: ${response.status}`)
-        }
-        return response.json() as Promise<MapSearchResult>
-      })
-      .then((payload) => {
-        if (Array.isArray(payload?.facilities)) {
-          setFacilities(payload.facilities)
-        } else {
-          setFacilities([])
-        }
-      })
-      .catch((error) => {
-        if ((error as Error).name === "AbortError") {
-          return
-        }
-        console.error("Map facilities fetch failed", error)
-        setFacilities([])
-      })
-      .finally(() => {
-        setIsFetching(false)
-      })
-
+  useEffect(() => {
     return () => {
-      controller.abort()
+      if (pendingRequestRef.current) {
+        pendingRequestRef.current.abort()
+        pendingRequestRef.current = null
+      }
     }
-  }, [filters, routeDefaults])
+  }, [])
 
   const addClusteringLayers = useCallback((facilitiesToAdd?: MapFacility[]) => {
     const facilitiesForMap = facilitiesToAdd ?? currentFacilitiesRef.current
@@ -138,7 +195,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
         },
         geometry: {
           type: "Point",
-          coordinates: [facility.longitude, facility.latitude],
+          coordinates: [facility.lng, facility.lat],
         },
       })),
     }
@@ -249,6 +306,10 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
     mapRef.current.addControl(new mapboxgl.FullscreenControl(), "top-right")
     mapRef.current.addControl(new mapboxgl.ScaleControl(), "bottom-left")
 
+    const handleMoveEnd = () => {
+      requestFacilities()
+    }
+
     const handleClusterClick = (event: mapboxgl.MapMouseEvent) => {
       if (!mapRef.current) return
 
@@ -315,6 +376,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
     mapRef.current.on("load", () => {
       setIsLoading(false)
       setIsStyleLoaded(true)
+      requestFacilities(true)
     })
 
     mapRef.current.on("style.load", () => {
@@ -322,15 +384,19 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
       if (currentFacilitiesRef.current.length > 0) {
         addClusteringLayers(currentFacilitiesRef.current)
       }
+      requestFacilities(true)
     })
+
+    mapRef.current.on("moveend", handleMoveEnd)
 
     return () => {
       if (mapRef.current) {
+        mapRef.current.off("moveend", handleMoveEnd)
         mapRef.current.remove()
         mapRef.current = null
       }
     }
-  }, [addClusteringLayers, mapStyle])
+  }, [addClusteringLayers, mapStyle, requestFacilities])
 
   useEffect(() => {
     if (!mapRef.current || !isStyleLoaded || isLoading || facilities.length === 0) {
@@ -341,7 +407,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
 
     const bounds = new mapboxgl.LngLatBounds()
     for (const facility of facilities) {
-      bounds.extend([facility.longitude, facility.latitude])
+      bounds.extend([facility.lng, facility.lat])
     }
 
     if (!bounds.isEmpty()) {
@@ -382,7 +448,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
           <p className="text-gray-500 text-sm">
             Map visualization requires a Mapbox access token. Filtered facilities appear here when a token is configured.
           </p>
-          <div className="mt-4 text-xs text-gray-400">Showing {facilities.length} facilities</div>
+          <div className="mt-4 text-xs text-gray-400">Showing {totalFacilities} facilities</div>
         </div>
       </div>
     )
@@ -440,9 +506,9 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
           <div className="flex items-center gap-2 text-sm">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-blue-600 rounded-full" />
-              <span className="font-medium text-gray-900">{facilities.length}</span>
+              <span className="font-medium text-gray-900">{totalFacilities}</span>
             </div>
-            <span className="text-gray-600">{facilities.length === 1 ? "facility" : "facilities"}</span>
+            <span className="text-gray-600">{totalFacilities === 1 ? "facility" : "facilities"}</span>
             {isFetching && <span className="text-xs text-gray-400">Updating…</span>}
           </div>
         </div>

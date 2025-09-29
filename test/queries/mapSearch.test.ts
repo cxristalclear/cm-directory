@@ -94,6 +94,8 @@ describe("companyFacilitiesForMap", () => {
     expect(builder.limit).toHaveBeenCalledWith(5001, { referencedTable: "facilities" })
     expect(result.facilities).toHaveLength(12)
     expect(result.truncated).toBe(false)
+    expect(result.totalCount).toBe(12)
+    expect(result.facilities[0]).toMatchObject({ lat: expect.any(Number), lng: expect.any(Number) })
   })
 
   it("truncates facilities above the safety cap", async () => {
@@ -126,6 +128,7 @@ describe("companyFacilitiesForMap", () => {
     expect(builder.limit).toHaveBeenCalledWith(5001)
     expect(result.facilities).toHaveLength(5000)
     expect(result.truncated).toBe(true)
+    expect(result.totalCount).toBe(5005)
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining("companyFacilitiesForMap truncated results"),
       expect.any(Object),

@@ -88,8 +88,8 @@ const mapFacilities = baseCompanies.flatMap((company) =>
     facility_id: facility.id,
     city: facility.city ?? null,
     state: facility.state ?? null,
-    latitude: facility.latitude ?? 0,
-    longitude: facility.longitude ?? 0,
+    lat: facility.latitude ?? 0,
+    lng: facility.longitude ?? 0,
   })),
 )
 
@@ -124,7 +124,11 @@ const mockResult = {
 beforeEach(() => {
   jest.clearAllMocks()
   companySearch.mockResolvedValue(mockResult)
-  companyFacilitiesForMap.mockResolvedValue({ facilities: mapFacilities, truncated: false })
+  companyFacilitiesForMap.mockResolvedValue({
+    facilities: mapFacilities,
+    truncated: false,
+    totalCount: mapFacilities.length,
+  })
 })
 
 describe("home page SSR", () => {

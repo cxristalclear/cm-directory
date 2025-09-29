@@ -39,13 +39,14 @@ export type MapFacility = {
   facility_id: string
   city: string | null
   state: string | null
-  latitude: number
-  longitude: number
+  lat: number
+  lng: number
 }
 
 export type MapSearchResult = {
   facilities: MapFacility[]
   truncated: boolean
+  totalCount: number
 }
 
 type MapSearchOptions = Pick<CompanySearchOptions, "routeDefaults" | "bbox"> & {
@@ -85,8 +86,8 @@ function coerceFacilities(companies: CompanyWithFacilities[]): MapFacility[] {
         facility_id: facility.id,
         city: facility.city ?? null,
         state: facility.state ?? null,
-        latitude,
-        longitude,
+        lat: latitude,
+        lng: longitude,
       })
     }
   }
@@ -129,17 +130,18 @@ export async function companyFacilitiesForMap(options: MapSearchOptions): Promis
   const { data, error } = await builder
   if (error) {
     console.error("companyFacilitiesForMap query failed", { filters }, error)
-    return { facilities: [], truncated: false }
+    return { facilities: [], truncated: false, totalCount: 0 }
   }
 
   const rows = (Array.isArray(data) ? (data as CompanyWithFacilities[]) : [])
   const flattened = coerceFacilities(rows)
-  const truncated = flattened.length > MAX_FACILITY_RESULTS
+  const totalCount = flattened.length
+  const truncated = totalCount > MAX_FACILITY_RESULTS
   const facilities = truncated ? flattened.slice(0, MAX_FACILITY_RESULTS) : flattened
 
   if (truncated) {
     logTruncation(filters, flattened.length)
   }
 
-  return { facilities, truncated }
+  return { facilities, truncated, totalCount }
 }
