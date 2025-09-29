@@ -60,6 +60,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
   const currentFacilitiesRef = useRef<MapFacility[]>(initialFacilities)
   const pendingRequestRef = useRef<AbortController | null>(null)
   const lastQuerySignatureRef = useRef<string | null>(null)
+  const shouldFitBoundsRef = useRef(true)
 
   const [facilities, setFacilities] = useState<MapFacility[]>(initialFacilities)
   const [totalFacilities, setTotalFacilities] = useState<number>(initialFacilities.length)
@@ -154,6 +155,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
 
   useEffect(() => {
     lastQuerySignatureRef.current = null
+    shouldFitBoundsRef.current = true
     requestFacilities(true)
   }, [buildParams, requestFacilities])
 
@@ -307,6 +309,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
     mapRef.current.addControl(new mapboxgl.ScaleControl(), "bottom-left")
 
     const handleMoveEnd = () => {
+      shouldFitBoundsRef.current = false
       requestFacilities()
     }
 
@@ -376,6 +379,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
     mapRef.current.on("load", () => {
       setIsLoading(false)
       setIsStyleLoaded(true)
+      shouldFitBoundsRef.current = true
       requestFacilities(true)
     })
 
@@ -384,6 +388,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
       if (currentFacilitiesRef.current.length > 0) {
         addClusteringLayers(currentFacilitiesRef.current)
       }
+      shouldFitBoundsRef.current = false
       requestFacilities(true)
     })
 
@@ -405,12 +410,17 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
 
     addClusteringLayers(facilities)
 
+    if (!shouldFitBoundsRef.current) {
+      return
+    }
+
     const bounds = new mapboxgl.LngLatBounds()
     for (const facility of facilities) {
       bounds.extend([facility.lng, facility.lat])
     }
 
     if (!bounds.isEmpty()) {
+      shouldFitBoundsRef.current = false
       mapRef.current.fitBounds(bounds, {
         padding: { top: 50, bottom: 50, left: 50, right: 50 },
         maxZoom: 10,
