@@ -161,14 +161,12 @@ type FilterSkipOptions = {
   skipVolume?: boolean
 }
 
-type CompanyFilterBuilder<Result> = PostgrestFilterBuilder<
+type CompanyFilterBuilder<Row> = PostgrestFilterBuilder<
   Schema,
   CompanyRow,
-  Result,
+  Row[] | null,
   "companies"
 >
-
-type CompanyCountBuilder = CompanyFilterBuilder<null>
 
 export type CompanyPageInfo = {
   hasNextPage: boolean
@@ -348,49 +346,646 @@ function applyCursor<Result>(
   )
 }
 
-export function applyFilters<Result>(
-  builder: CompanyFilterBuilder<Result>,
-  filters: NormalizedFilters,
-  skip: FilterSkipOptions = {},
-): CompanyFilterBuilder<Result> {
-  const { skipStates = false, skipCapabilities = false, skipVolume = false } = skip
+let envSanityPromise: Promise<void> | null = null
 
-  if (!skipStates && filters.states.length > 0) {
-    const values = filters.states
-      .map((state) => state.replace(/"/g, ""))
-      .map((state) => `"${state}"`)
-      .join(",")
-    builder.filter("facilities.state", "in", `(${values})`)
+function maskSupabaseUrl(value: string | undefined): string | null {
+  if (!value) {
+    return null
   }
 
-  if (!skipCapabilities && filters.capabilities.length > 0) {
-    const orConditions = filters.capabilities
-      .map((slug) => `capabilities.${CAPABILITY_COLUMN_MAP[slug]}.is.true`)
-      .join(",")
+  if (value.length <= 12) {
+    return `${value.slice(0, 4)}…`
+  }
 
-    if (orConditions) {
-      builder.or(orConditions, { referencedTable: "capabilities" })
+  return `${value.slice(0, 8)}…${value.slice(-4)}`
+}
+
+async function ensureEnvironmentSanity(): Promise<void> {
+  if (envSanityPromise) {
+    return envSanityPromise
+  }
+
+  if (typeof process !== "undefined" && process.env.NODE_ENV === "test") {
+    envSanityPromise = Promise.resolve()
+    return envSanityPromise
+  }
+
+  envSanityPromise = (async () => {
+    const supabaseUrl = maskSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)
+    const anonKeyPresent = Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+    console.info("companySearch environment", {
+      supabaseUrl,
+      anonKeyPresent,
+    })
+
+    try {
+      const builder = supabase
+        .from("companies")
+        .select("id", { count: "exact", head: true }) as PostgrestFilterBuilder<
+        Schema,
+        CompanyRow,
+        { id: string | null }[] | null,
+        "companies"
+      >
+
+      const query = getBuilderUrl(builder)
+      const response = await builder
+      if (response.error) {
+        console.error("companySearch environment probe error", {
+          query: query ?? null,
+          error: formatErrorForLog(response.error),
+        })
+        return
+      }
+
+      console.info("companySearch environment probe", {
+        query: query ?? null,
+        companyCount: typeof response.count === "number" ? response.count : null,
+      })
+    } catch (error) {
+      console.error("companySearch environment probe", {
+        error: formatErrorForLog(error),
+      })
+    }
+  })()
+
+  return envSanityPromise
+}
+
+type CompanyIdSet = Set<string>
+
+type FilterCompanySets = {
+  states: CompanyIdSet | null
+  capabilities: CompanyIdSet | null
+  volume: CompanyIdSet | null
+  certification: CompanyIdSet | null
+  bbox: CompanyIdSet | null
+}
+
+function intersectSets(base: CompanyIdSet | null, next: CompanyIdSet | null): CompanyIdSet | null {
+  if (!next) {
+    return base ? new Set(base) : null
+  }
+
+  if (!base) {
+    return new Set(next)
+  }
+
+  const intersection = new Set<string>()
+  for (const value of base) {
+    if (next.has(value)) {
+      intersection.add(value)
     }
   }
 
-  if (!skipVolume && filters.productionVolume) {
-    const column = VOLUME_COLUMN_MAP[filters.productionVolume]
-    builder.eq(`capabilities.${column}`, true)
+  return intersection
+}
+
+function normalizeCompanyId(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null
   }
 
-  if (filters.certification) {
-    builder.eq("certifications.certification_type", filters.certification)
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+async function fetchCompanyIdsForStates(
+  states: string[],
+  context: LogContext,
+): Promise<CompanyIdSet> {
+  const builder = supabase
+    .from("facilities")
+    .select("company_id, state") as PostgrestFilterBuilder<
+    Schema,
+    FacilityRow,
+    { company_id: string | null; state: string | null }[] | null,
+    "facilities"
+  >
+
+  builder.in("state", states)
+  builder.not("company_id", "is", null)
+
+  const { data } = await executeBuilder<{ company_id: string | null; state: string | null }>(
+    "filter:states",
+    context,
+    builder,
+  )
+
+  const result = new Set<string>()
+  for (const row of data) {
+    const companyId = normalizeCompanyId(row.company_id)
+    if (companyId) {
+      result.add(companyId)
+    }
   }
 
-  if (filters.bbox) {
-    const { minLng, maxLng, minLat, maxLat } = filters.bbox
-    builder.gte("facilities.longitude", minLng)
-    builder.lte("facilities.longitude", maxLng)
-    builder.gte("facilities.latitude", minLat)
-    builder.lte("facilities.latitude", maxLat)
+  return result
+}
+
+async function fetchCompanyIdsForCapabilities(
+  capabilities: CapabilitySlug[],
+  context: LogContext,
+): Promise<CompanyIdSet> {
+  const builder = supabase
+    .from("capabilities")
+    .select("company_id") as PostgrestFilterBuilder<
+    Schema,
+    CapabilityRow,
+    { company_id: string | null }[] | null,
+    "capabilities"
+  >
+
+  const orConditions = capabilities
+    .map((slug) => `${CAPABILITY_COLUMN_MAP[slug]}.is.true`)
+    .join(",")
+
+  if (orConditions) {
+    builder.or(orConditions)
   }
 
-  return builder
+  builder.not("company_id", "is", null)
+
+  const { data } = await executeBuilder<{ company_id: string | null }>(
+    "filter:capabilities",
+    context,
+    builder,
+  )
+
+  const result = new Set<string>()
+  for (const row of data) {
+    const companyId = normalizeCompanyId(row.company_id)
+    if (companyId) {
+      result.add(companyId)
+    }
+  }
+
+  return result
+}
+
+async function fetchCompanyIdsForVolume(
+  level: ProductionVolume,
+  context: LogContext,
+): Promise<CompanyIdSet> {
+  const builder = supabase
+    .from("capabilities")
+    .select("company_id") as PostgrestFilterBuilder<
+    Schema,
+    CapabilityRow,
+    { company_id: string | null }[] | null,
+    "capabilities"
+  >
+
+  builder.eq(VOLUME_COLUMN_MAP[level], true)
+  builder.not("company_id", "is", null)
+
+  const { data } = await executeBuilder<{ company_id: string | null }>(
+    "filter:volume",
+    context,
+    builder,
+  )
+
+  const result = new Set<string>()
+  for (const row of data) {
+    const companyId = normalizeCompanyId(row.company_id)
+    if (companyId) {
+      result.add(companyId)
+    }
+  }
+
+  return result
+}
+
+async function fetchCompanyIdsForCertification(
+  certification: string,
+  context: LogContext,
+): Promise<CompanyIdSet> {
+  const builder = supabase
+    .from("certifications")
+    .select("company_id") as PostgrestFilterBuilder<
+    Schema,
+    CertificationRow,
+    { company_id: string | null }[] | null,
+    "certifications"
+  >
+
+  builder.eq("certification_type", certification)
+  builder.not("company_id", "is", null)
+
+  const { data } = await executeBuilder<{ company_id: string | null }>(
+    "filter:certification",
+    context,
+    builder,
+  )
+
+  const result = new Set<string>()
+  for (const row of data) {
+    const companyId = normalizeCompanyId(row.company_id)
+    if (companyId) {
+      result.add(companyId)
+    }
+  }
+
+  return result
+}
+
+async function fetchCompanyIdsForBoundingBox(
+  bbox: BoundingBox,
+  context: LogContext,
+): Promise<CompanyIdSet> {
+  if (!bbox) {
+    return new Set()
+  }
+
+  const builder = supabase
+    .from("facilities")
+    .select("company_id, longitude, latitude") as PostgrestFilterBuilder<
+    Schema,
+    FacilityRow,
+    { company_id: string | null; longitude: number | null; latitude: number | null }[] | null,
+    "facilities"
+  >
+
+  builder.gte("longitude", bbox.minLng)
+  builder.lte("longitude", bbox.maxLng)
+  builder.gte("latitude", bbox.minLat)
+  builder.lte("latitude", bbox.maxLat)
+  builder.not("company_id", "is", null)
+
+  const { data } = await executeBuilder<{
+    company_id: string | null
+    longitude: number | null
+    latitude: number | null
+  }>("filter:bbox", context, builder)
+
+  const result = new Set<string>()
+  for (const row of data) {
+    const companyId = normalizeCompanyId(row.company_id)
+    if (companyId) {
+      result.add(companyId)
+    }
+  }
+
+  return result
+}
+
+async function fetchAllCompanyIds(context: LogContext): Promise<CompanyIdSet> {
+  const builder = supabase
+    .from("companies")
+    .select("id") as CompanyFilterBuilder<{ id: string | null }>
+
+  const { data } = await executeBuilder<{ id: string | null }>("filter:all", context, builder)
+  const result = new Set<string>()
+  for (const row of data) {
+    const id = normalizeCompanyId(row.id)
+    if (id) {
+      result.add(id)
+    }
+  }
+
+  return result
+}
+
+async function gatherFilterCompanySets(
+  filters: NormalizedFilters,
+  context: LogContext,
+): Promise<FilterCompanySets> {
+  const statesPromise = filters.states.length > 0 ? fetchCompanyIdsForStates(filters.states, context) : Promise.resolve(null)
+  const capabilitiesPromise =
+    filters.capabilities.length > 0
+      ? fetchCompanyIdsForCapabilities(filters.capabilities, context)
+      : Promise.resolve(null)
+  const volumePromise = filters.productionVolume
+    ? fetchCompanyIdsForVolume(filters.productionVolume, context)
+    : Promise.resolve(null)
+  const certificationPromise = filters.certification
+    ? fetchCompanyIdsForCertification(filters.certification, context)
+    : Promise.resolve(null)
+  const bboxPromise = filters.bbox ? fetchCompanyIdsForBoundingBox(filters.bbox, context) : Promise.resolve(null)
+
+  const [states, capabilities, volume, certification, bbox] = await Promise.all([
+    statesPromise,
+    capabilitiesPromise,
+    volumePromise,
+    certificationPromise,
+    bboxPromise,
+  ])
+
+  return {
+    states,
+    capabilities,
+    volume,
+    certification,
+    bbox,
+  }
+}
+
+function computeCompanyIdSet(
+  filters: NormalizedFilters,
+  skip: FilterSkipOptions,
+  sets: FilterCompanySets,
+): CompanyIdSet | null {
+  const { skipStates = false, skipCapabilities = false, skipVolume = false } = skip
+
+  let result: CompanyIdSet | null = null
+
+  if (!skipStates && sets.states) {
+    result = intersectSets(result, sets.states)
+  }
+
+  if (!skipCapabilities && sets.capabilities) {
+    result = intersectSets(result, sets.capabilities)
+  }
+
+  if (!skipVolume && sets.volume) {
+    result = intersectSets(result, sets.volume)
+  }
+
+  if (sets.certification) {
+    result = intersectSets(result, sets.certification)
+  }
+
+  if (sets.bbox) {
+    result = intersectSets(result, sets.bbox)
+  }
+
+  return result
+}
+
+export type CompanyFilterPreparation = {
+  context: LogContext
+  filterSets: FilterCompanySets
+  resolveCompanyIds: (set: CompanyIdSet | null) => Promise<string[]>
+  allCompanyIds: string[]
+}
+
+export async function prepareCompanyFilterContext(
+  filters: NormalizedFilters,
+  routeDefaults: CompanySearchOptions["routeDefaults"] | null,
+): Promise<CompanyFilterPreparation> {
+  const context: LogContext = { filters, routeDefaults }
+  const filterSets = await gatherFilterCompanySets(filters, context)
+  let allCompanyIdsPromise: Promise<CompanyIdSet> | null = null
+
+  const resolveCompanyIds = async (set: CompanyIdSet | null): Promise<string[]> => {
+    if (set) {
+      return Array.from(set)
+    }
+
+    if (!allCompanyIdsPromise) {
+      allCompanyIdsPromise = fetchAllCompanyIds(context)
+    }
+
+    const allIds = await allCompanyIdsPromise
+    return Array.from(allIds)
+  }
+
+  const allCompanyIds = await resolveCompanyIds(computeCompanyIdSet(filters, {}, filterSets))
+
+  return { context, filterSets, resolveCompanyIds, allCompanyIds }
+}
+
+async function fetchStateFacetCountsForCompanies(
+  companyIds: string[],
+  filters: NormalizedFilters,
+  context: LogContext,
+): Promise<Array<{ code: string; count: number }>> {
+  if (companyIds.length === 0) {
+    return filters.states
+      .map((state) => normalizeStateCode(state))
+      .filter((state): state is string => Boolean(state))
+      .map((state) => ({ code: state, count: 0 }))
+  }
+
+  const builder = supabase
+    .from("facilities")
+    .select("company_id, state") as PostgrestFilterBuilder<
+    Schema,
+    FacilityRow,
+    { company_id: string | null; state: string | null }[] | null,
+    "facilities"
+  >
+
+  builder.in("company_id", companyIds)
+  builder.not("company_id", "is", null)
+  builder.not("state", "is", null)
+
+  const { data } = await executeBuilder<{ company_id: string | null; state: string | null }>(
+    "facet:states",
+    { ...context, facet: "states" },
+    builder,
+  )
+
+  const counts = new Map<string, Set<string>>()
+
+  for (const row of data) {
+    const companyId = normalizeCompanyId(row.company_id)
+    const state = normalizeStateCode(row.state)
+    if (!companyId || !state) {
+      continue
+    }
+
+    const bucket = counts.get(state) ?? new Set<string>()
+    bucket.add(companyId)
+    counts.set(state, bucket)
+  }
+
+  for (const state of filters.states) {
+    const normalized = normalizeStateCode(state)
+    if (normalized && !counts.has(normalized)) {
+      counts.set(normalized, new Set())
+    }
+  }
+
+  return Array.from(counts.entries())
+    .map(([code, bucket]) => ({ code, count: bucket.size }))
+    .filter((entry) => entry.count > 0 || filters.states.includes(entry.code))
+    .sort((a, b) => a.code.localeCompare(b.code))
+}
+
+async function fetchCapabilityFacetCountsForCompanies(
+  companyIds: string[],
+  context: LogContext,
+): Promise<Array<{ slug: CapabilitySlug; count: number }>> {
+  if (companyIds.length === 0) {
+    return CAPABILITY_SLUGS.map((slug) => ({ slug, count: 0 }))
+  }
+
+  const builder = supabase
+    .from("capabilities")
+    .select(`company_id, ${CAPABILITIES_SELECT_FRAGMENT}`) as PostgrestFilterBuilder<
+    Schema,
+    CapabilityRow,
+    CapabilityRow[] | null,
+    "capabilities"
+  >
+
+  builder.in("company_id", companyIds)
+  builder.not("company_id", "is", null)
+
+  const { data } = await executeBuilder<CapabilityRow>(
+    "facet:capabilities",
+    { ...context, facet: "capabilities" },
+    builder,
+  )
+
+  const sets = new Map<CapabilitySlug, Set<string>>()
+  for (const slug of CAPABILITY_SLUGS) {
+    sets.set(slug, new Set())
+  }
+
+  for (const row of data) {
+    const companyId = normalizeCompanyId(row.company_id)
+    if (!companyId) {
+      continue
+    }
+
+    for (const slug of CAPABILITY_SLUGS) {
+      const column = CAPABILITY_COLUMN_MAP[slug]
+      if (row[column]) {
+        sets.get(slug)?.add(companyId)
+      }
+    }
+  }
+
+  return CAPABILITY_SLUGS.map((slug) => ({ slug, count: sets.get(slug)?.size ?? 0 }))
+}
+
+async function fetchProductionVolumeFacetCountsForCompanies(
+  companyIds: string[],
+  context: LogContext,
+): Promise<Array<{ level: ProductionVolume; count: number }>> {
+  if (companyIds.length === 0) {
+    return PRODUCTION_VOLUMES.map((level) => ({ level, count: 0 }))
+  }
+
+  const builder = supabase
+    .from("capabilities")
+    .select(`company_id, ${CAPABILITIES_SELECT_FRAGMENT}`) as PostgrestFilterBuilder<
+    Schema,
+    CapabilityRow,
+    CapabilityRow[] | null,
+    "capabilities"
+  >
+
+  builder.in("company_id", companyIds)
+  builder.not("company_id", "is", null)
+
+  const { data } = await executeBuilder<CapabilityRow>(
+    "facet:productionVolume",
+    { ...context, facet: "productionVolume" },
+    builder,
+  )
+
+  const sets = new Map<ProductionVolume, Set<string>>()
+  for (const level of PRODUCTION_VOLUMES) {
+    sets.set(level, new Set())
+  }
+
+  for (const row of data) {
+    const companyId = normalizeCompanyId(row.company_id)
+    if (!companyId) {
+      continue
+    }
+
+    for (const level of PRODUCTION_VOLUMES) {
+      const column = VOLUME_COLUMN_MAP[level]
+      if (row[column]) {
+        sets.get(level)?.add(companyId)
+      }
+    }
+  }
+
+  return PRODUCTION_VOLUMES.map((level) => ({ level, count: sets.get(level)?.size ?? 0 }))
+}
+
+async function buildFacetCounts(
+  filters: NormalizedFilters,
+  sets: FilterCompanySets,
+  resolveCompanyIds: (set: CompanyIdSet | null) => Promise<string[]>,
+  context: LogContext,
+): Promise<CompanyFacetCounts> {
+  try {
+    const baseForStates = await resolveCompanyIds(
+      computeCompanyIdSet(filters, { skipStates: true }, sets),
+    )
+    const baseForCapabilities = await resolveCompanyIds(
+      computeCompanyIdSet(filters, { skipCapabilities: true }, sets),
+    )
+    const baseForVolume = await resolveCompanyIds(
+      computeCompanyIdSet(filters, { skipVolume: true }, sets),
+    )
+
+    const states = await fetchStateFacetCountsForCompanies(baseForStates, filters, context)
+    const capabilities = await fetchCapabilityFacetCountsForCompanies(
+      baseForCapabilities,
+      context,
+    )
+    const productionVolume = await fetchProductionVolumeFacetCountsForCompanies(
+      baseForVolume,
+      context,
+    )
+
+    return { states, capabilities, productionVolume }
+  } catch (error) {
+    logSupabaseError("facet", context, error)
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`companySearch facet computation failed: ${message}`)
+  }
+}
+
+async function fetchCompaniesPage(
+  companyIds: string[],
+  cursor: CompanySearchCursor | null,
+  pageSize: number,
+  context: LogContext,
+): Promise<{ rows: CompanyRecord[]; count: number | null }> {
+  if (companyIds.length === 0) {
+    return { rows: [], count: 0 }
+  }
+
+  const builder = supabase
+    .from("companies")
+    .select(COMPANY_LIST_SELECT, { count: "exact" }) as CompanyFilterBuilder<CompanyRecord>
+
+  builder.in("id", companyIds)
+  applyCursor(builder, cursor)
+  builder.order("company_name", { ascending: true })
+  builder.order("id", { ascending: true })
+  builder.limit(pageSize + 1)
+
+  const { data, count } = await executeBuilder<CompanyRecord>("main", context, builder)
+  return { rows: data, count }
+}
+
+async function fetchPreviousRowFromIds(
+  companyIds: string[],
+  firstCompany: Company,
+  context: LogContext,
+): Promise<PrevRow | null> {
+  if (companyIds.length === 0) {
+    return null
+  }
+
+  const builder = supabase
+    .from("companies")
+    .select("id, company_name") as CompanyFilterBuilder<PrevRow>
+
+  builder.in("id", companyIds)
+
+  const encodedName = encodeURIComponent(firstCompany.company_name)
+  const encodedId = encodeURIComponent(firstCompany.id)
+
+  builder.order("company_name", { ascending: false })
+  builder.order("id", { ascending: false })
+  builder.or(
+    `company_name.lt.${encodedName},and(company_name.eq.${encodedName},id.lt.${encodedId})`,
+  )
+  builder.limit(1)
+
+  const { data } = await executeBuilder<PrevRow>("previous", context, builder)
+  return data[0] ?? null
 }
 
 function coerceCompany(company: CompanyRecord): Company {
@@ -475,215 +1070,48 @@ function formatErrorForLog(error: unknown) {
   return error
 }
 
-function logSupabaseError(stage: string, context: LogContext, error: unknown) {
+function logSupabaseError(stage: string, context: LogContext, error: unknown, query?: string | null) {
   console.error("companySearch error", {
     stage,
     facet: context.facet ?? null,
     filters: cloneFiltersForLog(context.filters),
     routeDefaults: context.routeDefaults ?? null,
+    query: query ?? null,
     error: formatErrorForLog(error),
   })
 }
 
-function applyDistinct(builder: CompanyCountBuilder) {
-  const maybeUrl = (builder as unknown as { url?: URL }).url
-  if (maybeUrl instanceof URL) {
-    maybeUrl.searchParams.set("distinct", "true")
-  }
-}
-
-function createCountBuilder(): CompanyCountBuilder {
-  const builder = supabase
-    .from("companies")
-    .select(
-      `id,
-      facilities:facilities!left(id,state),
-      capabilities:capabilities!left(id),
-      certifications:certifications!left(id)`,
-      { head: true, count: "exact" },
-    ) as unknown as CompanyCountBuilder
-
-  applyDistinct(builder)
-
-  return builder
-}
-
-async function fetchPreviousRow(
-  filters: NormalizedFilters,
-  firstCompany: Company,
-): Promise<PrevRow | null> {
-  const builder = supabase
-    .from("companies")
-    .select("id, company_name") as CompanyFilterBuilder<PrevRow[]>
-
-  applyFilters(builder, filters)
-
-  const encodedName = encodeURIComponent(firstCompany.company_name)
-  const encodedId = encodeURIComponent(firstCompany.id)
-
-  builder.order("company_name", { ascending: false })
-  builder.order("id", { ascending: false })
-  builder.or(
-    `company_name.lt.${encodedName},and(company_name.eq.${encodedName},id.lt.${encodedId})`,
-  )
-  builder.limit(1)
-
-  const { data, error } = await builder
-  if (error) {
-    throw error
+function getBuilderUrl(builder: unknown): string | null {
+  if (builder && typeof builder === "object" && "url" in builder) {
+    const value = builder as { url?: URL | null }
+    if (value.url instanceof URL) {
+      return value.url.toString()
+    }
   }
 
-  const rows = (data ?? []) as PrevRow[]
-  return rows[0] ?? null
+  return null
 }
 
-async function fetchStateCandidates(filters: NormalizedFilters): Promise<string[]> {
-  const builder = supabase
-    .from("companies")
-    .select(
-      `facilities:facilities!inner(
-        state
-      ),
-      capabilities:capabilities!left(id),
-      certifications:certifications!left(id)`,
-    ) as CompanyFilterBuilder<CompanyRecord[]>
+async function executeBuilder<Result>(
+  stage: string,
+  context: LogContext,
+  builder: PostgrestFilterBuilder<Schema, any, Result[] | null, any>,
+): Promise<{ data: Result[]; count: number | null }> {
+  const query = getBuilderUrl(builder)
 
-  applyFilters(builder, filters, { skipStates: true })
-  builder.not("facilities.state", "is", null)
-  builder.limit(200, { foreignTable: "facilities" })
-
-  const { data, error } = await builder
-  if (error) {
-    throw error
-  }
-
-  const fromFacilities = Array.isArray(data)
-    ? (data as Array<{ facilities: Facility[] | null }>)
-        .flatMap((row) => row.facilities ?? [])
-        .map((facility) => normalizeStateCode(facility.state))
-        .filter((state): state is string => Boolean(state))
-    : []
-
-  const combined = new Set<string>([...fromFacilities, ...filters.states])
-  return Array.from(combined).sort((a, b) => a.localeCompare(b))
-}
-
-async function countCompaniesForState(
-  state: string,
-  filters: NormalizedFilters,
-): Promise<number> {
-  const builder = createCountBuilder()
-  applyFilters(builder, filters, { skipStates: true })
-  builder.eq("facilities.state", state)
-
-  const { count, error } = await builder
-  if (error) {
-    throw error
-  }
-
-  return typeof count === "number" ? count : 0
-}
-
-async function fetchStateFacetCounts(filters: NormalizedFilters): Promise<Array<{ code: string; count: number }>> {
-  const candidates = await fetchStateCandidates(filters)
-  if (candidates.length === 0) {
-    return []
-  }
-
-  const counts = await Promise.all(
-    candidates.map(async (state) => ({ code: state, count: await countCompaniesForState(state, filters) })),
-  )
-
-  return counts
-    .filter((entry) => entry.count > 0 || filters.states.includes(entry.code))
-    .sort((a, b) => a.code.localeCompare(b.code))
-}
-
-async function countCompaniesForCapability(
-  slug: CapabilitySlug,
-  filters: NormalizedFilters,
-): Promise<number> {
-  const builder = createCountBuilder()
-  applyFilters(builder, filters, { skipCapabilities: true })
-  builder.eq(`capabilities.${CAPABILITY_COLUMN_MAP[slug]}`, true)
-
-  const { count, error } = await builder
-  if (error) {
-    throw error
-  }
-
-  return typeof count === "number" ? count : 0
-}
-
-async function fetchCapabilityFacetCounts(
-  filters: NormalizedFilters,
-): Promise<Array<{ slug: CapabilitySlug; count: number }>> {
-  const counts = await Promise.all(
-    CAPABILITY_SLUGS.map(async (slug) => ({ slug, count: await countCompaniesForCapability(slug, filters) })),
-  )
-
-  return counts
-}
-
-async function countCompaniesForVolume(
-  level: ProductionVolume,
-  filters: NormalizedFilters,
-): Promise<number> {
-  const builder = createCountBuilder()
-  applyFilters(builder, filters, { skipVolume: true })
-  builder.eq(`capabilities.${VOLUME_COLUMN_MAP[level]}`, true)
-
-  const { count, error } = await builder
-  if (error) {
-    throw error
-  }
-
-  return typeof count === "number" ? count : 0
-}
-
-async function fetchVolumeFacetCounts(
-  filters: NormalizedFilters,
-): Promise<Array<{ level: ProductionVolume; count: number }>> {
-  const counts = await Promise.all(
-    PRODUCTION_VOLUMES.map(async (level) => ({ level, count: await countCompaniesForVolume(level, filters) })),
-  )
-
-  return counts
-}
-
-async function runFacetQuery<T>(
-  facet: LogContext["facet"],
-  filters: NormalizedFilters,
-  routeDefaults: LogContext["routeDefaults"],
-  query: () => Promise<T>,
-): Promise<T> {
   try {
-    return await query()
+    const response = await builder
+    if (response.error) {
+      logSupabaseError(stage, context, response.error, query)
+      throw response.error
+    }
+
+    const rows = Array.isArray(response.data) ? (response.data as Result[]) : []
+    return { data: rows, count: typeof response.count === "number" ? response.count : null }
   } catch (error) {
-    logSupabaseError("facet", { filters, routeDefaults, facet }, error)
-    throw new Error(`Failed to load ${facet ?? "unknown"} facet counts`)
+    logSupabaseError(stage, context, error, query)
+    throw error
   }
-}
-
-async function fetchFacetCounts(
-  filters: NormalizedFilters,
-  routeDefaults: LogContext["routeDefaults"],
-): Promise<CompanyFacetCounts> {
-  const states = await runFacetQuery("states", filters, routeDefaults, () => fetchStateFacetCounts(filters))
-  const capabilities = await runFacetQuery(
-    "capabilities",
-    filters,
-    routeDefaults,
-    () => fetchCapabilityFacetCounts(filters),
-  )
-  const productionVolume = await runFacetQuery(
-    "productionVolume",
-    filters,
-    routeDefaults,
-    () => fetchVolumeFacetCounts(filters),
-  )
-
-  return { states, capabilities, productionVolume }
 }
 
 export async function companySearch(options: CompanySearchOptions): Promise<CompanySearchResult> {
@@ -692,98 +1120,66 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
   const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE
   const routeDefaults = options.routeDefaults ?? null
 
-  try {
-    const builder = supabase
-      .from("companies")
-      .select(COMPANY_LIST_SELECT, { count: "exact" }) as CompanyFilterBuilder<CompanyRecord[]>
+  await ensureEnvironmentSanity()
 
-    applyFilters(builder, filters)
-    applyCursor(builder, cursor)
+  const { context, filterSets, resolveCompanyIds, allCompanyIds } = await prepareCompanyFilterContext(
+    filters,
+    routeDefaults,
+  )
 
-    builder.order("company_name", { ascending: true })
-    builder.order("id", { ascending: true })
-    builder.limit(pageSize + 1)
+  const { rows, count } = await fetchCompaniesPage(allCompanyIds, cursor, pageSize, context)
+  const hasNextPage = rows.length > pageSize
+  const trimmedRows = hasNextPage ? rows.slice(0, pageSize) : rows
+  const companies = trimmedRows.map((row) => coerceCompany(row))
 
-    const { data, error, count } = await builder
-    if (error) {
-      throw error
-    }
+  const firstCompany = companies[0] ?? null
+  const lastCompany = companies.at(-1) ?? null
 
-    const rows = (data ?? []) as CompanyRecord[]
-    const hasNextPage = rows.length > pageSize
-    const trimmedRows = hasNextPage ? rows.slice(0, pageSize) : rows
-    const companies = trimmedRows.map((row) => coerceCompany(row))
+  let prevCursor: string | null = null
+  let hasPreviousPage = false
 
-    const firstCompany = companies[0] ?? null
-    const lastCompany = companies.at(-1) ?? null
-
-    let prevCursor: string | null = null
-    let hasPreviousPage = false
-
-    if (cursor && firstCompany) {
-      try {
-        const previousRow = await fetchPreviousRow(filters, firstCompany)
-        if (previousRow) {
-          prevCursor = serializeCursor({ name: previousRow.company_name, id: previousRow.id })
-          hasPreviousPage = Boolean(prevCursor)
-        }
-      } catch (previousError) {
-        logSupabaseError("previous", { filters, routeDefaults }, previousError)
+  if (cursor && firstCompany) {
+    try {
+      const previousRow = await fetchPreviousRowFromIds(allCompanyIds, firstCompany, context)
+      if (previousRow) {
+        prevCursor = serializeCursor({ name: previousRow.company_name, id: previousRow.id })
+        hasPreviousPage = Boolean(prevCursor)
       }
+    } catch (previousError) {
+      logSupabaseError("previous", context, previousError)
     }
+  }
 
-    const nextCursor = hasNextPage && lastCompany
-      ? serializeCursor({ name: lastCompany.company_name, id: lastCompany.id })
-      : null
+  const nextCursor = hasNextPage && lastCompany
+    ? serializeCursor({ name: lastCompany.company_name, id: lastCompany.id })
+    : null
 
-    const startCursor = firstCompany
-      ? serializeCursor({ name: firstCompany.company_name, id: firstCompany.id })
-      : null
-    const endCursor = lastCompany
-      ? serializeCursor({ name: lastCompany.company_name, id: lastCompany.id })
-      : null
+  const startCursor = firstCompany
+    ? serializeCursor({ name: firstCompany.company_name, id: firstCompany.id })
+    : null
+  const endCursor = lastCompany
+    ? serializeCursor({ name: lastCompany.company_name, id: lastCompany.id })
+    : null
 
-    let facetCounts: CompanyFacetCounts | null = null
-    if (includeFacetCounts) {
-      try {
-        facetCounts = await fetchFacetCounts(filters, routeDefaults)
-      } catch (facetError) {
-        facetCounts = createEmptyFacetCounts()
-      }
-    }
+  let facetCounts: CompanyFacetCounts | null = null
+  if (includeFacetCounts) {
+    facetCounts = await buildFacetCounts(filters, filterSets, resolveCompanyIds, context)
+  }
 
-    const pageInfo: CompanyPageInfo = {
-      hasNextPage,
-      hasPreviousPage,
-      nextCursor,
-      prevCursor,
-      startCursor,
-      endCursor,
-      pageSize,
-    }
+  const pageInfo: CompanyPageInfo = {
+    hasNextPage,
+    hasPreviousPage,
+    nextCursor,
+    prevCursor,
+    startCursor,
+    endCursor,
+    pageSize,
+  }
 
-    return {
-      companies,
-      filteredCount: typeof count === "number" ? count : companies.length,
-      facetCounts,
-      pageInfo,
-    }
-  } catch (error) {
-    logSupabaseError("main", { filters, routeDefaults }, error)
-
-    return {
-      companies: [],
-      filteredCount: 0,
-      facetCounts: includeFacetCounts ? createEmptyFacetCounts() : null,
-      pageInfo: {
-        hasNextPage: false,
-        hasPreviousPage: false,
-        nextCursor: null,
-        prevCursor: null,
-        startCursor: null,
-        endCursor: null,
-        pageSize,
-      },
-    }
+  return {
+    companies,
+    filteredCount: typeof count === "number" ? count : companies.length,
+    facetCounts,
+    pageInfo,
   }
 }

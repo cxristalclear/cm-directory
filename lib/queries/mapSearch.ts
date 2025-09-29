@@ -2,8 +2,8 @@ import { supabase } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase"
 import type { FilterUrlState } from "@/lib/filters/url"
 import {
-  applyFilters,
   normalizeFilters,
+  prepareCompanyFilterContext,
   type CompanySearchOptions,
   type NormalizedFilters,
 } from "@/lib/queries/companySearch"
@@ -110,6 +110,12 @@ export async function companyFacilitiesForMap(options: MapSearchOptions): Promis
     bbox: options.bbox,
   })
 
+  const { allCompanyIds } = await prepareCompanyFilterContext(filters, options.routeDefaults ?? null)
+
+  if (allCompanyIds.length === 0) {
+    return { facilities: [], truncated: false, totalCount: 0 }
+  }
+
   const builder = supabase
     .from("companies")
     .select(MAP_SELECT_FRAGMENT) as unknown as PostgrestFilterBuilder<
@@ -119,7 +125,15 @@ export async function companyFacilitiesForMap(options: MapSearchOptions): Promis
     "companies"
   >
 
-  applyFilters(builder, filters)
+  builder.in("id", allCompanyIds)
+
+  if (filters.bbox) {
+    const { minLng, maxLng, minLat, maxLat } = filters.bbox
+    builder.gte("facilities.longitude", minLng)
+    builder.lte("facilities.longitude", maxLng)
+    builder.gte("facilities.latitude", minLat)
+    builder.lte("facilities.latitude", maxLat)
+  }
 
   // Fetch a generous number of companies to approximate the facility cap before client truncation
   builder.order("company_name", { ascending: true })

@@ -1,11 +1,14 @@
 import { companyFacilitiesForMap } from "@/lib/queries/mapSearch"
-import { supabase } from "@/lib/supabase"
 
 jest.mock("@/lib/supabase", () => ({
   supabase: {
     from: jest.fn(),
   },
 }))
+
+const { supabase } = jest.requireMock("@/lib/supabase") as {
+  supabase: { from: jest.Mock }
+}
 
 type BuilderResult = {
   data?: unknown
@@ -14,44 +17,58 @@ type BuilderResult = {
 
 type MockBuilder = {
   select: jest.Mock
+  in: jest.Mock
   order: jest.Mock
   limit: jest.Mock
-  filter: jest.Mock
-  or: jest.Mock
-  eq: jest.Mock
   gte: jest.Mock
   lte: jest.Mock
   then: jest.Mock
 }
 
-function createBuilder(result: BuilderResult): { from: { select: jest.Mock }; builder: MockBuilder } {
+type QueueEntry = {
+  table: string
+  builder: MockBuilder
+  response: BuilderResult
+}
+
+const builderQueue: QueueEntry[] = []
+
+function createMockBuilder(table: string, result: BuilderResult): MockBuilder {
   const response = { data: result.data ?? null, error: result.error ?? null }
 
   const builder: MockBuilder = {
     select: jest.fn(() => builder),
+    in: jest.fn(() => builder),
     order: jest.fn(() => builder),
     limit: jest.fn(() => builder),
-    filter: jest.fn(() => builder),
-    or: jest.fn(() => builder),
-    eq: jest.fn(() => builder),
     gte: jest.fn(() => builder),
     lte: jest.fn(() => builder),
     then: jest.fn((resolve, reject) => Promise.resolve(response).then(resolve, reject)),
   }
 
-  return {
-    from: {
-      select: jest.fn(() => builder),
-    },
-    builder,
-  }
+  return builder
 }
 
-describe("companyFacilitiesForMap", () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
-  })
+function enqueueBuilder(table: string, result: BuilderResult): QueueEntry {
+  const entry: QueueEntry = { table, builder: createMockBuilder(table, result), response: result }
+  builderQueue.push(entry)
+  return entry
+}
 
+beforeEach(() => {
+  jest.clearAllMocks()
+  builderQueue.length = 0
+  supabase.from.mockImplementation((table: string) => {
+    const next = builderQueue.shift()
+    if (!next) {
+      throw new Error(`Unexpected supabase.from call for ${table}`)
+    }
+    expect(next.table).toBe(table)
+    return next.builder
+  })
+})
+
+describe("companyFacilitiesForMap", () => {
   it("returns all facilities without pagination cap", async () => {
     const companies = [
       {
@@ -80,18 +97,18 @@ describe("companyFacilitiesForMap", () => {
       },
     ]
 
-    const { builder, from } = createBuilder({ data: companies })
-    ;(supabase.from as jest.Mock).mockReturnValue(from)
+    enqueueBuilder("companies", { data: companies.map((company) => ({ id: company.id })) })
+    const mainEntry = enqueueBuilder("companies", { data: companies })
 
     const result = await companyFacilitiesForMap({
       filters: { states: [], capabilities: [], productionVolume: null },
     })
 
     expect(supabase.from).toHaveBeenCalledWith("companies")
-    expect(from.select).toHaveBeenCalled()
-    expect(builder.order).toHaveBeenCalledWith("company_name", { ascending: true })
-    expect(builder.limit).toHaveBeenCalledWith(5001)
-    expect(builder.limit).toHaveBeenCalledWith(5001, { referencedTable: "facilities" })
+    expect(mainEntry.builder.order).toHaveBeenCalledWith("company_name", { ascending: true })
+    expect(mainEntry.builder.limit).toHaveBeenCalledWith(5001)
+    expect(mainEntry.builder.limit).toHaveBeenCalledWith(5001, { referencedTable: "facilities" })
+    expect(builderQueue).toHaveLength(0)
     expect(result.facilities).toHaveLength(12)
     expect(result.truncated).toBe(false)
     expect(result.totalCount).toBe(12)
@@ -100,7 +117,7 @@ describe("companyFacilitiesForMap", () => {
 
   it("truncates facilities above the safety cap", async () => {
     const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined)
-    const largeFacilities = Array.from({ length: 5005 }).map((_, index) => ({
+    const facilities = Array.from({ length: 5005 }).map((_, index) => ({
       id: `f-${index}`,
       city: "City",
       state: "CA",
@@ -108,24 +125,22 @@ describe("companyFacilitiesForMap", () => {
       longitude: -97 - index * 0.001,
     }))
 
-    const { builder, from } = createBuilder({
+    enqueueBuilder("companies", { data: [{ id: "c01" }] })
+    enqueueBuilder("companies", {
       data: [
         {
           id: "c01",
           company_name: "Alpha",
           slug: "alpha",
-          facilities: largeFacilities,
+          facilities,
         },
       ],
     })
-
-    ;(supabase.from as jest.Mock).mockReturnValue(from)
 
     const result = await companyFacilitiesForMap({
       filters: { states: [], capabilities: [], productionVolume: null },
     })
 
-    expect(builder.limit).toHaveBeenCalledWith(5001)
     expect(result.facilities).toHaveLength(5000)
     expect(result.truncated).toBe(true)
     expect(result.totalCount).toBe(5005)
