@@ -170,10 +170,6 @@ type CompanyFilterBuilder<Result> = PostgrestFilterBuilder<
 
 type CompanyCountBuilder = CompanyFilterBuilder<null>
 
-type FacilityStateRow = {
-  state: string | null
-}
-
 export type CompanyPageInfo = {
   hasNextPage: boolean
   hasPreviousPage: boolean
@@ -456,14 +452,60 @@ function createEmptyFacetCounts(): CompanyFacetCounts {
   }
 }
 
-function logSupabaseError(stage: string, filters: NormalizedFilters, error: unknown) {
-  console.error(`companySearch ${stage} error`, { filters }, error)
+type LogContext = {
+  filters: NormalizedFilters
+  routeDefaults: CompanySearchOptions["routeDefaults"] | null
+  facet?: "states" | "capabilities" | "productionVolume"
+}
+
+function cloneFiltersForLog(filters: NormalizedFilters) {
+  return {
+    ...filters,
+    states: [...filters.states],
+    capabilities: [...filters.capabilities],
+    bbox: filters.bbox ? { ...filters.bbox } : null,
+  }
+}
+
+function formatErrorForLog(error: unknown) {
+  if (error instanceof Error) {
+    return { message: error.message, stack: error.stack }
+  }
+
+  return error
+}
+
+function logSupabaseError(stage: string, context: LogContext, error: unknown) {
+  console.error("companySearch error", {
+    stage,
+    facet: context.facet ?? null,
+    filters: cloneFiltersForLog(context.filters),
+    routeDefaults: context.routeDefaults ?? null,
+    error: formatErrorForLog(error),
+  })
+}
+
+function applyDistinct(builder: CompanyCountBuilder) {
+  const maybeUrl = (builder as unknown as { url?: URL }).url
+  if (maybeUrl instanceof URL) {
+    maybeUrl.searchParams.set("distinct", "true")
+  }
 }
 
 function createCountBuilder(): CompanyCountBuilder {
-  return supabase
+  const builder = supabase
     .from("companies")
-    .select("id", { head: true, count: "exact" }) as unknown as CompanyCountBuilder
+    .select(
+      `id,
+      facilities:facilities!left(id,state),
+      capabilities:capabilities!left(id),
+      certifications:certifications!left(id)`,
+      { head: true, count: "exact" },
+    ) as unknown as CompanyCountBuilder
+
+  applyDistinct(builder)
+
+  return builder
 }
 
 async function fetchPreviousRow(
@@ -497,17 +539,18 @@ async function fetchPreviousRow(
 
 async function fetchStateCandidates(filters: NormalizedFilters): Promise<string[]> {
   const builder = supabase
-    .from("facilities")
-    .select("state")
-    .not("state", "is", null)
+    .from("companies")
+    .select(
+      `facilities:facilities!inner(
+        state
+      ),
+      capabilities:capabilities!left(id),
+      certifications:certifications!left(id)`,
+    ) as CompanyFilterBuilder<CompanyRecord[]>
 
-  if (filters.bbox) {
-    const { minLng, maxLng, minLat, maxLat } = filters.bbox
-    builder.gte("longitude", minLng)
-    builder.lte("longitude", maxLng)
-    builder.gte("latitude", minLat)
-    builder.lte("latitude", maxLat)
-  }
+  applyFilters(builder, filters, { skipStates: true })
+  builder.not("facilities.state", "is", null)
+  builder.limit(200, { foreignTable: "facilities" })
 
   const { data, error } = await builder
   if (error) {
@@ -515,8 +558,9 @@ async function fetchStateCandidates(filters: NormalizedFilters): Promise<string[
   }
 
   const fromFacilities = Array.isArray(data)
-    ? (data as FacilityStateRow[])
-        .map((row) => normalizeStateCode(row.state))
+    ? (data as Array<{ facilities: Facility[] | null }>)
+        .flatMap((row) => row.facilities ?? [])
+        .map((facility) => normalizeStateCode(facility.state))
         .filter((state): state is string => Boolean(state))
     : []
 
@@ -607,12 +651,37 @@ async function fetchVolumeFacetCounts(
   return counts
 }
 
-async function fetchFacetCounts(filters: NormalizedFilters): Promise<CompanyFacetCounts> {
-  const [states, capabilities, productionVolume] = await Promise.all([
-    fetchStateFacetCounts(filters),
-    fetchCapabilityFacetCounts(filters),
-    fetchVolumeFacetCounts(filters),
-  ])
+async function runFacetQuery<T>(
+  facet: LogContext["facet"],
+  filters: NormalizedFilters,
+  routeDefaults: LogContext["routeDefaults"],
+  query: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await query()
+  } catch (error) {
+    logSupabaseError("facet", { filters, routeDefaults, facet }, error)
+    throw new Error(`Failed to load ${facet ?? "unknown"} facet counts`)
+  }
+}
+
+async function fetchFacetCounts(
+  filters: NormalizedFilters,
+  routeDefaults: LogContext["routeDefaults"],
+): Promise<CompanyFacetCounts> {
+  const states = await runFacetQuery("states", filters, routeDefaults, () => fetchStateFacetCounts(filters))
+  const capabilities = await runFacetQuery(
+    "capabilities",
+    filters,
+    routeDefaults,
+    () => fetchCapabilityFacetCounts(filters),
+  )
+  const productionVolume = await runFacetQuery(
+    "productionVolume",
+    filters,
+    routeDefaults,
+    () => fetchVolumeFacetCounts(filters),
+  )
 
   return { states, capabilities, productionVolume }
 }
@@ -621,6 +690,7 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
   const { cursor = null, includeFacetCounts = true } = options
   const filters = normalizeFilters(options)
   const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE
+  const routeDefaults = options.routeDefaults ?? null
 
   try {
     const builder = supabase
@@ -658,7 +728,7 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
           hasPreviousPage = Boolean(prevCursor)
         }
       } catch (previousError) {
-        logSupabaseError("previous", filters, previousError)
+        logSupabaseError("previous", { filters, routeDefaults }, previousError)
       }
     }
 
@@ -676,9 +746,8 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
     let facetCounts: CompanyFacetCounts | null = null
     if (includeFacetCounts) {
       try {
-        facetCounts = await fetchFacetCounts(filters)
+        facetCounts = await fetchFacetCounts(filters, routeDefaults)
       } catch (facetError) {
-        logSupabaseError("facets", filters, facetError)
         facetCounts = createEmptyFacetCounts()
       }
     }
@@ -700,7 +769,7 @@ export async function companySearch(options: CompanySearchOptions): Promise<Comp
       pageInfo,
     }
   } catch (error) {
-    logSupabaseError("main", filters, error)
+    logSupabaseError("main", { filters, routeDefaults }, error)
 
     return {
       companies: [],

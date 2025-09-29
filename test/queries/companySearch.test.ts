@@ -52,6 +52,7 @@ type MockBuilder = {
   limit: jest.Mock
   not: jest.Mock
   then: jest.Mock
+  url: URL
 }
 
 type BuilderEntry = {
@@ -200,6 +201,8 @@ function createBuilder(result: BuilderResult, table: string, label: string): Bui
     count: result.count,
   }
 
+  const url = new URL(`https://example.com/${table}`)
+
   const builder: MockBuilder = {
     select: jest.fn(() => builder),
     filter: jest.fn(() => builder),
@@ -211,6 +214,7 @@ function createBuilder(result: BuilderResult, table: string, label: string): Bui
     limit: jest.fn(() => builder),
     not: jest.fn(() => builder),
     then: jest.fn((resolve, reject) => Promise.resolve(response).then(resolve, reject)),
+    url,
   }
 
   const fromObject = {
@@ -252,15 +256,30 @@ describe("companySearch", () => {
       "companies",
       "prev",
     )
-    const facilitiesEntry = enqueueBuilder(
+    const stateCandidateData = [
       {
-        data: [
-          { state: "CA" },
-          { state: "TX" },
+        facilities: [
+          createFacility({ company_id: "c01", state: "CA" }),
         ],
       },
-      "facilities",
+      {
+        facilities: [
+          createFacility({ company_id: "c02", state: "TX" }),
+        ],
+      },
+    ]
+
+    const facilitiesEntry = enqueueBuilder(
+      {
+        data: stateCandidateData,
+      },
+      "companies",
       "state candidates",
+    )
+
+    const stateCounts: Array<BuilderResult> = [{ count: 1 }, { count: 1 }]
+    const stateCountEntries = stateCounts.map((result, index) =>
+      enqueueBuilder(result, "companies", `state-count-${index}`),
     )
 
     const capabilityCounts: Array<BuilderResult> = [
@@ -271,18 +290,13 @@ describe("companySearch", () => {
       { count: 0 },
       { count: 1 },
     ]
-    for (const [index, result] of capabilityCounts.entries()) {
-      enqueueBuilder(result, "companies", `capability-${index}`)
-    }
+    const capabilityEntries = capabilityCounts.map((result, index) =>
+      enqueueBuilder(result, "companies", `capability-${index}`),
+    )
 
     const volumeCounts: Array<BuilderResult> = [{ count: 0 }, { count: 1 }, { count: 1 }]
-    for (const [index, result] of volumeCounts.entries()) {
-      enqueueBuilder(result, "companies", `volume-${index}`)
-    }
-
-    const stateCounts: Array<BuilderResult> = [{ count: 1 }, { count: 1 }]
-    const stateCountEntries = stateCounts.map((result, index) =>
-      enqueueBuilder(result, "companies", `state-count-${index}`),
+    const volumeEntries = volumeCounts.map((result, index) =>
+      enqueueBuilder(result, "companies", `volume-${index}`),
     )
 
     const cursor = serializeCursor({ name: "Alpha Manufacturing", id: "c01" })
@@ -329,8 +343,11 @@ describe("companySearch", () => {
     expect(result.facetCounts?.productionVolume.find((entry) => entry.level === "high")?.count).toBe(1)
 
     expect(prevEntry.from.select).toHaveBeenCalledWith("id, company_name")
-    expect(facilitiesEntry.from.select).toHaveBeenCalledWith("state")
-    expect(facilitiesEntry.builder.not).toHaveBeenCalledWith("state", "is", null)
+    expect(facilitiesEntry.from.select).toHaveBeenCalledWith(
+      expect.stringContaining("facilities:facilities!inner"),
+    )
+    expect(facilitiesEntry.builder.not).toHaveBeenCalledWith("facilities.state", "is", null)
+    expect(facilitiesEntry.builder.limit).toHaveBeenCalledWith(200, { foreignTable: "facilities" })
 
     const stateFacetEntry = stateCountEntries[0]
     expect(stateFacetEntry?.builder.or).toHaveBeenCalledWith("capabilities.pcb_assembly_smt.is.true", {
@@ -338,6 +355,12 @@ describe("companySearch", () => {
     })
     expect(stateFacetEntry?.builder.eq).toHaveBeenCalledWith("capabilities.medium_volume_production", true)
     expect(stateFacetEntry?.builder.eq).toHaveBeenCalledWith("facilities.state", "CA")
+    expect(stateFacetEntry?.builder.url.searchParams.get("distinct")).toBe("true")
+
+    expect(capabilityEntries[0]?.builder.filter).toHaveBeenCalledWith("facilities.state", "in", "(\"CA\",\"TX\")")
+    expect(capabilityEntries[0]?.builder.url.searchParams.get("distinct")).toBe("true")
+    expect(volumeEntries[0]?.builder.filter).toHaveBeenCalledWith("facilities.state", "in", "(\"CA\",\"TX\")")
+    expect(volumeEntries[0]?.builder.url.searchParams.get("distinct")).toBe("true")
   })
 
   it("skips facet queries when includeFacetCounts is false", async () => {
@@ -366,7 +389,7 @@ describe("companySearch", () => {
       "companies",
       "main",
     )
-    const facilitiesEntry = enqueueBuilder({ data: [], error: null }, "facilities", "state candidates")
+    const facilitiesEntry = enqueueBuilder({ data: [], error: null }, "companies", "state candidates")
 
     for (let i = 0; i < 6; i += 1) {
       enqueueBuilder({ count: 0 }, "companies", `capability-${i}`)
@@ -384,7 +407,7 @@ describe("companySearch", () => {
     expect(result.pageInfo.hasPreviousPage).toBe(false)
     expect(result.filteredCount).toBe(2)
     expect(result.companies).toHaveLength(baseCompanies.length)
-    expect(facilitiesEntry.from.select).toHaveBeenCalledWith("state")
+    expect(facilitiesEntry.from.select).toHaveBeenCalledWith(expect.stringContaining("facilities:facilities!inner"))
   })
 
   it("applies bounding box filters", async () => {
@@ -393,7 +416,11 @@ describe("companySearch", () => {
       "companies",
       "main",
     )
-    enqueueBuilder({ data: [], error: null }, "facilities", "state candidates")
+    const initialStateCandidates = [
+      { facilities: [createFacility({ company_id: "c01", state: "CA" })] },
+      { facilities: [createFacility({ company_id: "c02", state: "TX" })] },
+    ]
+    enqueueBuilder({ data: initialStateCandidates, error: null }, "companies", "state candidates")
     for (let i = 0; i < 6; i += 1) {
       enqueueBuilder({ count: 0 }, "companies", `capability-${i}`)
     }
@@ -410,6 +437,71 @@ describe("companySearch", () => {
     expect(entry.builder.lte).toHaveBeenCalledWith("facilities.latitude", 50)
   })
 
+  it("updates facet counts when filters change", async () => {
+    const firstMain = enqueueBuilder(
+      { data: baseCompanies, count: 2, error: null },
+      "companies",
+      "main-first",
+    )
+    const firstStateCandidates = [
+      { facilities: [createFacility({ company_id: "c01", state: "CA" })] },
+      { facilities: [createFacility({ company_id: "c02", state: "TX" })] },
+    ]
+    enqueueBuilder({ data: firstStateCandidates, error: null }, "companies", "state candidates")
+    const firstStateCounts: BuilderResult[] = [{ count: 2 }, { count: 1 }]
+    firstStateCounts.forEach((result, index) => {
+      enqueueBuilder(result, "companies", `state-first-${index}`)
+    })
+    const firstCapabilityCounts: BuilderResult[] = [{ count: 2 }, { count: 1 }, { count: 0 }, { count: 0 }, { count: 0 }, { count: 0 }]
+    firstCapabilityCounts.forEach((result, index) => {
+      enqueueBuilder(result, "companies", `capability-first-${index}`)
+    })
+    const firstVolumeCounts: BuilderResult[] = [{ count: 1 }, { count: 1 }, { count: 0 }]
+    firstVolumeCounts.forEach((result, index) => {
+      enqueueBuilder(result, "companies", `volume-first-${index}`)
+    })
+
+    const initialResult = await companySearch({
+      filters: { states: [], capabilities: [], productionVolume: null },
+    })
+
+    expect(firstMain.from.select).toHaveBeenCalledWith(expect.stringContaining("capabilities:capabilities"), {
+      count: "exact",
+    })
+    expect(initialResult.facetCounts?.capabilities[0]?.count).toBe(2)
+    expect(initialResult.facetCounts?.productionVolume.find((entry) => entry.level === "low")?.count).toBe(1)
+    expect(initialResult.facetCounts?.states[0]?.count).toBe(2)
+
+    const secondMain = enqueueBuilder(
+      { data: baseCompanies.slice(0, 1), count: 1, error: null },
+      "companies",
+      "main-second",
+    )
+    const secondStateCandidates = [{ facilities: [createFacility({ company_id: "c01", state: "CA" })] }]
+    enqueueBuilder({ data: secondStateCandidates, error: null }, "companies", "state candidates second")
+    const secondStateCounts: BuilderResult[] = [{ count: 1 }]
+    secondStateCounts.forEach((result, index) => {
+      enqueueBuilder(result, "companies", `state-second-${index}`)
+    })
+    const secondCapabilityCounts: BuilderResult[] = [{ count: 1 }, { count: 0 }, { count: 0 }, { count: 0 }, { count: 0 }, { count: 0 }]
+    secondCapabilityCounts.forEach((result, index) => {
+      enqueueBuilder(result, "companies", `capability-second-${index}`)
+    })
+    const secondVolumeCounts: BuilderResult[] = [{ count: 1 }, { count: 0 }, { count: 0 }]
+    secondVolumeCounts.forEach((result, index) => {
+      enqueueBuilder(result, "companies", `volume-second-${index}`)
+    })
+
+    const filteredResult = await companySearch({
+      filters: { states: ["CA"], capabilities: ["smt"], productionVolume: "medium" },
+    })
+
+    expect(secondMain.builder.filter).toHaveBeenCalledWith("facilities.state", "in", "(\"CA\")")
+    expect(filteredResult.facetCounts?.capabilities[0]?.count).toBe(1)
+    expect(filteredResult.facetCounts?.states[0]?.count).toBe(1)
+    expect(filteredResult.facetCounts?.productionVolume.find((entry) => entry.level === "low")?.count).toBe(1)
+  })
+
   it("logs and returns empty results when Supabase returns an error", async () => {
     const error = new Error("Query failed")
     enqueueBuilder({ data: null, error }, "companies", "main")
@@ -420,6 +512,13 @@ describe("companySearch", () => {
     })
 
     expect(consoleSpy).toHaveBeenCalled()
+    const [message, payload] = consoleSpy.mock.calls[0]
+    expect(message).toBe("companySearch error")
+    expect(payload).toMatchObject({
+      stage: "main",
+      facet: null,
+      filters: expect.objectContaining({ states: [], capabilities: [], productionVolume: null }),
+    })
     expect(result).toEqual({
       companies: [],
       filteredCount: 0,
