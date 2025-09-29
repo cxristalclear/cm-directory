@@ -33,8 +33,15 @@ jest.mock("@/lib/queries/companySearch", () => {
   }
 })
 
+jest.mock("@/lib/queries/mapSearch", () => ({
+  companyFacilitiesForMap: jest.fn(),
+}))
+
 const { companySearch } = jest.requireMock("@/lib/queries/companySearch") as {
   companySearch: jest.Mock
+}
+const { companyFacilitiesForMap } = jest.requireMock("@/lib/queries/mapSearch") as {
+  companyFacilitiesForMap: jest.Mock
 }
 
 const baseCompanies = Array.from({ length: 3 }).map((_, index) => ({
@@ -73,11 +80,16 @@ const baseCompanies = Array.from({ length: 3 }).map((_, index) => ({
 
 const mockResult = {
   companies: baseCompanies,
-  totalCount: 18,
-  hasNext: false,
-  hasPrev: false,
-  nextCursor: null,
-  prevCursor: null,
+  filteredCount: 18,
+  pageInfo: {
+    hasNextPage: false,
+    hasPreviousPage: false,
+    nextCursor: null,
+    prevCursor: null,
+    startCursor: null,
+    endCursor: null,
+    pageSize: 9,
+  },
   facetCounts: {
     states: [{ code: "TX", count: 18 }],
     capabilities: [
@@ -93,9 +105,23 @@ const mockResult = {
   },
 }
 
+const mapFacilities = baseCompanies.flatMap((company) =>
+  company.facilities.map((facility) => ({
+    company_id: company.id,
+    company_name: company.company_name,
+    slug: company.slug,
+    facility_id: facility.id,
+    city: facility.city ?? null,
+    state: facility.state ?? null,
+    latitude: facility.latitude ?? 0,
+    longitude: facility.longitude ?? 0,
+  })),
+)
+
 beforeEach(() => {
   jest.clearAllMocks()
   companySearch.mockResolvedValue(mockResult)
+  companyFacilitiesForMap.mockResolvedValue({ facilities: mapFacilities, truncated: false })
 })
 
 describe("state landing page SSR", () => {
@@ -122,7 +148,7 @@ describe("state landing page SSR", () => {
 
     const headerProps = mockHeader.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(headerProps).toMatchObject({
-      totalCount: mockResult.totalCount,
+      filteredCount: mockResult.filteredCount,
       visibleCount: mockResult.companies.length,
       clearHref: "/manufacturers/texas",
     })
@@ -136,14 +162,14 @@ describe("state landing page SSR", () => {
 
     const listProps = mockCompanyList.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(listProps).toMatchObject({
-      totalCount: mockResult.totalCount,
-      hasNext: false,
+      filteredCount: mockResult.filteredCount,
+      pageInfo: expect.objectContaining({ hasNextPage: false }),
     })
     expect(Array.isArray(listProps.companies)).toBe(true)
     expect((listProps.companies as unknown[]).length).toBe(mockResult.companies.length)
 
     const mapProps = mockLazyCompanyMap.mock.calls.at(-1)?.[0] as Record<string, unknown>
-    expect(Array.isArray(mapProps?.companies)).toBe(true)
-    expect((mapProps?.companies as unknown[]).length).toBe(mockResult.companies.length)
+    expect(Array.isArray(mapProps?.initialFacilities)).toBe(true)
+    expect((mapProps?.initialFacilities as unknown[]).length).toBe(mapFacilities.length)
   })
 })

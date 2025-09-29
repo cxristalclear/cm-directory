@@ -160,7 +160,7 @@ export default async function IndustryPage({
   return (
     <div className="min-h-screen bg-gray-50">
       <Header
-        totalCount={listingCompanies.length}
+        filteredCount={listingCompanies.length}
         visibleCount={listingCompanies.length}
         activeFilterCount={filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)}
         clearHref={`/industries/${industry}`}
@@ -217,11 +217,16 @@ export default async function IndustryPage({
           <h2 className="text-2xl font-bold mb-6">{industryData.name} Manufacturers</h2>
           <CompanyList
             companies={listingCompanies}
-            totalCount={listingCompanies.length}
-            hasNext={false}
-            hasPrev={false}
-            nextCursor={null}
-            prevCursor={null}
+            filteredCount={listingCompanies.length}
+            pageInfo={{
+              hasNextPage: false,
+              hasPreviousPage: false,
+              nextCursor: null,
+              prevCursor: null,
+              startCursor: null,
+              endCursor: null,
+              pageSize: listingCompanies.length,
+            }}
           />
         </section>
       </main>

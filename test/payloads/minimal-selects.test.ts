@@ -267,6 +267,15 @@ describe("listing page payloads", () => {
 
   const listingCompanies = sanitizeCompaniesForListing(baseCompanies)
   const facetCounts = computeFacetCountsFromCompanies(listingCompanies)
+  const pageInfo = {
+    hasNextPage: false,
+    hasPreviousPage: false,
+    nextCursor: null,
+    prevCursor: null,
+    startCursor: null,
+    endCursor: null,
+    pageSize: listingCompanies.length,
+  }
 
   function keyTree(value: unknown): unknown {
     if (Array.isArray(value)) {
@@ -289,7 +298,8 @@ describe("listing page payloads", () => {
     const homePayload = {
       companies: listingCompanies,
       facetCounts,
-      totalCount: listingCompanies.length,
+      filteredCount: listingCompanies.length,
+      pageInfo,
     }
 
     expect(keyTree(homePayload)).toMatchInlineSnapshot(`
@@ -424,10 +434,6 @@ describe("listing page payloads", () => {
         "count": "number",
         "slug": "string",
       },
-      "6": {
-        "count": "number",
-        "slug": "string",
-      },
     },
     "productionVolume": {
       "0": {
@@ -454,7 +460,16 @@ describe("listing page payloads", () => {
       },
     },
   },
-  "totalCount": "number",
+  "filteredCount": "number",
+  "pageInfo": {
+    "endCursor": "object",
+    "hasNextPage": "boolean",
+    "hasPreviousPage": "boolean",
+    "nextCursor": "object",
+    "pageSize": "number",
+    "prevCursor": "object",
+    "startCursor": "object",
+  },
 }
 `)
 
@@ -468,7 +483,8 @@ describe("listing page payloads", () => {
     const statePayload = {
       companies: listingCompanies,
       facetCounts,
-      totalCount: listingCompanies.length,
+      filteredCount: listingCompanies.length,
+      pageInfo,
     }
 
     expect(keyTree(statePayload)).toMatchInlineSnapshot(`
@@ -603,10 +619,6 @@ describe("listing page payloads", () => {
         "count": "number",
         "slug": "string",
       },
-      "6": {
-        "count": "number",
-        "slug": "string",
-      },
     },
     "productionVolume": {
       "0": {
@@ -633,7 +645,16 @@ describe("listing page payloads", () => {
       },
     },
   },
-  "totalCount": "number",
+  "filteredCount": "number",
+  "pageInfo": {
+    "endCursor": "object",
+    "hasNextPage": "boolean",
+    "hasPreviousPage": "boolean",
+    "nextCursor": "object",
+    "pageSize": "number",
+    "prevCursor": "object",
+    "startCursor": "object",
+  },
 }
 `)
   })
@@ -642,7 +663,8 @@ describe("listing page payloads", () => {
     const certPayload = {
       companies: listingCompanies,
       facetCounts,
-      totalCount: listingCompanies.length,
+      filteredCount: listingCompanies.length,
+      pageInfo,
     }
 
     expect(keyTree(certPayload)).toMatchInlineSnapshot(`
@@ -777,10 +799,6 @@ describe("listing page payloads", () => {
         "count": "number",
         "slug": "string",
       },
-      "6": {
-        "count": "number",
-        "slug": "string",
-      },
     },
     "productionVolume": {
       "0": {
@@ -807,7 +825,16 @@ describe("listing page payloads", () => {
       },
     },
   },
-  "totalCount": "number",
+  "filteredCount": "number",
+  "pageInfo": {
+    "endCursor": "object",
+    "hasNextPage": "boolean",
+    "hasPreviousPage": "boolean",
+    "nextCursor": "object",
+    "pageSize": "number",
+    "prevCursor": "object",
+    "startCursor": "object",
+  },
 }
 `)
   })

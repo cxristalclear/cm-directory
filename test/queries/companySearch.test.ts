@@ -50,10 +50,12 @@ type MockBuilder = {
   lte: jest.Mock
   order: jest.Mock
   limit: jest.Mock
+  not: jest.Mock
   then: jest.Mock
 }
 
 type BuilderEntry = {
+  table: string
   from: { select: jest.Mock }
   builder: MockBuilder
 }
@@ -191,7 +193,7 @@ const baseCompanies: MockCompany[] = [
 
 const builderQueue: BuilderEntry[] = []
 
-function createBuilder(result: BuilderResult, label: string): BuilderEntry {
+function createBuilder(result: BuilderResult, table: string, label: string): BuilderEntry {
   const response = {
     data: result.data ?? null,
     error: result.error ?? null,
@@ -207,6 +209,7 @@ function createBuilder(result: BuilderResult, label: string): BuilderEntry {
     lte: jest.fn(() => builder),
     order: jest.fn(() => builder),
     limit: jest.fn(() => builder),
+    not: jest.fn(() => builder),
     then: jest.fn((resolve, reject) => Promise.resolve(response).then(resolve, reject)),
   }
 
@@ -215,57 +218,71 @@ function createBuilder(result: BuilderResult, label: string): BuilderEntry {
     label,
   }
 
-  return { from: fromObject, builder }
+  return { table, from: fromObject, builder }
 }
 
 beforeEach(() => {
   jest.clearAllMocks()
   builderQueue.length = 0
-  supabase.from.mockImplementation(() => {
+  supabase.from.mockImplementation((table: string) => {
     const next = builderQueue.shift()
     if (!next) {
       throw new Error("Unexpected supabase.from call")
     }
+    expect(next.table).toBe(table)
     return next.from
   })
 })
 
-function enqueueBuilder(result: BuilderResult, label: string): BuilderEntry {
-  const entry = createBuilder(result, label)
+function enqueueBuilder(result: BuilderResult, table: string, label: string): BuilderEntry {
+  const entry = createBuilder(result, table, label)
   builderQueue.push(entry)
   return entry
 }
 
 describe("companySearch", () => {
   it("normalizes filters and returns formatted results", async () => {
-    const mainEntry = enqueueBuilder({ data: baseCompanies, count: 42, error: null }, "main")
-    const prevEntry = enqueueBuilder({ data: [{ id: "c00", company_name: "Aardvark" }], error: null }, "prev")
-    const stateEntry = enqueueBuilder(
-      {
-        data: [
-          { id: "c01", facilities: [{ state: "CA" }] },
-          { id: "c02", facilities: [{ state: "TX" }] },
-        ],
-      },
-      "state facets",
+    const mainEntry = enqueueBuilder(
+      { data: baseCompanies, count: 42, error: null },
+      "companies",
+      "main",
     )
-    const capabilityEntry = enqueueBuilder(
-      {
-        data: [
-          { id: "c01", capabilities: baseCompanies[0].capabilities },
-          { id: "c02", capabilities: baseCompanies[1].capabilities },
-        ],
-      },
-      "cap facets",
+    const prevEntry = enqueueBuilder(
+      { data: [{ id: "c00", company_name: "Aardvark" }], error: null },
+      "companies",
+      "prev",
     )
-    const volumeEntry = enqueueBuilder(
+    const facilitiesEntry = enqueueBuilder(
       {
         data: [
-          { id: "c01", capabilities: baseCompanies[0].capabilities },
-          { id: "c02", capabilities: baseCompanies[1].capabilities },
+          { state: "CA" },
+          { state: "TX" },
         ],
       },
-      "volume facets",
+      "facilities",
+      "state candidates",
+    )
+
+    const capabilityCounts: Array<BuilderResult> = [
+      { count: 1 },
+      { count: 0 },
+      { count: 0 },
+      { count: 0 },
+      { count: 0 },
+      { count: 1 },
+    ]
+    for (const [index, result] of capabilityCounts.entries()) {
+      enqueueBuilder(result, "companies", `capability-${index}`)
+    }
+
+    const volumeCounts: Array<BuilderResult> = [{ count: 0 }, { count: 1 }, { count: 1 }]
+    for (const [index, result] of volumeCounts.entries()) {
+      enqueueBuilder(result, "companies", `volume-${index}`)
+    }
+
+    const stateCounts: Array<BuilderResult> = [{ count: 1 }, { count: 1 }]
+    const stateCountEntries = stateCounts.map((result, index) =>
+      enqueueBuilder(result, "companies", `state-count-${index}`),
     )
 
     const cursor = serializeCursor({ name: "Alpha Manufacturing", id: "c01" })
@@ -277,7 +294,7 @@ describe("companySearch", () => {
       includeFacetCounts: true,
     })
 
-    expect(supabase.from).toHaveBeenCalledTimes(5)
+    expect(supabase.from).toHaveBeenCalledTimes(14)
     expect(mainEntry.from.select).toHaveBeenCalledWith(expect.stringContaining("capabilities:capabilities"), {
       count: "exact",
     })
@@ -291,28 +308,44 @@ describe("companySearch", () => {
       "ISO 13485",
     )
 
-    expect(result.totalCount).toBe(42)
+    expect(mainEntry.builder.limit).toHaveBeenCalledWith(10)
+
+    expect(result.filteredCount).toBe(42)
     expect(result.companies).toHaveLength(2)
-    expect(result.hasNext).toBe(false)
-    expect(result.hasPrev).toBe(true)
-    expect(result.prevCursor).toBeTruthy()
-    expect(result.nextCursor).toBeNull()
+    expect(result.pageInfo.hasNextPage).toBe(false)
+    expect(result.pageInfo.hasPreviousPage).toBe(true)
+    expect(result.pageInfo.prevCursor).toBeTruthy()
+    expect(result.pageInfo.nextCursor).toBeNull()
+    expect(result.pageInfo.startCursor).toBeTruthy()
+    expect(result.pageInfo.endCursor).toBeTruthy()
 
     expect(result.facetCounts?.states).toEqual([
       { code: "CA", count: 1 },
       { code: "TX", count: 1 },
     ])
     expect(result.facetCounts?.capabilities.find((entry) => entry.slug === "smt")?.count).toBe(1)
+    expect(result.facetCounts?.capabilities.find((entry) => entry.slug === "box_build")?.count).toBe(1)
+    expect(result.facetCounts?.productionVolume.find((entry) => entry.level === "medium")?.count).toBe(1)
     expect(result.facetCounts?.productionVolume.find((entry) => entry.level === "high")?.count).toBe(1)
 
     expect(prevEntry.from.select).toHaveBeenCalledWith("id, company_name")
-    expect(stateEntry.from.select).toHaveBeenCalled()
-    expect(capabilityEntry.from.select).toHaveBeenCalled()
-    expect(volumeEntry.from.select).toHaveBeenCalled()
+    expect(facilitiesEntry.from.select).toHaveBeenCalledWith("state")
+    expect(facilitiesEntry.builder.not).toHaveBeenCalledWith("state", "is", null)
+
+    const stateFacetEntry = stateCountEntries[0]
+    expect(stateFacetEntry?.builder.or).toHaveBeenCalledWith("capabilities.pcb_assembly_smt.is.true", {
+      referencedTable: "capabilities",
+    })
+    expect(stateFacetEntry?.builder.eq).toHaveBeenCalledWith("capabilities.medium_volume_production", true)
+    expect(stateFacetEntry?.builder.eq).toHaveBeenCalledWith("facilities.state", "CA")
   })
 
   it("skips facet queries when includeFacetCounts is false", async () => {
-    enqueueBuilder({ data: baseCompanies.slice(0, 1), count: 1, error: null }, "main")
+    const mainEntry = enqueueBuilder(
+      { data: baseCompanies.slice(0, 1), count: 1, error: null },
+      "companies",
+      "main",
+    )
 
     const result = await companySearch({
       filters: { states: [], capabilities: [], productionVolume: null },
@@ -320,29 +353,53 @@ describe("companySearch", () => {
     })
 
     expect(supabase.from).toHaveBeenCalledTimes(1)
+    expect(mainEntry.builder.limit).toHaveBeenCalledWith(10)
+    expect(result.filteredCount).toBe(1)
     expect(result.facetCounts).toBeNull()
+    expect(result.pageInfo.hasNextPage).toBe(false)
+    expect(result.pageInfo.hasPreviousPage).toBe(false)
   })
 
   it("returns all companies when no filters or cursor are provided", async () => {
-    const mainEntry = enqueueBuilder({ data: baseCompanies, count: 2, error: null }, "main")
-    enqueueBuilder({ data: [], error: null }, "state facets")
-    enqueueBuilder({ data: [], error: null }, "cap facets")
-    enqueueBuilder({ data: [], error: null }, "volume facets")
+    const mainEntry = enqueueBuilder(
+      { data: baseCompanies, count: 2, error: null },
+      "companies",
+      "main",
+    )
+    const facilitiesEntry = enqueueBuilder({ data: [], error: null }, "facilities", "state candidates")
+
+    for (let i = 0; i < 6; i += 1) {
+      enqueueBuilder({ count: 0 }, "companies", `capability-${i}`)
+    }
+    for (let i = 0; i < 3; i += 1) {
+      enqueueBuilder({ count: 0 }, "companies", `volume-${i}`)
+    }
 
     const result = await companySearch({
       filters: { states: [], capabilities: [], productionVolume: null },
     })
 
-    expect(mainEntry.builder.limit).not.toHaveBeenCalled()
-    expect(result.hasNext).toBe(false)
+    expect(mainEntry.builder.limit).toHaveBeenCalledWith(10)
+    expect(result.pageInfo.hasNextPage).toBe(false)
+    expect(result.pageInfo.hasPreviousPage).toBe(false)
+    expect(result.filteredCount).toBe(2)
     expect(result.companies).toHaveLength(baseCompanies.length)
+    expect(facilitiesEntry.from.select).toHaveBeenCalledWith("state")
   })
 
   it("applies bounding box filters", async () => {
-    const entry = enqueueBuilder({ data: baseCompanies.slice(0, 1), count: 1, error: null }, "main")
-    enqueueBuilder({ data: [], error: null }, "state facets")
-    enqueueBuilder({ data: [], error: null }, "cap facets")
-    enqueueBuilder({ data: [], error: null }, "volume facets")
+    const entry = enqueueBuilder(
+      { data: baseCompanies.slice(0, 1), count: 1, error: null },
+      "companies",
+      "main",
+    )
+    enqueueBuilder({ data: [], error: null }, "facilities", "state candidates")
+    for (let i = 0; i < 6; i += 1) {
+      enqueueBuilder({ count: 0 }, "companies", `capability-${i}`)
+    }
+    for (let i = 0; i < 3; i += 1) {
+      enqueueBuilder({ count: 0 }, "companies", `volume-${i}`)
+    }
 
     await companySearch({
       filters: { states: [], capabilities: [], productionVolume: null },
@@ -355,7 +412,7 @@ describe("companySearch", () => {
 
   it("logs and returns empty results when Supabase returns an error", async () => {
     const error = new Error("Query failed")
-    enqueueBuilder({ data: null, error }, "main")
+    enqueueBuilder({ data: null, error }, "companies", "main")
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {})
 
     const result = await companySearch({
@@ -365,11 +422,7 @@ describe("companySearch", () => {
     expect(consoleSpy).toHaveBeenCalled()
     expect(result).toEqual({
       companies: [],
-      totalCount: 0,
-      hasNext: false,
-      hasPrev: false,
-      nextCursor: null,
-      prevCursor: null,
+      filteredCount: 0,
       facetCounts: {
         states: [],
         capabilities: expect.arrayContaining([
@@ -381,6 +434,15 @@ describe("companySearch", () => {
           { level: "medium", count: 0 },
           { level: "high", count: 0 },
         ],
+      },
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        nextCursor: null,
+        prevCursor: null,
+        startCursor: null,
+        endCursor: null,
+        pageSize: 9,
       },
     })
 

@@ -319,15 +319,6 @@ export interface VerificationData {
   updated_at?: string
 }
 
-// Extended type for facilities with company reference (for map)
-export interface FacilityWithCompany extends Facility {
-  company: Company
-}
-
-export interface ListingFacilityWithCompany extends ListingFacility {
-  company: ListingCompany
-}
-
 // Enum types for validation
 export const EmployeeCountRanges = ['<50', '50-150', '150-500', '500-1000', '1000+'] as const
 export const RevenueRanges = ['<$10M', '$10M-50M', '$50M-150M', '$150M+'] as const

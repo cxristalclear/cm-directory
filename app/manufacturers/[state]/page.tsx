@@ -6,8 +6,10 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import Header from "@/components/Header"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
+import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch, parseCursor } from "@/lib/queries/companySearch"
+import { companyFacilitiesForMap } from "@/lib/queries/mapSearch"
 import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 import { supabase } from "@/lib/supabase"
 
@@ -186,19 +188,26 @@ export default async function StateManufacturersPage({
     states: parsedFilters.states.length > 0 ? parsedFilters.states : [stateData.abbreviation],
   }
 
-  const searchResult = await companySearch({
-    filters: mergedFilters,
-    routeDefaults: { state: stateData.abbreviation },
-    cursor,
-    includeFacetCounts: true,
-  })
+  const [searchResult, mapResult] = await Promise.all([
+    companySearch({
+      filters: mergedFilters,
+      routeDefaults: { state: stateData.abbreviation },
+      cursor,
+      includeFacetCounts: true,
+    }),
+    companyFacilitiesForMap({
+      filters: mergedFilters,
+      routeDefaults: { state: stateData.abbreviation },
+    }),
+  ])
 
   const companies = sanitizeCompaniesForListing(searchResult.companies)
   const activeFilterCount =
     mergedFilters.states.length + mergedFilters.capabilities.length + (mergedFilters.productionVolume ? 1 : 0)
+  const mapFacilities = mapResult.facilities
 
   const stats = {
-    totalCompanies: searchResult.totalCount,
+    totalCompanies: searchResult.filteredCount,
     certifications: [
       ...new Set(
         companies.flatMap((company) =>
@@ -234,71 +243,74 @@ export default async function StateManufacturersPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        totalCount={searchResult.totalCount}
-        visibleCount={companies.length}
-        activeFilterCount={activeFilterCount}
-        clearHref={basePath}
-      />
+    <FilterProvider initialFilters={mergedFilters}>
+      <div className="min-h-screen bg-gray-50">
+        <Header
+          filteredCount={searchResult.filteredCount}
+          visibleCount={companies.length}
+          activeFilterCount={activeFilterCount}
+          clearHref={basePath}
+        />
 
-      <main className="container mx-auto px-4 py-8">
-        <nav aria-label="Breadcrumb" className="mb-3 text-sm text-gray-600">
-          <ol className="flex items-center gap-2">
-            <li>
-              <Link href="/" className="underline">
-                Home
-              </Link>
-            </li>
-            <li aria-hidden>/</li>
-            <li>
-              <Link href="/pcb-assembly-manufacturers" className="underline">
-                PCB Assembly
-              </Link>
-            </li>
-            <li aria-hidden>/</li>
-            <li aria-current="page" className="text-gray-500">
-              {stateData.name}
-            </li>
-          </ol>
-        </nav>
+        <main className="container mx-auto px-4 py-8">
+          <nav aria-label="Breadcrumb" className="mb-3 text-sm text-gray-600">
+            <ol className="flex items-center gap-2">
+              <li>
+                <Link href="/" className="underline">
+                  Home
+                </Link>
+              </li>
+              <li aria-hidden>/</li>
+              <li>
+                <Link href="/pcb-assembly-manufacturers" className="underline">
+                  PCB Assembly
+                </Link>
+              </li>
+              <li aria-hidden>/</li>
+              <li aria-current="page" className="text-gray-500">
+                {stateData.name}
+              </li>
+            </ol>
+          </nav>
 
-        <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold mb-2">Contract Manufacturers in {stateData.fullName}</h1>
-          <p className="text-gray-600">{stateData.description}</p>
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-gray-200 p-4">
-              <div className="text-sm text-gray-500">Verified companies</div>
-              <div className="text-2xl font-semibold text-gray-900">{stats.totalCompanies}</div>
+          <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
+            <h1 className="text-3xl font-bold mb-2">Contract Manufacturers in {stateData.fullName}</h1>
+            <p className="text-gray-600">{stateData.description}</p>
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-lg border border-gray-200 p-4">
+                <div className="text-sm text-gray-500">Verified companies</div>
+                <div className="text-2xl font-semibold text-gray-900">{stats.totalCompanies}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <div className="text-sm text-gray-500">Top certifications</div>
+                <div className="text-sm text-gray-900">{stats.certifications.join(", ") || "—"}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <div className="text-sm text-gray-500">Major cities served</div>
+                <div className="text-sm text-gray-900">{stats.cities.join(", ") || stateData.majorCities.join(", ")}</div>
+              </div>
             </div>
-            <div className="rounded-lg border border-gray-200 p-4">
-              <div className="text-sm text-gray-500">Top certifications</div>
-              <div className="text-sm text-gray-900">{stats.certifications.join(", ") || "—"}</div>
+          </section>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <FilterSidebar basePath={basePath} filters={mergedFilters} facetCounts={searchResult.facetCounts} clearHref={basePath} />
             </div>
-            <div className="rounded-lg border border-gray-200 p-4">
-              <div className="text-sm text-gray-500">Major cities served</div>
-              <div className="text-sm text-gray-900">{stats.cities.join(", ") || stateData.majorCities.join(", ")}</div>
+            <div className="lg:col-span-8 space-y-4">
+              <LazyCompanyMap
+                initialFacilities={mapFacilities}
+                initialFilters={mergedFilters}
+                routeDefaults={{ state: stateData.abbreviation }}
+              />
+              <CompanyList
+                companies={companies}
+                filteredCount={searchResult.filteredCount}
+                pageInfo={searchResult.pageInfo}
+              />
             </div>
           </div>
-        </section>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <FilterSidebar basePath={basePath} filters={mergedFilters} facetCounts={searchResult.facetCounts} clearHref={basePath} />
-          </div>
-          <div className="lg:col-span-8 space-y-4">
-            <LazyCompanyMap companies={companies} />
-            <CompanyList
-              companies={companies}
-              totalCount={searchResult.totalCount}
-              hasNext={searchResult.hasNext}
-              hasPrev={searchResult.hasPrev}
-              nextCursor={searchResult.nextCursor}
-              prevCursor={searchResult.prevCursor}
-            />
-          </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </FilterProvider>
   )
 }

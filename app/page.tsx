@@ -3,8 +3,10 @@ import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import Header from "@/components/Header"
+import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { companySearch, parseCursor } from "@/lib/queries/companySearch"
+import { companyFacilitiesForMap } from "@/lib/queries/mapSearch"
 import { sanitizeCompaniesForListing } from "@/lib/payloads/listing"
 
 export const metadata = {
@@ -60,20 +62,27 @@ export default async function Home({
   const filters = parseFiltersFromSearchParams(resolvedParams)
   const cursor = parseCursor(resolvedParams)
 
-  const searchResult = await companySearch({
-    filters,
-    cursor,
-    includeFacetCounts: true,
-  })
+  const [searchResult, mapResult] = await Promise.all([
+    companySearch({
+      filters,
+      cursor,
+      includeFacetCounts: true,
+    }),
+    companyFacilitiesForMap({
+      filters,
+    }),
+  ])
 
   const companies = sanitizeCompaniesForListing(searchResult.companies)
   const activeFilterCount =
     filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
+  const mapFacilities = mapResult.facilities
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Script
-        id="website-jsonld"
+    <FilterProvider initialFilters={filters}>
+      <div className="min-h-screen bg-gray-50">
+        <Script
+          id="website-jsonld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
@@ -91,7 +100,7 @@ export default async function Home({
       />
 
       <Header
-        totalCount={searchResult.totalCount}
+        filteredCount={searchResult.filteredCount}
         visibleCount={companies.length}
         activeFilterCount={activeFilterCount}
         clearHref="/"
@@ -116,16 +125,13 @@ export default async function Home({
           </div>
 
           <div className="lg:col-span-9 space-y-4">
-            <LazyCompanyMap companies={companies} />
+            <LazyCompanyMap initialFacilities={mapFacilities} initialFilters={filters} />
 
             <div className="companies-directory">
               <CompanyList
                 companies={companies}
-                totalCount={searchResult.totalCount}
-                hasNext={searchResult.hasNext}
-                hasPrev={searchResult.hasPrev}
-                nextCursor={searchResult.nextCursor}
-                prevCursor={searchResult.prevCursor}
+                filteredCount={searchResult.filteredCount}
+                pageInfo={searchResult.pageInfo}
               />
             </div>
 
@@ -141,6 +147,7 @@ export default async function Home({
           </div>
         </div>
       </main>
-    </div>
+      </div>
+    </FilterProvider>
   )
 }

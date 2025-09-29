@@ -35,8 +35,15 @@ jest.mock("@/lib/queries/companySearch", () => {
   }
 })
 
+jest.mock("@/lib/queries/mapSearch", () => ({
+  companyFacilitiesForMap: jest.fn(),
+}))
+
 const { companySearch } = jest.requireMock("@/lib/queries/companySearch") as {
   companySearch: jest.Mock
+}
+const { companyFacilitiesForMap } = jest.requireMock("@/lib/queries/mapSearch") as {
+  companyFacilitiesForMap: jest.Mock
 }
 
 const baseCompanies = Array.from({ length: 9 }).map((_, index) => ({
@@ -73,13 +80,31 @@ const baseCompanies = Array.from({ length: 9 }).map((_, index) => ({
   certifications: [],
 }))
 
+const mapFacilities = baseCompanies.flatMap((company) =>
+  company.facilities.map((facility) => ({
+    company_id: company.id,
+    company_name: company.company_name,
+    slug: company.slug,
+    facility_id: facility.id,
+    city: facility.city ?? null,
+    state: facility.state ?? null,
+    latitude: facility.latitude ?? 0,
+    longitude: facility.longitude ?? 0,
+  })),
+)
+
 const mockResult = {
   companies: baseCompanies,
-  totalCount: 42,
-  hasNext: true,
-  hasPrev: false,
-  nextCursor: "next",
-  prevCursor: null,
+  filteredCount: 42,
+  pageInfo: {
+    hasNextPage: true,
+    hasPreviousPage: false,
+    nextCursor: "next",
+    prevCursor: null,
+    startCursor: "start",
+    endCursor: "end",
+    pageSize: 9,
+  },
   facetCounts: {
     states: [{ code: "TX", count: 42 }],
     capabilities: [
@@ -99,6 +124,7 @@ const mockResult = {
 beforeEach(() => {
   jest.clearAllMocks()
   companySearch.mockResolvedValue(mockResult)
+  companyFacilitiesForMap.mockResolvedValue({ facilities: mapFacilities, truncated: false })
 })
 
 describe("home page SSR", () => {
@@ -124,16 +150,18 @@ describe("home page SSR", () => {
 
     const headerProps = mockHeader.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(headerProps).toMatchObject({
-      totalCount: mockResult.totalCount,
+      filteredCount: mockResult.filteredCount,
       visibleCount: mockResult.companies.length,
       activeFilterCount: 2,
     })
 
     const companyListProps = mockCompanyList.mock.calls.at(-1)?.[0] as Record<string, unknown>
     expect(companyListProps).toMatchObject({
-      totalCount: mockResult.totalCount,
-      hasNext: true,
-      nextCursor: "next",
+      filteredCount: mockResult.filteredCount,
+      pageInfo: expect.objectContaining({
+        hasNextPage: true,
+        nextCursor: "next",
+      }),
     })
     expect(Array.isArray(companyListProps.companies)).toBe(true)
     expect((companyListProps.companies as unknown[]).length).toBe(mockResult.companies.length)
@@ -146,8 +174,8 @@ describe("home page SSR", () => {
     })
 
     const mapProps = mockLazyCompanyMap.mock.calls.at(-1)?.[0] as Record<string, unknown>
-    expect(Array.isArray(mapProps?.companies)).toBe(true)
-    expect((mapProps?.companies as unknown[]).length).toBe(mockResult.companies.length)
+    expect(Array.isArray(mapProps?.initialFacilities)).toBe(true)
+    expect((mapProps?.initialFacilities as unknown[]).length).toBe(mapFacilities.length)
   })
 
   it("decodes cursor from the URL", async () => {

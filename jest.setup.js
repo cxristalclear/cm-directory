@@ -14,3 +14,14 @@ jest.mock('dompurify', () => ({
     sanitize: jest.fn((html) => html)
   }
 }))
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    replace: jest.fn(),
+    push: jest.fn(),
+  }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+}))
+
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
