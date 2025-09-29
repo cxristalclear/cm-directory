@@ -60,7 +60,6 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
   const currentFacilitiesRef = useRef<MapFacility[]>(initialFacilities)
   const pendingRequestRef = useRef<AbortController | null>(null)
   const lastQuerySignatureRef = useRef<string | null>(null)
-  const shouldFitBoundsRef = useRef(true)
 
   const [facilities, setFacilities] = useState<MapFacility[]>(initialFacilities)
   const [totalFacilities, setTotalFacilities] = useState<number>(initialFacilities.length)
@@ -75,12 +74,13 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
 
   const requestFacilities = useCallback(
     (force = false) => {
-      if (!mapRef.current || !isStyleLoaded || isLoading) {
+      const map = mapRef.current
+      if (!map || !map.isStyleLoaded() || !isStyleLoaded || isLoading) {
         return
       }
 
-      const bounds = mapRef.current.getBounds()
-      const zoom = mapRef.current.getZoom()
+      const bounds = map.getBounds()
+      const zoom = map.getZoom()
 
       if (!bounds || !Number.isFinite(zoom)) {
         return
@@ -155,7 +155,6 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
 
   useEffect(() => {
     lastQuerySignatureRef.current = null
-    shouldFitBoundsRef.current = true
     requestFacilities(true)
   }, [buildParams, requestFacilities])
 
@@ -171,15 +170,16 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
   const addClusteringLayers = useCallback((facilitiesToAdd?: MapFacility[]) => {
     const facilitiesForMap = facilitiesToAdd ?? currentFacilitiesRef.current
 
-    if (!mapRef.current || facilitiesForMap.length === 0) {
+    const map = mapRef.current
+    if (!map || !map.isStyleLoaded() || facilitiesForMap.length === 0) {
       return
     }
 
     try {
-      if (mapRef.current.getLayer("clusters")) mapRef.current.removeLayer("clusters")
-      if (mapRef.current.getLayer("cluster-count")) mapRef.current.removeLayer("cluster-count")
-      if (mapRef.current.getLayer("unclustered-point")) mapRef.current.removeLayer("unclustered-point")
-      if (mapRef.current.getSource("facilities")) mapRef.current.removeSource("facilities")
+      if (map.getLayer("clusters")) map.removeLayer("clusters")
+      if (map.getLayer("cluster-count")) map.removeLayer("cluster-count")
+      if (map.getLayer("unclustered-point")) map.removeLayer("unclustered-point")
+      if (map.getSource("facilities")) map.removeSource("facilities")
     } catch (error) {
       // Layers may not exist yet
       console.debug("Map layer cleanup skipped", error)
@@ -202,14 +202,14 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
       })),
     }
 
-    const existingSource = mapRef.current.getSource("facilities") as mapboxgl.GeoJSONSource | undefined
+    const existingSource = map.getSource("facilities") as mapboxgl.GeoJSONSource | undefined
     if (existingSource) {
       existingSource.setData(geojson)
-      if (mapRef.current.getLayer("clusters")) {
+      if (map.getLayer("clusters")) {
         return
       }
     } else {
-      mapRef.current.addSource("facilities", {
+      map.addSource("facilities", {
         type: "geojson",
         data: geojson,
         cluster: true,
@@ -218,7 +218,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
       })
     }
 
-    mapRef.current.addLayer({
+    map.addLayer({
       id: "clusters",
       type: "circle",
       source: "facilities",
@@ -247,7 +247,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
       },
     })
 
-    mapRef.current.addLayer({
+    map.addLayer({
       id: "cluster-count",
       type: "symbol",
       source: "facilities",
@@ -262,7 +262,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
       },
     })
 
-    mapRef.current.addLayer({
+    map.addLayer({
       id: "unclustered-point",
       type: "circle",
       source: "facilities",
@@ -309,7 +309,6 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
     mapRef.current.addControl(new mapboxgl.ScaleControl(), "bottom-left")
 
     const handleMoveEnd = () => {
-      shouldFitBoundsRef.current = false
       requestFacilities()
     }
 
@@ -379,7 +378,6 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
     mapRef.current.on("load", () => {
       setIsLoading(false)
       setIsStyleLoaded(true)
-      shouldFitBoundsRef.current = true
       requestFacilities(true)
     })
 
@@ -388,7 +386,6 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
       if (currentFacilitiesRef.current.length > 0) {
         addClusteringLayers(currentFacilitiesRef.current)
       }
-      shouldFitBoundsRef.current = false
       requestFacilities(true)
     })
 
@@ -404,15 +401,12 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
   }, [addClusteringLayers, mapStyle, requestFacilities])
 
   useEffect(() => {
-    if (!mapRef.current || !isStyleLoaded || isLoading || facilities.length === 0) {
+    const map = mapRef.current
+    if (!map || !map.isStyleLoaded() || !isStyleLoaded || isLoading || facilities.length === 0) {
       return
     }
 
     addClusteringLayers(facilities)
-
-    if (!shouldFitBoundsRef.current) {
-      return
-    }
 
     const bounds = new mapboxgl.LngLatBounds()
     for (const facility of facilities) {
@@ -420,8 +414,7 @@ export default function CompanyMap({ initialFacilities, initialFilters, routeDef
     }
 
     if (!bounds.isEmpty()) {
-      shouldFitBoundsRef.current = false
-      mapRef.current.fitBounds(bounds, {
+      map.fitBounds(bounds, {
         padding: { top: 50, bottom: 50, left: 50, right: 50 },
         maxZoom: 10,
         duration: 600,
