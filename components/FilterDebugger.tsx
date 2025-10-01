@@ -1,63 +1,112 @@
-"use client"
+// components/FilterDebugger.tsx
+'use client'
 
-import { useMemo } from "react"
-import { useFilters } from "@/contexts/FilterContext"
-import type { Company } from "@/types/company"
+import { useFilters } from '../contexts/FilterContext'
+import type { Company } from '../types/company'
+import { useMemo } from 'react'
+import { filterCompanies, getLocationFilteredFacilities } from '../utils/filtering'
 
 interface FilterDebuggerProps {
   allCompanies: Company[]
 }
 
 export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
-  const { filters, filteredCount } = useFilters()
-
-  const companiesByState = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const company of allCompanies) {
-      for (const facility of company.facilities ?? []) {
-        if (facility?.state) {
-          counts.set(facility.state, (counts.get(facility.state) ?? 0) + 1)
-        }
-      }
+  const { filters } = useFilters()
+  
+  // UPDATED: Use the same location-aware filtering as CompanyMap
+  const { filteredCompanies, mapMarkers, companiesWithMultipleFacilities, companiesWithoutValidFacilities } = useMemo(() => {
+    // Get filtered companies
+    const filtered = filterCompanies(allCompanies, filters)
+    
+    // Get location-filtered facilities for the map
+    const locationFilteredFacilities = getLocationFilteredFacilities(
+      allCompanies,
+      filters,
+      (company, facility) => facility
+    )
+    
+    // Transform to marker format
+    
+    // Check for companies without valid facilities
+    const withoutValid = filtered.filter(company => {
+      const hasFacility = company.facilities?.some(f => f.latitude && f.longitude)
+      return !hasFacility
+    })
+    
+    // Check for companies with multiple facilities (that pass location filter)
+    const withMultiple = filtered.filter(company => {
+      const validFacilities = getLocationFilteredFacilities(
+        [company],
+        filters,
+        (_, facility) => facility
+      ).filter(f => f.latitude && f.longitude)
+      return validFacilities.length > 1
+    })
+    
+    return {
+      filteredCompanies: filtered,
+      mapMarkers: locationFilteredFacilities,
+      companiesWithMultipleFacilities: withMultiple,
+      companiesWithoutValidFacilities: withoutValid
     }
-    return counts
-  }, [allCompanies])
-
+  }, [allCompanies, filters])
+  
   return (
-    <div className="fixed bottom-20 right-4 z-50 max-w-md rounded-lg border-2 border-blue-500 bg-white p-4 shadow-xl">
-      <h3 className="mb-2 text-sm font-bold text-blue-700">Filter Debug Info</h3>
-
+    <div className="fixed bottom-20 right-4 z-50 bg-white p-4 rounded-lg shadow-xl border-2 border-blue-500 max-w-md">
+      <h3 className="font-bold text-sm mb-2 text-blue-700">Filter Debug Info</h3>
+      
       <div className="space-y-2 text-xs">
         <div className="flex justify-between">
-          <span className="font-semibold">Filtered companies:</span>
-          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{filteredCount}</span>
+          <span className="font-semibold">Companies (filtered):</span>
+          <span className="font-mono bg-gray-100 px-2 py-1 rounded">{filteredCompanies.length}</span>
         </div>
+        
         <div className="flex justify-between">
-          <span className="font-semibold">Active states:</span>
-          <span className="rounded bg-gray-100 px-2 py-1 font-mono">
-            {filters.states.length > 0 ? filters.states.join(", ") : "(none)"}
-          </span>
+          <span className="font-semibold">Map Markers (facilities):</span>
+          <span className="font-mono bg-gray-100 px-2 py-1 rounded">{mapMarkers.length}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="font-semibold">Active capabilities:</span>
-          <span className="rounded bg-gray-100 px-2 py-1 font-mono">
-            {filters.capabilities.length > 0 ? filters.capabilities.join(", ") : "(none)"}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="font-semibold">Production volume:</span>
-          <span className="rounded bg-gray-100 px-2 py-1 font-mono">{filters.productionVolume ?? "(none)"}</span>
-        </div>
-
-        <div className="border-t pt-2">
-          <div className="mb-1 font-semibold text-blue-700">Known companies by state</div>
-          <ul className="grid grid-cols-2 gap-1 text-gray-700">
-            {Array.from(companiesByState.entries()).map(([state, count]) => (
-              <li key={state}>
-                {state}: {count}
-              </li>
-            ))}
-          </ul>
+        
+        {companiesWithMultipleFacilities.length > 0 && (
+          <div className="border-t pt-2 mt-2">
+            <div className="text-orange-600 font-semibold">
+              Companies with Multiple Locations: {companiesWithMultipleFacilities.length}
+            </div>
+            <div className="max-h-20 overflow-y-auto text-xs text-gray-600 mt-1">
+              {companiesWithMultipleFacilities.slice(0, 5).map(c => {
+                const facilityCount = getLocationFilteredFacilities(
+                  [c],
+                  filters,
+                  (_, f) => f
+                ).filter(f => f.latitude && f.longitude).length
+                return (
+                  <div key={c.id}>
+                    • {c.company_name} ({facilityCount} locations in selected area)
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+        
+        {companiesWithoutValidFacilities.length > 0 && (
+          <div className="border-t pt-2 mt-2">
+            <div className="text-red-600 font-semibold">
+              Companies Missing Coordinates: {companiesWithoutValidFacilities.length}
+            </div>
+            <div className="max-h-20 overflow-y-auto text-xs text-gray-600 mt-1">
+              {companiesWithoutValidFacilities.slice(0, 5).map(c => (
+                <div key={c.id}>• {c.company_name}</div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        <div className="border-t pt-2 mt-2 text-xs">
+          <div className="font-semibold mb-1">Active Filters:</div>
+          {filters.countries.length > 0 && <div>• Countries: {filters.countries.join(', ')}</div>}
+          {filters.states.length > 0 && <div>• States: {filters.states.join(', ')}</div>}
+          {filters.capabilities.length > 0 && <div>• Capabilities: {filters.capabilities.join(', ')}</div>}
+          {filters.productionVolume && <div>• Volume: {filters.productionVolume}</div>}
         </div>
       </div>
     </div>
