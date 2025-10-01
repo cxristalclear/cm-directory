@@ -2,12 +2,22 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode, useTransition, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { useDebouncedCallback } from "use-debounce"
 import type { FilterState, FilterContextType } from "../types/company"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
-export function FilterProvider({ children }: { children: ReactNode }) {
+interface FilterProviderProps {
+  children: ReactNode
+  initialFilters?: {
+    states: string[]
+    capabilities: CapabilitySlug[]
+    productionVolume: ProductionVolume | null
+  }
+}
+
+export function FilterProvider({ children, initialFilters }: FilterProviderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -15,9 +25,9 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
   const [filters, setFilters] = useState<FilterState>({
     countries: [],
-    states: [],
-    capabilities: [],
-    productionVolume: null,
+    states: initialFilters?.states || [],
+    capabilities: initialFilters?.capabilities || [],
+    productionVolume: initialFilters?.productionVolume || null,
   })
 
   const [filteredCount, setFilteredCount] = useState(0)
@@ -60,6 +70,8 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     [router, pathname]
   )
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const debouncedUpdateURL = useDebouncedCallback(updateURLParams, 300)
 
   const updateFilter = useCallback(
     <K extends keyof FilterState>(key: K, value: FilterState[K]) => {

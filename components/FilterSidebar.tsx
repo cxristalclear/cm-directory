@@ -1,300 +1,623 @@
-"use client"
+'use client'
 
-import { useMemo, useState } from "react"
-import { ChevronDown, Filter as FilterIcon } from "lucide-react"
+import { useState, useMemo } from 'react'
+import { useFilters } from '../contexts/FilterContext'
+import { ChevronDown, X, Filter, MapPin, Settings, Layers } from 'lucide-react'
+import type { Company } from '../types/company'
+import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
+import { getStateName } from '../utils/stateMapping'
 
-import { useFilters } from "@/contexts/FilterContext"
-import type { Company } from "@/types/company"
-import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
-import { getStateName } from "@/utils/stateMapping"
+type FilterSection = 'location' | 'capabilities' | 'volume'
 
 interface FilterSidebarProps {
   allCompanies: Company[]
 }
 
-type FilterSection = "country" | "states" | "capabilities" | "volume"
-
-type FilterOption<T extends string> = {
-  value: T
-  label: string
-  count: number
+// Country names mapping
+const COUNTRIES: Record<string, string> = {
+  'US': 'United States',
+  'CA': 'Canada',
+  'MX': 'Mexico',
+  'CN': 'China',
+  'TW': 'Taiwan',
+  'VN': 'Vietnam',
+  'MY': 'Malaysia',
+  'TH': 'Thailand',
+  'IN': 'India',
+  'DE': 'Germany',
+  'PL': 'Poland',
+  'HU': 'Hungary',
+  'CZ': 'Czech Republic',
 }
 
-const CAPABILITY_LABELS: Record<CapabilitySlug, string> = {
-  smt: "SMT",
-  through_hole: "Through-Hole",
-  cable_harness: "Cable Harness",
-  box_build: "Box Build",
-  prototyping: "Prototyping",
+const getCountryName = (code: string): string => {
+  return COUNTRIES[code] || code
 }
 
-const VOLUME_LABELS: Record<ProductionVolume, string> = {
-  low: "Low Volume",
-  medium: "Medium Volume",
-  high: "High Volume",
+// Subdivision names for different countries (states, provinces, etc.)
+const COUNTRY_SUBDIVISIONS: Record<string, string> = {
+  'US': 'States',
+  'CA': 'Provinces',
+  'MX': 'States',
+  'CN': 'Provinces',
+  'TW': 'Counties',
+  'VN': 'Provinces',
+  'MY': 'States',
+  'TH': 'Provinces',
+  'IN': 'States',
+  'DE': 'States',
+  'PL': 'Voivodeships',
+  'HU': 'Counties',
+  'CZ': 'Regions',
+}
+
+// Capability display names
+const CAPABILITY_NAMES: Record<CapabilitySlug, string> = {
+  'smt': 'SMT Assembly',
+  'through_hole': 'Through-Hole Assembly',
+  'cable_harness': 'Cable & Harness Assembly',
+  'box_build': 'Box Build Assembly',
+  'prototyping': 'Prototyping'
+}
+
+// Volume display names
+const VOLUME_NAMES: Record<ProductionVolume, string> = {
+  'low': 'Low Volume',
+  'medium': 'Medium Volume',
+  'high': 'High Volume'
 }
 
 export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
   const { filters, updateFilter, clearFilters } = useFilters()
-  const [expandedSections, setExpandedSections] = useState<Record<FilterSection, boolean>>({
-    country: true,
-    states: true,
-    capabilities: true,
-    volume: true,
-  })
+  const [isOpen, setIsOpen] = useState(false)
+  const [expandedSections, setExpandedSections] = useState<FilterSection[]>(['location', 'capabilities'])
 
-  const stateOptions = useMemo((): FilterOption<string>[] => {
-    const counts = new Map<string, number>()
+  // Calculate dynamic filter counts
+  const dynamicCounts = useMemo(() => {
+    const counts = {
+      countries: new Map<string, number>(),
+      states: new Map<string, number>(),
+      capabilities: new Map<CapabilitySlug, number>(),
+      productionVolume: new Map<ProductionVolume, number>()
+    }
 
-    for (const company of allCompanies) {
-      for (const facility of company.facilities ?? []) {
-        if (facility?.state) {
-          const state = facility.state.toUpperCase()
-          counts.set(state, (counts.get(state) ?? 0) + 1)
+    allCompanies.forEach(company => {
+      // Pre-calculate matching for each filter type (exclude itself)
+      const matchesCountries = filters.countries.length === 0 || 
+        company.facilities?.some(f => filters.countries.includes(f.country || 'US'))
+
+      const matchesStates = filters.states.length === 0 ||
+        company.facilities?.some(f =>
+          typeof f.state === 'string' && filters.states.includes(f.state)
+        )
+
+      const matchesCapabilities = filters.capabilities.length === 0 || 
+        (company.capabilities?.[0] && filters.capabilities.some(selected => {
+          const cap = company.capabilities![0]
+          switch (selected) {
+            case 'smt': return cap.pcb_assembly_smt
+            case 'through_hole': return cap.pcb_assembly_through_hole
+            case 'cable_harness': return cap.cable_harness_assembly
+            case 'box_build': return cap.box_build_assembly
+            case 'prototyping': return cap.prototyping
+            default: return false
+          }
+        }))
+
+      const matchesVolume = !filters.productionVolume ||
+        (company.capabilities?.[0] && (() => {
+          const cap = company.capabilities![0]
+          switch (filters.productionVolume) {
+            case 'low': return cap.low_volume_production
+            case 'medium': return cap.medium_volume_production
+            case 'high': return cap.high_volume_production
+            default: return false
+          }
+        })())
+
+      // Count COUNTRIES (exclude countries filter)
+      if (matchesStates && matchesCapabilities && matchesVolume) {
+        company.facilities?.forEach(facility => {
+          const country = facility.country || 'US'
+          counts.countries.set(country, (counts.countries.get(country) || 0) + 1)
+        })
+      }
+
+      // Count STATES (exclude states filter)
+      if (matchesCountries && matchesCapabilities && matchesVolume) {
+        company.facilities?.forEach(facility => {
+          if (filters.countries.length === 0 || filters.countries.includes(facility.country || 'US')) {
+            if (facility.state) {
+              counts.states.set(facility.state, (counts.states.get(facility.state) || 0) + 1)
+            }
+          }
+        })
+      }
+
+      // Count CAPABILITIES (exclude capabilities filter)
+      if (matchesCountries && matchesStates && matchesVolume) {
+        if (company.capabilities?.[0]) {
+          const cap = company.capabilities[0]
+          if (cap.pcb_assembly_smt) {
+            counts.capabilities.set('smt', (counts.capabilities.get('smt') || 0) + 1)
+          }
+          if (cap.pcb_assembly_through_hole) {
+            counts.capabilities.set('through_hole', (counts.capabilities.get('through_hole') || 0) + 1)
+          }
+          if (cap.cable_harness_assembly) {
+            counts.capabilities.set('cable_harness', (counts.capabilities.get('cable_harness') || 0) + 1)
+          }
+          if (cap.box_build_assembly) {
+            counts.capabilities.set('box_build', (counts.capabilities.get('box_build') || 0) + 1)
+          }
+          if (cap.prototyping) {
+            counts.capabilities.set('prototyping', (counts.capabilities.get('prototyping') || 0) + 1)
+          }
         }
       }
-    }
 
-    return Array.from(counts.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([state, count]) => ({
-        value: state,
-        label: getStateName(state) ?? state,
-        count,
-      }))
-  }, [allCompanies])
+      // Count VOLUME (exclude volume filter)
+      if (matchesCountries && matchesStates && matchesCapabilities) {
+        if (company.capabilities?.[0]) {
+          const cap = company.capabilities[0]
+          if (cap.low_volume_production) {
+            counts.productionVolume.set('low', (counts.productionVolume.get('low') || 0) + 1)
+          }
+          if (cap.medium_volume_production) {
+            counts.productionVolume.set('medium', (counts.productionVolume.get('medium') || 0) + 1)
+          }
+          if (cap.high_volume_production) {
+            counts.productionVolume.set('high', (counts.productionVolume.get('high') || 0) + 1)
+          }
+        }
+      }
+    })
 
-  const capabilityOptions = useMemo((): FilterOption<CapabilitySlug>[] => {
-    const counts = new Map<CapabilitySlug, number>()
-
-    for (const company of allCompanies) {
-      const capabilityRecord = company.capabilities?.[0]
-      if (!capabilityRecord) {
-        continue
-      }
-
-      if (capabilityRecord.pcb_assembly_smt) {
-        counts.set("smt", (counts.get("smt") ?? 0) + 1)
-      }
-      if (capabilityRecord.pcb_assembly_through_hole) {
-        counts.set("through_hole", (counts.get("through_hole") ?? 0) + 1)
-      }
-      if (capabilityRecord.cable_harness_assembly) {
-        counts.set("cable_harness", (counts.get("cable_harness") ?? 0) + 1)
-      }
-      if (capabilityRecord.box_build_assembly) {
-        counts.set("box_build", (counts.get("box_build") ?? 0) + 1)
-      }
-      if (capabilityRecord.prototyping) {
-        counts.set("prototyping", (counts.get("prototyping") ?? 0) + 1)
-      }
-    }
-
-    return (Object.keys(CAPABILITY_LABELS) as CapabilitySlug[]).map(value => ({
-      value,
-      label: CAPABILITY_LABELS[value],
-      count: counts.get(value) ?? 0,
-    }))
-  }, [allCompanies])
-
-  const volumeOptions = useMemo((): FilterOption<ProductionVolume>[] => {
-    const counts = new Map<ProductionVolume, number>()
-
-    for (const company of allCompanies) {
-      const capabilityRecord = company.capabilities?.[0]
-      if (!capabilityRecord) {
-        continue
-      }
-
-      if (capabilityRecord.low_volume_production) {
-        counts.set("low", (counts.get("low") ?? 0) + 1)
-      }
-      if (capabilityRecord.medium_volume_production) {
-        counts.set("medium", (counts.get("medium") ?? 0) + 1)
-      }
-      if (capabilityRecord.high_volume_production) {
-        counts.set("high", (counts.get("high") ?? 0) + 1)
-      }
-    }
-
-    return (Object.keys(VOLUME_LABELS) as ProductionVolume[]).map(value => ({
-      value,
-      label: VOLUME_LABELS[value],
-      count: counts.get(value) ?? 0,
-    }))
-  }, [allCompanies])
+    return counts
+  }, [allCompanies, filters.countries, filters.states, filters.capabilities, filters.productionVolume])
 
   const toggleSection = (section: FilterSection) => {
-    setExpandedSections(previous => ({
-      ...previous,
-      [section]: !previous[section],
-    }))
+    setExpandedSections(prev =>
+      prev.includes(section)
+        ? prev.filter(s => s !== section)
+        : [...prev, section]
+    )
   }
 
-  const toggleState = (value: string) => {
-    const nextStates = filters.states.includes(value)
-      ? filters.states.filter(entry => entry !== value)
-      : [...filters.states, value]
-    updateFilter("states", nextStates)
+  const handleCountryToggle = (countryCode: string) => {
+    const newCountries = filters.countries.includes(countryCode)
+      ? filters.countries.filter(c => c !== countryCode)
+      : [...filters.countries, countryCode]
+    updateFilter('countries', newCountries)
   }
 
-  const toggleCapability = (value: CapabilitySlug) => {
-    const nextCapabilities = filters.capabilities.includes(value)
-      ? filters.capabilities.filter(entry => entry !== value)
-      : [...filters.capabilities, value]
-    updateFilter("capabilities", nextCapabilities)
+  const handleStateToggle = (state: string) => {
+    const newStates = filters.states.includes(state)
+      ? filters.states.filter(s => s !== state)
+      : [...filters.states, state]
+    updateFilter('states', newStates)
   }
 
-  const selectProductionVolume = (value: ProductionVolume) => {
-    updateFilter("productionVolume", filters.productionVolume === value ? null : value)
+  const handleCapabilityToggle = (capability: CapabilitySlug) => {
+    const newCapabilities = filters.capabilities.includes(capability)
+      ? filters.capabilities.filter(c => c !== capability)
+      : [...filters.capabilities, capability]
+    updateFilter('capabilities', newCapabilities)
   }
 
-  const activeFilterCount =
-    filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
+  const handleVolumeChange = (volume: ProductionVolume | null) => {
+    updateFilter('productionVolume', volume)
+  }
+
+  // Get subdivision label based on selected countries
+  const getSubdivisionLabel = (): string => {
+    if (filters.countries.length === 0) {
+      return 'US States' // Default to US since most companies are US-based
+    }
+    
+    if (filters.countries.length === 1) {
+      const country = filters.countries[0]
+      const subdivisionName = COUNTRY_SUBDIVISIONS[country] || 'States'
+      return `${getCountryName(country)} ${subdivisionName}`
+    }
+    
+    // Multiple countries selected - use generic term
+    const hasUS = filters.countries.includes('US')
+    const hasCanada = filters.countries.includes('CA')
+    
+    if (hasUS && hasCanada) {
+      return 'States/Provinces'
+    }
+    
+    return 'States/Regions'
+  }
+
+  const activeFilterCount = 
+    filters.countries.length +
+    filters.states.length + 
+    filters.capabilities.length + 
+    (filters.productionVolume ? 1 : 0)
+
+  const sectionIcons: Record<FilterSection, React.ReactElement> = {
+    location: <MapPin className="w-4 h-4" />,
+    capabilities: <Settings className="w-4 h-4" />,
+    volume: <Layers className="w-4 h-4" />
+  }
 
   return (
-    <aside className="space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-gray-900">
-            <FilterIcon className="h-5 w-5 text-blue-600" />
-            <span className="text-lg font-semibold">Filters</span>
+    <>
+      {/* Mobile/Desktop Toggle Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed left-4 bottom-4 z-30 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl rounded-full p-4 lg:hidden hover:shadow-2xl transition-all duration-300"
+      >
+        <Filter className="w-6 h-6" />
+        {activeFilterCount > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+            {activeFilterCount}
+          </span>
+        )}
+      </button>
+
+      {/* Sidebar */}
+      <div className={`
+        fixed lg:relative top-0 left-0 h-full lg:h-auto z-20 
+        bg-white shadow-xl lg:shadow-lg
+        transition-all duration-300 ease-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        w-80 lg:w-full
+        overflow-y-auto
+      `}>
+        <div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-4 lg:p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg">
+                <Filter className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+                {activeFilterCount > 0 && (
+                  <p className="text-xs text-gray-500">{activeFilterCount} active</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                >
+                  Clear all
+                </button>
+              )}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
           </div>
+
+          {/* Active Filter Chips */}
           {activeFilterCount > 0 && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              Clear all
-            </button>
+            <div className="flex flex-wrap gap-2 pb-4 border-b border-gray-200">
+              {filters.countries.map(country => (
+                <span key={country} className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                  {getCountryName(country)}
+                  <button 
+                    onClick={() => handleCountryToggle(country)} 
+                    className="ml-1 hover:bg-blue-100 rounded-full p-0.5 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              {filters.states.map(state => (
+                <span key={state} className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                  {getStateName(state)}
+                  <button 
+                    onClick={() => handleStateToggle(state)} 
+                    className="ml-1 hover:bg-blue-100 rounded-full p-0.5 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              {filters.capabilities.map(cap => (
+                <span key={cap} className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                  {CAPABILITY_NAMES[cap]}
+                  <button 
+                    onClick={() => handleCapabilityToggle(cap)} 
+                    className="ml-1 hover:bg-blue-100 rounded-full p-0.5 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              {filters.productionVolume && (
+                <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                  {VOLUME_NAMES[filters.productionVolume]}
+                  <button 
+                    onClick={() => handleVolumeChange(null)} 
+                    className="ml-1 hover:bg-blue-100 rounded-full p-0.5 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+            </div>
           )}
         </div>
 
-        <section>
-          <button
-            type="button"
-            onClick={() => toggleSection("states")}
-            className="flex w-full items-center justify-between py-2 text-left"
-          >
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">States</h3>
-              {filters.states.length > 0 && (
-                <p className="text-xs text-blue-600">{filters.states.length} selected</p>
+        <div className="p-4 lg:p-6">
+          {/* Filter Sections */}
+          <div className="space-y-3">
+            {/* Location Filter - Countries and States */}
+            <div className="bg-gray-50 rounded-xl p-4 transition-all duration-200 hover:bg-gray-100">
+              <button
+                onClick={() => toggleSection('location')}
+                className="flex items-center justify-between w-full group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm group-hover:shadow transition-shadow">
+                    {sectionIcons.location}
+                  </div>
+                  <div className="text-left">
+                    <span className="font-semibold text-gray-900">Location</span>
+                    {(filters.countries.length > 0 || filters.states.length > 0) && (
+                      <p className="text-xs text-blue-600">
+                        {filters.countries.length + filters.states.length} selected
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className={`transform transition-transform duration-200 ${expandedSections.includes('location') ? 'rotate-180' : ''}`}>
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                </div>
+              </button>
+
+              {expandedSections.includes('location') && (
+                <div className="mt-4 space-y-4">
+                  {/* Countries */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Countries</h4>
+                    <div className="space-y-2">
+                      {Array.from(dynamicCounts.countries.entries())
+                        .sort(([a], [b]) => getCountryName(a).localeCompare(getCountryName(b)))
+                        .map(([country, count]) => {
+                          const isSelected = filters.countries.includes(country)
+                          const isDisabled = count === 0 && !isSelected
+                          
+                          return (
+                            <label 
+                              key={country} 
+                              className={`flex items-center justify-between p-2 rounded-lg ${
+                                isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
+                              } transition-colors group`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => !isDisabled && handleCountryToggle(country)}
+                                  disabled={isDisabled}
+                                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                                />
+                                <span className={`text-sm font-medium ${
+                                  isDisabled ? 'text-gray-400' : 'text-gray-700'
+                                }`}>
+                                  {getCountryName(country)}
+                                </span>
+                              </div>
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                isSelected 
+                                  ? 'bg-blue-100 text-blue-700 font-semibold'
+                                  : isDisabled
+                                    ? 'bg-gray-50 text-gray-400'
+                                    : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                              } transition-colors`}>
+                                {count}
+                              </span>
+                            </label>
+                          )
+                        })}
+                    </div>
+                  </div>
+
+                  {/* States */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      {getSubdivisionLabel()}
+                    </h4>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {Array.from(dynamicCounts.states.entries())
+                        .sort(([a], [b]) => getStateName(a).localeCompare(getStateName(b)))
+                        .map(([state, count]) => {
+                          const isSelected = filters.states.includes(state)
+                          const isDisabled = count === 0 && !isSelected
+                          
+                          return (
+                            <label 
+                              key={state} 
+                              className={`flex items-center justify-between p-2 rounded-lg ${
+                                isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
+                              } transition-colors group`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => !isDisabled && handleStateToggle(state)}
+                                  disabled={isDisabled}
+                                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                                />
+                                <span className={`text-sm font-medium ${
+                                  isDisabled ? 'text-gray-400' : 'text-gray-700'
+                                }`}>
+                                  {getStateName(state)}
+                                </span>
+                              </div>
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                isSelected 
+                                  ? 'bg-blue-100 text-blue-700 font-semibold'
+                                  : isDisabled
+                                    ? 'bg-gray-50 text-gray-400'
+                                    : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                              } transition-colors`}>
+                                {count}
+                              </span>
+                            </label>
+                          )
+                        })}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
-            <ChevronDown
-              className={`h-4 w-4 text-gray-500 transition-transform ${
-                expandedSections.states ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-          {expandedSections.states && (
-            <div className="space-y-2">
-              {stateOptions.map(option => {
-                const checked = filters.states.includes(option.value)
-                return (
-                  <label key={option.value} className="flex items-center justify-between text-sm text-gray-700">
-                    <span className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        value={option.value}
-                        onChange={() => toggleState(option.value)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      {option.label}
-                    </span>
-                    <span className="text-xs text-gray-500">{option.count}</span>
-                  </label>
-                )
-              })}
-            </div>
-          )}
-        </section>
 
-        <section className="mt-4">
-          <button
-            type="button"
-            onClick={() => toggleSection("capabilities")}
-            className="flex w-full items-center justify-between py-2 text-left"
-          >
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Capabilities</h3>
-              {filters.capabilities.length > 0 && (
-                <p className="text-xs text-blue-600">{filters.capabilities.length} selected</p>
+            {/* Capabilities Filter */}
+            <div className="bg-gray-50 rounded-xl p-4 transition-all duration-200 hover:bg-gray-100">
+              <button
+                onClick={() => toggleSection('capabilities')}
+                className="flex items-center justify-between w-full group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm group-hover:shadow transition-shadow">
+                    {sectionIcons.capabilities}
+                  </div>
+                  <div className="text-left">
+                    <span className="font-semibold text-gray-900">Capabilities</span>
+                    {filters.capabilities.length > 0 && (
+                      <p className="text-xs text-blue-600">{filters.capabilities.length} selected</p>
+                    )}
+                  </div>
+                </div>
+                <div className={`transform transition-transform duration-200 ${expandedSections.includes('capabilities') ? 'rotate-180' : ''}`}>
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                </div>
+              </button>
+
+              {expandedSections.includes('capabilities') && (
+                <div className="mt-4 space-y-2">
+                  {Array.from(dynamicCounts.capabilities.entries()).map(([cap, count]) => {
+                    const isSelected = filters.capabilities.includes(cap)
+                    const isDisabled = count === 0 && !isSelected
+                    
+                    return (
+                      <label 
+                        key={cap} 
+                        className={`flex items-center justify-between p-2 rounded-lg ${
+                          isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
+                        } transition-colors group`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => !isDisabled && handleCapabilityToggle(cap)}
+                            disabled={isDisabled}
+                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                          />
+                          <span className={`text-sm font-medium ${
+                            isDisabled ? 'text-gray-400' : 'text-gray-700'
+                          }`}>
+                            {CAPABILITY_NAMES[cap]}
+                          </span>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          isSelected 
+                            ? 'bg-blue-100 text-blue-700 font-semibold'
+                            : isDisabled
+                              ? 'bg-gray-50 text-gray-400'
+                              : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                        } transition-colors`}>
+                          {count}
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
               )}
             </div>
-            <ChevronDown
-              className={`h-4 w-4 text-gray-500 transition-transform ${
-                expandedSections.capabilities ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-          {expandedSections.capabilities && (
-            <div className="space-y-2">
-              {capabilityOptions.map(option => {
-                const checked = filters.capabilities.includes(option.value)
-                return (
-                  <label key={option.value} className="flex items-center justify-between text-sm text-gray-700">
-                    <span className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        value={option.value}
-                        onChange={() => toggleCapability(option.value)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      {option.label}
-                    </span>
-                    <span className="text-xs text-gray-500">{option.count}</span>
-                  </label>
-                )
-              })}
-            </div>
-          )}
-        </section>
 
-        <section className="mt-4">
-          <button
-            type="button"
-            onClick={() => toggleSection("volume")}
-            className="flex w-full items-center justify-between py-2 text-left"
-          >
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Production Volume</h3>
-              {filters.productionVolume && <p className="text-xs text-blue-600">1 selected</p>}
+            {/* Volume Filter - Radio buttons since it's single select */}
+            <div className="bg-gray-50 rounded-xl p-4 transition-all duration-200 hover:bg-gray-100">
+              <button
+                onClick={() => toggleSection('volume')}
+                className="flex items-center justify-between w-full group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm group-hover:shadow transition-shadow">
+                    {sectionIcons.volume}
+                  </div>
+                  <div className="text-left">
+                    <span className="font-semibold text-gray-900">Production Volume</span>
+                    {filters.productionVolume && (
+                      <p className="text-xs text-blue-600">{VOLUME_NAMES[filters.productionVolume]}</p>
+                    )}
+                  </div>
+                </div>
+                <div className={`transform transition-transform duration-200 ${expandedSections.includes('volume') ? 'rotate-180' : ''}`}>
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                </div>
+              </button>
+
+              {expandedSections.includes('volume') && (
+                <div className="mt-4 space-y-2">
+                  {Array.from(dynamicCounts.productionVolume.entries()).map(([vol, count]) => {
+                    const isSelected = filters.productionVolume === vol
+                    const isDisabled = count === 0 && !isSelected
+                    
+                    return (
+                      <label 
+                        key={vol} 
+                        className={`flex items-center justify-between p-2 rounded-lg ${
+                          isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
+                        } transition-colors group`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="productionVolume"
+                            checked={isSelected}
+                            onChange={() => !isDisabled && handleVolumeChange(vol)}
+                            disabled={isDisabled}
+                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                          />
+                          <span className={`text-sm font-medium ${
+                            isDisabled ? 'text-gray-400' : 'text-gray-700'
+                          }`}>
+                            {VOLUME_NAMES[vol]}
+                          </span>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          isSelected 
+                            ? 'bg-blue-100 text-blue-700 font-semibold'
+                            : isDisabled
+                              ? 'bg-gray-50 text-gray-400'
+                              : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                        } transition-colors`}>
+                          {count}
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
             </div>
-            <ChevronDown
-              className={`h-4 w-4 text-gray-500 transition-transform ${
-                expandedSections.volume ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-          {expandedSections.volume && (
-            <div className="space-y-2">
-              {volumeOptions.map(option => {
-                const checked = filters.productionVolume === option.value
-                return (
-                  <label key={option.value} className="flex items-center justify-between text-sm text-gray-700">
-                    <span className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        checked={checked}
-                        value={option.value}
-                        onChange={() => selectProductionVolume(option.value)}
-                        className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      {option.label}
-                    </span>
-                    <span className="text-xs text-gray-500">{option.count}</span>
-                  </label>
-                )
-              })}
-            </div>
-          )}
-        </section>
+          </div>
+        </div>
       </div>
-    </aside>
+
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-10 lg:hidden transition-opacity duration-300"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </>
   )
 }
