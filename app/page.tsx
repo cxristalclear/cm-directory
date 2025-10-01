@@ -5,21 +5,24 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import FilterDebugger from "@/components/FilterDebugger"
 import Header from "@/components/Header"
+import { FilterErrorBoundary } from "@/components/FilterErrorBoundary"
+import { MapErrorBoundary } from "@/components/MapErrorBoundary"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
+import { siteConfig, featureFlags } from "@/lib/config"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
   description:
     "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities (SMT, Through-Hole, Box Build), certifications (ISO 13485, AS9100), industries, and state.",
-  alternates: { canonical: "https://www.example.com/" },
+  alternates: { canonical: siteConfig.url },
   openGraph: {
     title: "CM Directory — Electronics Contract Manufacturers",
     description:
       "Find and compare PCB assembly partners by capability, certification, and location.",
-    url: "https://www.example.com/",
-    siteName: "CM Directory",
+    url: siteConfig.url,
+    siteName: siteConfig.name,
     type: "website",
   },
   twitter: {
@@ -28,9 +31,7 @@ export const metadata = {
     description:
       "Filter verified manufacturers by capability, certification, and location.",
   },
-};
-
-const SHOW_DEBUG = process.env.NEXT_PUBLIC_SHOW_DEBUG === "true";
+}
 
 const AdPlaceholder = ({ width, height, label, className = "" }: { width: string; height: string; label: string; className?: string }) => (
   <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} style={{ width, height }}>
@@ -40,21 +41,31 @@ const AdPlaceholder = ({ width, height, label, className = "" }: { width: string
       <div className="text-xs text-gray-400 mt-1">Advertisement</div>
     </div>
   </div>
-);
+)
 
 async function getData() {
-  const { data: companies, error } = await supabase
-    .from("companies")
-    .select(`
-      *,
-      facilities(*),
-      capabilities(*),
-      certifications(*),
-      industries(*)
-    `)
-    .eq("is_active", true);
-  if (error) return [];
-  return companies || [];
+  try {
+    const { data: companies, error } = await supabase
+      .from("companies")
+      .select(`
+        *,
+        facilities(*),
+        capabilities(*),
+        certifications(*),
+        industries(*)
+      `)
+      .eq("is_active", true)
+    
+    if (error) {
+      console.error('Error fetching companies:', error)
+      return []
+    }
+    
+    return companies || []
+  } catch (error) {
+    console.error('Unexpected error fetching companies:', error)
+    return []
+  }
 }
 
 export default async function Home({
@@ -73,15 +84,16 @@ export default async function Home({
         __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          name: "CM Directory",
-          url: "https://www.example.com/",
+          name: siteConfig.name,
+          url: siteConfig.url,
           potentialAction: {
             "@type": "SearchAction",
-            target: "https://www.example.com/?q={search_term_string}",
+            target: `${siteConfig.url}?q={search_term_string}`,
             "query-input": "required name=search_term_string"
           }
         })
       }} />
+      
       <FilterProvider initialFilters={initialFilters}>
         <div className="min-h-screen bg-gray-50">
           <Header companies={companies} />
@@ -101,22 +113,35 @@ export default async function Home({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Filter Sidebar */}
               <div className="lg:col-span-3 space-y-4">
-                <Suspense fallback={<div>Loading filters...</div>}>
-                  <FilterSidebar allCompanies={companies} />
-                  {SHOW_DEBUG && <FilterDebugger allCompanies={companies} />}
-                </Suspense>
+                <FilterErrorBoundary>
+                  <Suspense fallback={<div className="bg-white rounded-xl shadow-lg p-6 animate-pulse">Loading filters...</div>}>
+                    <FilterSidebar allCompanies={companies} />
+                    {featureFlags.showDebug && <FilterDebugger allCompanies={companies} />}
+                  </Suspense>
+                </FilterErrorBoundary>
 
                 {/* Bottom Sidebar Ad */}
                 <AdPlaceholder width="100%" height="250px" label="Sidebar Skyscraper" />
               </div>
 
               <div className="lg:col-span-9 space-y-4">
-                {/* Map - No extra Suspense needed, LazyCompanyMap handles it internally */}
-                <LazyCompanyMap allCompanies={companies} />
+                {/* Map with Error Boundary */}
+                <MapErrorBoundary>
+                  <LazyCompanyMap allCompanies={companies} />
+                </MapErrorBoundary>
 
                 {/* List */}
                 <div className="companies-directory">
-                  <Suspense fallback={<div>Loading companies...</div>}>
+                  <Suspense fallback={
+                    <div className="bg-white rounded-xl shadow-sm p-8 animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+                      <div className="space-y-4">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                        ))}
+                      </div>
+                    </div>
+                  }>
                     <CompanyList allCompanies={companies} />
                   </Suspense>
                 </div>
@@ -137,5 +162,5 @@ export default async function Home({
         </div>
       </FilterProvider>
     </Suspense>
-  );
+  )
 }

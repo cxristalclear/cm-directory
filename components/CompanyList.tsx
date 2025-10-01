@@ -1,47 +1,72 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Award, Building2, ChevronRight, MapPin, Users } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
 import type { Company } from "@/types/company"
 import { filterCompanies } from "@/utils/filtering"
+import Pagination from "./Pagination"
 
 interface CompanyListProps {
   allCompanies: Company[]
   limit?: number
 }
 
-const DEFAULT_LIMIT = 9
+const DEFAULT_LIMIT = 12 // Increased from 9 for better pagination
 
-function createSummary(totalCount: number, visibleCount: number): string {
+function createSummary(totalCount: number, visibleCount: number, currentPage: number, totalPages: number): string {
   if (totalCount === 0) {
     return "No results"
   }
 
-  if (visibleCount === totalCount) {
+  if (currentPage === totalPages && visibleCount === totalCount) {
     return `${totalCount} results`
   }
 
-  return `${visibleCount} of ${totalCount} results`
+  const startIndex = (currentPage - 1) * DEFAULT_LIMIT + 1
+  const endIndex = Math.min(currentPage * DEFAULT_LIMIT, totalCount)
+
+  return `Showing ${startIndex}-${endIndex} of ${totalCount} results`
 }
 
 export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: CompanyListProps) {
   const { filters, setFilteredCount } = useFilters()
+  const [currentPage, setCurrentPage] = useState(1)
 
   const filteredCompanies = useMemo(() => {
     return filterCompanies(allCompanies, filters)
   }, [allCompanies, filters])
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters])
+
   useEffect(() => {
     setFilteredCount(filteredCompanies.length)
   }, [filteredCompanies.length, setFilteredCount])
 
-  const visibleCompanies = filteredCompanies.slice(0, limit)
-  const summary = createSummary(filteredCompanies.length, visibleCompanies.length)
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredCompanies.length / limit)
+  const startIndex = (currentPage - 1) * limit
+  const endIndex = startIndex + limit
+  const visibleCompanies = filteredCompanies.slice(startIndex, endIndex)
+  const summary = createSummary(filteredCompanies.length, visibleCompanies.length, currentPage, totalPages)
 
-  if (visibleCompanies.length === 0) {
+  // Scroll to top when page changes
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+    
+    // Smooth scroll to top of company list
+    const element = document.querySelector('.companies-directory')
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  if (filteredCompanies.length === 0) {
     return (
       <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
         <Building2 className="mb-4 inline h-12 w-12 text-gray-400" />
@@ -55,11 +80,13 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
 
   return (
     <div className="space-y-6">
+      {/* Header with Results Count */}
       <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
         <h2 className="text-2xl font-bold text-gray-900">Companies Directory</h2>
         <span className="text-sm font-medium text-gray-600">{summary}</span>
       </div>
 
+      {/* Company Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {visibleCompanies.map(company => {
           const facility = company.facilities?.[0]
@@ -198,6 +225,15 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
           )
         })}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      )}
     </div>
   )
 }
