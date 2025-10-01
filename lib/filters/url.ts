@@ -130,7 +130,7 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
     filters.capabilities.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
   )
 
-  normalizedCountries.forEach((countries) => params.append("countries", countries))
+  normalizedCountries.forEach((country) => params.append("country", country))
   normalizedStates.forEach((state) => params.append("state", state))
   normalizedCapabilities.forEach((capability) => params.append("capability", capability))
 
