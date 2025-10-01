@@ -8,7 +8,7 @@ import { MapPin, RotateCcw } from "lucide-react"
 import type { FeatureCollection, Point } from "geojson"
 import type { Company, FacilityWithCompany } from "../types/company"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
-import { filterCompanies } from "../utils/filtering"
+import { filterCompanies, getLocationFilteredFacilities } from "../utils/filtering"
 import { useDebounce } from "../hooks/useDebounce"
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
@@ -42,27 +42,29 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   // Debounce filter changes for better performance
   const debouncedFilters = useDebounce(filters, 300)
 
+  // UPDATED: Use location-aware filtering
   const filteredFacilities = useMemo(() => {
+    // Get filtered companies count for display
     const filteredCompanies = filterCompanies(allCompanies, debouncedFilters)
-
-    // Extract facilities from filtered companies
-    const facilities = filteredCompanies
-      .flatMap((company) =>
-        (company.facilities ?? []).map((facility) => ({
-          ...facility,
-          company,
-        })),
-      )
-      .filter((facility): facility is FacilityWithCoordinates => {
-        const { latitude, longitude, company } = facility
-        return (
-          Boolean(company) &&
-          typeof latitude === 'number' &&
-          Number.isFinite(latitude) &&
-          typeof longitude === 'number' &&
-          Number.isFinite(longitude)
-        )
+    
+    // Get facilities that match BOTH company filters AND location filters
+    const facilities = getLocationFilteredFacilities(
+      allCompanies,
+      debouncedFilters,
+      (company, facility) => ({
+        ...facility,
+        company,
       })
+    ).filter((facility): facility is FacilityWithCoordinates => {
+      const { latitude, longitude, company } = facility
+      return (
+        Boolean(company) &&
+        typeof latitude === 'number' &&
+        Number.isFinite(latitude) &&
+        typeof longitude === 'number' &&
+        Number.isFinite(longitude)
+      )
+    })
 
     return { facilities, filteredCount: filteredCompanies.length }
   }, [debouncedFilters, allCompanies])
@@ -78,60 +80,44 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
   // Function to add clustering layers
   const addClusteringLayers = useCallback((facilitiesToAdd?: FacilityWithCoordinates[]) => {
+    if (!map.current) return
+
     const facilities = facilitiesToAdd || currentFacilitiesRef.current
-    
-    if (!map.current || facilities.length === 0) {
-      return
-    }
+    if (facilities.length === 0) return
 
-    // Remove existing layers and source
-    try {
-      if (map.current.getLayer('clusters')) map.current.removeLayer('clusters')
-      if (map.current.getLayer('cluster-count')) map.current.removeLayer('cluster-count')
-      if (map.current.getLayer('unclustered-point')) map.current.removeLayer('unclustered-point')
-      if (map.current.getSource('facilities')) map.current.removeSource('facilities')
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      // Layers might not exist yet, this is normal
-    }
+    // Remove existing layers and source if they exist
+    if (map.current.getLayer('clusters')) map.current.removeLayer('clusters')
+    if (map.current.getLayer('cluster-count')) map.current.removeLayer('cluster-count')
+    if (map.current.getLayer('unclustered-point')) map.current.removeLayer('unclustered-point')
+    if (map.current.getSource('facilities')) map.current.removeSource('facilities')
 
-    // Create GeoJSON
+    // Create GeoJSON from facilities
     const geojson: FeatureCollection<Point, FacilityFeatureProperties> = {
       type: 'FeatureCollection',
       features: facilities.map((facility) => ({
         type: 'Feature',
-        properties: {
-          company_name: facility.company.company_name || 'Unknown Company',
-          company_slug: facility.company.slug || '',
-          city: facility.city || 'Unknown City',
-          state: facility.state || 'Unknown State',
-          facility_type: facility.facility_type || 'Manufacturing Facility',
-        },
         geometry: {
           type: 'Point',
-          coordinates: [facility.longitude, facility.latitude],
+          coordinates: [facility.longitude, facility.latitude]
         },
-      })),
+        properties: {
+          company_name: facility.company.company_name,
+          company_slug: facility.company.slug,
+          city: facility.city || '',
+          state: facility.state || '',
+          facility_type: facility.facility_type || 'Manufacturing'
+        }
+      }))
     }
 
-    // Check if source already exists and update it, or create new
-    const existingSource = map.current.getSource('facilities') as mapboxgl.GeoJSONSource
-    if (existingSource) {
-      existingSource.setData(geojson)
-      // Check if layers exist - if not, we need to add them
-      if (map.current.getLayer('clusters')) {
-        return // Only return if layers exist
-      }
-    } else {
-      // Add source
-      map.current.addSource('facilities', {
-        type: 'geojson',
-        data: geojson,
-        cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 50
-      })
-    }
+    // Add source with clustering
+    map.current.addSource('facilities', {
+      type: 'geojson',
+      data: geojson,
+      cluster: true,
+      clusterMaxZoom: 14,
+      clusterRadius: 50
+    })
 
     // Add cluster circles
     map.current.addLayer({
@@ -198,60 +184,45 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   useEffect(() => {
     if (!mapContainer.current || map.current) return
 
-    if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN === "pk.demo_token") {
-      setIsLoading(false)
-      return
-    }
-
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: [-98.5795, 39.8283],
+      style: mapStyle,
+      center: [-98.5795, 39.8283], // Center of USA
       zoom: 3.5,
       pitch: 0,
-      bearing: 0,
-      antialias: true,
-      fadeDuration: 300,
+      bearing: 0
     })
 
-    // Add controls
-    map.current.addControl(
-      new mapboxgl.NavigationControl({
-        showCompass: true,
-        showZoom: true,
-        visualizePitch: true,
-      }),
-      "top-right",
-    )
+    // Add navigation controls
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
 
-    map.current.addControl(new mapboxgl.FullscreenControl(), "top-right")
-    map.current.addControl(new mapboxgl.ScaleControl(), "bottom-left")
-
-    // Event handlers
-    const handleClusterClick = (e: mapboxgl.MapMouseEvent) => {
+    // Click handler for clusters
+    const handleClusterClick = (e: mapboxgl.MapLayerMouseEvent) => {
       if (!map.current) return
-      
       const features = map.current.queryRenderedFeatures(e.point, {
         layers: ['clusters']
       })
 
-      if (features.length === 0) return
+      if (!features[0]) return
 
       const clusterId = features[0].properties?.cluster_id
-      if (clusterId === undefined) return
+      const source = map.current.getSource('facilities')
 
-      const source = map.current.getSource('facilities') as mapboxgl.GeoJSONSource
-      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-        if (err || !map.current) return
+      if (source && 'getClusterExpansionZoom' in source) {
+        source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+          if (err || !map.current) return
 
-        map.current.easeTo({
-          center: (features[0].geometry as GeoJSON.Point).coordinates as [number, number],
-          zoom: zoom || 10
+          const coordinates = (features[0].geometry as GeoJSON.Point).coordinates as [number, number]
+          map.current.easeTo({
+            center: coordinates,
+            zoom: zoom || map.current.getZoom() + 2
+          })
         })
-      })
+      }
     }
 
-    const handlePointClick = (e: mapboxgl.MapMouseEvent) => {
+    // Click handler for individual points
+    const handlePointClick = (e: mapboxgl.MapLayerMouseEvent) => {
       if (!map.current || !e.features?.[0]) return
 
       const coordinates = (e.features[0].geometry as GeoJSON.Point).coordinates.slice() as [number, number]
@@ -299,10 +270,9 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     map.current.on('load', () => {
       setIsLoading(false)
       setIsStyleLoaded(true)
-      // Don't add layers here - wait for facilities data
     })
 
-    // Handle style changes (this fires after style.load)
+    // Handle style changes
     map.current.on('style.load', () => {
       setIsStyleLoaded(true)
       // Re-add layers with current facilities
@@ -317,9 +287,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         map.current = null
       }
     }
-  }, [addClusteringLayers])
-
-  // Remove automatic style changes - only change when user clicks button
+  }, [addClusteringLayers, mapStyle])
 
   // Update layers when facilities change AND map is ready
   useEffect(() => {
@@ -336,7 +304,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         bounds.extend([facility.longitude, facility.latitude])
       })
 
-      // Use setTimeout to ensure layers are rendered before fitting bounds
       setTimeout(() => {
         if (map.current) {
           map.current.fitBounds(bounds, {
@@ -352,7 +319,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const handleStyleChange = (newStyle: string) => {
     if (map.current && newStyle !== mapStyle) {
       setMapStyle(newStyle)
-      setIsStyleLoaded(false) // Reset style loaded state
+      setIsStyleLoaded(false)
       map.current.setStyle(newStyle)
     }
   }
@@ -411,57 +378,53 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              Terrain
+              Outdoors
             </button>
             <button
-              onClick={() => handleStyleChange("mapbox://styles/mapbox/satellite-streets-v12")}
+              onClick={() => handleStyleChange("mapbox://styles/mapbox/dark-v11")}
               className={`px-3 py-1.5 text-xs font-medium rounded transition-colors duration-200 ${
-                mapStyle === "mapbox://styles/mapbox/satellite-streets-v12"
+                mapStyle === "mapbox://styles/mapbox/dark-v11"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              Satellite
+              Dark
             </button>
           </div>
         </div>
 
         <button
           onClick={resetView}
-          className="bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/50 p-2 hover:bg-white/95 transition-colors duration-200"
-          title="Reset View"
+          className="bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/50 p-2 hover:bg-white transition-colors duration-200"
+          title="Reset view"
         >
           <RotateCcw className="w-4 h-4 text-gray-600" />
         </button>
       </div>
 
       {/* Results Counter */}
-      <div className="absolute bottom-4 left-4 z-10">
-        <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/50 px-3 py-2">
-          <div className="flex items-center gap-2 text-sm">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-              <span className="font-medium text-gray-900">{filteredFacilities.facilities.length}</span>
-            </div>
-            <span className="text-gray-600">
-              {filteredFacilities.facilities.length === 1 ? "facility" : "facilities"}
-            </span>
-          </div>
+      <div className="absolute top-4 right-4 z-10">
+        <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/50 px-4 py-2">
+          <p className="text-sm font-medium text-gray-600">
+            <span className="text-blue-600 font-semibold">{filteredFacilities.facilities.length}</span> locations
+            {' '}from{' '}
+            <span className="text-blue-600 font-semibold">{filteredFacilities.filteredCount}</span> companies
+          </p>
         </div>
       </div>
 
+      {/* Map Container */}
+      <div ref={mapContainer} className="w-full h-[600px]" />
+
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 bg-white/75 backdrop-blur-sm z-20 flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-gray-600 font-medium">Loading map...</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-gray-600">Loading map...</p>
           </div>
         </div>
       )}
-
-      {/* Map Container */}
-      <div ref={mapContainer} className="w-full h-[500px]" />
     </div>
   )
 }

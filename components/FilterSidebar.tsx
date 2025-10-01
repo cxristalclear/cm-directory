@@ -12,7 +12,7 @@ interface FilterSidebarProps {
   allCompanies: Company[]
 }
 
-type FilterSection = "states" | "capabilities" | "volume"
+type FilterSection = "country" | "states" | "capabilities" | "volume"
 
 type FilterOption<T extends string> = {
   value: T
@@ -37,6 +37,7 @@ const VOLUME_LABELS: Record<ProductionVolume, string> = {
 export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
   const { filters, updateFilter, clearFilters } = useFilters()
   const [expandedSections, setExpandedSections] = useState<Record<FilterSection, boolean>>({
+    country: true,
     states: true,
     capabilities: true,
     volume: true,

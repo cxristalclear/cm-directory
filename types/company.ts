@@ -4,6 +4,7 @@ import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 // Database-accurate type definitions based on your PostgreSQL schema
 
 export type FilterState = {
+  countries: string[]
   states: string[]
   capabilities: CapabilitySlug[]
   productionVolume: ProductionVolume | null
