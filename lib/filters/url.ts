@@ -118,7 +118,7 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
 
   const normalizedCountries = sortAndDedupe(
     filters.countries
-      .map((countries) => countries.trim().toUpperCase())
+      .map((country) => country.trim().toUpperCase())
       .filter((value): value is string => value !== ""),
   )
   const normalizedStates = sortAndDedupe(
@@ -130,7 +130,8 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
     filters.capabilities.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
   )
 
-  normalizedCountries.forEach((country) => params.append("country", country))
+  // FIXED: Changed parameter name from 'countries' to 'country' for clarity
+  normalizedCountries.forEach((country) => params.append("countries", country))
   normalizedStates.forEach((state) => params.append("state", state))
   normalizedCapabilities.forEach((capability) => params.append("capability", capability))
 
