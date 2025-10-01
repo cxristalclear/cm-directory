@@ -3,6 +3,7 @@ import { parseFiltersFromSearchParams, serializeFiltersToSearchParams } from '..
 describe('filter URL helpers', () => {
   it('round-trips state, capability, and volume selections', () => {
     const params = serializeFiltersToSearchParams({
+      countries: ['US', 'CA'],
       states: ['tx', 'CA'],
       capabilities: ['prototyping', 'smt'],
       productionVolume: 'high',
@@ -15,6 +16,7 @@ describe('filter URL helpers', () => {
     const parsed = parseFiltersFromSearchParams(params)
 
     expect(parsed).toEqual({
+      countries: ['US', 'CA'],
       states: ['CA', 'TX'],
       capabilities: ['prototyping', 'smt'],
       productionVolume: 'high',
@@ -35,24 +37,27 @@ describe('filter URL helpers', () => {
 
   it('produces stable query parameter ordering', () => {
     const params = serializeFiltersToSearchParams({
+      countries: ['US', 'CA'],
       states: ['TX', 'CA'],
       capabilities: ['smt', 'prototyping'],
       productionVolume: 'medium',
     })
 
     expect(params.toString()).toBe(
-      'state=CA&state=TX&capability=prototyping&capability=smt&volume=medium',
+      'countries=CA&countries=US&state=CA&state=TX&capability=prototyping&capability=smt&volume=medium',
     )
   })
 
   it('parses from plain record inputs', () => {
     const parsed = parseFiltersFromSearchParams({
+      countries: ['us', 'ca'],
       state: ['ca', 'ny'],
       capability: ['SMT', 'through_hole'],
       volume: 'LOW',
     })
 
     expect(parsed).toEqual({
+      countries: ['CA', 'US'],
       states: ['CA', 'NY'],
       capabilities: ['smt', 'through_hole'],
       productionVolume: 'low',

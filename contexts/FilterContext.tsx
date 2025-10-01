@@ -11,6 +11,7 @@ const FilterContext = createContext<FilterContextType | undefined>(undefined)
 interface FilterProviderProps {
   children: ReactNode
   initialFilters?: {
+    countries: string[]
     states: string[]
     capabilities: CapabilitySlug[]
     productionVolume: ProductionVolume | null
@@ -24,7 +25,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
   const [isPending, startTransition] = useTransition()
 
   const [filters, setFilters] = useState<FilterState>({
-    countries: [],
+    countries: initialFilters?.countries || [],
     states: initialFilters?.states || [],
     capabilities: initialFilters?.capabilities || [],
     productionVolume: initialFilters?.productionVolume || null,
