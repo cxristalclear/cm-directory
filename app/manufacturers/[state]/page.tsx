@@ -1,38 +1,46 @@
-import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { MapPin, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import CompanyList from "@/components/CompanyList"
+import FilterSidebar from "@/components/FilterSidebar"
+import { FilterProvider } from "@/contexts/FilterContext"
+import { parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
 // State data with SEO-friendly names and info
-const STATE_DATA: Record<string, { 
+const STATE_DATA: Record<string, {
   name: string
+  abbreviation: string
   fullName: string
   description: string
   majorCities: string[]
 }> = {
   'california': {
     name: 'California',
+    abbreviation: 'CA',
     fullName: 'California',
     description: 'Silicon Valley and Southern California host advanced electronics and medical device manufacturers',
     majorCities: ['Los Angeles', 'San Diego', 'San Jose', 'San Francisco']
   },
   'texas': {
     name: 'Texas',
+    abbreviation: 'TX',
     fullName: 'Texas',
     description: 'Major manufacturing hub with aerospace, defense, and energy sector specializations',
     majorCities: ['Houston', 'Dallas', 'Austin', 'San Antonio']
   },
   'ohio': {
     name: 'Ohio',
-    fullName: 'Ohio', 
+    abbreviation: 'OH',
+    fullName: 'Ohio',
     description: 'Traditional manufacturing powerhouse with automotive and industrial expertise',
     majorCities: ['Columbus', 'Cleveland', 'Cincinnati', 'Dayton']
   },
   'michigan': {
     name: 'Michigan',
+    abbreviation: 'MI',
     fullName: 'Michigan',
     description: 'Automotive manufacturing capital with growing medical device and aerospace sectors',
     majorCities: ['Detroit', 'Grand Rapids', 'Warren', 'Sterling Heights']
@@ -63,12 +71,12 @@ export async function generateStaticParams() {
 }
 
 // Generate metadata for SEO
-export async function generateMetadata({ 
+export async function generateMetadata({
   params,
 }: {
-  params: { state: string }
+  params: Promise<{ state: string }>
 }): Promise<Metadata> {
-  const { state } = params
+  const { state } = await params
   const stateData = STATE_DATA[state.toLowerCase()]
   
   if (!stateData) {
@@ -82,7 +90,7 @@ export async function generateMetadata({
   const { count } = await supabase
     .from('facilities')
     .select('*', { count: 'exact', head: true })
-    .eq('state', stateData.name)
+    .eq('state', stateData.abbreviation)
   
   return {
     title: `Contract Manufacturers in ${stateData.fullName} | ${count || 0}+ Verified Companies`,
@@ -102,10 +110,13 @@ export async function generateMetadata({
 
 export default async function StateManufacturersPage({
   params,
+  searchParams,
 }: {
-  params: { state: string }
+  params: Promise<{ state: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const { state } = params
+  const [{ state }, sp] = await Promise.all([params, searchParams])
+  const initialFilters = parseFiltersFromSearchParams(sp)
   const stateData = STATE_DATA[state.toLowerCase()]
   
   if (!stateData) {
@@ -125,7 +136,7 @@ export default async function StateManufacturersPage({
       certifications (certification_type),
       industries (industry_name)
     `)
-    .eq('facilities.state', stateData.name)
+    .eq('facilities.state', stateData.abbreviation)
     .eq('is_active', true)
 
     const companies: Company[] = (data ?? []) as Company[]
@@ -199,15 +210,16 @@ export default async function StateManufacturersPage({
   }
   
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(stateSchema) }}
-      />
-      
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white">
+    <FilterProvider initialFilters={initialFilters}>
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(stateSchema) }}
+        />
+
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+          {/* Hero Section */}
+          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white">
           <div className="container mx-auto px-4 py-12">
             {/* Breadcrumbs */}
             <nav className="flex items-center gap-2 text-sm text-blue-100 mb-6">
@@ -219,8 +231,8 @@ export default async function StateManufacturersPage({
             </nav>
             
             <div className="flex items-start gap-4 mb-6">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                <MapPin className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-2xl font-semibold">
+                {stateData.abbreviation}
               </div>
               <div>
                 <h1 className="text-4xl font-bold mb-3">
@@ -313,8 +325,15 @@ export default async function StateManufacturersPage({
             </p>
           </div>
           
-          <CompanyList allCompanies={companies || []} />
-          
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <FilterSidebar allCompanies={companies || []} />
+            </div>
+            <div className="lg:col-span-8">
+              <CompanyList allCompanies={companies || []} />
+            </div>
+          </div>
+
           {/* Related States Section */}
           <div className="mt-12 bg-white rounded-xl shadow-sm p-8">
             <h2 className="text-xl font-bold mb-4">Explore Other States</h2>
@@ -336,6 +355,7 @@ export default async function StateManufacturersPage({
           </div>
         </div>
       </div>
-    </>
+      </>
+    </FilterProvider>
   )
 }

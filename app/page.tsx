@@ -1,12 +1,13 @@
-import { Suspense } from "react";
-import LazyCompanyMap from '@/components/LazyCompanyMap'
-import CompanyList from "../components/CompanyList";
-import FilterSidebar from "@/components/FilterSidebar";
-import FilterDebugger from '@/components/FilterDebugger'
-import Header from "@/components/Header";
-import { FilterProvider } from "../contexts/FilterContext";
-import { supabase } from "../lib/supabase";
-import Script from "next/script";
+import { Suspense } from "react"
+import Script from "next/script"
+import LazyCompanyMap from "@/components/LazyCompanyMap"
+import CompanyList from "@/components/CompanyList"
+import FilterSidebar from "@/components/FilterSidebar"
+import FilterDebugger from "@/components/FilterDebugger"
+import Header from "@/components/Header"
+import { FilterProvider } from "@/contexts/FilterContext"
+import { parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { supabase } from "@/lib/supabase"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -56,8 +57,14 @@ async function getData() {
   return companies || [];
 }
 
-export default async function Home() {
-  const companies = await getData();
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const sp = await searchParams
+  const initialFilters = parseFiltersFromSearchParams(sp)
+  const companies = await getData()
 
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
@@ -75,7 +82,7 @@ export default async function Home() {
           }
         })
       }} />
-      <FilterProvider>
+      <FilterProvider initialFilters={initialFilters}>
         <div className="min-h-screen bg-gray-50">
           <Header companies={companies} />
 
@@ -96,9 +103,7 @@ export default async function Home() {
               <div className="lg:col-span-3 space-y-4">
                 <Suspense fallback={<div>Loading filters...</div>}>
                   <FilterSidebar allCompanies={companies} />
-                  {SHOW_DEBUG && (
-                  <FilterDebugger allCompanies={companies} />
-                  )}
+                  {SHOW_DEBUG && <FilterDebugger allCompanies={companies} />}
                 </Suspense>
 
                 {/* Bottom Sidebar Ad */}
