@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo } from "react"
 import { Building2 } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
@@ -11,15 +10,10 @@ interface HeaderProps {
   companies?: Company[]
 }
 
-export default function Header({ companies = [] }: HeaderProps) {
-  const { filters, filteredCount, clearFilters } = useFilters()
+export default function Header({ }: HeaderProps) {
+  useFilters()
 
-  const activeFilterCount = useMemo(() => {
-    return filters.states.length + filters.capabilities.length + (filters.productionVolume ? 1 : 0)
-  }, [filters.capabilities.length, filters.productionVolume, filters.states.length])
 
-  const totalCompanies = companies.length
-  const hasActiveFilters = activeFilterCount > 0
 
   return (
     <header className="relative overflow-hidden">
@@ -58,25 +52,9 @@ export default function Header({ companies = [] }: HeaderProps) {
               <p className="mb-6 text-lg leading-relaxed text-blue-100 md:text-xl">
                 Connect with verified contract manufacturers. Filter by location, capabilities, and production volume.
               </p>
-              <div className="flex flex-col items-center justify-center gap-3 text-white sm:flex-row sm:gap-4">
-                <span className="text-sm font-medium uppercase tracking-widest text-blue-100">
-                  Showing {filteredCount}
-                  {totalCompanies > 0 ? ` of ${totalCompanies}` : ""} manufacturers
-                </span>
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
-                  >
-                    Clear filters ({activeFilterCount})
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         </div>
-
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
           <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-white/5 blur-3xl" />

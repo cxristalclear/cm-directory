@@ -403,7 +403,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       </div>
 
       {/* Results Counter */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-25 z-10">
         <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/50 px-4 py-2">
           <p className="text-sm font-medium text-gray-600">
             <span className="text-blue-600 font-semibold">{filteredFacilities.facilities.length}</span> locations

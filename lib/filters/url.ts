@@ -28,6 +28,7 @@ type SearchParamValue = string | string[] | undefined
 type SearchParamInput = URLSearchParams | Record<string, SearchParamValue>
 
 export type FilterUrlState = {
+  country: string[] // ISO country codes
   states: string[]
   capabilities: CapabilitySlug[]
   productionVolume: ProductionVolume | null
@@ -95,24 +96,31 @@ function collectValues(params: URLSearchParams, keys: readonly string[]): string
 export function parseFiltersFromSearchParams(searchParams: SearchParamInput): FilterUrlState {
   const params = toURLSearchParams(searchParams)
 
+  const countryValues = collectValues(params, ["country", "countries"]).map((value) => value.trim().toUpperCase())
   const stateValues = collectValues(params, ["state", "states"]).map((value) => normalizeState(value))
   const capabilityValues = collectValues(params, ["capability", "capabilities"]).map((value) =>
     value.toLowerCase(),
   )
   const volumeValues = collectValues(params, ["volume"]).map((value) => value.toLowerCase())
 
+  const country = sortAndDedupe(countryValues.filter((value): value is string => value !== ""))
   const states = sortAndDedupe(stateValues.filter((value): value is string => value !== null))
   const capabilities = sortAndDedupe(
     capabilityValues.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
   )
   const productionVolume = volumeValues.find((value): value is ProductionVolume => isProductionVolume(value)) ?? null
 
-  return { states, capabilities, productionVolume }
+  return { country, states, capabilities, productionVolume }
 }
 
 export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSearchParams {
   const params = new URLSearchParams()
 
+  const normalizedCountries = sortAndDedupe(
+    filters.country
+      .map((country) => country.trim().toUpperCase())
+      .filter((value): value is string => value !== ""),
+  )
   const normalizedStates = sortAndDedupe(
     filters.states
       .map((state) => normalizeState(state))
@@ -122,6 +130,7 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
     filters.capabilities.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
   )
 
+  normalizedCountries.forEach((country) => params.append("country", country))
   normalizedStates.forEach((state) => params.append("state", state))
   normalizedCapabilities.forEach((capability) => params.append("capability", capability))
 
