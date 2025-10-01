@@ -1,18 +1,11 @@
-import type { Company, FilterState } from '../types/company'
+import type { Company, FilterState, Facility } from '../types/company'
+import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
 
+/**
+ * Filter companies based on all filter criteria
+ */
 export function filterCompanies(companies: Company[], filters: FilterState): Company[] {
   let filtered = [...companies]
-
-  // Search term filter
-  if (filters.searchTerm) {
-    const searchLower = filters.searchTerm.toLowerCase()
-    filtered = filtered.filter(
-      (company) =>
-        company.company_name?.toLowerCase().includes(searchLower) ||
-        company.description?.toLowerCase().includes(searchLower) ||
-        company.key_differentiators?.toLowerCase().includes(searchLower),
-    )
-  }
 
   // Countries filter
   if (filters.countries.length > 0) {
@@ -35,7 +28,7 @@ export function filterCompanies(companies: Company[], filters: FilterState): Com
     filtered = filtered.filter((company) => {
       if (!company.capabilities?.[0]) return false
       const cap = company.capabilities[0]
-      return filters.capabilities.some((filter) => {
+      return filters.capabilities.some((filter: CapabilitySlug) => {
         switch (filter) {
           case "smt":
             return cap.pcb_assembly_smt
@@ -54,51 +47,75 @@ export function filterCompanies(companies: Company[], filters: FilterState): Com
     })
   }
 
-  // Volume capability filter
-  if (filters.volumeCapability.length > 0) {
+  // Production volume filter (single value, nullable)
+  if (filters.productionVolume) {
     filtered = filtered.filter((company) => {
       if (!company.capabilities?.[0]) return false
       const cap = company.capabilities[0]
-      return filters.volumeCapability.some((vol) => {
-        switch (vol) {
-          case "low":
-            return cap.low_volume_production
-          case "medium":
-            return cap.medium_volume_production
-          case "high":
-            return cap.high_volume_production
-          default:
-            return false
-        }
-      })
+      const volume: ProductionVolume = filters.productionVolume as ProductionVolume
+      
+      switch (volume) {
+        case "low":
+          return cap.low_volume_production
+        case "medium":
+          return cap.medium_volume_production
+        case "high":
+          return cap.high_volume_production
+        default:
+          return false
+      }
     })
   }
 
-  // Certifications filter
-  if (filters.certifications.length > 0) {
-    filtered = filtered.filter((company) =>
-      company.certifications?.some((cert) =>
-        filters.certifications.includes(cert.certification_type.toLowerCase().replace(/\s+/g, "_")),
-      ),
+  return filtered
+}
+
+/**
+ * Filter facilities based on location filters only
+ * This ensures only facilities matching the selected locations are displayed
+ */
+export function filterFacilitiesByLocation(
+  facilities: Facility[],
+  filters: FilterState
+): Facility[] {
+  let filtered = [...facilities]
+
+  // Apply country filter to facilities
+  if (filters.countries.length > 0) {
+    filtered = filtered.filter((facility) =>
+      filters.countries.includes(facility.country || 'US')
     )
   }
 
-  // Industries filter
-  if (filters.industries.length > 0) {
-    filtered = filtered.filter((company) =>
-      company.industries?.some((ind) =>
-        filters.industries.includes(ind.industry_name.toLowerCase().replace(/\s+/g, "_")),
-      ),
-    )
-  }
-
-  // Employee range filter
-  if (filters.employeeRange.length > 0) {
-    filtered = filtered.filter((company) =>
-      typeof company.employee_count_range === 'string' &&
-      filters.employeeRange.includes(company.employee_count_range)
+  // Apply state filter to facilities
+  if (filters.states.length > 0) {
+    filtered = filtered.filter((facility) =>
+      facility.state && filters.states.includes(facility.state)
     )
   }
 
   return filtered
+}
+
+/**
+ * Get location-filtered facilities from companies
+ * Use this when you need to display only facilities that match location filters
+ * This is the KEY function that solves the "showing all locations" problem
+ */
+export function getLocationFilteredFacilities<T extends Facility>(
+  companies: Company[],
+  filters: FilterState,
+  facilitiesMapper: (company: Company, facility: Facility) => T
+): T[] {
+  // First filter companies by all criteria (countries, states, capabilities, volume)
+  const filteredCompanies = filterCompanies(companies, filters)
+  
+  // Extract all facilities from filtered companies
+  const allFacilities = filteredCompanies.flatMap((company) =>
+    (company.facilities ?? []).map((facility) => facilitiesMapper(company, facility))
+  )
+  
+  // Then apply location-specific filtering to facilities
+  // This ensures we only show facilities in the selected countries/states
+  return filterFacilitiesByLocation(allFacilities, filters) as T[]
 }

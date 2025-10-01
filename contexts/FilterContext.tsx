@@ -4,24 +4,31 @@ import { createContext, useContext, useState, useEffect, type ReactNode, useTran
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { useDebouncedCallback } from "use-debounce"
 import type { FilterState, FilterContextType } from "../types/company"
+import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
-export function FilterProvider({ children }: { children: ReactNode }) {
+interface FilterProviderProps {
+  children: ReactNode
+  initialFilters?: {
+    countries: string[]
+    states: string[]
+    capabilities: CapabilitySlug[]
+    productionVolume: ProductionVolume | null
+  }
+}
+
+export function FilterProvider({ children, initialFilters }: FilterProviderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
   const [filters, setFilters] = useState<FilterState>({
-    searchTerm: "",
-    countries: [],
-    states: [],
-    capabilities: [],
-    certifications: [],
-    industries: [],
-    employeeRange: [],
-    volumeCapability: [],
+    countries: initialFilters?.countries || [],
+    states: initialFilters?.states || [],
+    capabilities: initialFilters?.capabilities || [],
+    productionVolume: initialFilters?.productionVolume || null,
   })
 
   const [filteredCount, setFilteredCount] = useState(0)
@@ -31,14 +38,10 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     const params = new URLSearchParams(searchParams.toString())
 
     const newFilters: FilterState = {
-      searchTerm: params.get("search") || "",
       countries: params.get("countries")?.split(",").filter(Boolean) || [],
       states: params.get("states")?.split(",").filter(Boolean) || [],
-      capabilities: params.get("capabilities")?.split(",").filter(Boolean) || [],
-      certifications: params.get("certifications")?.split(",").filter(Boolean) || [],
-      industries: params.get("industries")?.split(",").filter(Boolean) || [],
-      employeeRange: params.get("employees")?.split(",").filter(Boolean) || [],
-      volumeCapability: params.get("volume")?.split(",").filter(Boolean) || [],
+      capabilities: (params.get("capabilities")?.split(",").filter(Boolean) || []) as CapabilitySlug[],
+      productionVolume: (params.get("volume") || null) as ProductionVolume | null,
     }
 
     setFilters((prevFilters) => {
@@ -51,14 +54,10 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     (newFilters: FilterState) => {
       const params = new URLSearchParams()
 
-      if (newFilters.searchTerm) params.set("search", newFilters.searchTerm)
       if (newFilters.countries.length) params.set("countries", newFilters.countries.join(","))
       if (newFilters.states.length) params.set("states", newFilters.states.join(","))
       if (newFilters.capabilities.length) params.set("capabilities", newFilters.capabilities.join(","))
-      if (newFilters.certifications.length) params.set("certifications", newFilters.certifications.join(","))
-      if (newFilters.industries.length) params.set("industries", newFilters.industries.join(","))
-      if (newFilters.employeeRange.length) params.set("employees", newFilters.employeeRange.join(","))
-      if (newFilters.volumeCapability.length) params.set("volume", newFilters.volumeCapability.join(","))
+      if (newFilters.productionVolume) params.set("volume", newFilters.productionVolume)
 
       const newUrl = `${pathname}${params.toString() ? "?" + params.toString() : ""}`
       
@@ -72,6 +71,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     [router, pathname]
   )
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const debouncedUpdateURL = useDebouncedCallback(updateURLParams, 300)
 
   const updateFilter = useCallback(
@@ -81,29 +81,21 @@ export function FilterProvider({ children }: { children: ReactNode }) {
         
         // Defer URL update to after render
         setTimeout(() => {
-          if (key === "searchTerm") {
-            debouncedUpdateURL(newFilters)
-          } else {
-            updateURLParams(newFilters)
-          }
+          updateURLParams(newFilters)
         }, 0)
         
         return newFilters
       })
     },
-    [debouncedUpdateURL, updateURLParams]
+    [updateURLParams]
   )
 
   const clearFilters = useCallback(() => {
     const defaultFilters: FilterState = {
-      searchTerm: "",
       countries: [],
       states: [],
       capabilities: [],
-      certifications: [],
-      industries: [],
-      employeeRange: [],
-      volumeCapability: [],
+      productionVolume: null,
     }
     
     setFilters(defaultFilters)
@@ -118,6 +110,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
   const contextValue: FilterContextType = {
     filters,
+    setFilters,
     updateFilter,
     clearFilters,
     filteredCount,
