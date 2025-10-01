@@ -1,8 +1,9 @@
 import { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase'
+import { siteConfig } from '../lib/config'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://yourdomain.com'
+  const baseUrl = siteConfig.url
   
   // Fetch all companies
   const { data: companies } = await supabase
@@ -40,14 +41,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 1,
     },
-    ...companyUrls,
-    ...stateUrls,
-    // Add category pages when you create them
     {
       url: `${baseUrl}/manufacturers`,
       lastModified: new Date(),
       changeFrequency: 'daily' as const,
       priority: 0.9,
     },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/add-your-company`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    },
+    ...companyUrls,
+    ...stateUrls,
   ]
 }
