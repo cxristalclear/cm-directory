@@ -353,7 +353,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
 
         <div className="p-4 lg:p-6">
           {/* Filter Sections */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {/* Location Filter - Countries and States */}
             <div className="bg-gray-50 rounded-xl p-4 transition-all duration-200 hover:bg-gray-100">
               <button
@@ -383,7 +383,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                   {/* Countries */}
                   <div>
                     <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Countries</h4>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       {Array.from(dynamicCounts.countries.entries())
                         .sort(([a], [b]) => getCountryName(a).localeCompare(getCountryName(b)))
                         .map(([country, count]) => {
@@ -431,7 +431,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                     <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                       {getSubdivisionLabel()}
                     </h4>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <div className="space-y-1 max-h-64 overflow-y-auto">
                       {Array.from(dynamicCounts.states.entries())
                         .sort(([a], [b]) => getStateName(a).localeCompare(getStateName(b)))
                         .map(([state, count]) => {
@@ -500,7 +500,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
               </button>
 
               {expandedSections.includes('capabilities') && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-1">
                   {Array.from(dynamicCounts.capabilities.entries()).map(([cap, count]) => {
                     const isSelected = filters.capabilities.includes(cap)
                     const isDisabled = count === 0 && !isSelected
@@ -565,7 +565,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
               </button>
 
               {expandedSections.includes('volume') && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-1">
                   {Array.from(dynamicCounts.productionVolume.entries()).map(([vol, count]) => {
                     const isSelected = filters.productionVolume === vol
                     const isDisabled = count === 0 && !isSelected
