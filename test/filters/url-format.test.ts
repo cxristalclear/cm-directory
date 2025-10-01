@@ -4,19 +4,19 @@ describe('filter URL helpers', () => {
   it('round-trips state, capability, and volume selections', () => {
     const params = serializeFiltersToSearchParams({
       countries: ['US', 'CA'],
-      states: ['tx', 'CA'],
+      states: ['TX', 'CA'],
       capabilities: ['prototyping', 'smt'],
       productionVolume: 'high',
     })
 
     expect(params.toString()).toBe(
-      'state=CA&state=TX&capability=prototyping&capability=smt&volume=high',
+      'countries=CA&countries=US&state=CA&state=TX&capability=prototyping&capability=smt&volume=high',
     )
 
     const parsed = parseFiltersFromSearchParams(params)
 
     expect(parsed).toEqual({
-      countries: ['US', 'CA'],
+      countries: ['CA', 'US'],
       states: ['CA', 'TX'],
       capabilities: ['prototyping', 'smt'],
       productionVolume: 'high',
@@ -32,7 +32,12 @@ describe('filter URL helpers', () => {
   it('ignores unknown filter values safely', () => {
     const parsed = parseFiltersFromSearchParams(new URLSearchParams('state=ZZ&capability=unknown&volume=foo'))
 
-    expect(parsed).toEqual({ states: [], capabilities: [], productionVolume: null })
+    expect(parsed).toEqual({ 
+      countries: [],
+      states: [], 
+      capabilities: [], 
+      productionVolume: null 
+    })
   })
 
   it('produces stable query parameter ordering', () => {
@@ -62,5 +67,63 @@ describe('filter URL helpers', () => {
       capabilities: ['smt', 'through_hole'],
       productionVolume: 'low',
     })
+  })
+
+  it('handles countries filtering', () => {
+    const params = serializeFiltersToSearchParams({
+      countries: ['US', 'CA', 'MX'],
+      states: [],
+      capabilities: [],
+      productionVolume: null,
+    })
+
+    expect(params.toString()).toBe('countries=CA&countries=MX&countries=US')
+
+    const parsed = parseFiltersFromSearchParams(params)
+    expect(parsed.countries).toEqual(['CA', 'MX', 'US'])
+  })
+
+  it('handles empty filters', () => {
+    const params = serializeFiltersToSearchParams({
+      countries: [],
+      states: [],
+      capabilities: [],
+      productionVolume: null,
+    })
+
+    expect(params.toString()).toBe('')
+  })
+
+  it('parses countries from URL params', () => {
+    const parsed = parseFiltersFromSearchParams(
+      new URLSearchParams('countries=US&countries=CA&state=TX')
+    )
+
+    expect(parsed).toEqual({
+      countries: ['CA', 'US'],
+      states: ['TX'],
+      capabilities: [],
+      productionVolume: null,
+    })
+  })
+
+  it('normalizes country codes to uppercase', () => {
+    const parsed = parseFiltersFromSearchParams(
+      new URLSearchParams('countries=us&countries=ca&countries=mx')
+    )
+
+    expect(parsed.countries).toEqual(['CA', 'MX', 'US'])
+  })
+
+  it('handles both singular and plural param names', () => {
+    const parsed1 = parseFiltersFromSearchParams(
+      new URLSearchParams('country=US&state=CA&capability=smt')
+    )
+
+    const parsed2 = parseFiltersFromSearchParams(
+      new URLSearchParams('countries=US&states=CA&capabilities=smt')
+    )
+
+    expect(parsed1).toEqual(parsed2)
   })
 })

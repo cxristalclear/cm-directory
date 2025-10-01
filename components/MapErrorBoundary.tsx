@@ -1,5 +1,7 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+'use client'
+
+import React, { Component, ReactNode } from 'react'
+import { MapPin, AlertTriangle } from 'lucide-react'
 
 interface Props {
   children: ReactNode
@@ -12,44 +14,74 @@ interface State {
 }
 
 export class MapErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null
+  constructor(props: Props) {
+    super(props)
+    this.state = { hasError: false, error: null }
   }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error }
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Map error caught by boundary:', error, errorInfo)
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Map error caught:', error, errorInfo)
+    
+    // Log to error reporting service
+    // Example: logErrorToService(error, errorInfo)
   }
 
-  private handleReset = () => {
-    this.setState({ hasError: false, error: null })
-  }
-
-  public render() {
+  render() {
     if (this.state.hasError) {
+      // If custom fallback is provided, use it
       if (this.props.fallback) {
         return this.props.fallback
       }
 
+      // Default error UI
       return (
-        <div className="relative bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl shadow-sm border border-red-200/50 p-8 text-center min-h-[500px] flex items-center justify-center">
+        <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-sm border border-gray-200/50 p-8 text-center min-h-[500px] flex items-center justify-center">
           <div className="max-w-md">
-            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Map Loading Error</h3>
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-yellow-600" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Map Unavailable
+            </h3>
             <p className="text-gray-600 text-sm mb-4">
-              {this.state.error?.message || 'Unable to load the map component. This might be due to network issues or browser compatibility.'}
+              The map visualization couldn&apos;t be loaded. This might be due to:
             </p>
-            <button
-              onClick={this.handleReset}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Try Again
-            </button>
+            <ul className="text-sm text-gray-600 text-left space-y-1 mb-6 max-w-xs mx-auto">
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">•</span>
+                <span>Missing or invalid Mapbox access token</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">•</span>
+                <span>Network connectivity issues</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">•</span>
+                <span>Browser compatibility problems</span>
+              </li>
+            </ul>
+
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="text-left mb-4">
+                <summary className="text-xs text-gray-500 cursor-pointer mb-2">
+                  Error Details (Development Only)
+                </summary>
+                <pre className="text-xs bg-gray-100 text-gray-800 p-3 rounded-lg overflow-auto">
+                  {this.state.error.message}
+                </pre>
+              </details>
+            )}
+
+            <div className="flex items-center justify-center gap-2 text-gray-500">
+              <MapPin className="w-4 h-4" />
+              <span className="text-sm">You can still browse companies using the list below</span>
+            </div>
           </div>
         </div>
       )
@@ -58,3 +90,5 @@ export class MapErrorBoundary extends Component<Props, State> {
     return this.props.children
   }
 }
+
+export default MapErrorBoundary
