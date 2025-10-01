@@ -11,8 +11,19 @@ const facetCounts: CompanyFacetCounts = {
     { code: "CA", count: 12 },
     { code: "TX", count: 8 },
   ],
-  capabilities: [],
-  productionVolume: [],
+  capabilities: [
+    { slug: "smt", count: 10 },
+    { slug: "through_hole", count: 6 },
+    { slug: "mixed", count: 4 },
+    { slug: "fine_pitch", count: 3 },
+    { slug: "cable_harness", count: 2 },
+    { slug: "box_build", count: 5 },
+  ],
+  productionVolume: [
+    { level: "low", count: 7 },
+    { level: "medium", count: 5 },
+    { level: "high", count: 2 },
+  ],
 }
 
 let currentFilters: FilterUrlState = { states: [], capabilities: [], productionVolume: null }
@@ -85,5 +96,70 @@ describe("FilterSidebar state facet", () => {
 
     const updatedCheckbox = container.querySelector<HTMLInputElement>("#state-CA")
     expect(updatedCheckbox?.checked).toBe(true)
+  })
+
+  it("renders capability counts in sorted order", () => {
+    const initialFilters: FilterUrlState = { states: ["CA"], capabilities: [], productionVolume: null }
+
+    act(() => {
+      root.render(
+        <FilterSidebar basePath="/manufacturers" filters={initialFilters} facetCounts={facetCounts} clearHref="/" />,
+      )
+    })
+
+    const capabilityCountBadges = Array.from(
+      container.querySelectorAll<HTMLSpanElement>("section:nth-of-type(2) a span:nth-of-type(2)"),
+    )
+
+    expect(capabilityCountBadges).toHaveLength(6)
+    expect(capabilityCountBadges[0]?.textContent).toBe("10")
+    expect(capabilityCountBadges[capabilityCountBadges.length - 1]?.textContent).toBe("5")
+  })
+
+  it("updates displayed counts after filters change", () => {
+    const initialFilters: FilterUrlState = { states: [], capabilities: [], productionVolume: null }
+
+    act(() => {
+      root.render(
+        <FilterSidebar basePath="/" filters={initialFilters} facetCounts={facetCounts} clearHref="/" />,
+      )
+    })
+
+    const updatedFacetCounts: CompanyFacetCounts = {
+      states: [
+        { code: "CA", count: 5 },
+        { code: "TX", count: 2 },
+      ],
+      capabilities: facetCounts.capabilities.map((entry) =>
+        entry.slug === "smt" ? { ...entry, count: 3 } : entry,
+      ),
+      productionVolume: facetCounts.productionVolume.map((entry) =>
+        entry.level === "medium" ? { ...entry, count: 1 } : entry,
+      ),
+    }
+
+    act(() => {
+      root.render(
+        <FilterSidebar
+          basePath="/"
+          filters={{ states: ["CA"], capabilities: ["smt"], productionVolume: "medium" }}
+          facetCounts={updatedFacetCounts}
+          clearHref="/"
+        />,
+      )
+    })
+
+    const stateCountText = container.querySelector("label[for='state-CA'] span:nth-of-type(2)")?.textContent
+    expect(stateCountText).toBe("5")
+
+    const capabilityCount = container.querySelector<HTMLSpanElement>(
+      "section:nth-of-type(2) li:first-child span:nth-of-type(2)",
+    )?.textContent
+    expect(capabilityCount).toBe("3")
+
+    const volumeCount = container.querySelector<HTMLSpanElement>(
+      "section:nth-of-type(3) a:nth-of-type(2) span:nth-of-type(2)",
+    )?.textContent
+    expect(volumeCount).toBe("1")
   })
 })

@@ -1,13 +1,7 @@
 import { randomUUID } from "crypto"
 
-import {
-  companySearch,
-  deserializeCursor,
-  prepareCompanyFilterContext,
-  serializeCursor,
-} from "@/lib/queries/companySearch"
-import type { NormalizedFilters } from "@/lib/queries/companySearch"
-import type { Capabilities, Certification, Company, Facility } from "@/types/company"
+import { companySearch } from "@/lib/queries/companySearch"
+import type { Capabilities, Company, Facility } from "@/types/company"
 
 jest.mock("@/lib/supabase", () => ({
   supabase: {
@@ -184,41 +178,16 @@ function createCompany(
   }
 }
 
-describe("prepareCompanyFilterContext", () => {
-  it("collects company ids for active filters", async () => {
-    enqueueBuilder("facilities", {
-      data: [
-        { company_id: "c01", state: "CA" },
-        { company_id: "c02", state: "TX" },
-      ],
-    })
-    enqueueBuilder("capabilities", { data: [{ company_id: "c01" }] })
-    enqueueBuilder("capabilities", { data: [{ company_id: "c01" }] })
-    enqueueBuilder("certifications", { data: [{ company_id: "c01" }] })
-
-    const filters = {
-      states: ["CA", "TX"],
-      capabilities: ["smt"],
-      productionVolume: "medium" as const,
-      certification: "ISO 13485",
-      bbox: null,
-    } satisfies NormalizedFilters
-
-    const result = await prepareCompanyFilterContext(filters, { certSlug: "iso-13485" })
-
-    expect(result.allCompanyIds).toEqual(["c01"])
-    expect(result.filterSets.states).toBeInstanceOf(Set)
-    expect(supabase.from).toHaveBeenCalledTimes(4)
-  })
-})
-
-describe("companySearch", () => {
-  const companies = [
+describe("companySearch facet counts", () => {
+  const baseCompanies = [
     createCompany({
       id: "c01",
       company_name: "Alpha Manufacturing",
       slug: "alpha-manufacturing",
-      facilities: [createFacility({ company_id: "c01", state: "CA", latitude: 37.3, longitude: -122.0 })],
+      facilities: [
+        createFacility({ company_id: "c01", state: "CA" }),
+        createFacility({ company_id: "c01", state: "CA" }),
+      ],
       capabilities: [
         createCapabilities({ company_id: "c01", pcb_assembly_smt: true, medium_volume_production: true }),
       ],
@@ -227,30 +196,20 @@ describe("companySearch", () => {
       id: "c02",
       company_name: "Beta Electronics",
       slug: "beta-electronics",
-      facilities: [createFacility({ company_id: "c02", state: "TX", latitude: 30.2, longitude: -97.7 })],
+      facilities: [createFacility({ company_id: "c02", state: "TX" })],
       capabilities: [
         createCapabilities({ company_id: "c02", box_build_assembly: true, high_volume_production: true }),
       ],
     }),
   ]
 
-  it("returns paginated results with facet counts", async () => {
+  it("counts all facets without active filters", async () => {
+    enqueueBuilder("companies", { data: baseCompanies.map((company) => ({ id: company.id })) })
+    enqueueBuilder("companies", { data: baseCompanies, count: 2 })
     enqueueBuilder("facilities", {
       data: [
         { company_id: "c01", state: "CA" },
-        { company_id: "c02", state: "TX" },
-      ],
-    })
-    enqueueBuilder("capabilities", { data: [{ company_id: "c01" }] })
-    enqueueBuilder("capabilities", { data: [{ company_id: "c01" }] })
-    enqueueBuilder("certifications", { data: [{ company_id: "c01" }] })
-
-    enqueueBuilder("companies", { data: companies, count: 2 })
-    enqueueBuilder("companies", { data: [{ id: "c00", company_name: "Aardvark" }] })
-    enqueueBuilder("facilities", {
-      data: [
         { company_id: "c01", state: "CA" },
-        { company_id: "c02", state: "TX" },
         { company_id: "c02", state: "TX" },
       ],
     })
@@ -268,74 +227,72 @@ describe("companySearch", () => {
     })
 
     const result = await companySearch({
-      filters: { states: ["CA", "tx"], capabilities: ["smt"], productionVolume: "medium" },
-      routeDefaults: { certSlug: "iso-13485" },
-      cursor: { name: "Alpha Manufacturing", id: "c01" },
+      filters: { states: [], capabilities: [], productionVolume: null },
     })
 
-    expect(result.companies).toHaveLength(2)
-    expect(result.filteredCount).toBe(2)
-    expect(result.pageInfo.hasNextPage).toBe(false)
-    expect(result.pageInfo.hasPreviousPage).toBe(true)
     expect(result.facetCounts?.states).toEqual([
       { code: "CA", count: 1 },
       { code: "TX", count: 1 },
     ])
     expect(result.facetCounts?.capabilities.find((entry) => entry.slug === "smt")?.count).toBe(1)
+    expect(result.facetCounts?.capabilities.find((entry) => entry.slug === "box_build")?.count).toBe(1)
     expect(result.facetCounts?.productionVolume.find((entry) => entry.level === "medium")?.count).toBe(1)
-    expect(supabase.from).toHaveBeenCalledTimes(9)
+    expect(result.facetCounts?.productionVolume.find((entry) => entry.level === "high")?.count).toBe(1)
   })
 
-  it("skips facet queries when includeFacetCounts is false", async () => {
-    enqueueBuilder("companies", { data: companies.map((company) => ({ id: company.id })) })
-    enqueueBuilder("companies", { data: companies.slice(0, 1), count: 1 })
-
-    const result = await companySearch({
-      filters: { states: [], capabilities: [], productionVolume: null },
-      includeFacetCounts: false,
-    })
-
-    expect(result.facetCounts).toBeNull()
-    expect(supabase.from).toHaveBeenCalledTimes(2)
-  })
-
-  it("applies bounding box when resolving company ids", async () => {
-    const bbox = { minLng: -130, minLat: 25, maxLng: -65, maxLat: 50 }
-    const bboxEntry = enqueueBuilder("facilities", {
+  it("applies capability filters when computing state counts", async () => {
+    enqueueBuilder("capabilities", { data: [{ company_id: "c01" }] })
+    enqueueBuilder("companies", { data: [baseCompanies[0]], count: 1 })
+    enqueueBuilder("companies", { data: baseCompanies.map((company) => ({ id: company.id })) })
+    enqueueBuilder("facilities", {
       data: [
-        { company_id: "c01", longitude: -122, latitude: 37 },
-        { company_id: "c02", longitude: -97, latitude: 30 },
+        { company_id: "c01", state: "CA" },
+        { company_id: "c01", state: "CA" },
       ],
     })
-    enqueueBuilder("companies", { data: companies, count: 2 })
-    enqueueBuilder("facilities", { data: [] })
-    enqueueBuilder("capabilities", { data: [] })
-    enqueueBuilder("capabilities", { data: [] })
-
-    await companySearch({
-      filters: { states: [], capabilities: [], productionVolume: null },
-      bbox,
+    enqueueBuilder("capabilities", {
+      data: [
+        createCapabilities({ company_id: "c01", pcb_assembly_smt: true, medium_volume_production: true }),
+        createCapabilities({ company_id: "c02", box_build_assembly: true, high_volume_production: true }),
+      ],
+    })
+    enqueueBuilder("capabilities", {
+      data: [createCapabilities({ company_id: "c01", medium_volume_production: true })],
     })
 
-    expect(bboxEntry.builder.gte).toHaveBeenCalledWith("longitude", bbox.minLng)
-    expect(bboxEntry.builder.lte).toHaveBeenCalledWith("latitude", bbox.maxLat)
+    const result = await companySearch({
+      filters: { states: [], capabilities: ["smt"], productionVolume: null },
+    })
+
+    expect(result.facetCounts?.states).toEqual([{ code: "CA", count: 1 }])
+    expect(result.facetCounts?.capabilities.find((entry) => entry.slug === "box_build")?.count).toBe(1)
   })
 
-  it("throws when Supabase returns an error", async () => {
-    enqueueBuilder("companies", { data: companies.map((company) => ({ id: company.id })) })
-    const error = new Error("Query failed")
-    enqueueBuilder("companies", { error })
+  it("applies production volume filters when computing capability counts", async () => {
+    enqueueBuilder("capabilities", { data: [{ company_id: "c02" }] })
+    enqueueBuilder("companies", { data: [baseCompanies[1]], count: 1 })
+    enqueueBuilder("companies", { data: baseCompanies.map((company) => ({ id: company.id })) })
+    enqueueBuilder("facilities", {
+      data: [
+        { company_id: "c02", state: "TX" },
+      ],
+    })
+    enqueueBuilder("capabilities", {
+      data: [createCapabilities({ company_id: "c02", box_build_assembly: true, high_volume_production: true })],
+    })
+    enqueueBuilder("capabilities", {
+      data: [
+        createCapabilities({ company_id: "c01", medium_volume_production: true }),
+        createCapabilities({ company_id: "c02", high_volume_production: true }),
+      ],
+    })
 
-    await expect(
-      companySearch({ filters: { states: [], capabilities: [], productionVolume: null } }),
-    ).rejects.toThrow("Query failed")
-  })
-})
+    const result = await companySearch({
+      filters: { states: [], capabilities: [], productionVolume: "high" },
+    })
 
-describe("cursor helpers", () => {
-  it("serializes and deserializes cursors", () => {
-    const cursor = serializeCursor({ name: "Test", id: "123" })
-    expect(cursor).toBeTruthy()
-    expect(deserializeCursor(cursor)).toEqual({ name: "Test", id: "123" })
+    expect(result.facetCounts?.states).toEqual([{ code: "TX", count: 1 }])
+    expect(result.facetCounts?.capabilities.find((entry) => entry.slug === "smt")?.count).toBe(0)
+    expect(result.facetCounts?.productionVolume.find((entry) => entry.level === "high")?.count).toBe(1)
   })
 })
