@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { AlertTriangle, Home } from 'lucide-react'
+import { AlertTriangle, Home, Link } from 'lucide-react'
 
 export default function GlobalError({
   error,
@@ -49,13 +49,13 @@ export default function GlobalError({
                 >
                   Reload Page
                 </button>
-                <link
+                <Link
                   href="/"
                   className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   <Home className="w-4 h-4" />
                   Go Home
-                </link>
+                </Link>
               </div>
             </div>
           </div>
