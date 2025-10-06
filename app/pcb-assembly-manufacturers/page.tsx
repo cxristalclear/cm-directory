@@ -1,6 +1,5 @@
 import { Suspense } from "react"
 import Script from "next/script"
-import ActiveFiltersBar from "@/components/ActiveFiltersBar"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import Header from "@/components/Header"
@@ -44,9 +43,6 @@ export default async function PcbAssemblyManufacturers({
       <div className="min-h-screen bg-gray-50">
         <Header companies={companies} />
         <main className="container mx-auto px-4 py-8">
-          <div className="mb-6">
-            <ActiveFiltersBar />
-          </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-4 space-y-4">
