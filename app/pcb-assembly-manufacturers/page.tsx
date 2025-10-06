@@ -6,7 +6,7 @@ import FilterSidebar from "@/components/FilterSidebar"
 import Header from "@/components/Header"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import { FilterProvider } from "@/contexts/FilterContext"
-import { parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { CapabilitySlug, parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 
 export const metadata = {
@@ -29,7 +29,15 @@ export default async function PcbAssemblyManufacturers({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const [companies, sp] = await Promise.all([getCompanies(), searchParams])
-  const initialFilters = parseFiltersFromSearchParams(sp)
+  const urlFilters = parseFiltersFromSearchParams(sp)
+  const initialFilters = {
+    countries: urlFilters.countries,
+    states: urlFilters.states,
+    capabilities: urlFilters.capabilities.length > 0 
+      ? urlFilters.capabilities 
+      : ['smt', 'through_hole'] as CapabilitySlug[],
+    productionVolume: urlFilters.productionVolume,
+  }
 
   return (
     <FilterProvider initialFilters={initialFilters}>

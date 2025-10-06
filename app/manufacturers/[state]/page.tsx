@@ -116,9 +116,15 @@ export default async function StateManufacturersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const [{ state }, sp] = await Promise.all([params, searchParams])
-  const initialFilters = parseFiltersFromSearchParams(sp)
+  const urlFilters = parseFiltersFromSearchParams(sp)
   const stateData = STATE_DATA[state.toLowerCase()]
-  
+  const initialFilters = {
+    countries: urlFilters.countries.length > 0 ? urlFilters.countries : [],
+    states: urlFilters.states.length > 0 ? urlFilters.states : [stateData.abbreviation],
+    capabilities: urlFilters.capabilities,
+    productionVolume: urlFilters.productionVolume,
+  }
+
   if (!stateData) {
     notFound()
   }
@@ -129,6 +135,7 @@ export default async function StateManufacturersPage({
     .select(`
       *,
       facilities!inner (
+        country,
         state,
         city
       ),
