@@ -5,6 +5,8 @@ import { Building2 } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
 import type { Company } from "@/types/company"
+import AddCompanyButton from '@/components/AddCompanyButton'
+
 
 interface HeaderProps {
   companies?: Company[]
@@ -12,8 +14,6 @@ interface HeaderProps {
 
 export default function Header({ }: HeaderProps) {
   useFilters()
-
-
 
   return (
     <header className="relative overflow-hidden">
@@ -33,12 +33,7 @@ export default function Header({ }: HeaderProps) {
               <Link href="/about" className="text-sm font-medium text-white/90 hover:text-white">
                 About
               </Link>
-              <Link
-                href="/add-company"
-                className="inline-flex items-center justify-center rounded-lg bg-white/90 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm ring-1 ring-white/70 backdrop-blur hover:bg-white"
-              >
-                Add Your Company
-              </Link>
+                <AddCompanyButton variant="primary" className="inline-flex items-center justify-center" />
             </div>
           </div>
         </nav>

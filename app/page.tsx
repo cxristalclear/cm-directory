@@ -11,6 +11,8 @@ import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import { siteConfig, featureFlags } from "@/lib/config"
+import AddCompanyCallout from '@/components/AddCompanyCallout'
+
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -145,7 +147,7 @@ export default async function Home({
                     <CompanyList allCompanies={companies} />
                   </Suspense>
                 </div>
-
+                <AddCompanyCallout className="mt-12" />
                 {/* Bottom Content Ad */}
                 <div className="bg-white rounded-xl shadow-xl p-4">
                   <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide text-center">Sponsored</div>

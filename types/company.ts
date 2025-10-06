@@ -21,6 +21,7 @@ export type FilterContextType = {
 }
 
 export interface Company {
+  name: string
   // Primary fields
   id: string // UUID
   company_name: string
