@@ -11,8 +11,8 @@ export default async function CompanyHistoryPage({
   params: Promise<{ slug: string }>
 }) {
   
-  const cookieStore = await cookies()
-  const supabase = createServerComponentClient({ cookies: () => cookieStore })
+  // ✅ CORRECT: Pass cookies directly
+  const supabase = createServerComponentClient({ cookies })
   const { slug } = await params
 
   // Fetch company

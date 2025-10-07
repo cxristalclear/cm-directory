@@ -56,10 +56,13 @@ export async function generateStaticParams() {
     .select('state')
     .not('state', 'is', null)
 
+  type FacilityState = { state: string }
+  const typedFacilities = (facilities || []) as FacilityState[]
+
   const uniqueStates = [
     ...new Set(
-      (facilities ?? [])
-        .map((facility) => facility?.state)
+      typedFacilities
+        .map((facility) => facility.state)
         .filter((state): state is string => typeof state === 'string' && state.length > 0)
         .map((state) => state.toLowerCase()),
     ),
@@ -146,24 +149,37 @@ export default async function StateManufacturersPage({
     .eq('facilities.state', stateData.abbreviation)
     .eq('is_active', true)
 
-    const companies: Company[] = (data ?? []) as Company[]
+  const companies: Company[] = (data ?? []) as Company[]
+  
+  // Type for aggregation
+  type CompanyWithTypedRelations = {
+    facilities: Array<{ city: string | null }> | null
+    capabilities: Array<{
+      pcb_assembly_smt: boolean | null
+      cable_harness_assembly: boolean | null
+      box_build_assembly: boolean | null
+    }> | null
+    certifications: Array<{ certification_type: string }> | null
+  }
   
   // Get aggregated stats
   const stats = {
     totalCompanies: companies.length,
     certifications: [
       ...new Set(
-        companies.flatMap((company) =>
-          (company.certifications ?? [])
+        companies.flatMap((company) => {
+          const typedCompany = company as unknown as CompanyWithTypedRelations
+          return (typedCompany.certifications ?? [])
             .map((certification) => certification?.certification_type)
-            .filter((cert): cert is string => typeof cert === 'string' && cert.length > 0),
-        ),
+            .filter((cert): cert is string => typeof cert === 'string' && cert.length > 0)
+        }),
       ),
     ],
     capabilities: [
       ...new Set(
         companies.flatMap((company) => {
-          const cap = company.capabilities?.[0]
+          const typedCompany = company as unknown as CompanyWithTypedRelations
+          const cap = typedCompany.capabilities?.[0]
           const caps: string[] = []
           if (cap?.pcb_assembly_smt) caps.push('SMT Assembly')
           if (cap?.cable_harness_assembly) caps.push('Cable Assembly')
@@ -174,11 +190,12 @@ export default async function StateManufacturersPage({
     ],
     cities: [
       ...new Set(
-        companies.flatMap((company) =>
-          (company.facilities ?? [])
+        companies.flatMap((company) => {
+          const typedCompany = company as unknown as CompanyWithTypedRelations
+          return (typedCompany.facilities ?? [])
             .map((facility) => facility?.city)
-            .filter((city): city is string => typeof city === 'string' && city.length > 0),
-        ),
+            .filter((city): city is string => typeof city === 'string' && city.length > 0)
+        }),
       ),
     ],
   }
