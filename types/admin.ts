@@ -3,13 +3,13 @@
 export interface CompanyFormData {
   // Basic Info
   company_name: string
-  dba_name?: string
-  description?: string
-  website_url?: string
-  year_founded?: number
-  employee_count_range?: string
-  annual_revenue_range?: string
-  key_differentiators?: string
+  dba_name?: string | null
+  description?: string | null
+  website_url?: string | null
+  year_founded?: number | null
+  employee_count_range?: string | null
+  annual_revenue_range?: string | null
+  key_differentiators?: string | null
 
   // Related data
   facilities?: FacilityFormData[]
@@ -23,33 +23,33 @@ export interface CompanyFormData {
 export interface FacilityFormData {
   id?: string
   facility_type: string
-  street_address?: string
-  city?: string
-  state?: string
-  zip_code?: string
-  country?: string
+  street_address?: string | null
+  city?: string | null
+  state?: string | null
+  zip_code?: string | null
+  country?: string | null
   is_primary?: boolean
 }
 
 export interface CapabilitiesFormData {
-  pcb_assembly_smt?: boolean
-  pcb_assembly_through_hole?: boolean
-  pcb_assembly_mixed?: boolean
-  pcb_assembly_fine_pitch?: boolean
-  cable_harness_assembly?: boolean
-  box_build_assembly?: boolean
-  testing_ict?: boolean
-  testing_functional?: boolean
-  testing_environmental?: boolean
-  testing_rf_wireless?: boolean
-  design_services?: boolean
-  supply_chain_management?: boolean
-  prototyping?: boolean
-  low_volume_production?: boolean
-  medium_volume_production?: boolean
-  high_volume_production?: boolean
-  turnkey_services?: boolean
-  consigned_services?: boolean
+  pcb_assembly_smt?: boolean | null
+  pcb_assembly_through_hole?: boolean | null
+  pcb_assembly_mixed?: boolean | null
+  pcb_assembly_fine_pitch?: boolean | null
+  cable_harness_assembly?: boolean | null
+  box_build_assembly?: boolean | null
+  testing_ict?: boolean | null
+  testing_functional?: boolean | null
+  testing_environmental?: boolean | null
+  testing_rf_wireless?: boolean | null
+  design_services?: boolean | null
+  supply_chain_management?: boolean | null
+  prototyping?: boolean | null
+  low_volume_production?: boolean | null
+  medium_volume_production?: boolean | null
+  high_volume_production?: boolean | null
+  turnkey_services?: boolean | null
+  consigned_services?: boolean | null
 }
 
 export interface IndustryFormData {
@@ -60,36 +60,36 @@ export interface IndustryFormData {
 export interface CertificationFormData {
   id?: string
   certification_type: string
-  certificate_number?: string
-  status?: 'Active' | 'Expired' | 'Pending'
-  issued_date?: string
-  expiration_date?: string
+  certificate_number?: string | null
+  status?: 'Active' | 'Expired' | 'Pending' | null
+  issued_date?: string | null
+  expiration_date?: string | null
 }
 
 export interface TechnicalSpecsFormData {
-  smallest_component_size?: string
-  finest_pitch_capability?: string
-  max_pcb_size_inches?: string
-  max_pcb_layers?: number
-  lead_free_soldering?: boolean
-  conformal_coating?: boolean
-  potting_encapsulation?: boolean
-  x_ray_inspection?: boolean
-  aoi_inspection?: boolean
-  flying_probe_testing?: boolean
-  burn_in_testing?: boolean
-  clean_room_class?: string
+  smallest_component_size?: string | null
+  finest_pitch_capability?: string | null
+  max_pcb_size_inches?: string | null
+  max_pcb_layers?: number | null
+  lead_free_soldering?: boolean | null
+  conformal_coating?: boolean | null
+  potting_encapsulation?: boolean | null
+  x_ray_inspection?: boolean | null
+  aoi_inspection?: boolean | null
+  flying_probe_testing?: boolean | null
+  burn_in_testing?: boolean | null
+  clean_room_class?: string | null
 }
 
 export interface BusinessInfoFormData {
-  min_order_qty?: string
-  prototype_lead_time?: string
-  production_lead_time?: string
-  payment_terms?: string
-  rush_order_capability?: boolean
-  twenty_four_seven_production?: boolean
-  engineering_support_hours?: string
-  sales_territory?: string
-  notable_customers?: string
-  awards_recognition?: string
+  min_order_qty?: string | null
+  prototype_lead_time?: string | null
+  production_lead_time?: string | null
+  payment_terms?: string | null
+  rush_order_capability?: boolean | null
+  twenty_four_seven_production?: boolean | null
+  engineering_support_hours?: string | null
+  sales_territory?: string | null
+  notable_customers?: string | null
+  awards_recognition?: string | null
 }

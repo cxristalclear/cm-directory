@@ -8,7 +8,8 @@ export default async function EditCompanyPage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const supabase = createServerComponentClient({ cookies })
+  const cookieStore = await cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
   const { slug } = await params
 
   // Fetch company with all related data

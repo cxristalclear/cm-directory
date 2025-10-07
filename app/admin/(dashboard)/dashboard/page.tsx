@@ -26,7 +26,7 @@ export default async function AdminDashboard() {
     .limit(5)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
       {/* Page header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -37,29 +37,21 @@ export default async function AdminDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Building2 className="h-6 w-6 text-gray-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Companies
-                  </dt>
-                  <dd className="text-3xl font-semibold text-gray-900">
-                    {totalCompanies || 0}
-                  </dd>
-                </dl>
-              </div>
+        <div className="admin-stat-card">
+          <div className="flex items-center gap-4">
+            <div className="admin-stat-icon">
+              <Building2 className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <dt className="text-sm font-medium text-gray-600">Total Companies</dt>
+              <dd className="text-3xl font-bold gradient-text">{totalCompanies || 0}</dd>
             </div>
           </div>
         </div>
       </div>
 
       {/* Quick actions */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="admin-stat-card">
         <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
           <Link
@@ -80,7 +72,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Recently added */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="admin-stat-card">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Recently Added</h2>
         </div>
@@ -119,7 +111,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Recently edited */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="admin-stat-card">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Recently Edited</h2>
         </div>
