@@ -4,10 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, Plus } from 'lucide-react'
 import type { CompanyFormData, FacilityFormData, IndustryFormData, CertificationFormData } from '@/types/admin'
-import { Database } from '@/lib/supabase'
-
-type Company = Database['public']['Tables']['companies']['Row']
-type CompanyInsert = Database['public']['Tables']['companies']['Insert']
 
 interface CompanyFormProps {
   initialData?: CompanyFormData
@@ -31,7 +27,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
     }
   )
 
-  const updateField = (field: keyof CompanyFormData, value: any) => {
+  const updateField = <K extends keyof CompanyFormData>(field: K, value: CompanyFormData[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -49,7 +45,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
     updateField('facilities', [...(formData.facilities || []), newFacility])
   }
 
-  const updateFacility = (index: number, field: keyof FacilityFormData, value: any) => {
+  const updateFacility = <K extends keyof FacilityFormData>(index: number, field: K, value: FacilityFormData[K]) => {
     const updated = [...(formData.facilities || [])]
     updated[index] = { ...updated[index], [field]: value }
     updateField('facilities', updated)
@@ -86,7 +82,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
     updateField('certifications', [...(formData.certifications || []), newCert])
   }
 
-  const updateCertification = (index: number, field: keyof CertificationFormData, value: any) => {
+  const updateCertification = <K extends keyof CertificationFormData>(index: number, field: K, value: CertificationFormData[K]) => {
     const updated = [...(formData.certifications || [])]
     updated[index] = { ...updated[index], [field]: value }
     updateField('certifications', updated)
@@ -106,7 +102,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
   }
 
   // Technical specs management
-  const updateTechnicalSpec = (field: string, value: any) => {
+  const updateTechnicalSpec = (field: string, value: unknown) => {
     updateField('technical_specs', {
       ...(formData.technical_specs || {}),
       [field]: value,
@@ -114,7 +110,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
   }
 
   // Business info management
-  const updateBusinessInfo = (field: string, value: any) => {
+  const updateBusinessInfo = (field: string, value: unknown) => {
     updateField('business_info', {
       ...(formData.business_info || {}),
       [field]: value,
