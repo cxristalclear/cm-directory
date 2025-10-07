@@ -21,7 +21,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="admin-background min-h-screen"> {/* Add this wrapper */}
       <AdminSidebar />
       <div className="lg:pl-64">
         <AdminHeader user={session.user} />

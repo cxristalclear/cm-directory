@@ -1,0 +1,652 @@
+/* Admin Dashboard - Modern Glassmorphism Theme */
+
+/* ===================================
+   🎨 CSS Variables & Theme
+   =================================== */
+:root {
+  /* Glass effect colors */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  
+  /* Backdrop blur values */
+  --blur-light: blur(8px);
+  --blur-medium: blur(12px);
+  --blur-heavy: blur(16px);
+  
+  /* Color palette - Blue/Purple gradient theme */
+  --primary-start: #667eea;
+  --primary-end: #764ba2;
+  --secondary-start: #f093fb;
+  --secondary-end: #f5576c;
+  --accent-start: #4facfe;
+  --accent-end: #00f2fe;
+  
+  /* Status colors with glass effect */
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --success-border: rgba(16, 185, 129, 0.3);
+  --success-text: #059669;
+  
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  --warning-border: rgba(245, 158, 11, 0.3);
+  --warning-text: #d97706;
+  
+  --error-bg: rgba(239, 68, 68, 0.1);
+  --error-border: rgba(239, 68, 68, 0.3);
+  --error-text: #dc2626;
+  
+  --info-bg: rgba(59, 130, 246, 0.1);
+  --info-border: rgba(59, 130, 246, 0.3);
+  --info-text: #2563eb;
+  
+  /* Neutral colors */
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --glass-bg: rgba(17, 24, 39, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-muted: #9ca3af;
+  }
+}
+
+/* ===================================
+   🏠 Layout & Background
+   =================================== */
+
+/* Main admin background with gradient */
+.admin-background {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Animated gradient background alternative */
+.admin-background-animated {
+  background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  min-height: 100vh;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Subtle pattern overlay */
+.admin-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* ===================================
+   💎 Glass Card Components
+   =================================== */
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
+}
+
+/* Different intensities */
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+}
+
+.glass-card-heavy {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: var(--blur-heavy);
+  -webkit-backdrop-filter: var(--blur-heavy);
+}
+
+/* ===================================
+   🎯 Sidebar Styling
+   =================================== */
+
+.admin-sidebar {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: 4px 0 24px 0 rgba(31, 38, 135, 0.1);
+}
+
+.admin-sidebar-logo {
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+
+/* Navigation links */
+.admin-nav-link {
+  position: relative;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.admin-nav-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.admin-nav-link:hover::before,
+.admin-nav-link-active::before {
+  opacity: 0.15;
+}
+
+.admin-nav-link-active {
+  background: rgba(102, 126, 234, 0.1);
+  font-weight: 600;
+  color: var(--primary-start);
+}
+
+/* ===================================
+   📊 Header Styling
+   =================================== */
+
+.admin-header {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 4px 24px 0 rgba(31, 38, 135, 0.08);
+}
+
+.admin-search-input {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.admin-search-input:focus {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--primary-start);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ===================================
+   📝 Form Elements
+   =================================== */
+
+.admin-input,
+.admin-select,
+.admin-textarea {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.admin-input:focus,
+.admin-select:focus,
+.admin-textarea:focus {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--primary-start);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  outline: none;
+}
+
+.admin-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Checkbox styling */
+.admin-checkbox {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--glass-border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: var(--blur-light);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.admin-checkbox:checked {
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  border-color: var(--primary-start);
+}
+
+.admin-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* ===================================
+   🔘 Buttons
+   =================================== */
+
+/* Primary button with gradient */
+.admin-btn-primary {
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 24px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.admin-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px 0 rgba(102, 126, 234, 0.4);
+}
+
+.admin-btn-primary:hover::before {
+  left: 100%;
+}
+
+/* Secondary button (glass) */
+.admin-btn-secondary {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.admin-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px 0 rgba(31, 38, 135, 0.15);
+}
+
+/* Danger button */
+.admin-btn-danger {
+  background: linear-gradient(135deg, #f5576c, #f093fb);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 24px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px 0 rgba(245, 87, 108, 0.3);
+  transition: all 0.3s ease;
+}
+
+.admin-btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px 0 rgba(245, 87, 108, 0.4);
+}
+
+/* Icon buttons */
+.admin-btn-icon {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 8px;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+}
+
+/* ===================================
+   📋 Table Styling
+   =================================== */
+
+.admin-table {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+}
+
+.admin-table-header {
+  background: rgba(102, 126, 234, 0.08);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+}
+
+.admin-table-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.admin-table-row:hover {
+  background: rgba(102, 126, 234, 0.05);
+}
+
+/* ===================================
+   🏷️ Badge Components
+   =================================== */
+
+.admin-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-badge-success {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+
+.admin-badge-warning {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+
+.admin-badge-error {
+  background: var(--error-bg);
+  border-color: var(--error-border);
+  color: var(--error-text);
+}
+
+.admin-badge-info {
+  background: var(--info-bg);
+  border-color: var(--info-border);
+  color: var(--info-text);
+}
+
+/* ===================================
+   📊 Stats Cards
+   =================================== */
+
+.admin-stat-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.admin-stat-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(135deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+  transform: rotate(45deg);
+  transition: all 0.5s ease;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
+}
+
+.admin-stat-card:hover::before {
+  top: -10%;
+  right: -10%;
+}
+
+/* Gradient icon background */
+.admin-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+/* ===================================
+   ⏱️ Timeline Styling
+   =================================== */
+
+.admin-timeline-item {
+  position: relative;
+  padding-left: 40px;
+}
+
+.admin-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: 40px;
+  width: 2px;
+  height: calc(100% - 40px);
+  background: linear-gradient(180deg, var(--primary-start), transparent);
+}
+
+.admin-timeline-icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  border: 2px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px 0 rgba(31, 38, 135, 0.15);
+}
+
+.admin-timeline-content {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+/* ===================================
+   🎨 Utility Classes
+   =================================== */
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-secondary {
+  background: linear-gradient(135deg, var(--secondary-start), var(--secondary-end));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Floating animation */
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Shimmer effect for loading states */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Pulse effect for notifications */
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ===================================
+   📱 Responsive Adjustments
+   =================================== */
+
+@media (max-width: 768px) {
+  .glass-card {
+    border-radius: 12px;
+  }
+  
+  .admin-btn-primary,
+  .admin-btn-secondary {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  
+  .admin-stat-card {
+    padding: 16px;
+  }
+}
+
+/* ===================================
+   🌓 Dark Mode Overrides
+   =================================== */
+
+@media (prefers-color-scheme: dark) {
+  .admin-input,
+  .admin-select,
+  .admin-textarea {
+    background: rgba(17, 24, 39, 0.6);
+    color: var(--text-primary);
+  }
+  
+  .admin-table-row:hover {
+    background: rgba(102, 126, 234, 0.1);
+  }
+}
+
+/* ===================================
+   ✨ Special Effects
+   =================================== */
+
+/* Glow effect for focused elements */
+.glow-on-focus:focus {
+  box-shadow: 
+    0 0 0 3px rgba(102, 126, 234, 0.1),
+    0 0 20px 0 rgba(102, 126, 234, 0.2);
+}
+
+/* Gradient border effect */
+.gradient-border {
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border-radius: 16px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
