@@ -1,4 +1,3 @@
-// # Login page
 'use client'
 
 import { useState } from 'react'

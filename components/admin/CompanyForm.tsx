@@ -4,6 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, Plus } from 'lucide-react'
 import type { CompanyFormData, FacilityFormData, IndustryFormData, CertificationFormData } from '@/types/admin'
+import { Database } from '@/lib/supabase'
+
+type Company = Database['public']['Tables']['companies']['Row']
+type CompanyInsert = Database['public']['Tables']['companies']['Insert']
 
 interface CompanyFormProps {
   initialData?: CompanyFormData

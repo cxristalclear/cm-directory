@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { CompanyFormData } from '@/types/admin'
 
 /**
  * Generate a URL-friendly slug from company name
@@ -46,8 +47,8 @@ export async function ensureUniqueSlug(
  * Compare two objects and return array of changes
  */
 export function getFieldChanges(
-  oldData: Record<string, any>,
-  newData: Record<string, any>
+  oldData: Record<string, string | number | boolean | null | undefined>,
+  newData: Record<string, string | number | boolean | null | undefined>
 ): Array<{
   field_name: string
   old_value: string | null
@@ -128,7 +129,7 @@ export async function logCompanyChanges(
 /**
  * Validate required company fields
  */
-export function validateCompanyData(data: any): { valid: boolean; errors: string[] } {
+export function validateCompanyData(data: CompanyFormData): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
   if (!data.company_name || data.company_name.trim() === '') {
@@ -140,7 +141,7 @@ export function validateCompanyData(data: any): { valid: boolean; errors: string
   }
 
   if (data.year_founded) {
-    const year = parseInt(data.year_founded)
+    const year = parseInt(String(data.year_founded))
     const currentYear = new Date().getFullYear()
     if (year < 1800 || year > currentYear) {
       errors.push(`Year founded must be between 1800 and ${currentYear}`)

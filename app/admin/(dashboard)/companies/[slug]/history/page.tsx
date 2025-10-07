@@ -10,7 +10,9 @@ export default async function CompanyHistoryPage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const supabase = createServerComponentClient({ cookies })
+  
+  const cookieStore = await cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
   const { slug } = await params
 
   // Fetch company

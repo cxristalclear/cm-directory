@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import CompanyForm from '@/components/admin/CompanyForm'
 import type { CompanyFormData } from '@/types/admin'
+import type { CompanyWithRelations } from '@/types/company'
 import { getFieldChanges, logCompanyChanges, validateCompanyData, ensureUniqueSlug, generateSlug } from '@/lib/admin/utils'
 import { toast } from 'sonner'
 
 interface EditCompanyFormProps {
-  company: any
+  company: CompanyWithRelations
 }
 
 export default function EditCompanyForm({ company }: EditCompanyFormProps) {
@@ -20,19 +21,81 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
   // Prepare initial data from company
   const initialData: CompanyFormData = {
     company_name: company.company_name,
-    dba_name: company.dba_name,
-    description: company.description,
-    website_url: company.website_url,
-    year_founded: company.year_founded,
-    employee_count_range: company.employee_count_range,
-    annual_revenue_range: company.annual_revenue_range,
-    key_differentiators: company.key_differentiators,
-    facilities: company.facilities || [],
-    capabilities: company.capabilities?.[0] || {},
-    industries: company.industries || [],
-    certifications: company.certifications || [],
-    technical_specs: company.technical_specs?.[0] || {},
-    business_info: company.business_info?.[0] || {},
+    dba_name: company.dba_name || undefined,
+    description: company.description || undefined,
+    website_url: company.website_url || undefined,
+    year_founded: company.year_founded || undefined,
+    employee_count_range: company.employee_count_range || undefined,
+    annual_revenue_range: company.annual_revenue_range || undefined,
+    key_differentiators: company.key_differentiators || undefined,
+    facilities: company.facilities?.map(f => ({
+      id: f.id,
+      facility_type: f.facility_type,
+      street_address: f.street_address || undefined,
+      city: f.city || undefined,
+      state: f.state || undefined,
+      zip_code: f.zip_code || undefined,
+      country: f.country || 'US',
+      is_primary: f.is_primary || false,
+    })) || [],
+    capabilities: company.capabilities?.[0] ? {
+      pcb_assembly_smt: company.capabilities[0].pcb_assembly_smt || undefined,
+      pcb_assembly_through_hole: company.capabilities[0].pcb_assembly_through_hole || undefined,
+      pcb_assembly_mixed: company.capabilities[0].pcb_assembly_mixed || undefined,
+      pcb_assembly_fine_pitch: company.capabilities[0].pcb_assembly_fine_pitch || undefined,
+      cable_harness_assembly: company.capabilities[0].cable_harness_assembly || undefined,
+      box_build_assembly: company.capabilities[0].box_build_assembly || undefined,
+      testing_ict: company.capabilities[0].testing_ict || undefined,
+      testing_functional: company.capabilities[0].testing_functional || undefined,
+      testing_environmental: company.capabilities[0].testing_environmental || undefined,
+      testing_rf_wireless: company.capabilities[0].testing_rf_wireless || undefined,
+      design_services: company.capabilities[0].design_services || undefined,
+      supply_chain_management: company.capabilities[0].supply_chain_management || undefined,
+      prototyping: company.capabilities[0].prototyping || undefined,
+      low_volume_production: company.capabilities[0].low_volume_production || undefined,
+      medium_volume_production: company.capabilities[0].medium_volume_production || undefined,
+      high_volume_production: company.capabilities[0].high_volume_production || undefined,
+      turnkey_services: company.capabilities[0].turnkey_services || undefined,
+      consigned_services: company.capabilities[0].consigned_services || undefined,
+    } : {},
+    industries: company.industries?.map(i => ({
+      id: i.id,
+      industry_name: i.industry_name,
+    })) || [],
+    certifications: company.certifications?.map(c => ({
+      id: c.id,
+      certification_type: c.certification_type,
+      certificate_number: c.certificate_number || undefined,
+      status: (c.status as 'Active' | 'Expired' | 'Pending') || undefined,
+      issued_date: c.issued_date || undefined,
+      expiration_date: c.expiration_date || undefined,
+    })) || [],
+    technical_specs: company.technical_specs?.[0] ? {
+      smallest_component_size: company.technical_specs[0].smallest_component_size || undefined,
+      finest_pitch_capability: company.technical_specs[0].finest_pitch_capability || undefined,
+      max_pcb_size_inches: company.technical_specs[0].max_pcb_size_inches || undefined,
+      max_pcb_layers: company.technical_specs[0].max_pcb_layers || undefined,
+      lead_free_soldering: company.technical_specs[0].lead_free_soldering || undefined,
+      conformal_coating: company.technical_specs[0].conformal_coating || undefined,
+      potting_encapsulation: company.technical_specs[0].potting_encapsulation || undefined,
+      x_ray_inspection: company.technical_specs[0].x_ray_inspection || undefined,
+      aoi_inspection: company.technical_specs[0].aoi_inspection || undefined,
+      flying_probe_testing: company.technical_specs[0].flying_probe_testing || undefined,
+      burn_in_testing: company.technical_specs[0].burn_in_testing || undefined,
+      clean_room_class: company.technical_specs[0].clean_room_class || undefined,
+    } : {},
+    business_info: company.business_info?.[0] ? {
+      min_order_qty: company.business_info[0].min_order_qty || undefined,
+      prototype_lead_time: company.business_info[0].prototype_lead_time || undefined,
+      production_lead_time: company.business_info[0].production_lead_time || undefined,
+      payment_terms: company.business_info[0].payment_terms || undefined,
+      rush_order_capability: company.business_info[0].rush_order_capability || undefined,
+      twenty_four_seven_production: company.business_info[0].twenty_four_seven_production || undefined,
+      engineering_support_hours: company.business_info[0].engineering_support_hours || undefined,
+      sales_territory: company.business_info[0].sales_territory || undefined,
+      notable_customers: company.business_info[0].notable_customers || undefined,
+      awards_recognition: company.business_info[0].awards_recognition || undefined,
+    } : {},
   }
 
   const handleSubmit = async (formData: CompanyFormData, isDraft: boolean) => {
