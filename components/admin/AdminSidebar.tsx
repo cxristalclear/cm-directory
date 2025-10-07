@@ -43,14 +43,14 @@ export default function AdminSidebar() {
       <div
         className={`${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out`}
+        } lg:translate-x-0 fixed inset-y-0 left-0 z-30 w-64 admin-sidebar transition-transform duration-300 ease-in-out`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-200">
             <Building2 className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-lg font-bold text-gray-900">CM Directory</h1>
+              <h1 className="text-lg admin-sidebar-logo">CM Directory</h1>
               <p className="text-xs text-gray-500">Admin Dashboard</p>
             </div>
           </div>
@@ -64,14 +64,9 @@ export default function AdminSidebar() {
                   key={item.name}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`
-                    flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors
-                    ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                    }
-                  `}
+                  className={`admin-nav-link flex items-center gap-3 px-4 py-3 text-sm ${
+                    isActive ? 'admin-nav-link-active' : ''
+                  }`}
                 >
                   <item.icon className="h-5 w-5" />
                   {item.name}
