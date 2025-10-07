@@ -1,10 +1,12 @@
+// lib/supabase-server.ts - Server-side Supabase client for Next.js 15
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import type { Database } from './supabase'
 
 export async function createClient() {
   const cookieStore = await cookies()
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -26,73 +28,4 @@ export async function createClient() {
       },
     }
   )
-}
-
-export type Database = {
-  public: {
-    Tables: {
-      companies: {
-        Row: {
-          id: string
-          name: string
-          slug: string
-          description: string | null
-          website: string | null
-          email: string | null
-          phone: string | null
-          address: string | null
-          city: string | null
-          state: string | null
-          country: string | null
-          latitude: number | null
-          longitude: number | null
-          industry: string | null
-          services: string[] | null
-          certifications: string[] | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          slug: string
-          description?: string | null
-          website?: string | null
-          email?: string | null
-          phone?: string | null
-          address?: string | null
-          city?: string | null
-          state?: string | null
-          country?: string | null
-          latitude?: number | null
-          longitude?: number | null
-          industry?: string | null
-          services?: string[] | null
-          certifications?: string[] | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          slug?: string
-          description?: string | null
-          website?: string | null
-          email?: string | null
-          phone?: string | null
-          address?: string | null
-          city?: string | null
-          state?: string | null
-          country?: string | null
-          latitude?: number | null
-          longitude?: number | null
-          industry?: string | null
-          services?: string[] | null
-          certifications?: string[] | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-    }
-  }
 }

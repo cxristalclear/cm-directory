@@ -1,31 +1,44 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { Building2, Plus, Eye } from 'lucide-react'
 
+// Type for the query results with explicit fields
+type CompanyDashboardItem = {
+  id: string
+  company_name: string
+  slug: string
+  created_at: string
+  updated_at: string
+  is_active: boolean
+}
 
 export default async function AdminDashboard() {
-  // ✅ CORRECT: Pass cookies directly
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = await createClient()
 
   // Get total companies count
   const { count: totalCompanies } = await supabase
     .from('companies')
     .select('*', { count: 'exact', head: true })
 
-  // Get recently added companies
-  const { data: recentlyAdded } = await supabase
+  // Get recently added companies with explicit type casting
+  const { data: recentlyAddedRaw } = await supabase
     .from('companies')
     .select('id, company_name, slug, created_at, is_active')
     .order('created_at', { ascending: false })
     .limit(5)
 
-  // Get recently edited companies
-  const { data: recentlyEdited } = await supabase
+  // Cast to proper type to fix TypeScript inference
+  const recentlyAdded = (recentlyAddedRaw || []) as CompanyDashboardItem[]
+
+  // Get recently edited companies with explicit type casting
+  const { data: recentlyEditedRaw } = await supabase
     .from('companies')
     .select('id, company_name, slug, updated_at, is_active')
     .order('updated_at', { ascending: false })
     .limit(5)
+
+  // Cast to proper type to fix TypeScript inference  
+  const recentlyEdited = (recentlyEditedRaw || []) as CompanyDashboardItem[]
 
   return (
     <div className="space-y-6 ">
