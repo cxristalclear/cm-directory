@@ -649,7 +649,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   <label className="block text-sm font-medium text-gray-700">Status</label>
                   <select
                     value={cert.status || 'Active'}
-                    onChange={(e) => updateCertification(index, 'status', e.target.value)}
+                    onChange={(e) => updateCertification(index, 'status', e.target.value as 'Active' | 'Expired' | 'Pending')}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   >
                     {certificationStatuses.map((status) => (

@@ -12,20 +12,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .eq('is_active', true)
   
   // Fetch unique states with companies
-  const { data: states } = await supabase
+  const { data: facilities } = await supabase
     .from('facilities')
     .select('state')
     .not('state', 'is', null)
   
-  const uniqueStates = [...new Set(states?.map(s => s.state) || [])]
+  type FacilityState = { state: string }
+  const typedFacilities = (facilities || []) as FacilityState[]
+  const uniqueStates = [...new Set(typedFacilities.map(f => f.state))]
+  
+  type CompanySlug = { slug: string; updated_at: string }
+  const typedCompanies = (companies || []) as CompanySlug[]
   
   // Build sitemap entries
-  const companyUrls = companies?.map(company => ({
+  const companyUrls = typedCompanies.map(company => ({
     url: `${baseUrl}/companies/${company.slug}`,
     lastModified: company.updated_at,
     changeFrequency: 'weekly' as const,
     priority: 0.8,
-  })) || []
+  }))
   
   const stateUrls = uniqueStates.map(state => ({
     url: `${baseUrl}/manufacturers/${state.toLowerCase()}`,
