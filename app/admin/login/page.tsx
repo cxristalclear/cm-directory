@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase-client'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -10,7 +10,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,6 +25,10 @@ export default function AdminLoginPage() {
 
       if (error) throw error
 
+      // Wait a moment for cookies to be set
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Redirect to dashboard
       router.push('/admin/dashboard')
       router.refresh()
     } catch (err) {

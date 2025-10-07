@@ -1,5 +1,4 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase-server'
 import CompanyTable from '@/components/admin/CompanyTable'
 
 interface SearchParams {
@@ -11,12 +10,39 @@ interface SearchParams {
   [key: string]: string | undefined 
 }
 
+// Type that matches EXACTLY what CompanyTable expects
+type CompanyTableItem = {
+  id: string
+  company_name: string
+  slug: string
+  is_active: boolean
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+  facilities?: Array<{ city?: string; state?: string }>
+}
+
+// Type for the raw database result
+type DatabaseCompany = {
+  id: string
+  company_name: string
+  slug: string
+  is_active: boolean | null
+  is_verified: boolean | null
+  created_at: string
+  updated_at: string
+  facilities: Array<{
+    city: string | null
+    state: string | null
+  }> | null
+}
+
 export default async function AllCompaniesPage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>
 }) {
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = await createClient()
   const params = await searchParams
 
   const page = parseInt(params.page || '1')
@@ -48,13 +74,32 @@ export default async function AllCompaniesPage({
   }
 
   // Execute query with pagination
-  const { data: companies, count, error } = await query
+  const { data: companiesRaw, count, error } = await query
     .order('created_at', { ascending: false })
     .range(offset, offset + perPage - 1)
 
   if (error) {
     console.error('Error fetching companies:', error)
   }
+
+  // Cast and transform the data to match CompanyTable's expected type
+  const dbCompanies = (companiesRaw || []) as unknown as DatabaseCompany[]
+  
+  const companies: CompanyTableItem[] = dbCompanies.map((company) => ({
+    id: company.id,
+    company_name: company.company_name,
+    slug: company.slug,
+    is_active: company.is_active ?? false,
+    is_verified: company.is_verified ?? false,
+    created_at: company.created_at,
+    updated_at: company.updated_at,
+    facilities: company.facilities 
+      ? company.facilities.map((facility) => ({
+          city: facility.city ?? undefined,
+          state: facility.state ?? undefined,
+        }))
+      : undefined,
+  }))
 
   const totalPages = count ? Math.ceil(count / perPage) : 0
 
@@ -70,7 +115,7 @@ export default async function AllCompaniesPage({
       </div>
 
       <CompanyTable
-        companies={companies || []}
+        companies={companies}
         totalPages={totalPages}
         currentPage={page}
         searchParams={params}

@@ -1,9 +1,14 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import ChangeHistoryTimeline from '@/components/admin/ChangeHistoryTimeline'
+
+type CompanyBasic = {
+  id: string
+  company_name: string
+  slug: string
+}
 
 export default async function CompanyHistoryPage({
   params,
@@ -11,16 +16,17 @@ export default async function CompanyHistoryPage({
   params: Promise<{ slug: string }>
 }) {
   
-  // ✅ CORRECT: Pass cookies directly
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = await createClient()
   const { slug } = await params
 
   // Fetch company
-  const { data: company, error: companyError } = await supabase
+  const { data: companyRaw, error: companyError } = await supabase
     .from('companies')
     .select('id, company_name, slug')
     .eq('slug', slug)
     .single()
+
+  const company = companyRaw as CompanyBasic | null
 
   if (companyError || !company) {
     notFound()
