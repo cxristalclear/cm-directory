@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { Building2, Plus, Eye } from 'lucide-react'
 
 export default async function AdminDashboard() {
-  const supabase = createServerComponentClient({ cookies })
+  const cookieStore = await cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
 
   // Get total companies count
   const { count: totalCompanies } = await supabase
