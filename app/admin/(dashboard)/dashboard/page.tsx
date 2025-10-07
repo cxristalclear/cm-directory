@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { Building2, Plus, Eye } from 'lucide-react'
 
+
 export default async function AdminDashboard() {
   // ✅ CORRECT: Pass cookies directly
   const supabase = createServerComponentClient({ cookies })
@@ -37,22 +38,22 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="admin-stat-card">
+      <div className=" grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="border rounded p-6">
           <div className="flex items-center gap-4">
             <div className="admin-stat-icon">
               <Building2 className="h-6 w-6" />
             </div>
             <div className="flex-1">
-              <dt className="text-sm font-medium text-gray-600">Total Companies</dt>
-              <dd className="text-3xl font-bold gradient-text">{totalCompanies || 0}</dd>
+              <dt className="text-lg font-medium text-gray-900">Total Companies</dt>
+              <dd className="text-3xl font-bold">{totalCompanies || 0}</dd>
             </div>
           </div>
         </div>
       </div>
 
       {/* Quick actions */}
-      <div className="admin-stat-card">
+      <div className=".glass-card">
         <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
           <Link
@@ -73,18 +74,18 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Recently added */}
-      <div className="admin-stat-card">
+      <div className=".glass-card">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Recently Added</h2>
         </div>
         <div className="divide-y divide-gray-200">
           {recentlyAdded && recentlyAdded.length > 0 ? (
             recentlyAdded.map((company) => (
-              <div key={company.id} className="px-6 py-4 flex items-center justify-between">
+              <div key={company.id} className="px-6 py-2 flex items-center justify-between">
                 <div>
                   <Link
                     href={`/admin/companies/edit/${company.slug}`}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                    className="text-sm font-medium text-black-900 hover:text-blue-800"
                   >
                     {company.company_name}
                   </Link>
@@ -112,18 +113,18 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Recently edited */}
-      <div className="admin-stat-card">
+      <div className=".glass-card">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Recently Edited</h2>
         </div>
         <div className="divide-y divide-gray-200">
           {recentlyEdited && recentlyEdited.length > 0 ? (
             recentlyEdited.map((company) => (
-              <div key={company.id} className="px-6 py-4 flex items-center justify-between">
+              <div key={company.id} className="px-6 py-2 flex items-center justify-between">
                 <div>
                   <Link
                     href={`/admin/companies/edit/${company.slug}`}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                    className="text-sm font-medium text-black-900 hover:text-blue-800"
                   >
                     {company.company_name}
                   </Link>
