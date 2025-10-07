@@ -1,6 +1,6 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
-import CompanyTable from '../../../../components/admin/CompanyTable'
+import CompanyTable from '@/components/admin/CompanyTable'
 
 interface SearchParams {
   search?: string
@@ -8,6 +8,7 @@ interface SearchParams {
   verified?: string
   state?: string
   page?: string
+  [key: string]: string | undefined 
 }
 
 export default async function AllCompaniesPage({
