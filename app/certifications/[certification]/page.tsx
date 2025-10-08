@@ -5,6 +5,7 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { getAbsoluteUrl, siteConfig } from "@/lib/config"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
@@ -73,6 +74,8 @@ export async function generateMetadata({
     }
   }
   
+  const pageUrl = getAbsoluteUrl(`/certifications/${certification}`)
+
   return {
     title: certData.title,
     description: `Find ${certData.name} certified contract manufacturers. ${certData.description}. Browse verified manufacturers with active certifications.`,
@@ -80,9 +83,17 @@ export async function generateMetadata({
       title: certData.title,
       description: certData.description,
       type: 'website',
+      url: pageUrl,
+      siteName: siteConfig.name,
+      images: [
+        {
+          url: siteConfig.ogImage,
+          alt: certData.title,
+        },
+      ],
     },
     alternates: {
-      canonical: `https://yourdomain.com/certifications/${certification}`,
+      canonical: pageUrl,
     },
   }
 }

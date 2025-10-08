@@ -5,6 +5,7 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { getAbsoluteUrl, siteConfig } from "@/lib/config"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
@@ -73,6 +74,8 @@ export async function generateMetadata({
     }
   }
   
+  const pageUrl = getAbsoluteUrl(`/industries/${industry}`)
+
   return {
     title: `${industryData.title} | Specialized Manufacturing Partners`,
     description: `Find contract manufacturers specializing in ${industryData.name.toLowerCase()}. ${industryData.description}`,
@@ -80,9 +83,17 @@ export async function generateMetadata({
       title: industryData.title,
       description: industryData.description,
       type: 'website',
+      url: pageUrl,
+      siteName: siteConfig.name,
+      images: [
+        {
+          url: siteConfig.ogImage,
+          alt: industryData.title,
+        },
+      ],
     },
     alternates: {
-      canonical: `https://yourdomain.com/industries/${industry}`,
+      canonical: pageUrl,
     },
   }
 }

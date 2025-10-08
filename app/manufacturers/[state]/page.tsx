@@ -6,6 +6,7 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { getAbsoluteUrl, siteConfig } from "@/lib/config"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
@@ -94,19 +95,31 @@ export async function generateMetadata({
     .from('facilities')
     .select('*', { count: 'exact', head: true })
     .eq('state', stateData.abbreviation)
-  
+
+  const pageUrl = getAbsoluteUrl(`/manufacturers/${state}`)
+  const manufacturersIndexUrl = getAbsoluteUrl('/manufacturers')
+  const homeUrl = getAbsoluteUrl('/')
+
   return {
     title: `Contract Manufacturers in ${stateData.fullName} | ${count || 0}+ Verified Companies`,
     description: `Find ${count || ''} verified contract manufacturers in ${stateData.fullName}. ${stateData.description}. Compare capabilities, certifications, and get quotes from local manufacturing partners.`,
-    
+
     openGraph: {
       title: `${stateData.fullName} Contract Manufacturers Directory`,
       description: `Browse verified contract manufacturers in ${stateData.fullName}. ${stateData.description}`,
       type: 'website',
+      url: pageUrl,
+      siteName: siteConfig.name,
+      images: [
+        {
+          url: siteConfig.ogImage,
+          alt: `${stateData.fullName} Contract Manufacturers Directory`,
+        },
+      ],
     },
-    
+
     alternates: {
-      canonical: `https://yourdomain.com/manufacturers/${state}`,
+      canonical: pageUrl,
     },
   }
 }
@@ -201,12 +214,15 @@ export default async function StateManufacturersPage({
   }
   
   // Schema for state page
+  const pageUrl = getAbsoluteUrl(`/manufacturers/${state}`)
+  const manufacturersIndexUrl = getAbsoluteUrl('/manufacturers')
+  const homeUrl = getAbsoluteUrl('/')
   const stateSchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: `Contract Manufacturers in ${stateData.fullName}`,
     description: stateData.description,
-    url: `https://yourdomain.com/manufacturers/${state}`,
+    url: pageUrl,
     numberOfItems: stats.totalCompanies,
     breadcrumb: {
       '@type': 'BreadcrumbList',
@@ -215,19 +231,19 @@ export default async function StateManufacturersPage({
           '@type': 'ListItem',
           position: 1,
           name: 'Home',
-          item: 'https://yourdomain.com'
+          item: homeUrl,
         },
         {
           '@type': 'ListItem',
           position: 2,
           name: 'Manufacturers',
-          item: 'https://yourdomain.com/manufacturers'
+          item: manufacturersIndexUrl,
         },
         {
           '@type': 'ListItem',
           position: 3,
           name: stateData.fullName,
-          item: `https://yourdomain.com/manufacturers/${state}`
+          item: pageUrl,
         }
       ]
     }
