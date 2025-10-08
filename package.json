@@ -9,7 +9,9 @@
     "lint": "next lint",
     "test": "jest",
     "geocode": "tsx scripts/geocode-facilities.ts",
-    "geocode:dry-run": "DRY_RUN=true tsx scripts/geocode-facilities.ts"
+    "geocode:dry-run": "DRY_RUN=true tsx scripts/geocode-facilities.ts",
+    "generate-types": "bash scripts/generate-types.sh",
+    "db:pull-types": "supabase gen types typescript --project-id $(grep NEXT_PUBLIC_SUPABASE_URL .env.local | cut -d '/' -f 3 | cut -d '.' -f 1) > lib/database.types.ts"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",

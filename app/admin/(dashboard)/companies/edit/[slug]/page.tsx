@@ -65,7 +65,6 @@ export default async function EditCompanyPage({
   // Transform to match the CompanyWithRelations interface expected by the form
   const company: CompanyWithRelations = {
     ...dbCompany,
-    name: dbCompany.company_name, // Add the 'name' field that the form expects
     // Transform facilities with proper location type
     facilities: dbCompany.facilities?.map(f => ({
       ...f,
