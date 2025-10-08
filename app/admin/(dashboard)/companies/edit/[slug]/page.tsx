@@ -87,8 +87,8 @@ export default async function EditCompanyPage({
 
   return (
     <div className="space-y-6">
-      <div className="glass-card gradient-border p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="glass-card p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-semibold gradient-text">Edit Company</h1>
             <p className="mt-2 text-sm text-[var(--text-muted)]">
