@@ -105,12 +105,15 @@ export default async function AllCompaniesPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">All Companies</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage and edit company profiles
-          </p>
+      <div className="glass-card p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold gradient-text">All Companies</h1>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              Manage and edit company profiles
+            </p>
+          </div>
+          {/* Action buttons should use the admin-btn-* styles when added */}
         </div>
       </div>
 
