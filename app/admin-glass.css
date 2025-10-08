@@ -209,12 +209,17 @@
 .admin-input,
 .admin-select,
 .admin-textarea {
-  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: var(--blur-light);
   -webkit-backdrop-filter: var(--blur-light);
   border: 1px solid var(--glass-border);
-  border-radius: 10px;
   transition: all 0.3s ease;
+  height: min-content;
+  background-color: #05060f0a;
+  border-radius: .5rem;
+  padding: 0 1rem;
+  border: 2px solid transparent;
+  font-size: .875rem;
+  transition: border-color .3s cubic-bezier(.25,.01,.25,1) 0s, color .3s cubic-bezier(.25,.01,.25,1) 0s,background .2s cubic-bezier(.25,.01,.25,1) 0s;
 }
 
 .admin-input:focus,
