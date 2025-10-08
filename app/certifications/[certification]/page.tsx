@@ -5,7 +5,7 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { getAbsoluteUrl, siteConfig } from "@/lib/config"
+import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
@@ -74,7 +74,7 @@ export async function generateMetadata({
     }
   }
   
-  const pageUrl = getAbsoluteUrl(`/certifications/${certification}`)
+  const pageUrl = getCanonicalUrl(`/certifications/${certification}`)
 
   return {
     title: certData.title,
