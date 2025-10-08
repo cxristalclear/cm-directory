@@ -87,16 +87,21 @@ export default async function EditCompanyPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Edit Company</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Update company profile information
-        </p>
-        {company.updated_at && (
-          <p className="mt-1 text-xs text-gray-400">
-            Last modified: {new Date(company.updated_at).toLocaleString()}
-          </p>
-        )}
+      <div className="glass-card gradient-border p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold gradient-text">Edit Company</h1>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              Update company profile information
+            </p>
+            {company.updated_at && (
+              <p className="mt-2 text-xs text-[var(--text-muted)]">
+                Last modified: {new Date(company.updated_at).toLocaleString()}
+              </p>
+            )}
+          </div>
+          {/* Action buttons should use the admin-btn-* styles when added */}
+        </div>
       </div>
 
       <EditCompanyForm company={company} />
