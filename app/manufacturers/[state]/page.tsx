@@ -6,7 +6,7 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { getAbsoluteUrl, siteConfig } from "@/lib/config"
+import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
@@ -96,9 +96,9 @@ export async function generateMetadata({
     .select('*', { count: 'exact', head: true })
     .eq('state', stateData.abbreviation)
 
-  const pageUrl = getAbsoluteUrl(`/manufacturers/${state}`)
-  const manufacturersIndexUrl = getAbsoluteUrl('/manufacturers')
-  const homeUrl = getAbsoluteUrl('/')
+  const pageUrl = getCanonicalUrl(`/manufacturers/${state}`)
+  const manufacturersIndexUrl = getCanonicalUrl('/manufacturers')
+  const homeUrl = getCanonicalUrl('/')
 
   return {
     title: `Contract Manufacturers in ${stateData.fullName} | ${count || 0}+ Verified Companies`,
@@ -214,15 +214,15 @@ export default async function StateManufacturersPage({
   }
   
   // Schema for state page
-  const pageUrl = getAbsoluteUrl(`/manufacturers/${state}`)
-  const manufacturersIndexUrl = getAbsoluteUrl('/manufacturers')
-  const homeUrl = getAbsoluteUrl('/')
+  const canonicalUrl = getCanonicalUrl(`/manufacturers/${state}`)
+  const manufacturersIndexUrl = getCanonicalUrl('/manufacturers')
+  const homeUrl = getCanonicalUrl('/')
   const stateSchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: `Contract Manufacturers in ${stateData.fullName}`,
     description: stateData.description,
-    url: pageUrl,
+    url: canonicalUrl,
     numberOfItems: stats.totalCompanies,
     breadcrumb: {
       '@type': 'BreadcrumbList',
@@ -243,7 +243,7 @@ export default async function StateManufacturersPage({
           '@type': 'ListItem',
           position: 3,
           name: stateData.fullName,
-          item: pageUrl,
+          item: canonicalUrl,
         }
       ]
     }

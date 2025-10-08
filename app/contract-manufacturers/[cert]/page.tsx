@@ -5,6 +5,7 @@ import Script from "next/script"
 import CompanyList from "@/components/CompanyList"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
@@ -35,15 +36,22 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { cert } = await params
   const certNice = normalizeCertParam(cert)
-  const title = `${certNice} Contract Manufacturers | CM Directory`;
-  const description = `Browse verified electronics manufacturers with ${certNice}. Compare capabilities (SMT, Through-Hole, Box Build) and locations.`;
-  const canonical = `https://www.example.com/contract-manufacturers/${cert}`;
+  const title = `${certNice} Contract Manufacturers | ${siteConfig.name}`
+  const description = `Browse verified electronics manufacturers with ${certNice}. Compare capabilities (SMT, Through-Hole, Box Build) and locations.`
+  const canonical = getCanonicalUrl(`/contract-manufacturers/${cert}`)
   return {
     title,
     description,
     alternates: { canonical },
-    openGraph: { title, description, url: canonical, type: "website" },
-    twitter: { card: "summary", title, description },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: "website",
+      siteName: siteConfig.name,
+      images: [siteConfig.ogImage],
+    },
+    twitter: { card: "summary_large_image", title, description, images: [siteConfig.ogImage] },
   };
 }
 
@@ -68,11 +76,13 @@ export default async function CertManufacturers({
     ),
   );
 
+  const canonicalUrl = getCanonicalUrl(`/contract-manufacturers/${cert}`)
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: `${certNice} Contract Manufacturers`,
-    url: `https://www.example.com/contract-manufacturers/${cert}`,
+    url: canonicalUrl,
   };
 
   return (

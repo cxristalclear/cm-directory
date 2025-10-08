@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ChevronRight, Home } from 'lucide-react'
-import { siteConfig } from '@/lib/config'
+import { getCanonicalUrl } from '@/lib/config'
 
 interface BreadcrumbItem {
   name: string
@@ -14,7 +14,13 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
-  const baseUrl = siteConfig.url
+  const resolveItemUrl = (url: string) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url
+    }
+
+    return getCanonicalUrl(url)
+  }
   
     
 
@@ -25,7 +31,7 @@ export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
       '@type': 'ListItem',
       position: index + 1,
       name: item.name,
-      item: `${baseUrl}${item.url}`, // Full URL for better SEO
+      item: resolveItemUrl(item.url), // Full URL for better SEO
     })),
   }
   
