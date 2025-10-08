@@ -45,22 +45,6 @@
   --text-muted: #6b7280;
 }
 
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --glass-bg: rgba(134, 175, 221, 0.8);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    
-    --text-primary: #f9f7f7;
-    --text-secondary: #dbe2ef;
-    --text-muted: #9ca3af;
-  }
-  
-  .admin-background {
-    background: linear-gradient(135deg, #112d4e 0%, #2d5985 100%);
-  }
-}
 
 /* ===================================
    🏠 Layout & Background
@@ -614,18 +598,6 @@
    🌓 Dark Mode Overrides
    =================================== */
 
-@media (prefers-color-scheme: dark) {
-  .admin-input,
-  .admin-select,
-  .admin-textarea {
-    background: rgba(17, 24, 39, 0.6);
-    color: var(--text-primary);
-  }
-  
-  .admin-table-row:hover {
-    background: rgba(63, 114, 175, 0.1);
-  }
-}
 
 /* ===================================
    ✨ Special Effects

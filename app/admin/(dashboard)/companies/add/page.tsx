@@ -166,7 +166,7 @@ export default function AddCompanyPage() {
 
   return (
     <div className="space-y-6">
-      <div className="glass-card gradient-border p-6">
+      <div className="glass-card p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-semibold gradient-text">Add Company</h1>

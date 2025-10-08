@@ -47,15 +47,13 @@ export default function AdminSidebar() {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="px-6 py-5">
-            <div className="gradient-border glass-card-light flex items-center gap-2 px-4 py-4">
-              <Building2 className="h-8 w-8 text-blue-600" />
-              <div>
-                <h1 className="text-lg admin-sidebar-logo">CM Directory</h1>
-                <p className="text-xs text-gray-500">Admin Dashboard</p>
-              </div>
+            <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-200">
+            <Building2 className="h-8 w-8 text-blue-600" />
+            <div>
+              <h1 className="text-lg admin-sidebar-logo">CM Directory</h1>
+              <p className="text-xs text-gray-500">Admin Dashboard</p>
             </div>
-          </div>
+            </div>
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1">
