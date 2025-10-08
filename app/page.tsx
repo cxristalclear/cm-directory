@@ -12,8 +12,10 @@ import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import { siteConfig, featureFlags } from "@/lib/config"
 import AddCompanyCallout from '@/components/AddCompanyCallout'
-import { Company } from "@/types/company"
 
+// ⬇️ Added: app-level strict types + DB types
+import type { Company, Facility } from "@/types/company"
+import type { Database } from "@/lib/database.types"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -46,9 +48,42 @@ const AdPlaceholder = ({ width, height, label, className = "" }: { width: string
   </div>
 )
 
-async function getData(): Promise<Company[]> {
+// ---------- DB Row Shapes (nullable from Supabase) ----------
+type DbFacility = Database["public"]["Tables"]["facilities"]["Row"]
+type DbCompany =
+  Database["public"]["Tables"]["companies"]["Row"] & {
+    facilities: DbFacility[] | null
+    capabilities: Database["public"]["Tables"]["capabilities"]["Row"][] | null
+    certifications: Database["public"]["Tables"]["certifications"]["Row"][] | null
+    industries: Database["public"]["Tables"]["industries"]["Row"][] | null
+  }
+
+// ---------- Normalizers (nullable -> strict app types) ----------
+function normalizeFacility(f: DbFacility, fallbackCompanyId: string): Facility {
+  // Ensure `company_id` is a string to satisfy the strict Facility type
+  return {
+    ...f,
+    company_id: (f.company_id ?? fallbackCompanyId ?? "") as string,
+  } as Facility
+}
+
+function normalizeCompany(c: DbCompany): Company {
+  // If your Company type has other non-null fields, set defaults here similarly.
+  const companyId: string = c.id ?? ""
+
+  return {
+    ...c,
+    facilities: (c.facilities ?? []).map((f) => normalizeFacility(f, companyId)),
+    capabilities: c.capabilities ?? [],
+    certifications: c.certifications ?? [],
+    industries: c.industries ?? [],
+  } as Company
+}
+
+// ---------- Data Fetch ----------
+async function getData(): Promise<DbCompany[]> {
   try {
-    const { data: companies, error } = await supabase
+    const { data, error } = await supabase
       .from("companies")
       .select(`
         *,
@@ -58,19 +93,13 @@ async function getData(): Promise<Company[]> {
         industries(*)
       `)
       .eq("is_active", true)
-    
+
     if (error) {
       console.error('Error fetching companies:', error)
       return []
     }
-    
-    // THIS IS THE ONLY CHANGE
-    const cleanedData = (companies || []).map(company => ({
-      ...company,
-      facilities: company.facilities?.filter(f => f.company_id) ?? [],
-    }))
 
-    return cleanedData as unknown as Company[]
+    return (data ?? []) as DbCompany[]
   } catch (error) {
     console.error('Unexpected error fetching companies:', error)
     return []
@@ -84,14 +113,10 @@ export default async function Home({
 }) {
   const sp = await searchParams
   const initialFilters = parseFiltersFromSearchParams(sp)
-  const companies = await getData()
 
-  // This logic was missing in my previous attempts. My apologies.
-  const hasActiveFilters =
-    initialFilters.countries.length > 0 ||
-    initialFilters.states.length > 0 ||
-    initialFilters.capabilities.length > 0 ||
-    initialFilters.productionVolume !== null
+  // Fetch DB rows (nullable), then normalize to strict app types once here.
+  const companiesDb = await getData()
+  const companies: Company[] = companiesDb.map(normalizeCompany)
 
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
@@ -115,74 +140,65 @@ export default async function Home({
           <Header companies={companies} />
 
           <main className="container mx-auto px-4 py-6">
-            {/* Conditional rendering logic restored */}
-            {hasActiveFilters ? (
-                 <>
-                 {/* Top Content Ad - Native/Sponsored */}
-                 <div className="mb-6 bg-white rounded-xl shadow-xl p-4">
-                   <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Featured Partner</div>
-                   <AdPlaceholder
-                     width="100%"
-                     height="120px"
-                     label="Sponsored Content / Featured Manufacturer"
-                     className="border-blue-200"
-                   />
-                 </div>
- 
-                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                   {/* Filter Sidebar */}
-                   <div className="lg:col-span-3 space-y-4">
-                     <FilterErrorBoundary>
-                       <Suspense fallback={<div className="bg-white rounded-xl shadow-lg p-6 animate-pulse">Loading filters...</div>}>
-                         <FilterSidebar allCompanies={companies} />
-                         {featureFlags.showDebug && <FilterDebugger allCompanies={companies} />}
-                       </Suspense>
-                     </FilterErrorBoundary>
- 
-                     {/* Bottom Sidebar Ad */}
-                     <AdPlaceholder width="100%" height="250px" label="Sidebar Skyscraper" />
-                   </div>
- 
-                   <div className="lg:col-span-9 space-y-4">
-                     {/* Map with Error Boundary */}
-                     <MapErrorBoundary>
-                       <LazyCompanyMap allCompanies={companies} />
-                     </MapErrorBoundary>
- 
-                     {/* List */}
-                     <div className="companies-directory">
-                       <Suspense fallback={
-                         <div className="bg-white rounded-xl shadow-sm p-8 animate-pulse">
-                           <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-                           <div className="space-y-4">
-                             {[1, 2, 3].map(i => (
-                               <div key={i} className="h-32 bg-gray-200 rounded"></div>
-                             ))}
-                           </div>
-                         </div>
-                       }>
-                         <CompanyList allCompanies={companies} />
-                       </Suspense>
-                     </div>
-                     <AddCompanyCallout className="mt-12" />
-                     {/* Bottom Content Ad */}
-                     <div className="bg-white rounded-xl shadow-xl p-4">
-                       <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide text-center">Sponsored</div>
-                       <AdPlaceholder
-                         width="100%"
-                         height="150px"
-                         label="Bottom Banner / Native Content"
-                         className="border-green-200"
-                       />
-                     </div>
-                   </div>
-                 </div>
-               </>
-            ) : (
-                <div className="space-y-12">
-                    {/* This is where the missing components would go if they were imported */}
+            {/* Top Content Ad - Native/Sponsored */}
+            <div className="mb-6 bg-white rounded-xl shadow-xl p-4">
+              <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Featured Partner</div>
+              <AdPlaceholder
+                width="100%"
+                height="120px"
+                label="Sponsored Content / Featured Manufacturer"
+                className="border-blue-200"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Filter Sidebar */}
+              <div className="lg:col-span-3 space-y-4">
+                <FilterErrorBoundary>
+                  <Suspense fallback={<div className="bg-white rounded-xl shadow-lg p-6 animate-pulse">Loading filters...</div>}>
+                    <FilterSidebar allCompanies={companies} />
+                    {featureFlags.showDebug && <FilterDebugger allCompanies={companies} />}
+                  </Suspense>
+                </FilterErrorBoundary>
+
+                {/* Bottom Sidebar Ad */}
+                <AdPlaceholder width="100%" height="250px" label="Sidebar Skyscraper" />
+              </div>
+
+              <div className="lg:col-span-9 space-y-4">
+                {/* Map with Error Boundary */}
+                <MapErrorBoundary>
+                  <LazyCompanyMap allCompanies={companies} />
+                </MapErrorBoundary>
+
+                {/* List */}
+                <div className="companies-directory">
+                  <Suspense fallback={
+                    <div className="bg-white rounded-xl shadow-sm p-8 animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+                      <div className="space-y-4">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                        ))}
+                      </div>
+                    </div>
+                  }>
+                    <CompanyList allCompanies={companies} />
+                  </Suspense>
                 </div>
-            )}
+                <AddCompanyCallout className="mt-12" />
+                {/* Bottom Content Ad */}
+                <div className="bg-white rounded-xl shadow-xl p-4">
+                  <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide text-center">Sponsored</div>
+                  <AdPlaceholder
+                    width="100%"
+                    height="150px"
+                    label="Bottom Banner / Native Content"
+                    className="border-green-200"
+                  />
+                </div>
+              </div>
+            </div>
           </main>
         </div>
       </FilterProvider>
