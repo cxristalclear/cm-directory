@@ -6,6 +6,10 @@ import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
+import {
+  createCollectionPageJsonLd,
+  jsonLdScriptProps,
+} from "@/lib/schema"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
@@ -128,11 +132,26 @@ export default async function IndustryPage({
   
   const typedCompanies = companies as Company[] | null
   
+  const canonicalUrl = getCanonicalUrl(`/industries/${industry}`)
+  const breadcrumbBaseUrl = getCanonicalUrl("/industries")
+  const industrySchema = createCollectionPageJsonLd({
+    name: industryData.title,
+    description: industryData.description,
+    url: canonicalUrl,
+    numberOfItems: typedCompanies?.length ?? 0,
+    breadcrumbs: [
+      { name: "Home", url: getCanonicalUrl("/") },
+      { name: "Industries", url: breadcrumbBaseUrl },
+      { name: industryData.name, url: canonicalUrl },
+    ],
+  })
+
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+        <script {...jsonLdScriptProps(industrySchema)} />
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
         <div className="container mx-auto px-4 py-12">
           <nav className="flex items-center gap-2 text-sm text-blue-100 mb-6">
             <Link href="/" className="hover:text-white">Home</Link>

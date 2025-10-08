@@ -7,6 +7,10 @@ import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
+import {
+  createCollectionPageJsonLd,
+  jsonLdScriptProps,
+} from "@/lib/schema"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
@@ -217,45 +221,22 @@ export default async function StateManufacturersPage({
   const canonicalUrl = getCanonicalUrl(`/manufacturers/${state}`)
   const manufacturersIndexUrl = getCanonicalUrl('/manufacturers')
   const homeUrl = getCanonicalUrl('/')
-  const stateSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
+  const stateSchema = createCollectionPageJsonLd({
     name: `Contract Manufacturers in ${stateData.fullName}`,
     description: stateData.description,
     url: canonicalUrl,
     numberOfItems: stats.totalCompanies,
-    breadcrumb: {
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        {
-          '@type': 'ListItem',
-          position: 1,
-          name: 'Home',
-          item: homeUrl,
-        },
-        {
-          '@type': 'ListItem',
-          position: 2,
-          name: 'Manufacturers',
-          item: manufacturersIndexUrl,
-        },
-        {
-          '@type': 'ListItem',
-          position: 3,
-          name: stateData.fullName,
-          item: canonicalUrl,
-        }
-      ]
-    }
-  }
+    breadcrumbs: [
+      { name: "Home", url: homeUrl },
+      { name: "Manufacturers", url: manufacturersIndexUrl },
+      { name: stateData.fullName, url: canonicalUrl },
+    ],
+  })
   
   return (
     <FilterProvider initialFilters={initialFilters}>
       <>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(stateSchema) }}
-        />
+        <script {...jsonLdScriptProps(stateSchema)} />
 
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
           {/* Hero Section */}
