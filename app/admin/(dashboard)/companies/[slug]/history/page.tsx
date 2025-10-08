@@ -3,12 +3,26 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import ChangeHistoryTimeline from '@/components/admin/ChangeHistoryTimeline'
+import type { Database } from '@/lib/database.types'
 
 type CompanyBasic = {
   id: string
   company_name: string
   slug: string
 }
+
+type ChangeLog = {
+  id: string
+  changed_by_email: string
+  changed_by_name: string
+  changed_at: string
+  change_type: 'created' | 'claimed' | 'updated' | 'verified' | 'approved' | 'rejected'
+  field_name: string | null
+  old_value: string | null
+  new_value: string | null
+}
+
+type RawChangeLog = Database['public']['Tables']['company_change_log']['Row']
 
 export default async function CompanyHistoryPage({
   params,
@@ -33,7 +47,7 @@ export default async function CompanyHistoryPage({
   }
 
   // Fetch change history
-  const { data: changeHistory, error: historyError } = await supabase
+  const { data: changeHistoryRaw, error: historyError } = await supabase
     .from('company_change_log')
     .select('*')
     .eq('company_id', company.id)
@@ -42,6 +56,22 @@ export default async function CompanyHistoryPage({
   if (historyError) {
     console.error('Error fetching change history:', historyError)
   }
+
+  // Cast to proper type with filtering for valid change_type values
+  const changeHistory = ((changeHistoryRaw || []) as RawChangeLog[])
+    .filter((change): change is RawChangeLog & { change_type: ChangeLog['change_type'] } => 
+      ['created', 'claimed', 'updated', 'verified', 'approved', 'rejected'].includes(change.change_type)
+    )
+    .map(change => ({
+      id: change.id,
+      changed_by_email: change.changed_by_email,
+      changed_by_name: change.changed_by_name,
+      changed_at: change.changed_at,
+      change_type: change.change_type,
+      field_name: change.field_name,
+      old_value: change.old_value,
+      new_value: change.new_value,
+    } as ChangeLog))
 
   return (
     <div className="space-y-6">
@@ -57,7 +87,7 @@ export default async function CompanyHistoryPage({
         <p className="mt-1 text-sm text-gray-500">Change History</p>
       </div>
 
-      <ChangeHistoryTimeline changes={changeHistory || []} />
+      <ChangeHistoryTimeline changes={changeHistory} />
     </div>
   )
 }
