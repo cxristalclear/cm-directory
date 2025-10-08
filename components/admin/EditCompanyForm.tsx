@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase-client'
 import CompanyForm from '@/components/admin/CompanyForm'
 import type { CompanyFormData } from '@/types/admin'
 import type { CompanyWithRelations } from '@/types/company'
@@ -16,7 +16,7 @@ interface EditCompanyFormProps {
 export default function EditCompanyForm({ company }: EditCompanyFormProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   // Prepare initial data from company
   const initialData: CompanyFormData = {
@@ -124,14 +124,14 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
       // Prepare company update data
       const companyUpdate = {
         company_name: formData.company_name,
-        dba_name: formData.dba_name || null,
+        dba_name: formData.dba_name || undefined,
         slug: newSlug,
-        description: formData.description || null,
-        website_url: formData.website_url || null,
-        year_founded: formData.year_founded || null,
-        employee_count_range: formData.employee_count_range || null,
-        annual_revenue_range: formData.annual_revenue_range || null,
-        key_differentiators: formData.key_differentiators || null,
+        description: formData.description || undefined,
+        website_url: formData.website_url || undefined,
+        year_founded: formData.year_founded || undefined,
+        employee_count_range: formData.employee_count_range || undefined,
+        annual_revenue_range: formData.annual_revenue_range || undefined,
+        key_differentiators: formData.key_differentiators || undefined,
         is_active: !isDraft,
         updated_at: new Date().toISOString(),
         last_reviewed_by: user.email || 'admin',
@@ -168,10 +168,10 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
         const facilitiesData = formData.facilities.map(f => ({
           company_id: company.id,
           facility_type: f.facility_type,
-          street_address: f.street_address || null,
-          city: f.city || null,
-          state: f.state || null,
-          zip_code: f.zip_code || null,
+          street_address: f.street_address || undefined,
+          city: f.city || undefined,
+          state: f.state || undefined,
+          zip_code: f.zip_code || undefined,
           country: f.country || 'US',
           is_primary: f.is_primary || false,
         }))
@@ -229,10 +229,10 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
         const certificationsData = formData.certifications.map(c => ({
           company_id: company.id,
           certification_type: c.certification_type,
-          certificate_number: c.certificate_number || null,
+          certificate_number: c.certificate_number || undefined,
           status: c.status || 'Active',
-          issued_date: c.issued_date || null,
-          expiration_date: c.expiration_date || null,
+          issued_date: c.issued_date || undefined,
+          expiration_date: c.expiration_date || undefined,
         }))
 
         const { error: certificationsError } = await supabase
