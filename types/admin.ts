@@ -5,11 +5,14 @@ export interface CompanyFormData {
   company_name: string
   dba_name?: string | null
   description?: string | null
-  website_url?: string | null
+  website_url?: string
   year_founded?: number | null
   employee_count_range?: string | null
   annual_revenue_range?: string | null
   key_differentiators?: string | null
+
+  is_verified?: boolean | null
+  verified_until?: string | null
 
   // Related data
   facilities?: FacilityFormData[]
