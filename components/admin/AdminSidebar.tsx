@@ -25,11 +25,11 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 admin-sidebar glass-card px-4 py-3">
         <button
           type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+          className="admin-btn-secondary inline-flex items-center justify-center gap-2 text-sm"
         >
           {mobileMenuOpen ? (
             <X className="h-6 w-6" />
@@ -47,13 +47,13 @@ export default function AdminSidebar() {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-200">
+            <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-200">
             <Building2 className="h-8 w-8 text-blue-600" />
             <div>
               <h1 className="text-lg admin-sidebar-logo">CM Directory</h1>
               <p className="text-xs text-gray-500">Admin Dashboard</p>
             </div>
-          </div>
+            </div>
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1">
@@ -64,7 +64,7 @@ export default function AdminSidebar() {
                   key={item.name}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`admin-nav-link flex items-center gap-3 px-4 py-3 text-sm ${
+                  className={`admin-btn-secondary admin-nav-link flex items-center gap-3 text-sm ${
                     isActive ? 'admin-nav-link-active' : ''
                   }`}
                 >
@@ -80,7 +80,7 @@ export default function AdminSidebar() {
       {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-20 bg-gray-600 bg-opacity-50"
+          className="lg:hidden fixed inset-0 z-20 glass-card-light gradient-border backdrop-blur-sm !rounded-none"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
