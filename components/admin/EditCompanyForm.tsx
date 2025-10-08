@@ -6,8 +6,20 @@ import { createClient } from '@/lib/supabase-client'
 import CompanyForm from '@/components/admin/CompanyForm'
 import type { CompanyFormData } from '@/types/admin'
 import type { CompanyWithRelations } from '@/types/company'
+import type { Database } from '@/lib/database.types'
 import { getFieldChanges, logCompanyChanges, validateCompanyData, ensureUniqueSlug, generateSlug } from '@/lib/admin/utils'
 import { toast } from 'sonner'
+
+type CompanyUpdate = Database['public']['Tables']['companies']['Update']
+type FacilityInsert = Database['public']['Tables']['facilities']['Insert']
+type CapabilitiesUpdate = Database['public']['Tables']['capabilities']['Update']
+type CapabilitiesInsert = Database['public']['Tables']['capabilities']['Insert']
+type IndustryInsert = Database['public']['Tables']['industries']['Insert']
+type CertificationInsert = Database['public']['Tables']['certifications']['Insert']
+type TechnicalSpecsUpdate = Database['public']['Tables']['technical_specs']['Update']
+type TechnicalSpecsInsert = Database['public']['Tables']['technical_specs']['Insert']
+type BusinessInfoUpdate = Database['public']['Tables']['business_info']['Update']
+type BusinessInfoInsert = Database['public']['Tables']['business_info']['Insert']
 
 interface EditCompanyFormProps {
   company: CompanyWithRelations
@@ -121,17 +133,17 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
         newSlug = await ensureUniqueSlug(supabase, baseSlug, company.id)
       }
 
-      // Prepare company update data
-      const companyUpdate = {
+      // Prepare company update data - match database types exactly
+      const companyUpdate: CompanyUpdate = {
         company_name: formData.company_name,
-        dba_name: formData.dba_name || undefined,
-        slug: newSlug,
-        description: formData.description || undefined,
-        website_url: formData.website_url || undefined,
-        year_founded: formData.year_founded || undefined,
-        employee_count_range: formData.employee_count_range || undefined,
-        annual_revenue_range: formData.annual_revenue_range || undefined,
-        key_differentiators: formData.key_differentiators || undefined,
+        dba_name: formData.dba_name || null,
+        slug: newSlug || null,
+        description: formData.description || null,
+        website_url: formData.website_url, // Optional string, undefined if empty
+        year_founded: formData.year_founded || null,
+        employee_count_range: formData.employee_count_range || null,
+        annual_revenue_range: formData.annual_revenue_range || null,
+        key_differentiators: formData.key_differentiators || null,
         is_active: !isDraft,
         updated_at: new Date().toISOString(),
         last_reviewed_by: user.email || 'admin',
@@ -154,64 +166,103 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
         companyUpdate
       )
 
+      console.log('Updating company with data:', companyUpdate)
+
       // Update company
       const { error: companyError } = await supabase
         .from('companies')
         .update(companyUpdate)
         .eq('id', company.id)
 
-      if (companyError) throw companyError
+      if (companyError) {
+        console.error('Company update error details:', {
+          message: companyError.message,
+          details: companyError.details,
+          hint: companyError.hint,
+          code: companyError.code
+        })
+        throw companyError
+      }
+
+      console.log('Company updated successfully')
 
       // Update facilities (delete and recreate for simplicity)
-      await supabase.from('facilities').delete().eq('company_id', company.id)
+      const { error: deleteFacilitiesError } = await supabase
+        .from('facilities')
+        .delete()
+        .eq('company_id', company.id)
+
+      if (deleteFacilitiesError) {
+        console.error('Error deleting facilities:', deleteFacilitiesError)
+        throw deleteFacilitiesError
+      }
+
       if (formData.facilities && formData.facilities.length > 0) {
-        const facilitiesData = formData.facilities.map(f => ({
+        const facilitiesData: FacilityInsert[] = formData.facilities.map(f => ({
           company_id: company.id,
           facility_type: f.facility_type,
-          street_address: f.street_address || undefined,
-          city: f.city || undefined,
-          state: f.state || undefined,
-          zip_code: f.zip_code || undefined,
+          street_address: f.street_address || null,
+          city: f.city || null,
+          state: f.state || null,
+          zip_code: f.zip_code || null,
           country: f.country || 'US',
           is_primary: f.is_primary || false,
         }))
+
+        console.log('Inserting facilities:', facilitiesData)
 
         const { error: facilitiesError } = await supabase
           .from('facilities')
           .insert(facilitiesData)
 
-        if (facilitiesError) throw facilitiesError
+        if (facilitiesError) {
+          console.error('Facilities insert error:', facilitiesError)
+          throw facilitiesError
+        }
       }
 
       // Update capabilities (upsert)
-      if (formData.capabilities) {
+      if (formData.capabilities && Object.keys(formData.capabilities).length > 0) {
         const existingCapabilities = company.capabilities?.[0]
+
+        // Convert undefined to null for capabilities
+        const capabilitiesData: CapabilitiesUpdate | CapabilitiesInsert = Object.fromEntries(
+          Object.entries(formData.capabilities).map(([key, value]) => [key, value ?? null])
+        )
 
         if (existingCapabilities) {
           // Update existing
+          console.log('Updating capabilities:', capabilitiesData)
           const { error: capabilitiesError } = await supabase
             .from('capabilities')
-            .update(formData.capabilities)
+            .update(capabilitiesData as CapabilitiesUpdate)
             .eq('company_id', company.id)
 
-          if (capabilitiesError) throw capabilitiesError
+          if (capabilitiesError) {
+            console.error('Capabilities update error:', capabilitiesError)
+            throw capabilitiesError
+          }
         } else {
           // Insert new
+          console.log('Inserting capabilities:', capabilitiesData)
           const { error: capabilitiesError } = await supabase
             .from('capabilities')
             .insert({
               company_id: company.id,
-              ...formData.capabilities,
-            })
+              ...capabilitiesData,
+            } as CapabilitiesInsert)
 
-          if (capabilitiesError) throw capabilitiesError
+          if (capabilitiesError) {
+            console.error('Capabilities insert error:', capabilitiesError)
+            throw capabilitiesError
+          }
         }
       }
 
       // Update industries (delete and recreate)
       await supabase.from('industries').delete().eq('company_id', company.id)
       if (formData.industries && formData.industries.length > 0) {
-        const industriesData = formData.industries.map(i => ({
+        const industriesData: IndustryInsert[] = formData.industries.map(i => ({
           company_id: company.id,
           industry_name: i.industry_name,
         }))
@@ -220,71 +271,99 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
           .from('industries')
           .insert(industriesData)
 
-        if (industriesError) throw industriesError
+        if (industriesError) {
+          console.error('Industries insert error:', industriesError)
+          throw industriesError
+        }
       }
 
       // Update certifications (delete and recreate)
       await supabase.from('certifications').delete().eq('company_id', company.id)
       if (formData.certifications && formData.certifications.length > 0) {
-        const certificationsData = formData.certifications.map(c => ({
+        const certificationsData: CertificationInsert[] = formData.certifications.map(c => ({
           company_id: company.id,
           certification_type: c.certification_type,
-          certificate_number: c.certificate_number || undefined,
+          certificate_number: c.certificate_number || null,
           status: c.status || 'Active',
-          issued_date: c.issued_date || undefined,
-          expiration_date: c.expiration_date || undefined,
+          issued_date: c.issued_date || null,
+          expiration_date: c.expiration_date || null,
         }))
 
         const { error: certificationsError } = await supabase
           .from('certifications')
           .insert(certificationsData)
 
-        if (certificationsError) throw certificationsError
+        if (certificationsError) {
+          console.error('Certifications insert error:', certificationsError)
+          throw certificationsError
+        }
       }
 
       // Update technical specs (upsert)
-      if (formData.technical_specs) {
+      if (formData.technical_specs && Object.keys(formData.technical_specs).length > 0) {
         const existingTechSpecs = company.technical_specs?.[0]
+
+        // Convert undefined to null
+        const techSpecsData: TechnicalSpecsUpdate | TechnicalSpecsInsert = Object.fromEntries(
+          Object.entries(formData.technical_specs).map(([key, value]) => [key, value ?? null])
+        )
 
         if (existingTechSpecs) {
           const { error: techSpecsError } = await supabase
             .from('technical_specs')
-            .update(formData.technical_specs)
+            .update(techSpecsData as TechnicalSpecsUpdate)
             .eq('company_id', company.id)
 
-          if (techSpecsError) throw techSpecsError
+          if (techSpecsError) {
+            console.error('Technical specs update error:', techSpecsError)
+            throw techSpecsError
+          }
         } else {
           const { error: techSpecsError } = await supabase
             .from('technical_specs')
             .insert({
               company_id: company.id,
-              ...formData.technical_specs,
-            })
+              ...techSpecsData,
+            } as TechnicalSpecsInsert)
 
-          if (techSpecsError) throw techSpecsError
+          if (techSpecsError) {
+            console.error('Technical specs insert error:', techSpecsError)
+            throw techSpecsError
+          }
         }
       }
 
       // Update business info (upsert)
-      if (formData.business_info) {
+      if (formData.business_info && Object.keys(formData.business_info).length > 0) {
         const existingBusinessInfo = company.business_info?.[0]
+
+        // Convert undefined to null
+        const businessInfoData: BusinessInfoUpdate | BusinessInfoInsert = Object.fromEntries(
+          Object.entries(formData.business_info).map(([key, value]) => [key, value ?? null])
+        )
 
         if (existingBusinessInfo) {
           const { error: businessInfoError } = await supabase
             .from('business_info')
-            .update(formData.business_info)
+            .update(businessInfoData as BusinessInfoUpdate)
             .eq('company_id', company.id)
 
-          if (businessInfoError) throw businessInfoError
+          if (businessInfoError) {
+            console.error('Business info update error:', businessInfoError)
+            throw businessInfoError
+          }
         } else {
           const { error: businessInfoError } = await supabase
             .from('business_info')
             .insert({
               company_id: company.id,
-              ...formData.business_info,
-            })
+              ...businessInfoData,
+            } as BusinessInfoInsert)
 
-          if (businessInfoError) throw businessInfoError
+          if (businessInfoError) {
+            console.error('Business info insert error:', businessInfoError)
+            throw businessInfoError
+          }
         }
       }
 
@@ -305,6 +384,10 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
       router.refresh()
     } catch (error) {
       console.error('Error updating company:', error)
+      // Log the full error object
+      if (error && typeof error === 'object') {
+        console.error('Error details:', JSON.stringify(error, null, 2))
+      }
       toast.error('Failed to update company. Please try again.')
     } finally {
       setLoading(false)
