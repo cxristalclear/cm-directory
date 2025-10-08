@@ -16,6 +16,7 @@ import AddCompanyCallout from '@/components/AddCompanyCallout'
 // ⬇️ Added: app-level strict types + DB types
 import type { Company, Facility } from "@/types/company"
 import type { Database } from "@/lib/database.types"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -120,6 +121,7 @@ export default async function Home({
 
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
+      <SpeedInsights />
       {/* Website JSON-LD */}
       <Script id="website-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{
         __html: JSON.stringify({
