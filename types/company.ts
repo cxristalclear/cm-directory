@@ -21,25 +21,46 @@ export type FilterContextType = {
 }
 
 export interface Company {
+  // ❌ REMOVED: name: string (doesn't exist in DB)
+  
   // Primary fields
-  id: string // UUID
+  id: string
   company_name: string
   dba_name?: string | null
-  website_url?: string | null // Made optional based on your data
+  website_url: string // ✅ Changed to required (matches DB)
   year_founded?: number | null
-  employee_count_range?: string | null // '<50', '50-150', '150-500', '500-1000', '1000+'
-  annual_revenue_range?: string | null // '<$10M', '$10M-50M', '$50M-150M', '$150M+'
-  slug: string
+  employee_count_range?: string | null
+  annual_revenue_range?: string | null
+  slug: string | null // ✅ Changed to nullable
   logo_url?: string | null
   description?: string | null
   key_differentiators?: string | null
   
   // Metadata
-  is_active?: boolean
-  is_verified?: boolean
+  is_active?: boolean | null
+  is_verified?: boolean | null
   last_verified_date?: string | null
-  created_at?: string
-  updated_at?: string
+  created_at?: string | null
+  updated_at?: string | null
+  
+  // ✅ ADDED: Claim management fields
+  claim_status?: string | null
+  claimed_at?: string | null
+  claimed_by_email?: string | null
+  claimed_by_name?: string | null
+  claim_approved_at?: string | null
+  claim_approved_by?: string | null
+  claim_rejection_reason?: string | null
+  
+  // ✅ ADDED: Verification tracking
+  verified_at?: string | null
+  verified_by?: string | null
+  verified_until?: string | null
+  
+  // ✅ ADDED: Review tracking
+  last_reviewed_at?: string | null
+  last_reviewed_by?: string | null
+  has_pending_updates?: boolean | null
   
   // Relationships
   facilities?: Facility[] | null
@@ -57,7 +78,6 @@ export interface CompanyWithRelations extends Company {
   contacts?: Contact[]
   business_info?: BusinessInfo[]
   technical_specs?: TechnicalSpecs[]
-  // These are already in Company but we're being explicit
   facilities?: Facility[]
   capabilities?: Capabilities[]
   certifications?: Certification[]
@@ -65,37 +85,37 @@ export interface CompanyWithRelations extends Company {
 }
 
 export interface Facility {
-  id: string // UUID
+  id: string
   company_id: string
-  facility_type: string // 'HQ', 'Manufacturing', 'Engineering', 'Sales Office'
+  facility_type: string
   street_address?: string | null
   city?: string | null
-  state?: string | null // 2-letter code
+  state?: string | null
   zip_code?: string | null
-  country?: string | null // Default 'US'
+  country?: string | null
   
   // GIS data
   latitude?: number | null
   longitude?: number | null
-  // PostGIS GEOGRAPHY type - stored as GeoJSON
   location?: {
     type: 'Point'
     coordinates: [number, number]
   } | null
   
   // Facility details
+  facility_name?: string | null // ✅ ADDED - exists in DB
   facility_size_sqft?: number | null
   employees_at_location?: number | null
   key_capabilities?: string | null
   
   // Metadata
-  is_primary?: boolean
-  created_at?: string
-  updated_at?: string
+  is_primary?: boolean | null
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface Capabilities {
-  id: string // UUID
+  id: string
   company_id: string
   
   // PCB Assembly
@@ -120,59 +140,60 @@ export interface Capabilities {
   prototyping?: boolean | null
   
   // Volume
-  low_volume_production?: boolean | null // <1K units
-  medium_volume_production?: boolean | null // 1K-100K
-  high_volume_production?: boolean | null // >100K
+  low_volume_production?: boolean | null
+  medium_volume_production?: boolean | null
+  high_volume_production?: boolean | null
   
   // Service Models
   turnkey_services?: boolean | null
   consigned_services?: boolean | null
   
+  // ✅ ADDED: This exists in capabilities table
+  lead_free_soldering?: boolean | null
+  
   // Metadata
   last_verified_date?: string | null
-  created_at?: string
-  updated_at?: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface Industry {
-  id: string // UUID
+  id: string
   company_id: string
   industry_name: string
   is_specialization?: boolean | null
   years_experience?: number | null
   notable_projects?: string | null
-  
-  created_at?: string
-  updated_at?: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface Certification {
-  id: string // UUID
+  id: string
   company_id: string
   certification_type: string
-  status?: string | null // 'Active', 'Expired', 'Pending'
+  status?: string | null
   certificate_number?: string | null
   issued_date?: string | null
   expiration_date?: string | null
   issuing_body?: string | null
   scope?: string | null
-  
-  created_at?: string
-  updated_at?: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface TechnicalSpecs {
-  id: string // UUID
+  id: string
   company_id: string
   
   // Component Capabilities
-  smallest_component_size?: string | null // '0201', '0402', etc.
+  smallest_component_size?: string | null
   finest_pitch_capability?: string | null
   max_pcb_size_inches?: string | null
   max_pcb_layers?: number | null
   
   // Process Capabilities
-  lead_free_soldering?: boolean | null
+  lead_free_soldering?: boolean | null // Also in Capabilities table
   conformal_coating?: boolean | null
   potting_encapsulation?: boolean | null
   
@@ -186,14 +207,14 @@ export interface TechnicalSpecs {
   clean_room_class?: string | null
   
   // Additional
-  additional_specs?: Record<string, unknown> | null // JSONB stored as object
+  additional_specs?: string | null // ✅ Changed from Record to string (DB type)
   
-  created_at?: string
-  updated_at?: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface BusinessInfo {
-  id: string // UUID
+  id: string
   company_id: string
   
   // Order Information
@@ -214,14 +235,14 @@ export interface BusinessInfo {
   notable_customers?: string | null
   awards_recognition?: string | null
   
-  created_at?: string
-  updated_at?: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface Contact {
-  id: string // UUID
+  id: string
   company_id: string
-  contact_type: string // 'Primary', 'Sales', 'Engineering', 'General'
+  contact_type: string
   
   first_name?: string | null
   last_name?: string | null
@@ -233,25 +254,25 @@ export interface Contact {
   
   // Preferences
   is_primary?: boolean | null
+  is_active?: boolean | null
   accepts_cold_outreach?: boolean | null
   preferred_contact_method?: string | null
   
   // Metadata
   last_contacted?: string | null
-  is_active?: boolean | null
-  created_at?: string
-  updated_at?: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface VerificationData {
-  id: string // UUID
+  id: string
   company_id: string
   
   // Verification Details
   verified_by?: string | null
   verification_date?: string | null
   verification_method?: string | null
-  data_confidence?: string | null // 'High', 'Medium', 'Low'
+  data_confidence?: string | null
   
   // Relationship
   venkel_relationship?: string | null
@@ -266,11 +287,10 @@ export interface VerificationData {
   has_logo?: boolean | null
   profile_completeness?: number | null
   
-  created_at?: string
-  updated_at?: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
-// Extended type for facilities with company reference (for map)
 export interface FacilityWithCompany extends Facility {
   company: Company
 }

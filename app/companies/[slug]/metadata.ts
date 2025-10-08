@@ -29,35 +29,47 @@ export async function generateMetadata({
     }
   }
   
+  // Type cast the company data
+  type CompanyMetadata = {
+    company_name: string
+    description: string | null
+    logo_url: string | null
+    facilities: Array<{ city: string | null; state: string | null }> | null
+    capabilities: Array<{ capability_type: string }> | null
+    certifications: Array<{ certification_type: string }> | null
+  }
+  
+  const typedCompany = company as unknown as CompanyMetadata
+  
   // Build location string
-  const location = company.facilities?.[0] 
-    ? `${company.facilities[0].city}, ${company.facilities[0].state}` 
+  const location = typedCompany.facilities?.[0] 
+    ? `${typedCompany.facilities[0].city}, ${typedCompany.facilities[0].state}` 
     : ''
   
   // Get top capabilities
-  const topCapabilities = company.capabilities
+  const topCapabilities = typedCompany.capabilities
     ?.slice(0, 3)
-    .map(c => c.capability_type)
+    .map((c: { capability_type: string }) => c.capability_type)
     .join(', ') || ''
   
   return {
-    title: `${company.company_name} - Contract Manufacturer ${location ? `in ${location}` : ''}`,
-    description: `${company.description || `${company.company_name} provides contract manufacturing services`}. Capabilities include ${topCapabilities}. View full profile, certifications, and contact information.`,
+    title: `${typedCompany.company_name} - Contract Manufacturer ${location ? `in ${location}` : ''}`,
+    description: `${typedCompany.description || `${typedCompany.company_name} provides contract manufacturing services`}. Capabilities include ${topCapabilities}. View full profile, certifications, and contact information.`,
     
     // Open Graph
     openGraph: {
-      title: company.company_name,
-      description: company.description || `Contract manufacturing services by ${company.company_name}`,
+      title: typedCompany.company_name,
+      description: typedCompany.description || `Contract manufacturing services by ${typedCompany.company_name}`,
       type: 'website',
       url: `https://yourdomain.com/companies/${slug}`,
-      images: company.logo_url ? [{ url: company.logo_url }] : [],
+      images: typedCompany.logo_url ? [{ url: typedCompany.logo_url }] : [],
     },
     
     // Twitter Card
     twitter: {
       card: 'summary_large_image',
-      title: company.company_name,
-      description: company.description?.substring(0, 160),
+      title: typedCompany.company_name,
+      description: typedCompany.description?.substring(0, 160),
     },
     
     // Additional meta
