@@ -532,10 +532,12 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
             )}
           </div>
           <div className="lg:col-span-3 mt-8">
+              {company.slug && (
                 <ClaimEditSection
                   companyName={company.company_name}
                   companySlug={company.slug}
                 />
+                )}
               </div>
         </div>
       </div>
