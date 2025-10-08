@@ -18,13 +18,16 @@ interface ChangeHistoryTimelineProps {
   changes: ChangeLog[]
 }
 
-const changeTypeColors: Record<string, string> = {
-  created: 'bg-green-100 text-green-800',
-  updated: 'bg-blue-100 text-blue-800',
-  claimed: 'bg-purple-100 text-purple-800',
-  verified: 'bg-emerald-100 text-emerald-800',
-  approved: 'bg-teal-100 text-teal-800',
-  rejected: 'bg-red-100 text-red-800',
+const changeTypeVariants: Record<
+  ChangeLog['change_type'],
+  'success' | 'info' | 'warning' | 'error'
+> = {
+  created: 'success',
+  updated: 'info',
+  claimed: 'warning',
+  verified: 'success',
+  approved: 'success',
+  rejected: 'error',
 }
 
 const changeTypeLabels: Record<string, string> = {
@@ -39,14 +42,14 @@ const changeTypeLabels: Record<string, string> = {
 export default function ChangeHistoryTimeline({ changes }: ChangeHistoryTimelineProps) {
   if (!changes || changes.length === 0) {
     return (
-      <div className="bg-white shadow rounded-lg p-12 text-center text-gray-500">
+      <div className="glass-card p-12 text-center text-gray-500">
         No change history available
       </div>
     )
   }
 
   return (
-    <div className="bg-white shadow rounded-lg">
+    <div className="glass-card">
       <div className="p-6">
         <div className="flow-root">
           <ul className="-mb-8">
@@ -73,9 +76,7 @@ export default function ChangeHistoryTimeline({ changes }: ChangeHistoryTimeline
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            changeTypeColors[change.change_type] || 'bg-gray-100 text-gray-800'
-                          }`}
+                          className={`admin-badge admin-badge-${changeTypeVariants[change.change_type]}`}
                         >
                           {changeTypeLabels[change.change_type] || change.change_type}
                         </span>
@@ -95,23 +96,35 @@ export default function ChangeHistoryTimeline({ changes }: ChangeHistoryTimeline
                       </div>
 
                       {change.field_name && (
-                        <div className="mt-2 text-sm">
-                          <p className="font-medium text-gray-900 mb-1">
-                            Changed: <span className="font-mono text-blue-600">{change.field_name}</span>
+                        <div className="mt-3 text-sm">
+                          <p className="font-medium text-gray-900 mb-2">
+                            Changed:{' '}
+                            <span className="font-mono gradient-text">{change.field_name}</span>
                           </p>
-                          <div className="flex items-center gap-3 bg-gray-50 rounded-md p-3">
-                            <div className="flex-1">
-                              <p className="text-xs text-gray-500 mb-1">Old Value</p>
-                              <p className="text-sm text-gray-700 font-mono break-words">
-                                {change.old_value || <span className="text-gray-400 italic">null</span>}
-                              </p>
+                          <div className="gradient-border rounded-2xl p-1">
+                            <div className="grid items-stretch gap-3 md:grid-cols-[1fr_auto_1fr]">
+                              <div className="glass-card h-full p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
+                                  Old Value
+                                </p>
+                                <p className="text-sm text-gray-800 font-mono break-words">
+                                  {change.old_value || <span className="text-gray-400 italic">null</span>}
+                                </p>
+                              </div>
+                              <div className="hidden md:flex items-center justify-center">
+                                <ArrowRight className="h-5 w-5 text-gray-400" />
+                              </div>
+                              <div className="glass-card h-full p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
+                                  New Value
+                                </p>
+                                <p className="text-sm text-gray-900 font-mono break-words">
+                                  {change.new_value || <span className="text-gray-400 italic">null</span>}
+                                </p>
+                              </div>
                             </div>
-                            <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                            <div className="flex-1">
-                              <p className="text-xs text-gray-500 mb-1">New Value</p>
-                              <p className="text-sm text-gray-900 font-mono break-words">
-                                {change.new_value || <span className="text-gray-400 italic">null</span>}
-                              </p>
+                            <div className="md:hidden mt-3 flex justify-center">
+                              <ArrowRight className="h-5 w-5 text-gray-400" />
                             </div>
                           </div>
                         </div>
