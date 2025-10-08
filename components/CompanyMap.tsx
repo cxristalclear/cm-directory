@@ -93,8 +93,10 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
     // Create GeoJSON from facilities
     const geojson: FeatureCollection<Point, FacilityFeatureProperties> = {
-      type: 'FeatureCollection',
-      features: facilities.map((facility) => ({
+    type: 'FeatureCollection',
+    features: facilities
+      .filter(facility => facility.company && facility.company.slug) // ✅ This line is the fix
+      .map((facility) => ({
         type: 'Feature',
         geometry: {
           type: 'Point',
@@ -102,13 +104,13 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         },
         properties: {
           company_name: facility.company.company_name,
-          company_slug: facility.company.slug,
+          company_slug: facility.company.slug!, // The '!' tells TypeScript we're sure it's not null here
           city: facility.city || '',
           state: facility.state || '',
           facility_type: facility.facility_type || 'Manufacturing'
         }
       }))
-    }
+  }
 
     // Add source with clustering
     map.current.addSource('facilities', {

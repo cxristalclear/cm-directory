@@ -5,6 +5,8 @@ import { Building2, Globe, Users, Calendar, DollarSign, CheckCircle, MapPin } fr
 import type { Company } from '@/types/company'
 import CompanyHeader from '@/components/CompanyHeader'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
+import ClaimEditSection from '@/components/ClaimEditSection'
+
 
 interface CompanyDetailClientProps {
   company: Company
@@ -529,6 +531,14 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
               </div>
             )}
           </div>
+          <div className="lg:col-span-3 mt-8">
+              {company.slug && (
+                <ClaimEditSection
+                  companyName={company.company_name}
+                  companySlug={company.slug}
+                />
+                )}
+              </div>
         </div>
       </div>
     </div>

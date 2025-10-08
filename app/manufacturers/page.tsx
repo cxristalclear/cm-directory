@@ -16,7 +16,9 @@ export default async function ManufacturersIndexPage() {
     .not('state', 'is', null)
   
   const stateStats = stateCounts?.reduce((acc, { state }) => {
-    acc[state] = (acc[state] || 0) + 1
+    if (state) { // This check ensures state is not null
+      acc[state] = (acc[state] || 0) + 1
+    }
     return acc
   }, {} as Record<string, number>) || {}
   

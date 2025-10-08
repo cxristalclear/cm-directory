@@ -32,31 +32,46 @@ export async function generateMetadata({
     }
   }
   
-  const location = company.facilities?.[0] 
-    ? `${company.facilities[0].city}, ${company.facilities[0].state}` 
+  // Type cast for metadata generation
+  type CompanyMetadata = {
+    company_name: string
+    description: string | null
+    facilities: Array<{ city: string | null; state: string | null }> | null
+    capabilities: Array<{
+      pcb_assembly_smt: boolean | null
+      cable_harness_assembly: boolean | null
+      box_build_assembly: boolean | null
+    }> | null
+    certifications: Array<{ certification_type: string }> | null
+  }
+  
+  const typedCompany = company as unknown as CompanyMetadata
+  
+  const location = typedCompany.facilities?.[0] 
+    ? `${typedCompany.facilities[0].city}, ${typedCompany.facilities[0].state}` 
     : ''
   
   // Get key capabilities for description
   const capabilities = []
-  if (company.capabilities?.[0]) {
-    const cap = company.capabilities[0]
+  if (typedCompany.capabilities?.[0]) {
+    const cap = typedCompany.capabilities[0]
     if (cap.pcb_assembly_smt) capabilities.push('SMT Assembly')
     if (cap.cable_harness_assembly) capabilities.push('Cable Assembly')
     if (cap.box_build_assembly) capabilities.push('Box Build')
   }
   
-  const certifications = company.certifications?.map(c => c.certification_type).slice(0, 3).join(', ')
+  const certifications = typedCompany.certifications?.map((c: { certification_type: string }) => c.certification_type).slice(0, 3).join(', ')
   
   return {
-    title: `${company.company_name} - Contract Manufacturer${location ? ` in ${location}` : ''} | CM Directory`,
-    description: company.description || 
-      `${company.company_name} is a contract manufacturer${location ? ` located in ${location}` : ''}. ${
+    title: `${typedCompany.company_name} - Contract Manufacturer${location ? ` in ${location}` : ''} | CM Directory`,
+    description: typedCompany.description || 
+      `${typedCompany.company_name} is a contract manufacturer${location ? ` located in ${location}` : ''}. ${
         capabilities.length > 0 ? `Capabilities include ${capabilities.join(', ')}.` : ''
       } ${certifications ? `Certifications: ${certifications}.` : ''} View full profile and contact information.`,
     
     openGraph: {
-      title: `${company.company_name} - Contract Manufacturer`,
-      description: company.description || `Contract manufacturing services by ${company.company_name}`,
+      title: `${typedCompany.company_name} - Contract Manufacturer`,
+      description: typedCompany.description || `Contract manufacturing services by ${typedCompany.company_name}`,
       type: 'website',
       url: `https://yourdomain.com/companies/${slug}`,
       siteName: 'CM Directory',
@@ -64,8 +79,8 @@ export async function generateMetadata({
     
     twitter: {
       card: 'summary_large_image',
-      title: `${company.company_name} - Contract Manufacturer`,
-      description: company.description?.substring(0, 160),
+      title: `${typedCompany.company_name} - Contract Manufacturer`,
+      description: typedCompany.description?.substring(0, 160),
     },
     
     alternates: {

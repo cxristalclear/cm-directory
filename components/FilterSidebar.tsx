@@ -2,12 +2,12 @@
 
 import { useState, useMemo } from 'react'
 import { useFilters } from '../contexts/FilterContext'
-import { ChevronDown, X, Filter, MapPin, Settings, Layers } from 'lucide-react'
+import { ChevronDown, X, Filter, MapPin, Globe, Settings, Layers } from 'lucide-react'
 import type { Company } from '../types/company'
 import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
 import { getStateName } from '../utils/stateMapping'
 
-type FilterSection = 'location' | 'capabilities' | 'volume'
+type FilterSection = 'countries' | 'states' | 'capabilities' | 'volume'
 
 interface FilterSidebarProps {
   allCompanies: Company[]
@@ -34,29 +34,12 @@ const getCountryName = (code: string): string => {
   return COUNTRIES[code] || code
 }
 
-// Subdivision names for different countries (states, provinces, etc.)
-const COUNTRY_SUBDIVISIONS: Record<string, string> = {
-  'US': 'States',
-  'CA': 'Provinces',
-  'MX': 'States',
-  'CN': 'Provinces',
-  'TW': 'Counties',
-  'VN': 'Provinces',
-  'MY': 'States',
-  'TH': 'Provinces',
-  'IN': 'States',
-  'DE': 'States',
-  'PL': 'Voivodeships',
-  'HU': 'Counties',
-  'CZ': 'Regions',
-}
-
 // Capability display names
 const CAPABILITY_NAMES: Record<CapabilitySlug, string> = {
   'smt': 'SMT Assembly',
   'through_hole': 'Through-Hole Assembly',
-  'cable_harness': 'Cable & Harness Assembly',
-  'box_build': 'Box Build Assembly',
+  'cable_harness': 'Cable & Harness',
+  'box_build': 'Box Build',
   'prototyping': 'Prototyping'
 }
 
@@ -70,7 +53,7 @@ const VOLUME_NAMES: Record<ProductionVolume, string> = {
 export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
   const { filters, updateFilter, clearFilters } = useFilters()
   const [isOpen, setIsOpen] = useState(false)
-  const [expandedSections, setExpandedSections] = useState<FilterSection[]>(['location', 'capabilities'])
+  const [expandedSections, setExpandedSections] = useState<FilterSection[]>(['countries', 'states', 'capabilities'])
 
   // Calculate dynamic filter counts
   const dynamicCounts = useMemo(() => {
@@ -209,51 +192,22 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
     updateFilter('productionVolume', volume)
   }
 
-  // Get subdivision label based on selected countries
-  const getSubdivisionLabel = (): string => {
-    if (filters.countries.length === 0) {
-      return 'US States' // Default to US since most companies are US-based
-    }
-    
-    if (filters.countries.length === 1) {
-      const country = filters.countries[0]
-      const subdivisionName = COUNTRY_SUBDIVISIONS[country] || 'States'
-      return `${getCountryName(country)} ${subdivisionName}`
-    }
-    
-    // Multiple countries selected - use generic term
-    const hasUS = filters.countries.includes('US')
-    const hasCanada = filters.countries.includes('CA')
-    
-    if (hasUS && hasCanada) {
-      return 'States/Provinces'
-    }
-    
-    return 'States/Regions'
-  }
-
   const activeFilterCount = 
     filters.countries.length +
     filters.states.length + 
     filters.capabilities.length + 
     (filters.productionVolume ? 1 : 0)
 
-  const sectionIcons: Record<FilterSection, React.ReactElement> = {
-    location: <MapPin className="w-4 h-4" />,
-    capabilities: <Settings className="w-4 h-4" />,
-    volume: <Layers className="w-4 h-4" />
-  }
-
   return (
     <>
-      {/* Mobile/Desktop Toggle Button */}
+      {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed left-4 bottom-4 z-30 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl rounded-full p-4 lg:hidden hover:shadow-2xl transition-all duration-300"
+        className="fixed left-4 bottom-4 z-30 bg-blue-600 text-white shadow-xl rounded-full p-4 lg:hidden hover:shadow-2xl transition-shadow"
       >
         <Filter className="w-6 h-6" />
         {activeFilterCount > 0 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
             {activeFilterCount}
           </span>
         )}
@@ -262,351 +216,316 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       {/* Sidebar */}
       <div className={`
         fixed lg:relative top-0 left-0 h-full lg:h-auto z-20 
-        bg-white shadow-xl lg:shadow-lg
-        transition-all duration-300 ease-out
+        bg-white shadow-xl lg:shadow-sm lg:rounded-xl lg:border lg:border-gray-200
+        transition-transform duration-300 ease-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         w-80 lg:w-full
         overflow-y-auto
       `}>
-        <div className="sticky top-0 bg-white z-10 border-b border-gray-200 p-4 lg:p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg">
-                <Filter className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Filters</h2>
-                {activeFilterCount > 0 && (
-                  <p className="text-xs text-gray-500">{activeFilterCount} active</p>
-                )}
-              </div>
+        {/* Header - Compact */}
+        <div className="sticky top-0 bg-white z-10 border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-600" />
+              <h2 className="font-semibold text-gray-900">Filters</h2>
+              {activeFilterCount > 0 && (
+                <span className="text-xs text-gray-500">({activeFilterCount})</span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearFilters}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                 >
                   Clear all
                 </button>
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="lg:hidden p-1 hover:bg-gray-100 rounded"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Active Filter Chips */}
+          {/* Active Filter Pills */}
           {activeFilterCount > 0 && (
-            <div className="flex flex-wrap gap-2 pb-4 border-b border-gray-200">
+            <div className="flex flex-wrap gap-1.5">
               {filters.countries.map(country => (
-                <span key={country} className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                <button
+                  key={country}
+                  onClick={() => handleCountryToggle(country)}
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
+                >
                   {getCountryName(country)}
-                  <button 
-                    onClick={() => handleCountryToggle(country)} 
-                    className="ml-1 hover:bg-blue-100 rounded-full p-0.5 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
+                  <X className="w-3 h-3" />
+                </button>
               ))}
               {filters.states.map(state => (
-                <span key={state} className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                <button
+                  key={state}
+                  onClick={() => handleStateToggle(state)}
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
+                >
                   {getStateName(state)}
-                  <button 
-                    onClick={() => handleStateToggle(state)} 
-                    className="ml-1 hover:bg-blue-100 rounded-full p-0.5 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
+                  <X className="w-3 h-3" />
+                </button>
               ))}
               {filters.capabilities.map(cap => (
-                <span key={cap} className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                <button
+                  key={cap}
+                  onClick={() => handleCapabilityToggle(cap)}
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
+                >
                   {CAPABILITY_NAMES[cap]}
-                  <button 
-                    onClick={() => handleCapabilityToggle(cap)} 
-                    className="ml-1 hover:bg-blue-100 rounded-full p-0.5 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
+                  <X className="w-3 h-3" />
+                </button>
               ))}
               {filters.productionVolume && (
-                <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                <button
+                  onClick={() => handleVolumeChange(null)}
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
+                >
                   {VOLUME_NAMES[filters.productionVolume]}
-                  <button 
-                    onClick={() => handleVolumeChange(null)} 
-                    className="ml-1 hover:bg-blue-100 rounded-full p-0.5 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
+                  <X className="w-3 h-3" />
+                </button>
               )}
             </div>
           )}
         </div>
 
-        <div className="p-4 lg:p-6">
-          {/* Filter Sections */}
-          <div className="space-y-2">
-            {/* Location Filter - Countries and States */}
-            <div className="bg-gray-50 rounded-xl p-4 transition-all duration-200 hover:bg-gray-100">
-              <button
-                onClick={() => toggleSection('location')}
-                className="flex items-center justify-between w-full group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white rounded-lg shadow-sm group-hover:shadow transition-shadow">
-                    {sectionIcons.location}
-                  </div>
-                  <div className="text-left">
-                    <span className="font-semibold text-gray-900">Location</span>
-                    {(filters.countries.length > 0 || filters.states.length > 0) && (
-                      <p className="text-xs text-blue-600">
-                        {filters.countries.length + filters.states.length} selected
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className={`transform transition-transform duration-200 ${expandedSections.includes('location') ? 'rotate-180' : ''}`}>
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                </div>
-              </button>
+        <div className="p-4 space-y-3">
+          {/* Country Filter */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => toggleSection('countries')}
+              className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-900">Country</span>
+                {filters.countries.length > 0 && (
+                  <span className="text-xs text-blue-600 font-medium">
+                    {filters.countries.length}
+                  </span>
+                )}
+              </div>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                expandedSections.includes('countries') ? 'rotate-180' : ''
+              }`} />
+            </button>
 
-              {expandedSections.includes('location') && (
-                <div className="mt-4 space-y-4">
-                  {/* Countries */}
-                  <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Countries</h4>
-                    <div className="space-y-1">
-                      {Array.from(dynamicCounts.countries.entries())
-                        .sort(([a], [b]) => getCountryName(a).localeCompare(getCountryName(b)))
-                        .map(([country, count]) => {
-                          const isSelected = filters.countries.includes(country)
-                          const isDisabled = count === 0 && !isSelected
-                          
-                          return (
-                            <label 
-                              key={country} 
-                              className={`flex items-center justify-between p-2 rounded-lg ${
-                                isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
-                              } transition-colors group`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => !isDisabled && handleCountryToggle(country)}
-                                  disabled={isDisabled}
-                                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
-                                />
-                                <span className={`text-sm font-medium ${
-                                  isDisabled ? 'text-gray-400' : 'text-gray-700'
-                                }`}>
-                                  {getCountryName(country)}
-                                </span>
-                              </div>
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                isSelected 
-                                  ? 'bg-blue-100 text-blue-700 font-semibold'
-                                  : isDisabled
-                                    ? 'bg-gray-50 text-gray-400'
-                                    : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
-                              } transition-colors`}>
-                                {count}
-                              </span>
-                            </label>
-                          )
-                        })}
-                    </div>
-                  </div>
-
-                  {/* States */}
-                  <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      {getSubdivisionLabel()}
-                    </h4>
-                    <div className="space-y-1 max-h-64 overflow-y-auto">
-                      {Array.from(dynamicCounts.states.entries())
-                        .sort(([a], [b]) => getStateName(a).localeCompare(getStateName(b)))
-                        .map(([state, count]) => {
-                          const isSelected = filters.states.includes(state)
-                          const isDisabled = count === 0 && !isSelected
-                          
-                          return (
-                            <label 
-                              key={state} 
-                              className={`flex items-center justify-between p-2 rounded-lg ${
-                                isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
-                              } transition-colors group`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => !isDisabled && handleStateToggle(state)}
-                                  disabled={isDisabled}
-                                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
-                                />
-                                <span className={`text-sm font-medium ${
-                                  isDisabled ? 'text-gray-400' : 'text-gray-700'
-                                }`}>
-                                  {getStateName(state)}
-                                </span>
-                              </div>
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                isSelected 
-                                  ? 'bg-blue-100 text-blue-700 font-semibold'
-                                  : isDisabled
-                                    ? 'bg-gray-50 text-gray-400'
-                                    : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
-                              } transition-colors`}>
-                                {count}
-                              </span>
-                            </label>
-                          )
-                        })}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Capabilities Filter */}
-            <div className="bg-gray-50 rounded-xl p-4 transition-all duration-200 hover:bg-gray-100">
-              <button
-                onClick={() => toggleSection('capabilities')}
-                className="flex items-center justify-between w-full group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white rounded-lg shadow-sm group-hover:shadow transition-shadow">
-                    {sectionIcons.capabilities}
-                  </div>
-                  <div className="text-left">
-                    <span className="font-semibold text-gray-900">Capabilities</span>
-                    {filters.capabilities.length > 0 && (
-                      <p className="text-xs text-blue-600">{filters.capabilities.length} selected</p>
-                    )}
-                  </div>
-                </div>
-                <div className={`transform transition-transform duration-200 ${expandedSections.includes('capabilities') ? 'rotate-180' : ''}`}>
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                </div>
-              </button>
-
-              {expandedSections.includes('capabilities') && (
-                <div className="mt-4 space-y-1">
-                  {Array.from(dynamicCounts.capabilities.entries()).map(([cap, count]) => {
-                    const isSelected = filters.capabilities.includes(cap)
+            {expandedSections.includes('countries') && (
+              <div className="p-2 space-y-0.5 max-h-48 overflow-y-auto">
+                {Array.from(dynamicCounts.countries.entries())
+                  .sort(([a], [b]) => getCountryName(a).localeCompare(getCountryName(b)))
+                  .map(([country, count]) => {
+                    const isSelected = filters.countries.includes(country)
                     const isDisabled = count === 0 && !isSelected
                     
                     return (
                       <label 
-                        key={cap} 
-                        className={`flex items-center justify-between p-2 rounded-lg ${
-                          isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
-                        } transition-colors group`}
+                        key={country} 
+                        className={`flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-50 ${
+                          isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           <input
                             type="checkbox"
                             checked={isSelected}
-                            onChange={() => !isDisabled && handleCapabilityToggle(cap)}
+                            onChange={() => !isDisabled && handleCountryToggle(country)}
                             disabled={isDisabled}
-                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-1 focus:ring-blue-500"
                           />
-                          <span className={`text-sm font-medium ${
-                            isDisabled ? 'text-gray-400' : 'text-gray-700'
-                          }`}>
-                            {CAPABILITY_NAMES[cap]}
+                          <span className="text-sm text-gray-700 truncate">
+                            {getCountryName(country)}
                           </span>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          isSelected 
-                            ? 'bg-blue-100 text-blue-700 font-semibold'
-                            : isDisabled
-                              ? 'bg-gray-50 text-gray-400'
-                              : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
-                        } transition-colors`}>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${
+                          isSelected ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-500'
+                        }`}>
                           {count}
                         </span>
                       </label>
                     )
                   })}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
 
-            {/* Volume Filter - Radio buttons since it's single select */}
-            <div className="bg-gray-50 rounded-xl p-4 transition-all duration-200 hover:bg-gray-100">
-              <button
-                onClick={() => toggleSection('volume')}
-                className="flex items-center justify-between w-full group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white rounded-lg shadow-sm group-hover:shadow transition-shadow">
-                    {sectionIcons.volume}
-                  </div>
-                  <div className="text-left">
-                    <span className="font-semibold text-gray-900">Production Volume</span>
-                    {filters.productionVolume && (
-                      <p className="text-xs text-blue-600">{VOLUME_NAMES[filters.productionVolume]}</p>
-                    )}
-                  </div>
-                </div>
-                <div className={`transform transition-transform duration-200 ${expandedSections.includes('volume') ? 'rotate-180' : ''}`}>
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                </div>
-              </button>
+          {/* State Filter */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => toggleSection('states')}
+              className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-900">State</span>
+                {filters.states.length > 0 && (
+                  <span className="text-xs text-blue-600 font-medium">
+                    {filters.states.length}
+                  </span>
+                )}
+              </div>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                expandedSections.includes('states') ? 'rotate-180' : ''
+              }`} />
+            </button>
 
-              {expandedSections.includes('volume') && (
-                <div className="mt-4 space-y-1">
-                  {Array.from(dynamicCounts.productionVolume.entries()).map(([vol, count]) => {
-                    const isSelected = filters.productionVolume === vol
+            {expandedSections.includes('states') && (
+              <div className="p-2 space-y-0.5 max-h-64 overflow-y-auto">
+                {Array.from(dynamicCounts.states.entries())
+                  .sort(([a], [b]) => getStateName(a).localeCompare(getStateName(b)))
+                  .map(([state, count]) => {
+                    const isSelected = filters.states.includes(state)
                     const isDisabled = count === 0 && !isSelected
                     
                     return (
                       <label 
-                        key={vol} 
-                        className={`flex items-center justify-between p-2 rounded-lg ${
-                          isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer'
-                        } transition-colors group`}
+                        key={state} 
+                        className={`flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-50 ${
+                          isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           <input
-                            type="radio"
-                            name="productionVolume"
+                            type="checkbox"
                             checked={isSelected}
-                            onChange={() => !isDisabled && handleVolumeChange(vol)}
+                            onChange={() => !isDisabled && handleStateToggle(state)}
                             disabled={isDisabled}
-                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed"
+                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-1 focus:ring-blue-500"
                           />
-                          <span className={`text-sm font-medium ${
-                            isDisabled ? 'text-gray-400' : 'text-gray-700'
-                          }`}>
-                            {VOLUME_NAMES[vol]}
+                          <span className="text-sm text-gray-700 truncate">
+                            {getStateName(state)}
                           </span>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          isSelected 
-                            ? 'bg-blue-100 text-blue-700 font-semibold'
-                            : isDisabled
-                              ? 'bg-gray-50 text-gray-400'
-                              : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
-                        } transition-colors`}>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${
+                          isSelected ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-500'
+                        }`}>
                           {count}
                         </span>
                       </label>
                     )
                   })}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
+
+          {/* Capabilities Filter */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => toggleSection('capabilities')}
+              className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-900">Capabilities</span>
+                {filters.capabilities.length > 0 && (
+                  <span className="text-xs text-blue-600 font-medium">
+                    {filters.capabilities.length}
+                  </span>
+                )}
+              </div>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                expandedSections.includes('capabilities') ? 'rotate-180' : ''
+              }`} />
+            </button>
+
+            {expandedSections.includes('capabilities') && (
+              <div className="p-2 space-y-0.5">
+                {Array.from(dynamicCounts.capabilities.entries()).map(([cap, count]) => {
+                  const isSelected = filters.capabilities.includes(cap)
+                  const isDisabled = count === 0 && !isSelected
+                  
+                  return (
+                    <label 
+                      key={cap} 
+                      className={`flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-50 ${
+                        isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => !isDisabled && handleCapabilityToggle(cap)}
+                          disabled={isDisabled}
+                          className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-1 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700 truncate">
+                          {CAPABILITY_NAMES[cap]}
+                        </span>
+                      </div>
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${
+                        isSelected ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-500'
+                      }`}>
+                        {count}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Volume Filter */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => toggleSection('volume')}
+              className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-900">Volume</span>
+                {filters.productionVolume && (
+                  <span className="text-xs text-blue-600 font-medium">1</span>
+                )}
+              </div>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                expandedSections.includes('volume') ? 'rotate-180' : ''
+              }`} />
+            </button>
+
+            {expandedSections.includes('volume') && (
+              <div className="p-2 space-y-0.5">
+                {Array.from(dynamicCounts.productionVolume.entries()).map(([vol, count]) => {
+                  const isSelected = filters.productionVolume === vol
+                  const isDisabled = count === 0 && !isSelected
+                  
+                  return (
+                    <label 
+                      key={vol} 
+                      className={`flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-50 ${
+                        isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <input
+                          type="radio"
+                          name="productionVolume"
+                          checked={isSelected}
+                          onChange={() => !isDisabled && handleVolumeChange(vol)}
+                          disabled={isDisabled}
+                          className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-1 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700 truncate">
+                          {VOLUME_NAMES[vol]}
+                        </span>
+                      </div>
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${
+                        isSelected ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-500'
+                      }`}>
+                        {count}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -614,7 +533,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       {/* Overlay for mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-10 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/50 z-10 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}

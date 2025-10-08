@@ -31,6 +31,23 @@ function Chip({ label, onRemove }: ChipProps) {
   )
 }
 
+// Country display names
+const COUNTRY_LABELS: Record<string, string> = {
+  'US': 'United States',
+  'CA': 'Canada',
+  'MX': 'Mexico',
+  'CN': 'China',
+  'TW': 'Taiwan',
+  'VN': 'Vietnam',
+  'MY': 'Malaysia',
+  'TH': 'Thailand',
+  'IN': 'India',
+  'DE': 'Germany',
+  'PL': 'Poland',
+  'HU': 'Hungary',
+  'CZ': 'Czech Republic',
+}
+
 const CAPABILITY_LABELS: Record<CapabilitySlug, string> = {
   smt: "SMT",
   through_hole: "Through-Hole",
@@ -47,6 +64,10 @@ const VOLUME_LABELS: Record<ProductionVolume, string> = {
 
 export default function ActiveFiltersBar() {
   const { filters, updateFilter, clearFilters } = useFilters()
+
+  const removeCountry = (country: string) => {
+    updateFilter("countries", filters.countries.filter((value) => value !== country))
+  }
 
   const removeState = (state: string) => {
     updateFilter("states", filters.states.filter((value) => value !== state))
@@ -65,10 +86,23 @@ export default function ActiveFiltersBar() {
 
   const chips: ReactNode[] = []
 
+  // Add country chips first
+  for (const country of filters.countries) {
+    chips.push(
+      <Chip 
+        key={`country:${country}`} 
+        label={COUNTRY_LABELS[country] || country} 
+        onRemove={() => removeCountry(country)} 
+      />
+    )
+  }
+
+  // Then state chips
   for (const state of filters.states) {
     chips.push(<Chip key={`state:${state}`} label={state} onRemove={() => removeState(state)} />)
   }
 
+  // Then capability chips
   for (const capability of filters.capabilities) {
     chips.push(
       <Chip
@@ -79,6 +113,7 @@ export default function ActiveFiltersBar() {
     )
   }
 
+  // Finally volume chip
   if (filters.productionVolume) {
     chips.push(
       <Chip
