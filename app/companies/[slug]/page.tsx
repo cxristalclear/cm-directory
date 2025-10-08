@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import type { CompanyWithRelations } from "@/types/company"
 import { CompanySchema } from "@/components/CompanySchema"
 import CompanyDetailClient from "./CompanyDetailClient"
+import { getAbsoluteUrl, siteConfig } from "@/lib/config"
 
 // Generate dynamic metadata for SEO
 export async function generateMetadata({ 
@@ -62,29 +63,38 @@ export async function generateMetadata({
   
   const certifications = typedCompany.certifications?.map((c: { certification_type: string }) => c.certification_type).slice(0, 3).join(', ')
   
+  const pageUrl = getAbsoluteUrl(`/companies/${slug}`)
+
   return {
     title: `${typedCompany.company_name} - Contract Manufacturer${location ? ` in ${location}` : ''} | CM Directory`,
-    description: typedCompany.description || 
+    description: typedCompany.description ||
       `${typedCompany.company_name} is a contract manufacturer${location ? ` located in ${location}` : ''}. ${
         capabilities.length > 0 ? `Capabilities include ${capabilities.join(', ')}.` : ''
       } ${certifications ? `Certifications: ${certifications}.` : ''} View full profile and contact information.`,
-    
+
     openGraph: {
       title: `${typedCompany.company_name} - Contract Manufacturer`,
       description: typedCompany.description || `Contract manufacturing services by ${typedCompany.company_name}`,
       type: 'website',
-      url: `https://yourdomain.com/companies/${slug}`,
-      siteName: 'CM Directory',
+      url: pageUrl,
+      siteName: siteConfig.name,
+      images: [
+        {
+          url: siteConfig.ogImage,
+          alt: `${typedCompany.company_name} - Contract Manufacturer`,
+        },
+      ],
     },
-    
+
     twitter: {
       card: 'summary_large_image',
       title: `${typedCompany.company_name} - Contract Manufacturer`,
       description: typedCompany.description?.substring(0, 160),
+      images: [siteConfig.ogImage],
     },
-    
+
     alternates: {
-      canonical: `https://yourdomain.com/companies/${slug}`,
+      canonical: pageUrl,
     },
     
     robots: {
@@ -131,7 +141,7 @@ export default async function CompanyPage({
     <>
       {/* JSON-LD Schema for SEO */}
       <CompanySchema company={company} />
-      
+
       {/* Client Component for interactivity */}
       <CompanyDetailClient company={company} />
     </>

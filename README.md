@@ -84,12 +84,19 @@ NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_access_token
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SITE_NAME=CM Directory
 
+# Social Profiles (Required for production metadata)
+NEXT_PUBLIC_TWITTER_URL=https://twitter.com/cmdirectory
+NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/cm-directory
+NEXT_PUBLIC_GITHUB_URL=https://github.com/cm-directory/app
+
 # Analytics (Optional)
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 
 # Feature Flags
 NEXT_PUBLIC_SHOW_DEBUG=false
 ```
+
+> **Deployment Tip:** Hosting on Vercel? Define the same environment variables in your project settings (Project Settings → Environment Variables). Files like `.env.local` are not uploaded during Vercel builds, so any values that only exist locally will be treated as missing at build time.
 
 ### 4. Set up your Supabase database
 
@@ -190,8 +197,13 @@ The application can be deployed to any platform that supports Next.js:
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | No | Mapbox access token for map visualization |
 | `NEXT_PUBLIC_SITE_URL` | Yes | Full URL of your deployed site |
 | `NEXT_PUBLIC_SITE_NAME` | No | Name of your site (default: "CM Directory") |
+| `NEXT_PUBLIC_TWITTER_URL` | Yes | Public Twitter/X profile URL referenced in metadata |
+| `NEXT_PUBLIC_LINKEDIN_URL` | Yes | LinkedIn company page for social links |
+| `NEXT_PUBLIC_GITHUB_URL` | Yes | GitHub organization or repository to surface in the footer |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No | Google Analytics measurement ID |
 | `NEXT_PUBLIC_SHOW_DEBUG` | No | Show debug information (default: false) |
+
+> 🚀 **Deployment reminder:** Coordinate with DevOps to ensure `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_TWITTER_URL`, `NEXT_PUBLIC_LINKEDIN_URL`, and `NEXT_PUBLIC_GITHUB_URL` are populated with the marketing-approved production URLs in every environment.
 
 ## 📚 Key Features Documentation
 
