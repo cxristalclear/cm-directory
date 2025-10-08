@@ -90,7 +90,7 @@ export default async function EditCompanyPage({
       <div className="glass-card p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold gradient-text">Edit Company</h1>
+            <h1 className="text-3xl font-semibold gradient-text">Edit Compan</h1>
             <p className="mt-2 text-sm text-[var(--text-muted)]">
               Update company profile information
             </p>
