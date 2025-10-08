@@ -7,6 +7,10 @@
 const requiredEnvVars = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  NEXT_PUBLIC_TWITTER_URL: process.env.NEXT_PUBLIC_TWITTER_URL,
+  NEXT_PUBLIC_LINKEDIN_URL: process.env.NEXT_PUBLIC_LINKEDIN_URL,
+  NEXT_PUBLIC_GITHUB_URL: process.env.NEXT_PUBLIC_GITHUB_URL,
 } as const
 
 // Check for missing required environment variables
@@ -20,15 +24,42 @@ if (missingEnvVars.length > 0 && process.env.NODE_ENV !== 'test') {
   )
 }
 
+// Flag obviously placeholder values so they can't silently reach production
+const placeholderPatterns = [/your_/i, /example\.com/i, /yourdomain\.com/i, /placeholder/i]
+const flaggedEnvVars = Object.entries({
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  NEXT_PUBLIC_TWITTER_URL: process.env.NEXT_PUBLIC_TWITTER_URL,
+  NEXT_PUBLIC_LINKEDIN_URL: process.env.NEXT_PUBLIC_LINKEDIN_URL,
+  NEXT_PUBLIC_GITHUB_URL: process.env.NEXT_PUBLIC_GITHUB_URL,
+}).filter(([, value]) =>
+  typeof value === 'string' && placeholderPatterns.some((pattern) => pattern.test(value))
+)
+
+if (flaggedEnvVars.length > 0 && process.env.NODE_ENV !== 'test') {
+  const keys = flaggedEnvVars.map(([key]) => key)
+  throw new Error(
+    `Placeholder environment variable(s) detected:\n${keys.join('\n')}\n\nPlease update the values before deploying.`
+  )
+}
+
+const normalizeUrl = (url: string): string => {
+  const trimmed = url.trim()
+  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed
+}
+
+const defaultSiteUrl = 'https://www.cm-directory.com'
+const siteUrl = normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL || defaultSiteUrl)
+
 // Site configuration
 export const siteConfig = {
   name: process.env.NEXT_PUBLIC_SITE_NAME || 'CM Directory',
   description: 'Find and connect with verified contract manufacturers worldwide',
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://cm-directory.vercel.app',
-  ogImage: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cm-directory.vercel.app'}/og-image.png`,
+  url: siteUrl,
+  ogImage: `${siteUrl}/og-image.png`,
   links: {
-    twitter: 'https://twitter.com/your_handle',
-    github: 'https://github.com/your_repo',
+    twitter: process.env.NEXT_PUBLIC_TWITTER_URL!,
+    linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL!,
+    github: process.env.NEXT_PUBLIC_GITHUB_URL!,
   },
 } as const
 

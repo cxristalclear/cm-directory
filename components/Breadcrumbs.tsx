@@ -1,14 +1,10 @@
 import Link from 'next/link'
 import { ChevronRight, Home } from 'lucide-react'
+import { siteConfig } from '@/lib/config'
 
 interface BreadcrumbItem {
   name: string
   url: string
-}
-
-interface BreadcrumbsProps {
-  items: BreadcrumbItem[]
-  className?: string
 }
 
 interface BreadcrumbsProps {
@@ -18,8 +14,7 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
-  // Add your domain for absolute URLs in schema
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://yourdomain.com'
+  const baseUrl = siteConfig.url
   
     
 

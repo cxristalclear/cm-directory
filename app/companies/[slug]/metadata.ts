@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { supabase } from '@/lib/supabase'
+import { getAbsoluteUrl, siteConfig } from '@/lib/config'
 
 export async function generateMetadata({ 
   params 
@@ -52,29 +53,37 @@ export async function generateMetadata({
     .map((c: { capability_type: string }) => c.capability_type)
     .join(', ') || ''
   
+  const pageUrl = getAbsoluteUrl(`/companies/${slug}`)
+
+  const ogImages = typedCompany.logo_url
+    ? [{ url: typedCompany.logo_url }]
+    : [{ url: siteConfig.ogImage }]
+
   return {
     title: `${typedCompany.company_name} - Contract Manufacturer ${location ? `in ${location}` : ''}`,
     description: `${typedCompany.description || `${typedCompany.company_name} provides contract manufacturing services`}. Capabilities include ${topCapabilities}. View full profile, certifications, and contact information.`,
-    
+
     // Open Graph
     openGraph: {
       title: typedCompany.company_name,
       description: typedCompany.description || `Contract manufacturing services by ${typedCompany.company_name}`,
       type: 'website',
-      url: `https://yourdomain.com/companies/${slug}`,
-      images: typedCompany.logo_url ? [{ url: typedCompany.logo_url }] : [],
+      url: pageUrl,
+      siteName: siteConfig.name,
+      images: ogImages,
     },
-    
+
     // Twitter Card
     twitter: {
       card: 'summary_large_image',
       title: typedCompany.company_name,
       description: typedCompany.description?.substring(0, 160),
+      images: [typedCompany.logo_url ?? siteConfig.ogImage],
     },
-    
+
     // Additional meta
     alternates: {
-      canonical: `https://yourdomain.com/companies/${slug}`,
+      canonical: pageUrl,
     },
     
     robots: {
