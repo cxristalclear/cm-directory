@@ -118,9 +118,9 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
   }
 
   return (
-    <form className="space-y-8 bg-white shadow rounded-lg">
+    <form className="space-y-8 glass-card">
       {/* Basic Information Section */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="glass-card p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Information</h2>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div className="sm:col-span-2">
@@ -133,7 +133,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               required
               value={formData.company_name}
               onChange={(e) => updateField('company_name', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input glow-on-focus"
             />
           </div>
 
@@ -146,7 +146,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               id="dba_name"
               value={formData.dba_name || ''}
               onChange={(e) => updateField('dba_name', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -160,7 +160,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.website_url || ''}
               onChange={(e) => updateField('website_url', e.target.value)}
               placeholder="https://example.com"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -175,7 +175,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               max={new Date().getFullYear()}
               value={formData.year_founded || ''}
               onChange={(e) => updateField('year_founded', parseInt(e.target.value) || undefined)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -187,7 +187,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               id="employee_count_range"
               value={formData.employee_count_range || ''}
               onChange={(e) => updateField('employee_count_range', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-select"
             >
               <option value="">Select range</option>
               {employeeRanges.map((range) => (
@@ -206,7 +206,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               id="annual_revenue_range"
               value={formData.annual_revenue_range || ''}
               onChange={(e) => updateField('annual_revenue_range', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-select"
             >
               <option value="">Select range</option>
               {revenueRanges.map((range) => (
@@ -226,7 +226,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               rows={4}
               value={formData.description || ''}
               onChange={(e) => updateField('description', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-textarea"
             />
           </div>
 
@@ -239,20 +239,20 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               rows={3}
               value={formData.key_differentiators || ''}
               onChange={(e) => updateField('key_differentiators', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-textarea"
             />
           </div>
         </div>
       </div>
 
       {/* Facilities Section */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Facilities</h2>
           <button
             type="button"
             onClick={addFacility}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+            className="admin-btn-secondary inline-flex items-center gap-2 px-3 py-2"
           >
             <Plus className="h-4 w-4" />
             Add Facility
@@ -261,11 +261,11 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
 
         <div className="space-y-6">
           {formData.facilities?.map((facility, index) => (
-            <div key={index} className="p-4 border border-gray-200 rounded-lg relative">
+            <div key={index} className="glass-card p-4 relative">
               <button
                 type="button"
                 onClick={() => removeFacility(index)}
-                className="absolute top-2 right-2 text-gray-400 hover:text-red-600"
+                className="admin-btn-danger absolute top-3 right-3 inline-flex items-center justify-center p-2"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -276,7 +276,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   <select
                     value={facility.facility_type}
                     onChange={(e) => updateFacility(index, 'facility_type', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full admin-select"
                   >
                     {facilityTypes.map((type) => (
                       <option key={type} value={type}>{type}</option>
@@ -290,7 +290,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                       type="checkbox"
                       checked={facility.is_primary || false}
                       onChange={(e) => updateFacility(index, 'is_primary', e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="admin-checkbox"
                     />
                     <span className="text-sm font-medium text-gray-700">Primary Location</span>
                   </label>
@@ -302,7 +302,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                     type="text"
                     value={facility.street_address || ''}
                     onChange={(e) => updateFacility(index, 'street_address', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full admin-input"
                   />
                 </div>
 
@@ -312,7 +312,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                     type="text"
                     value={facility.city || ''}
                     onChange={(e) => updateFacility(index, 'city', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full admin-input"
                   />
                 </div>
 
@@ -324,7 +324,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                     placeholder="CA"
                     value={facility.state || ''}
                     onChange={(e) => updateFacility(index, 'state', e.target.value.toUpperCase())}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full admin-input"
                   />
                 </div>
 
@@ -334,7 +334,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                     type="text"
                     value={facility.zip_code || ''}
                     onChange={(e) => updateFacility(index, 'zip_code', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full admin-input"
                   />
                 </div>
               </div>
@@ -348,7 +348,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
       </div>
 
       {/* Capabilities Section */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="glass-card p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-6">Capabilities</h2>
 
         <div className="space-y-6">
@@ -361,7 +361,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.pcb_assembly_smt || false}
                   onChange={(e) => updateCapability('pcb_assembly_smt', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">SMT</span>
               </label>
@@ -370,7 +370,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.pcb_assembly_through_hole || false}
                   onChange={(e) => updateCapability('pcb_assembly_through_hole', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Through-Hole</span>
               </label>
@@ -379,7 +379,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.pcb_assembly_mixed || false}
                   onChange={(e) => updateCapability('pcb_assembly_mixed', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Mixed Technology</span>
               </label>
@@ -388,7 +388,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.pcb_assembly_fine_pitch || false}
                   onChange={(e) => updateCapability('pcb_assembly_fine_pitch', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Fine Pitch</span>
               </label>
@@ -404,7 +404,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.cable_harness_assembly || false}
                   onChange={(e) => updateCapability('cable_harness_assembly', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Cable/Harness</span>
               </label>
@@ -413,7 +413,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.box_build_assembly || false}
                   onChange={(e) => updateCapability('box_build_assembly', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Box Build</span>
               </label>
@@ -429,7 +429,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.testing_ict || false}
                   onChange={(e) => updateCapability('testing_ict', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">ICT</span>
               </label>
@@ -438,7 +438,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.testing_functional || false}
                   onChange={(e) => updateCapability('testing_functional', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Functional</span>
               </label>
@@ -447,7 +447,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.testing_environmental || false}
                   onChange={(e) => updateCapability('testing_environmental', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Environmental</span>
               </label>
@@ -456,7 +456,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.testing_rf_wireless || false}
                   onChange={(e) => updateCapability('testing_rf_wireless', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">RF/Wireless</span>
               </label>
@@ -472,7 +472,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.design_services || false}
                   onChange={(e) => updateCapability('design_services', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Design Services</span>
               </label>
@@ -481,7 +481,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.supply_chain_management || false}
                   onChange={(e) => updateCapability('supply_chain_management', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Supply Chain</span>
               </label>
@@ -490,7 +490,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.prototyping || false}
                   onChange={(e) => updateCapability('prototyping', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Prototyping</span>
               </label>
@@ -506,7 +506,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.low_volume_production || false}
                   onChange={(e) => updateCapability('low_volume_production', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Low Volume</span>
               </label>
@@ -515,7 +515,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.medium_volume_production || false}
                   onChange={(e) => updateCapability('medium_volume_production', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Medium Volume</span>
               </label>
@@ -524,7 +524,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.high_volume_production || false}
                   onChange={(e) => updateCapability('high_volume_production', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">High Volume</span>
               </label>
@@ -540,7 +540,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.turnkey_services || false}
                   onChange={(e) => updateCapability('turnkey_services', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Turnkey</span>
               </label>
@@ -549,7 +549,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.capabilities?.consigned_services || false}
                   onChange={(e) => updateCapability('consigned_services', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Consigned</span>
               </label>
@@ -559,13 +559,13 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
       </div>
 
       {/* Industries Section */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Industries Served</h2>
           <button
             type="button"
             onClick={addIndustry}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+            className="admin-btn-secondary inline-flex items-center gap-2 px-3 py-2"
           >
             <Plus className="h-4 w-4" />
             Add Industry
@@ -580,12 +580,12 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                 value={industry.industry_name}
                 onChange={(e) => updateIndustry(index, e.target.value)}
                 placeholder="e.g., Aerospace, Medical, Automotive"
-                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="flex-1 admin-input"
               />
               <button
                 type="button"
                 onClick={() => removeIndustry(index)}
-                className="text-gray-400 hover:text-red-600"
+                className="admin-btn-danger inline-flex items-center justify-center p-2"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -599,13 +599,13 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
       </div>
 
       {/* Certifications Section */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Certifications</h2>
           <button
             type="button"
             onClick={addCertification}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+            className="admin-btn-secondary inline-flex items-center gap-2 px-3 py-2"
           >
             <Plus className="h-4 w-4" />
             Add Certification
@@ -614,11 +614,11 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
 
         <div className="space-y-6">
           {formData.certifications?.map((cert, index) => (
-            <div key={index} className="p-4 border border-gray-200 rounded-lg relative">
+            <div key={index} className="glass-card p-4 relative">
               <button
                 type="button"
                 onClick={() => removeCertification(index)}
-                className="absolute top-2 right-2 text-gray-400 hover:text-red-600"
+                className="admin-btn-danger absolute top-3 right-3 inline-flex items-center justify-center p-2"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -631,7 +631,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                     value={cert.certification_type}
                     onChange={(e) => updateCertification(index, 'certification_type', e.target.value)}
                     placeholder="e.g., ISO 9001, AS9100, IPC-A-610"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full admin-input"
                   />
                 </div>
 
@@ -641,7 +641,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                     type="text"
                     value={cert.certificate_number || ''}
                     onChange={(e) => updateCertification(index, 'certificate_number', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full admin-input"
                   />
                 </div>
 
@@ -650,7 +650,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   <select
                     value={cert.status || 'Active'}
                     onChange={(e) => updateCertification(index, 'status', e.target.value as 'Active' | 'Expired' | 'Pending')}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full admin-select"
                   >
                     {certificationStatuses.map((status) => (
                       <option key={status} value={status}>{status}</option>
@@ -664,7 +664,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                     type="date"
                     value={cert.issued_date || ''}
                     onChange={(e) => updateCertification(index, 'issued_date', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full admin-input"
                   />
                 </div>
 
@@ -674,7 +674,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                     type="date"
                     value={cert.expiration_date || ''}
                     onChange={(e) => updateCertification(index, 'expiration_date', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full admin-input"
                   />
                 </div>
               </div>
@@ -688,9 +688,9 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
       </div>
 
       {/* Technical Specs Section */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="glass-card p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-6">Technical Specifications (Optional)</h2>
-        
+
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">Smallest Component Size</label>
@@ -699,7 +699,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.technical_specs?.smallest_component_size || ''}
               onChange={(e) => updateTechnicalSpec('smallest_component_size', e.target.value)}
               placeholder="e.g., 0201, 0402"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -710,7 +710,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.technical_specs?.finest_pitch_capability || ''}
               onChange={(e) => updateTechnicalSpec('finest_pitch_capability', e.target.value)}
               placeholder="e.g., 0.3mm, 0.4mm"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -721,7 +721,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.technical_specs?.max_pcb_size_inches || ''}
               onChange={(e) => updateTechnicalSpec('max_pcb_size_inches', e.target.value)}
               placeholder="e.g., 24x24"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -731,7 +731,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               type="number"
               value={formData.technical_specs?.max_pcb_layers || ''}
               onChange={(e) => updateTechnicalSpec('max_pcb_layers', parseInt(e.target.value) || undefined)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -742,7 +742,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.technical_specs?.clean_room_class || ''}
               onChange={(e) => updateTechnicalSpec('clean_room_class', e.target.value)}
               placeholder="e.g., Class 100, ISO 7"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -754,7 +754,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.technical_specs?.lead_free_soldering || false}
                   onChange={(e) => updateTechnicalSpec('lead_free_soldering', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Lead-Free Soldering</span>
               </label>
@@ -763,7 +763,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.technical_specs?.conformal_coating || false}
                   onChange={(e) => updateTechnicalSpec('conformal_coating', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Conformal Coating</span>
               </label>
@@ -772,7 +772,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.technical_specs?.potting_encapsulation || false}
                   onChange={(e) => updateTechnicalSpec('potting_encapsulation', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Potting/Encapsulation</span>
               </label>
@@ -787,7 +787,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.technical_specs?.x_ray_inspection || false}
                   onChange={(e) => updateTechnicalSpec('x_ray_inspection', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">X-Ray</span>
               </label>
@@ -796,7 +796,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.technical_specs?.aoi_inspection || false}
                   onChange={(e) => updateTechnicalSpec('aoi_inspection', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">AOI</span>
               </label>
@@ -805,7 +805,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.technical_specs?.flying_probe_testing || false}
                   onChange={(e) => updateTechnicalSpec('flying_probe_testing', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Flying Probe</span>
               </label>
@@ -814,7 +814,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.technical_specs?.burn_in_testing || false}
                   onChange={(e) => updateTechnicalSpec('burn_in_testing', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Burn-In</span>
               </label>
@@ -824,9 +824,9 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
       </div>
 
       {/* Business Info Section */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="glass-card p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-6">Business Information (Optional)</h2>
-        
+
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">Minimum Order Quantity</label>
@@ -835,7 +835,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.business_info?.min_order_qty || ''}
               onChange={(e) => updateBusinessInfo('min_order_qty', e.target.value)}
               placeholder="e.g., 100 units"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -846,7 +846,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.business_info?.prototype_lead_time || ''}
               onChange={(e) => updateBusinessInfo('prototype_lead_time', e.target.value)}
               placeholder="e.g., 2-3 weeks"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -857,7 +857,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.business_info?.production_lead_time || ''}
               onChange={(e) => updateBusinessInfo('production_lead_time', e.target.value)}
               placeholder="e.g., 4-6 weeks"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -868,7 +868,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.business_info?.payment_terms || ''}
               onChange={(e) => updateBusinessInfo('payment_terms', e.target.value)}
               placeholder="e.g., Net 30"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -879,7 +879,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.business_info?.engineering_support_hours || ''}
               onChange={(e) => updateBusinessInfo('engineering_support_hours', e.target.value)}
               placeholder="e.g., 8am-6pm EST"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -890,7 +890,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.business_info?.sales_territory || ''}
               onChange={(e) => updateBusinessInfo('sales_territory', e.target.value)}
               placeholder="e.g., North America, Global"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-input"
             />
           </div>
 
@@ -901,7 +901,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.business_info?.notable_customers || ''}
               onChange={(e) => updateBusinessInfo('notable_customers', e.target.value)}
               placeholder="List notable customers (if allowed to disclose)"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-textarea"
             />
           </div>
 
@@ -912,7 +912,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
               value={formData.business_info?.awards_recognition || ''}
               onChange={(e) => updateBusinessInfo('awards_recognition', e.target.value)}
               placeholder="List any awards or industry recognition"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full admin-textarea"
             />
           </div>
 
@@ -924,7 +924,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.business_info?.rush_order_capability || false}
                   onChange={(e) => updateBusinessInfo('rush_order_capability', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">Rush Order Capability</span>
               </label>
@@ -933,7 +933,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                   type="checkbox"
                   checked={formData.business_info?.twenty_four_seven_production || false}
                   onChange={(e) => updateBusinessInfo('twenty_four_seven_production', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="admin-checkbox"
                 />
                 <span className="text-sm text-gray-700">24/7 Production</span>
               </label>
@@ -943,12 +943,12 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
       </div>
 
       {/* Form Actions */}
-      <div className="p-6 bg-gray-50 flex items-center justify-between">
+      <div className="glass-card p-6 flex items-center justify-between">
         <button
           type="button"
           onClick={() => router.push('/admin/companies')}
           disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 disabled:opacity-50"
+          className="admin-btn-secondary px-4 py-2 disabled:opacity-50"
         >
           Cancel
         </button>
@@ -957,7 +957,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
             type="button"
             onClick={() => handleSubmit(true)}
             disabled={loading}
-            className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+            className="admin-btn-secondary px-4 py-2 disabled:opacity-50"
           >
             {loading ? 'Saving...' : 'Save as Draft'}
           </button>
@@ -965,7 +965,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
             type="button"
             onClick={() => handleSubmit(false)}
             disabled={loading}
-            className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            className="admin-btn-primary px-4 py-2 disabled:opacity-50"
           >
             {loading ? 'Publishing...' : 'Publish'}
           </button>
