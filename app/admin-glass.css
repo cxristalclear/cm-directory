@@ -185,6 +185,12 @@
   color: var(--primary-start);
 }
 
+.admin-btn-secondary.admin-nav-link-active {
+  background: rgba(63, 114, 175, 0.1);
+  color: var(--primary-start);
+  font-weight: 600;
+}
+
 /* ===================================
    📊 Header Styling
    =================================== */
