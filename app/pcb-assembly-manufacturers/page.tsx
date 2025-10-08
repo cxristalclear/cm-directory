@@ -7,19 +7,30 @@ import LazyCompanyMap from "@/components/LazyCompanyMap"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { CapabilitySlug, parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
+import { Company } from "@/types/company" // Import the Company type
 
 export const metadata = {
   title: "PCB Assembly Manufacturers | CM Directory",
   description: "Browse contract manufacturers that offer SMT and through-hole PCB assembly services.",
 }
 
-async function getCompanies() {
+async function getCompanies(): Promise<Company[]> {
   const { data } = await supabase
     .from("companies")
     .select("*, capabilities(*), facilities(*)")
     .eq("is_active", true)
 
-  return data ?? []
+  if (!data) {
+    return []
+  }
+
+  // Filter out facilities with a null company_id to match the strict Company type
+  const cleanedData = data.map(company => ({
+    ...company,
+    facilities: company.facilities?.filter(f => f.company_id) ?? [],
+  }))
+
+  return cleanedData as unknown as Company[]
 }
 
 export default async function PcbAssemblyManufacturers({
