@@ -4,9 +4,12 @@
  */
 
 // Validate required environment variables
-const requiredEnvVars = {
+const supabaseEnvVars = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+} as const
+
+const metadataEnvVars = {
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_TWITTER_URL: process.env.NEXT_PUBLIC_TWITTER_URL,
   NEXT_PUBLIC_LINKEDIN_URL: process.env.NEXT_PUBLIC_LINKEDIN_URL,
@@ -14,13 +17,23 @@ const requiredEnvVars = {
 } as const
 
 // Check for missing required environment variables
-const missingEnvVars = Object.entries(requiredEnvVars)
+const missingSupabaseEnvVars = Object.entries(supabaseEnvVars)
   .filter(([, value]) => !value)
   .map(([key]) => key)
 
-if (missingEnvVars.length > 0 && process.env.NODE_ENV !== 'test') {
+if (missingSupabaseEnvVars.length > 0 && process.env.NODE_ENV !== 'test') {
   throw new Error(
-    `Missing required environment variables:\n${missingEnvVars.join('\n')}\n\nPlease check your .env.local file.`
+    `Missing required environment variables:\n${missingSupabaseEnvVars.join('\n')}\n\nPlease check your .env.local file.`
+  )
+}
+
+const missingMetadataEnvVars = Object.entries(metadataEnvVars)
+  .filter(([, value]) => !value)
+  .map(([key]) => key)
+
+if (missingMetadataEnvVars.length > 0 && process.env.NODE_ENV !== 'test') {
+  console.warn(
+    `Missing optional environment variables:\n${missingMetadataEnvVars.join('\n')}\n\nFalling back to documented production defaults. Set these values in your environment for accurate site metadata.`
   )
 }
 
@@ -50,6 +63,12 @@ const normalizeUrl = (url: string): string => {
 const defaultSiteUrl = 'https://www.cm-directory.com'
 const siteUrl = normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL || defaultSiteUrl)
 
+const defaultSocialLinks = {
+  twitter: 'https://twitter.com/cmdirectory',
+  linkedin: 'https://www.linkedin.com/company/cm-directory',
+  github: 'https://github.com/cm-directory/app',
+} as const
+
 // Site configuration
 export const siteConfig = {
   name: process.env.NEXT_PUBLIC_SITE_NAME || 'CM Directory',
@@ -57,9 +76,9 @@ export const siteConfig = {
   url: siteUrl,
   ogImage: `${siteUrl}/og-image.png`,
   links: {
-    twitter: process.env.NEXT_PUBLIC_TWITTER_URL!,
-    linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL!,
-    github: process.env.NEXT_PUBLIC_GITHUB_URL!,
+    twitter: process.env.NEXT_PUBLIC_TWITTER_URL || defaultSocialLinks.twitter,
+    linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL || defaultSocialLinks.linkedin,
+    github: process.env.NEXT_PUBLIC_GITHUB_URL || defaultSocialLinks.github,
   },
 } as const
 

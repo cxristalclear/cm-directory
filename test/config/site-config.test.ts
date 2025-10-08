@@ -35,6 +35,41 @@ describe('site configuration', () => {
     })
   })
 
+  it('falls back to documented defaults when optional metadata env vars are missing', () => {
+    process.env.NODE_ENV = 'production'
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-key'
+
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    const { siteConfig } = loadConfig()
+
+    expect(siteConfig.url).toBe('https://www.cm-directory.com')
+    expect(siteConfig.links).toEqual({
+      twitter: 'https://twitter.com/cmdirectory',
+      linkedin: 'https://www.linkedin.com/company/cm-directory',
+      github: 'https://github.com/cm-directory/app',
+    })
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Missing optional environment variables:')
+    )
+
+    warnSpy.mockRestore()
+  })
+
+  it('throws when required Supabase env vars are missing', () => {
+    process.env.NODE_ENV = 'production'
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    expect(() => loadConfig()).toThrow('Missing required environment variables:')
+
+    warnSpy.mockRestore()
+  })
+
   it('throws when placeholder handles are provided in production', () => {
     process.env.NODE_ENV = 'production'
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
