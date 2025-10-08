@@ -61,12 +61,19 @@ npm install
    NEXT_PUBLIC_SITE_URL=http://localhost:3000
    NEXT_PUBLIC_SITE_NAME=CM Directory
 
+   # Social Profiles (Required for production metadata)
+   NEXT_PUBLIC_TWITTER_URL=https://twitter.com/cmdirectory
+   NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/cm-directory
+   NEXT_PUBLIC_GITHUB_URL=https://github.com/cm-directory/app
+
    # Mapbox (Optional - leave blank to skip map features)
    NEXT_PUBLIC_MAPBOX_TOKEN=
 
    # Feature Flags
    NEXT_PUBLIC_SHOW_DEBUG=false
    ```
+
+> ℹ️ **Deployment tip:** Share the finalized social URLs with DevOps so the CI/CD environment includes `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_TWITTER_URL`, `NEXT_PUBLIC_LINKEDIN_URL`, and `NEXT_PUBLIC_GITHUB_URL` before promoting a release.
 
 ### Step 4: Verify Configuration
 
@@ -119,6 +126,9 @@ Make sure everything is working:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_TWITTER_URL`
+- `NEXT_PUBLIC_LINKEDIN_URL`
+- `NEXT_PUBLIC_GITHUB_URL`
 
 ### Issue: "Failed to fetch companies"
 
