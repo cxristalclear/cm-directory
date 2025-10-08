@@ -1,7 +1,7 @@
 // lib/supabase-server.ts - Server-side Supabase client for Next.js 15
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import type { Database } from './supabase'
+import type { Database } from './database.types'
 
 export async function createClient() {
   const cookieStore = await cookies()
