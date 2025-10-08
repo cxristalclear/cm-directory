@@ -16,6 +16,8 @@ export default function AddCompanyPage() {
   const handleSubmit = async (formData: CompanyFormData, isDraft: boolean) => {
     setLoading(true)
 
+    let createdCompanyId: string | null = null
+
     try {
       // Validate data
       const validation = validateCompanyData(formData)
@@ -54,6 +56,9 @@ export default function AddCompanyPage() {
         .single()
 
       if (companyError) throw companyError
+      if (!company) throw new Error('Company creation returned no data')
+
+      createdCompanyId = company.id
 
       // Insert facilities
       if (formData.facilities && formData.facilities.length > 0) {
@@ -158,6 +163,38 @@ export default function AddCompanyPage() {
       router.refresh()
     } catch (error) {
       console.error('Error creating company:', error)
+
+      if (createdCompanyId) {
+        const relatedTables = [
+          'facilities',
+          'capabilities',
+          'industries',
+          'certifications',
+          'technical_specs',
+          'business_info',
+        ] as const
+
+        for (const table of relatedTables) {
+          const { error: cleanupError } = await supabase
+            .from(table)
+            .delete()
+            .eq('company_id', createdCompanyId)
+
+          if (cleanupError) {
+            console.error(`Failed to cleanup ${table} for company ${createdCompanyId}:`, cleanupError)
+          }
+        }
+
+        const { error: rollbackError } = await supabase
+          .from('companies')
+          .delete()
+          .eq('id', createdCompanyId)
+
+        if (rollbackError) {
+          console.error(`Failed to rollback company ${createdCompanyId}:`, rollbackError)
+        }
+      }
+
       toast.error('Failed to create company. Please try again.')
     } finally {
       setLoading(false)
@@ -166,11 +203,16 @@ export default function AddCompanyPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Add Company</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Create a new company profile in the directory
-        </p>
+      <div className="glass-card p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold gradient-text">Add Company</h1>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              Create a new company profile in the directory
+            </p>
+          </div>
+          {/* Action buttons should use the admin-btn-* styles when added */}
+        </div>
       </div>
 
       <CompanyForm onSubmit={handleSubmit} loading={loading} />
