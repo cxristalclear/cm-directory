@@ -96,6 +96,8 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 NEXT_PUBLIC_SHOW_DEBUG=false
 ```
 
+> **Deployment Tip:** Hosting on Vercel? Define the same environment variables in your project settings (Project Settings → Environment Variables). Files like `.env.local` are not uploaded during Vercel builds, so any values that only exist locally will be treated as missing at build time.
+
 ### 4. Set up your Supabase database
 
 Ensure your Supabase database has the required tables and schema. See the database schema documentation in `/docs/database-schema.md` (if available).
