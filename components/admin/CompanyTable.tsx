@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Edit, Trash2, History, CheckCircle, Search } from 'lucide-react'
+import { Edit, Trash2, History, Search } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
 
@@ -96,9 +96,9 @@ export default function CompanyTable({
   }
 
   return (
-    <div className=".admin-table">
+    <div className="glass-card admin-table">
       {/* Filters */}
-      <div className="p-6 border-b border-gray-200 space-y-4 ">
+      <div className="p-6 border-b border-gray-200 space-y-4">
         <form onSubmit={handleSearch} className="flex gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -107,12 +107,12 @@ export default function CompanyTable({
               placeholder="Search companies..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="admin-input w-full pl-10"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="admin-btn-primary"
           >
             Search
           </button>
@@ -122,7 +122,7 @@ export default function CompanyTable({
           <select
             value={searchParams.status || ''}
             onChange={(e) => updateFilters('status', e.target.value)}
-            className="px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="admin-select"
           >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
@@ -132,7 +132,7 @@ export default function CompanyTable({
           <select
             value={searchParams.verified || ''}
             onChange={(e) => updateFilters('verified', e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="admin-select"
           >
             <option value="">All Verification</option>
             <option value="yes">Verified</option>
@@ -141,8 +141,9 @@ export default function CompanyTable({
 
           {(searchParams.search || searchParams.status || searchParams.verified) && (
             <button
+              type="button"
               onClick={() => router.push('/admin/companies')}
-              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
+              className="admin-btn-secondary"
             >
               Clear Filters
             </button>
@@ -152,30 +153,30 @@ export default function CompanyTable({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full">
+          <thead className="admin-table-header">
             <tr>
-              <th className=" .admin-table-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                 Company
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                 Location
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                 Verified
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                 Updated
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody>
             {companies.length > 0 ? (
               companies.map((company) => {
                 const primaryFacility = company.facilities?.find(f => f.city && f.state)
@@ -184,7 +185,7 @@ export default function CompanyTable({
                   : 'N/A'
 
                 return (
-                  <tr key={company.id} className="hover:bg-gray-50">
+                  <tr key={company.id} className="admin-table-row">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <Link
@@ -201,10 +202,10 @@ export default function CompanyTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        className={`admin-badge ${
                           company.is_active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'admin-badge-success'
+                            : 'admin-badge-warning'
                         }`}
                       >
                         {company.is_active ? 'Active' : 'Draft'}
@@ -212,9 +213,9 @@ export default function CompanyTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {company.is_verified ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <span className="admin-badge admin-badge-success">Verified</span>
                       ) : (
-                        <span className="text-xs text-gray-400">No</span>
+                        <span className="admin-badge admin-badge-warning">Not Verified</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -224,27 +225,29 @@ export default function CompanyTable({
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/companies/edit/${company.slug}`}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="admin-btn-icon"
+                          aria-label={`Edit ${company.company_name}`}
                           title="Edit"
                         >
                           <Edit className="h-4 w-4" />
                         </Link>
                         <Link
                           href={`/admin/companies/${company.slug}/history`}
-                          className="text-gray-600 hover:text-gray-900"
+                          className="admin-btn-icon"
+                          aria-label={`View history for ${company.company_name}`}
                           title="View History"
                         >
                           <History className="h-4 w-4" />
                         </Link>
                         <button
+                          type="button"
                           onClick={() => handleDelete(company.id, company.company_name)}
                           disabled={deleting}
-                          className={`${
-                            deleteConfirm === company.id
-                              ? 'text-red-600 hover:text-red-900'
-                              : 'text-gray-400 hover:text-red-600'
-                          } disabled:opacity-50`}
+                          className={`admin-btn-icon ${
+                            deleteConfirm === company.id ? 'text-red-600' : 'text-gray-500'
+                          } disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none`}
                           title="Delete"
+                          aria-label={`Delete ${company.company_name}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -254,7 +257,7 @@ export default function CompanyTable({
                 )
               })
             ) : (
-              <tr>
+              <tr className="admin-table-row">
                 <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                   No companies found
                 </td>
@@ -274,14 +277,14 @@ export default function CompanyTable({
             <button
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="admin-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="admin-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>
