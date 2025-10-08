@@ -75,16 +75,20 @@ export default async function CompanyHistoryPage({
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="glass-card p-6 space-y-4">
         <Link
           href={`/admin/companies/edit/${company.slug}`}
-          className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 mb-4"
+          className="admin-btn-secondary inline-flex w-fit items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Edit
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900">{company.company_name}</h1>
-        <p className="mt-1 text-sm text-gray-500">Change History</p>
+        <div>
+          <h1 className="text-3xl font-semibold gradient-text tracking-tight">
+            {company.company_name}
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">Change History</p>
+        </div>
       </div>
 
       <ChangeHistoryTimeline changes={changeHistory} />
