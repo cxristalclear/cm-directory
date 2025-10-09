@@ -7,6 +7,38 @@ type CompanySchemaProps = {
   canonicalUrl?: string
 }
 
+type CompanySchemaInput = Pick<
+  CompanyWithRelations,
+  | 'slug'
+  | 'cms_metadata'
+  | 'website_url'
+  | 'company_name'
+  | 'description'
+  | 'logo_url'
+  | 'year_founded'
+  | 'employee_count_range'
+  | 'social_links'
+  | 'facilities'
+  | 'contacts'
+  | 'capabilities'
+  | 'certifications'
+  | 'industries'
+>
+
+type CredentialJsonLd = {
+  '@type': 'EducationalOccupationalCredential'
+  name: string
+  credentialCategory: 'certification'
+  datePublished?: string
+  expires?: string
+  credentialStatus?: string
+}
+
+type IndustryJsonLd = {
+  '@type': 'Text'
+  name: string
+}
+
 const uniqueStrings = (values: Array<string | null | undefined>): string[] => {
   const seen = new Set<string>()
   for (const value of values) {
@@ -53,9 +85,12 @@ const extractVerifiedSocialUrls = (links?: CompanySocialLink[] | null): string[]
     .map((link) => link.url)
 }
 
-export function CompanySchema({ company, canonicalUrl }: CompanySchemaProps) {
+export const buildCompanyJsonLd = (
+  company: CompanySchemaInput,
+  canonicalUrl?: string,
+) => {
   const canonicalProfileUrl = resolveCanonicalUrl(canonicalUrl, company)
-  const officialSiteUrl = company.website_url?.trim()
+  const officialSiteUrl = company.website_url.trim() || undefined
   const profileUrl = canonicalProfileUrl ?? officialSiteUrl
 
   const combinedSocialLinks = [
@@ -114,7 +149,7 @@ export function CompanySchema({ company, canonicalUrl }: CompanySchemaProps) {
   })
 
   const credentials = company.certifications
-    ?.map((cert) => {
+    ?.map((cert): CredentialJsonLd | null => {
       if (!cert?.certification_type) return null
       return {
         '@type': 'EducationalOccupationalCredential',
@@ -125,17 +160,17 @@ export function CompanySchema({ company, canonicalUrl }: CompanySchemaProps) {
         ...(cert.status && { credentialStatus: cert.status }),
       }
     })
-    .filter((cert): cert is Record<string, unknown> => Boolean(cert))
+    .filter((cert): cert is CredentialJsonLd => Boolean(cert))
 
   const industries = company.industries
-    ?.map((ind) => {
+    ?.map((ind): IndustryJsonLd | null => {
       if (!ind?.industry_name) return null
       return {
         '@type': 'Text',
         name: ind.industry_name,
       }
     })
-    .filter((industry): industry is { '@type': 'Text'; name: string } => Boolean(industry))
+    .filter((industry): industry is IndustryJsonLd => Boolean(industry))
 
   const cmsLogoUrl = company.cms_metadata?.logo?.url
   const logoUrl = cmsLogoUrl || company.logo_url || undefined
@@ -178,12 +213,16 @@ export function CompanySchema({ company, canonicalUrl }: CompanySchemaProps) {
     ...(industries && industries.length > 0 ? { areaServed: industries } : {}),
   }
 
-  const cleanSchema = JSON.parse(JSON.stringify(schema))
+  return JSON.parse(JSON.stringify(schema)) as typeof schema
+}
+
+export function CompanySchema({ company, canonicalUrl }: CompanySchemaProps) {
+  const schema = buildCompanyJsonLd(company, canonicalUrl)
 
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(cleanSchema) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
     />
   )
 }
