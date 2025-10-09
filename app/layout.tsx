@@ -5,7 +5,7 @@ import "./globals.css"
 import "./admin-glass.css"
 import { Toaster } from "sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { siteConfig } from "@/lib/config"
+import { OG_IMAGE_PATH, siteConfig } from "@/lib/config"
 import SiteFooter from "@/components/SiteFooter"
 import {
   jsonLdScriptProps,
@@ -31,6 +31,7 @@ export const metadataBase = new URL(siteConfig.url)
 const defaultTitle = `${siteConfig.name} - Find Contract Manufacturers`
 const defaultDescription =
   "Discover and connect with verified contract manufacturers worldwide. Search by location, capabilities, and certifications."
+const ogImageUrl = new URL(OG_IMAGE_PATH, metadataBase).toString()
 
 export const metadata: Metadata = {
   metadataBase,
@@ -49,7 +50,7 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     images: [
       {
-        url: siteConfig.ogImage,
+        url: ogImageUrl,
         width: 1200,
         height: 630,
         alt: siteConfig.name,
@@ -61,7 +62,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteConfig.name,
     description: defaultDescription,
-    images: [siteConfig.ogImage],
+    images: [ogImageUrl],
   },
 }
 

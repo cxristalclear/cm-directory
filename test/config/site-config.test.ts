@@ -10,6 +10,7 @@ describe('site configuration', () => {
     delete mutableEnv()[key]
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const loadConfig = () => require('../../lib/config') as ConfigModule
 
   beforeEach(() => {
@@ -30,10 +31,10 @@ describe('site configuration', () => {
     setEnv('NEXT_PUBLIC_LINKEDIN_URL', 'https://www.linkedin.com/company/cm-directory')
     setEnv('NEXT_PUBLIC_GITHUB_URL', 'https://github.com/cm-directory/app')
 
-    const { siteConfig } = loadConfig()
+     const { siteConfig, OG_IMAGE_PATH } = loadConfig()
 
     expect(siteConfig.url).toBe('https://www.cm-directory.com')
-    expect(siteConfig.ogImage).toBe('https://www.cm-directory.com/og-image.png')
+    expect(siteConfig.ogImage).toBe(`https://www.cm-directory.com${OG_IMAGE_PATH}`)
     expect(siteConfig.links).toEqual({
       twitter: 'https://twitter.com/cm_directory',
       linkedin: 'https://www.linkedin.com/company/cm-directory',

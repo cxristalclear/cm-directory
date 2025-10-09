@@ -69,12 +69,23 @@ const defaultSocialLinks = {
   github: 'https://github.com/cm-directory/app',
 } as const
 
+export const OG_IMAGE_PATH = '/og-image.png' as const
+
+const buildAbsoluteUrl = (base: string, path: string = ''): string => {
+  if (!path) {
+    return `${base}/`
+  }
+
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${base}${normalizedPath}`
+}
+
 // Site configuration
 export const siteConfig = {
   name: process.env.NEXT_PUBLIC_SITE_NAME || 'CM Directory',
   description: 'Find and connect with verified contract manufacturers worldwide',
   url: siteUrl,
-  ogImage: `${siteUrl}/og-image.png`,
+  ogImage: buildAbsoluteUrl(siteUrl, OG_IMAGE_PATH),
   links: {
     twitter: process.env.NEXT_PUBLIC_TWITTER_URL || defaultSocialLinks.twitter,
     linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL || defaultSocialLinks.linkedin,
@@ -114,9 +125,7 @@ export const env = {
 
 // Helper function to build absolute URLs
 export function getAbsoluteUrl(path: string = ''): string {
-  const base = siteConfig.url
-  const cleanPath = path.startsWith('/') ? path : `/${path}`
-  return `${base}${cleanPath}`
+  return buildAbsoluteUrl(siteConfig.url, path)
 }
 
 // Helper function for canonical URLs
