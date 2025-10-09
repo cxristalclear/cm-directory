@@ -95,6 +95,13 @@ type CompanyRelations = {
 export type Company = CompanyBase & CompanyRelations
 export type CompanyWithRelations = Company
 
+export type HomepageCompany = Database["public"]["Tables"]["companies"]["Row"] & {
+  facilities?: Facility[] | null
+  capabilities?: Capabilities[] | null
+  certifications?: Certification[] | null
+  industries?: Industry[] | null
+}
+
 export interface FacilityWithCompany extends Facility {
   company: Company
 }

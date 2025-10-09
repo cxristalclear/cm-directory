@@ -1,3 +1,5 @@
+export {}
+
 const fromMock = jest.fn()
 
 jest.mock('@/lib/supabase', () => ({

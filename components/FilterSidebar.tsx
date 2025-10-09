@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useFilters } from '../contexts/FilterContext'
 import { ChevronDown, X, Filter, MapPin, Globe, Settings, Layers } from 'lucide-react'
-import type { HomepageCompany } from '@/types/homepage'
+import type { HomepageCompany } from '@/types/company'
 import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
 import { getStateName } from '../utils/stateMapping'
 
