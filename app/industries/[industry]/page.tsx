@@ -127,7 +127,7 @@ export default async function IndustryPage({
             />
 
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white/20 text-2xl font-semibold backdrop-blur-sm">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white/20 text-md font-semibold backdrop-blur-sm">
                 {industryData.name.split(" ")[0]}
               </div>
               <div>
