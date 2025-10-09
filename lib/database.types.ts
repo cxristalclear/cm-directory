@@ -222,6 +222,7 @@ export type Database = {
           claimed_at: string | null
           claimed_by_email: string | null
           claimed_by_name: string | null
+          cms_metadata: Json | null
           company_name: string
           created_at: string | null
           dba_name: string | null
@@ -253,6 +254,7 @@ export type Database = {
           claimed_at?: string | null
           claimed_by_email?: string | null
           claimed_by_name?: string | null
+          cms_metadata?: Json | null
           company_name: string
           created_at?: string | null
           dba_name?: string | null
@@ -284,6 +286,7 @@ export type Database = {
           claimed_at?: string | null
           claimed_by_email?: string | null
           claimed_by_name?: string | null
+          cms_metadata?: Json | null
           company_name?: string
           created_at?: string | null
           dba_name?: string | null
