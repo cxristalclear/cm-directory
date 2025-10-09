@@ -1,5 +1,6 @@
-import { Suspense, cache } from "react"
+import { Suspense } from "react"
 import Script from "next/script"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
@@ -59,7 +60,6 @@ const COMPANY_FIELDS = `
 `
 
 const MAX_COMPANIES = 500
-import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -93,7 +93,7 @@ const AdPlaceholder = ({ width, height, label, className = "" }: { width: string
 )
 
 // ---------- Data Fetch ----------
-const getData = cache(async function getData(): Promise<HomepageCompany[]> {
+async function getData(): Promise<HomepageCompany[]> {
   try {
     const { data, error } = await supabase
       .from("companies")
@@ -103,23 +103,28 @@ const getData = cache(async function getData(): Promise<HomepageCompany[]> {
       .limit(MAX_COMPANIES)
 
     if (error) {
-      console.error('Error fetching companies:', error)
+      console.error("Error fetching companies:", error)
       return []
     }
 
     return data ?? []
   } catch (error) {
-    console.error('Unexpected error fetching companies:', error)
+    console.error("Unexpected error fetching companies:", error)
     return []
   }
-})
+}
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>
+  searchParams?:
+    | Promise<Record<string, string | string[] | undefined>>
+    | Record<string, string | string[] | undefined>
 }) {
-  const initialFilters = parseFiltersFromSearchParams(searchParams ?? {})
+  const resolvedSearchParams: Record<string, string | string[] | undefined> =
+    (await Promise.resolve(searchParams)) ?? {}
+
+  const initialFilters = parseFiltersFromSearchParams(resolvedSearchParams)
 
   // Fetch DB rows (nullable), then normalize to strict app types once here.
   const companies = await getData()
