@@ -1,5 +1,29 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { CompanyFormData } from '@/types/admin'
+import type { Json } from '@/lib/database.types'
+
+type AuditFieldValue = string | number | boolean | null | Json | undefined
+
+function serializeAuditValue(value: AuditFieldValue): string | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value)
+  }
+
+  try {
+    return JSON.stringify(value)
+  } catch (error) {
+    console.warn('Failed to serialize audit value, falling back to String:', error)
+    return String(value)
+  }
+}
 
 /**
  * Generate a URL-friendly slug from company name
@@ -47,8 +71,8 @@ export async function ensureUniqueSlug(
  * Compare two objects and return array of changes
  */
 export function getFieldChanges(
-  oldData: Record<string, string | number | boolean | null | undefined>,
-  newData: Record<string, string | number | boolean | null | undefined>
+  oldData: Record<string, AuditFieldValue>,
+  newData: Record<string, AuditFieldValue>
 ): Array<{
   field_name: string
   old_value: string | null
@@ -72,9 +96,8 @@ export function getFieldChanges(
     const oldValue = oldData[key]
     const newValue = newData[key]
 
-    // Compare values (handle null/undefined)
-    const oldStr = oldValue !== null && oldValue !== undefined ? String(oldValue) : null
-    const newStr = newValue !== null && newValue !== undefined ? String(newValue) : null
+    const oldStr = serializeAuditValue(oldValue)
+    const newStr = serializeAuditValue(newValue)
 
     if (oldStr !== newStr) {
       changes.push({
