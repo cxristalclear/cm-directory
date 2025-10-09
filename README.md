@@ -151,6 +151,18 @@ cm-directory/
 └── next.config.ts          # Next.js configuration
 ```
 
+## 🗂️ CMS Content Guidelines
+
+To keep structured data accurate, content operations should populate the following optional fields when updating profiles in the CMS or Supabase:
+
+- `cms_metadata.canonical_path` – relative or absolute canonical URL for the company profile.
+- `cms_metadata.social_links[]` – each entry should include `platform`, `url`, and `is_verified: true` for links that can be surfaced in schema.org `sameAs` arrays.
+- `cms_metadata.logo` – preferred logo asset (Supabase storage URL) with optional `alt_text`.
+- `cms_metadata.hero_image` / `cms_metadata.gallery_images[]` – hero and supporting imagery used for JSON-LD `image` values.
+- `social_links[]` – legacy Supabase JSON column; continue marking verified links with `is_verified` to ensure they are eligible for discovery.
+
+Leaving these fields empty is safe—the schema output automatically omits undefined values.
+
 ## 🧪 Testing
 
 Run the test suite:
