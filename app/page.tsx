@@ -13,6 +13,7 @@ import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import { siteConfig, featureFlags } from "@/lib/config"
 import AddCompanyCallout from "@/components/AddCompanyCallout"
+import type { PageProps } from "@/types/nxt"
 import type { HomepageCompany } from "@/types/homepage"
 
 export const revalidate = 300
@@ -114,15 +115,12 @@ async function getData(): Promise<HomepageCompany[]> {
   }
 }
 
+type HomeSearchParams = Record<string, string | string[] | undefined>
+
 export default async function Home({
   searchParams,
-}: {
-  searchParams?:
-    | Promise<Record<string, string | string[] | undefined>>
-    | Record<string, string | string[] | undefined>
-}) {
-  const resolvedSearchParams: Record<string, string | string[] | undefined> =
-    (await Promise.resolve(searchParams)) ?? {}
+}: PageProps<Record<string, string | string[]>, HomeSearchParams>) {
+  const resolvedSearchParams: HomeSearchParams = (await searchParams) ?? {}
 
   const initialFilters = parseFiltersFromSearchParams(resolvedSearchParams)
 
