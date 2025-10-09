@@ -11,7 +11,8 @@ import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import { siteConfig, featureFlags } from "@/lib/config"
-import AddCompanyCallout from '@/components/AddCompanyCallout'
+import AddCompanyCallout from "@/components/AddCompanyCallout"
+import type { HomepageCompany } from "@/types/homepage"
 
 export const revalidate = 300
 
@@ -58,10 +59,6 @@ const COMPANY_FIELDS = `
 `
 
 const MAX_COMPANIES = 500
-
-// ⬇️ Added: app-level strict types + DB types
-import type { Company, Facility } from "@/types/company"
-import type { Database } from "@/lib/database.types"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata = {
@@ -95,44 +92,12 @@ const AdPlaceholder = ({ width, height, label, className = "" }: { width: string
   </div>
 )
 
-// ---------- DB Row Shapes (nullable from Supabase) ----------
-type DbFacility = Database["public"]["Tables"]["facilities"]["Row"]
-type DbCompany =
-  Database["public"]["Tables"]["companies"]["Row"] & {
-    facilities: DbFacility[] | null
-    capabilities: Database["public"]["Tables"]["capabilities"]["Row"][] | null
-    certifications: Database["public"]["Tables"]["certifications"]["Row"][] | null
-    industries: Database["public"]["Tables"]["industries"]["Row"][] | null
-  }
-
-// ---------- Normalizers (nullable -> strict app types) ----------
-function normalizeFacility(f: DbFacility, fallbackCompanyId: string): Facility {
-  // Ensure `company_id` is a string to satisfy the strict Facility type
-  return {
-    ...f,
-    company_id: (f.company_id ?? fallbackCompanyId ?? "") as string,
-  } as Facility
-}
-
-function normalizeCompany(c: DbCompany): Company {
-  // If your Company type has other non-null fields, set defaults here similarly.
-  const companyId: string = c.id ?? ""
-
-  return {
-    ...c,
-    facilities: (c.facilities ?? []).map((f) => normalizeFacility(f, companyId)),
-    capabilities: c.capabilities ?? [],
-    certifications: c.certifications ?? [],
-    industries: c.industries ?? [],
-  } as Company
-}
-
 // ---------- Data Fetch ----------
-const getData = cache(async function getData(): Promise<DbCompany[]> {
+const getData = cache(async function getData(): Promise<HomepageCompany[]> {
   try {
     const { data, error } = await supabase
       .from("companies")
-      .select(COMPANY_FIELDS)
+      .select<HomepageCompany>(COMPANY_FIELDS)
       .eq("is_active", true)
       .order("updated_at", { ascending: false })
       .limit(MAX_COMPANIES)
@@ -142,7 +107,7 @@ const getData = cache(async function getData(): Promise<DbCompany[]> {
       return []
     }
 
-    return (data ?? []) as DbCompany[]
+    return data ?? []
   } catch (error) {
     console.error('Unexpected error fetching companies:', error)
     return []
@@ -152,14 +117,12 @@ const getData = cache(async function getData(): Promise<DbCompany[]> {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>
+  searchParams?: Record<string, string | string[] | undefined>
 }) {
-  const sp = await searchParams
-  const initialFilters = parseFiltersFromSearchParams(sp)
+  const initialFilters = parseFiltersFromSearchParams(searchParams ?? {})
 
   // Fetch DB rows (nullable), then normalize to strict app types once here.
-  const companiesDb = await getData()
-  const companies: Company[] = companiesDb.map(normalizeCompany)
+  const companies = await getData()
 
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
@@ -181,7 +144,7 @@ export default async function Home({
       
       <FilterProvider initialFilters={initialFilters}>
         <div className="min-h-screen bg-gray-50">
-          <Header companies={companies} />
+          <Header />
 
           <main className="container mx-auto px-4 py-6">
             {/* Top Content Ad - Native/Sponsored */}
