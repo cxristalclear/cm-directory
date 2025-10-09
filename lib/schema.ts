@@ -7,14 +7,13 @@ export type JsonLd<T extends Record<string, unknown>> = T & {
   "@context": typeof SCHEMA_CONTEXT
 }
 
-export interface OrganizationJsonLd
-  extends JsonLd<{
-    "@type": "Organization"
-    name: string
-    url: string
-    logo: string
-    sameAs: string[]
-  }> {}
+export type OrganizationJsonLd = JsonLd<{
+  "@type": "Organization"
+  name: string
+  url: string
+  logo: string
+  sameAs: string[]
+}>
 
 export const organizationJsonLd: OrganizationJsonLd = {
   "@context": SCHEMA_CONTEXT,
@@ -27,17 +26,16 @@ export const organizationJsonLd: OrganizationJsonLd = {
   ),
 }
 
-export interface WebSiteJsonLd
-  extends JsonLd<{
-    "@type": "WebSite"
-    name: string
-    url: string
-    potentialAction: {
-      "@type": "SearchAction"
-      target: string
-      "query-input": string
-    }
-  }> {}
+export type WebSiteJsonLd = JsonLd<{
+  "@type": "WebSite"
+  name: string
+  url: string
+  potentialAction: {
+    "@type": "SearchAction"
+    target: string
+    "query-input": string
+  }
+}>
 
 export const webSiteJsonLd: WebSiteJsonLd = {
   "@context": SCHEMA_CONTEXT,
@@ -56,16 +54,15 @@ export type BreadcrumbInput = {
   url: string
 }
 
-export interface BreadcrumbListJsonLd
-  extends JsonLd<{
-    "@type": "BreadcrumbList"
-    itemListElement: Array<{
-      "@type": "ListItem"
-      position: number
-      name: string
-      item: string
-    }>
-  }> {}
+export type BreadcrumbListJsonLd = JsonLd<{
+  "@type": "BreadcrumbList"
+  itemListElement: Array<{
+    "@type": "ListItem"
+    position: number
+    name: string
+    item: string
+  }>
+}>
 
 export const createBreadcrumbListJsonLd = (
   breadcrumbs: BreadcrumbInput[],
@@ -88,15 +85,14 @@ export interface CollectionPageSchemaInput {
   breadcrumbs: BreadcrumbInput[]
 }
 
-export interface CollectionPageJsonLd
-  extends JsonLd<{
-    "@type": "CollectionPage"
-    name: string
-    description?: string
-    url: string
-    numberOfItems?: number
-    breadcrumb: BreadcrumbListJsonLd
-  }> {}
+export type CollectionPageJsonLd = JsonLd<{
+  "@type": "CollectionPage"
+  name: string
+  description?: string
+  url: string
+  numberOfItems?: number
+  breadcrumb: BreadcrumbListJsonLd
+}>
 
 export const createCollectionPageJsonLd = ({
   name,

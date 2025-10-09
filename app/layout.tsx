@@ -6,7 +6,11 @@ import "./admin-glass.css"
 import { Toaster } from "sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { siteConfig } from "@/lib/config"
-import { organizationJsonLd, webSiteJsonLd } from "@/lib/schema"
+import {
+  jsonLdScriptProps,
+  organizationJsonLd,
+  webSiteJsonLd,
+} from "@/lib/schema"
 
 const inter = Inter({
   variable: "--font-inter",
@@ -36,10 +40,6 @@ export const metadata: Metadata = {
   description: defaultDescription,
   alternates: {
     canonical: siteConfig.url,
-  },
-  other: {
-    "ld+json:organization": JSON.stringify(organizationJsonLd),
-    "ld+json:website": JSON.stringify(webSiteJsonLd),
   },
   openGraph: {
     title: siteConfig.name,
@@ -71,6 +71,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script {...jsonLdScriptProps(organizationJsonLd)} />
+        <script {...jsonLdScriptProps(webSiteJsonLd)} />
+      </head>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
         {children}
         <SpeedInsights />
