@@ -131,6 +131,11 @@ ADD COLUMN IF NOT EXISTS last_reviewed_by TEXT;
 
 ## 🚀 Implementation Steps
 
+### 🧭 Admin Task Guidelines
+
+- Always rely on the generated Supabase types in `lib/database.types.ts` when shaping payloads for admin updates. They mirror the database schema and prevent drift across forms and audit helpers.
+- Before marking an admin dashboard task complete, run `npm run lint` and `tsc --noEmit` to ensure the UI passes linting and type checks against the latest Supabase definitions.
+
 ### 1. Copy All Files
 
 Copy all the created files to your project, maintaining the directory structure shown above.
