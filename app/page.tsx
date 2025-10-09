@@ -1,4 +1,4 @@
-import { Suspense } from "react"
+import { Suspense, cache } from "react"
 import Script from "next/script"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
@@ -12,6 +12,52 @@ import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import { siteConfig, featureFlags } from "@/lib/config"
 import AddCompanyCallout from '@/components/AddCompanyCallout'
+
+export const revalidate = 300
+
+const COMPANY_FIELDS = `
+  id,
+  slug,
+  company_name,
+  dba_name,
+  description,
+  employee_count_range,
+  is_active,
+  website_url,
+  updated_at,
+  facilities (
+    id,
+    company_id,
+    city,
+    state,
+    country,
+    latitude,
+    longitude,
+    facility_type,
+    is_primary
+  ),
+  capabilities (
+    pcb_assembly_smt,
+    pcb_assembly_through_hole,
+    cable_harness_assembly,
+    box_build_assembly,
+    prototyping,
+    low_volume_production,
+    medium_volume_production,
+    high_volume_production
+  ),
+  certifications (
+    id,
+    certification_name,
+    certification_type
+  ),
+  industries (
+    id,
+    industry_name
+  )
+`
+
+const MAX_COMPANIES = 500
 
 // ⬇️ Added: app-level strict types + DB types
 import type { Company, Facility } from "@/types/company"
@@ -82,18 +128,14 @@ function normalizeCompany(c: DbCompany): Company {
 }
 
 // ---------- Data Fetch ----------
-async function getData(): Promise<DbCompany[]> {
+const getData = cache(async function getData(): Promise<DbCompany[]> {
   try {
     const { data, error } = await supabase
       .from("companies")
-      .select(`
-        *,
-        facilities(*),
-        capabilities(*),
-        certifications(*),
-        industries(*)
-      `)
+      .select(COMPANY_FIELDS)
       .eq("is_active", true)
+      .order("updated_at", { ascending: false })
+      .limit(MAX_COMPANIES)
 
     if (error) {
       console.error('Error fetching companies:', error)
@@ -105,7 +147,7 @@ async function getData(): Promise<DbCompany[]> {
     console.error('Unexpected error fetching companies:', error)
     return []
   }
-}
+})
 
 export default async function Home({
   searchParams,
