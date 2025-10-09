@@ -59,11 +59,7 @@ const COMPANY_FIELDS = `
   )
 `
 
-// ⬇️ Added: app-level strict types + DB types
-import type { Company, Facility } from "@/types/company"
-import type { Database } from "@/lib/database.types"
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import AddCompanyCallout from "@/components/AddCompanyCallout"
+const MAX_COMPANIES = 500
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
