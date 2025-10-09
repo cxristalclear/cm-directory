@@ -30,6 +30,9 @@ export default function Header({ }: HeaderProps) {
               </div>
             </Link>
             <div className="hidden items-center gap-4 md:flex">
+              <Link href="/industries" className="text-sm font-medium text-white/90 hover:text-white">
+                Industries
+              </Link>
               <Link href="/about" className="text-sm font-medium text-white/90 hover:text-white">
                 About
               </Link>
