@@ -7,30 +7,73 @@ import LazyCompanyMap from "@/components/LazyCompanyMap"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { CapabilitySlug, parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
-import { Company } from "@/types/company" // Import the Company type
+import type { HomepageCompany } from "@/types/company"
 
 export const metadata = {
   title: "PCB Assembly Manufacturers | CM Directory",
   description: "Browse contract manufacturers that offer SMT and through-hole PCB assembly services.",
 }
 
-async function getCompanies(): Promise<Company[]> {
+const HOMEPAGE_COMPANY_FIELDS = `
+  id,
+  slug,
+  company_name,
+  dba_name,
+  description,
+  employee_count_range,
+  is_active,
+  website_url,
+  updated_at,
+  facilities (
+    id,
+    company_id,
+    city,
+    state,
+    country,
+    latitude,
+    longitude,
+    facility_type,
+    is_primary
+  ),
+  capabilities (
+    pcb_assembly_smt,
+    pcb_assembly_through_hole,
+    cable_harness_assembly,
+    box_build_assembly,
+    prototyping,
+    low_volume_production,
+    medium_volume_production,
+    high_volume_production
+  ),
+  certifications (
+    id,
+    certification_name,
+    certification_type
+  ),
+  industries (
+    id,
+    industry_name
+  )
+`
+
+async function getCompanies(): Promise<HomepageCompany[]> {
   const { data } = await supabase
     .from("companies")
-    .select("*, capabilities(*), facilities(*)")
+    .select(HOMEPAGE_COMPANY_FIELDS)
     .eq("is_active", true)
+    .returns<HomepageCompany[]>()
 
   if (!data) {
     return []
   }
 
   // Filter out facilities with a null company_id to match the strict Company type
-  const cleanedData = data.map(company => ({
+  const cleanedData: HomepageCompany[] = data.map(company => ({
     ...company,
-    facilities: company.facilities?.filter(f => f.company_id) ?? [],
+    facilities: company.facilities?.filter(f => f.company_id) ?? null,
   }))
 
-  return cleanedData as unknown as Company[]
+  return cleanedData
 }
 
 export default async function PcbAssemblyManufacturers({
@@ -52,7 +95,7 @@ export default async function PcbAssemblyManufacturers({
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
-        <Header companies={companies} />
+        <Header />
         <main className="container mx-auto px-4 py-8">
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">

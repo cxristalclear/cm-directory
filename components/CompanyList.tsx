@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Award, Building2, ChevronRight, MapPin, Users } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
-import type { HomepageCompany } from "@/types/homepage"
+import type { HomepageCompany } from "@/types/company"
 import { filterCompanies } from "@/utils/filtering"
 
 interface CompanyListProps {

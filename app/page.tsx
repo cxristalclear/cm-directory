@@ -98,10 +98,11 @@ async function getData(): Promise<HomepageCompany[]> {
   try {
     const { data, error } = await supabase
       .from("companies")
-      .select<HomepageCompany>(COMPANY_FIELDS)
+      .select(COMPANY_FIELDS)
       .eq("is_active", true)
       .order("updated_at", { ascending: false })
       .limit(MAX_COMPANIES)
+      .returns<HomepageCompany[]>()
 
     if (error) {
       console.error("Error fetching companies:", error)
