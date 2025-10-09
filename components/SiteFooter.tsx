@@ -4,6 +4,7 @@ import { siteConfig } from '@/lib/config'
 const currentYear = new Date().getFullYear()
 
 const footerLinks = [
+  { href: '/industries', label: 'Industries' },
   { href: '/sitemap.xml', label: 'Sitemap' },
   { href: '/feed.xml', label: 'RSS Feed' },
   { href: '/about', label: 'About' },
