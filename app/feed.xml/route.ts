@@ -2,18 +2,20 @@ import { supabase } from '@/lib/supabase'
 import { siteConfig } from '@/lib/config'
 import { resolveCompanyCanonicalUrl } from '@/lib/canonical'
 import { getBuildTimestamp, toIsoString } from '@/lib/time'
+import type { Company } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-type CompanyFeedRow = {
-  slug: string | null
-  company_name: string
-  description: string | null
-  updated_at: string | null
-  cms_metadata?: {
-    canonical_path?: string | null
-  } | null
+type CompanyFeedRow = Pick<
+  Company,
+  'slug' | 'company_name' | 'description' | 'updated_at'
+> & {
+  cms_metadata: Company['cms_metadata']
 }
+
+type CanonicalMetadata = {
+  canonical_path?: string | null
+} | null
 
 type FeedItem = {
   title: string
@@ -33,11 +35,28 @@ function escapeXml(value: string): string {
     .replace(/'/g, '&apos;')
 }
 
+function extractCanonicalMetadata(value: CompanyFeedRow['cms_metadata']): CanonicalMetadata {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+
+  const canonicalPath = (value as Record<string, unknown>).canonical_path
+  if (typeof canonicalPath === 'string') {
+    return { canonical_path: canonicalPath }
+  }
+
+  if (canonicalPath === null || typeof canonicalPath === 'undefined') {
+    return { canonical_path: null }
+  }
+
+  return null
+}
+
 function buildFeedItems(rows: CompanyFeedRow[]): FeedItem[] {
   return rows.reduce<FeedItem[]>((items, row) => {
     const canonicalUrl = resolveCompanyCanonicalUrl({
       slug: row.slug ?? undefined,
-      cms_metadata: row.cms_metadata ?? null,
+      cms_metadata: extractCanonicalMetadata(row.cms_metadata),
     })
 
     if (!canonicalUrl) {
@@ -100,14 +119,25 @@ function serializeFeed(items: FeedItem[]): string {
 }
 
 export async function GET(): Promise<Response> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('companies')
     .select('slug, company_name, description, updated_at, cms_metadata')
     .eq('is_active', true)
     .order('updated_at', { ascending: false, nullsFirst: false })
     .limit(50)
 
-  const rows = (data ?? []) as CompanyFeedRow[]
+  if (error) {
+    console.error('Failed to load feed data', error)
+    return new Response('Unable to load feed', { status: 500 })
+  }
+
+  const rows: CompanyFeedRow[] = (data ?? []).map((row) => ({
+    slug: row.slug,
+    company_name: row.company_name,
+    description: row.description,
+    updated_at: row.updated_at,
+    cms_metadata: row.cms_metadata,
+  }))
   const items = buildFeedItems(rows)
   const body = serializeFeed(items)
 
