@@ -58,8 +58,8 @@ describe('sitemap metadata serialization', () => {
     const fallbackCompanyEntry = entries.find(entry =>
       entry.url.endsWith('/companies/fallback-manufacturing')
     )
-    const californiaEntry = entries.find(entry => entry.url.endsWith('/manufacturers/ca'))
-    const texasEntry = entries.find(entry => entry.url.endsWith('/manufacturers/tx'))
+    const californiaEntry = entries.find(entry => entry.url.endsWith('/manufacturers/california'))
+    const texasEntry = entries.find(entry => entry.url.endsWith('/manufacturers/texas'))
     const rootEntry = entries.find(entry => entry.url === 'https://www.cm-directory.com')
 
     expect(companyEntry?.lastModified).toBe('2024-03-30T12:34:56.000Z')
