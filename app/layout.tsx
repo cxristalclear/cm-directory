@@ -69,11 +69,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const rootStructuredData = [organizationJsonLd, webSiteJsonLd]
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script {...jsonLdScriptProps(organizationJsonLd)} />
-        <script {...jsonLdScriptProps(webSiteJsonLd)} />
+        {rootStructuredData.map((schema) => (
+          <script
+            key={schema["@type"]}
+            {...jsonLdScriptProps(schema)}
+          />
+        ))}
       </head>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
         {children}
