@@ -34,27 +34,27 @@ function escapeXml(value: string): string {
 }
 
 function buildFeedItems(rows: CompanyFeedRow[]): FeedItem[] {
-  return rows
-    .map((row) => {
-      const canonicalUrl = resolveCompanyCanonicalUrl({
-        slug: row.slug ?? undefined,
-        cms_metadata: row.cms_metadata ?? null,
-      })
-
-      if (!canonicalUrl) {
-        return null
-      }
-
-      const updatedIsoString = toIsoString(row.updated_at, buildTimestamp)
-
-      return {
-        title: row.company_name,
-        link: canonicalUrl,
-        description: row.description ?? undefined,
-        updatedIsoString,
-      }
+  return rows.reduce<FeedItem[]>((items, row) => {
+    const canonicalUrl = resolveCompanyCanonicalUrl({
+      slug: row.slug ?? undefined,
+      cms_metadata: row.cms_metadata ?? null,
     })
-    .filter((item): item is FeedItem => Boolean(item))
+
+    if (!canonicalUrl) {
+      return items
+    }
+
+    const updatedIsoString = toIsoString(row.updated_at, buildTimestamp)
+
+    items.push({
+      title: row.company_name,
+      link: canonicalUrl,
+      description: row.description ?? undefined,
+      updatedIsoString,
+    })
+
+    return items
+  }, [])
 }
 
 function serializeFeed(items: FeedItem[]): string {
