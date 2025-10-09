@@ -12,55 +12,12 @@ import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import { siteConfig, featureFlags } from "@/lib/config"
+
+// ⬇️ Added: app-level strict types + DB types
+import type { Company, Facility } from "@/types/company"
+import type { Database } from "@/lib/database.types"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import AddCompanyCallout from "@/components/AddCompanyCallout"
-import type { PageProps } from "@/types/nxt"
-import type { HomepageCompany } from "@/types/homepage"
-
-export const revalidate = 300
-
-const COMPANY_FIELDS = `
-  id,
-  slug,
-  company_name,
-  dba_name,
-  description,
-  employee_count_range,
-  is_active,
-  website_url,
-  updated_at,
-  facilities (
-    id,
-    company_id,
-    city,
-    state,
-    country,
-    latitude,
-    longitude,
-    facility_type,
-    is_primary
-  ),
-  capabilities (
-    pcb_assembly_smt,
-    pcb_assembly_through_hole,
-    cable_harness_assembly,
-    box_build_assembly,
-    prototyping,
-    low_volume_production,
-    medium_volume_production,
-    high_volume_production
-  ),
-  certifications (
-    id,
-    certification_name,
-    certification_type
-  ),
-  industries (
-    id,
-    industry_name
-  )
-`
-
-const MAX_COMPANIES = 500
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -174,6 +131,7 @@ export default async function Home({
 
                 {/* Bottom Sidebar Ad */}
                 <AdPlaceholder width="100%" height="250px" label="Sidebar Skyscraper" />
+                <AddCompanyCallout className="mt-12" />
               </div>
 
               <div className="lg:col-span-9 space-y-4">
@@ -197,7 +155,6 @@ export default async function Home({
                     <CompanyList allCompanies={companies} />
                   </Suspense>
                 </div>
-                <AddCompanyCallout className="mt-12" />
                 {/* Bottom Content Ad */}
                 <div className="bg-white rounded-xl shadow-xl p-4">
                   <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide text-center">Sponsored</div>

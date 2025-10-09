@@ -3,81 +3,44 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
+import { Breadcrumbs } from "@/components/Breadcrumbs"
 import { FilterProvider } from "@/contexts/FilterContext"
-import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
+import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import {
   createCollectionPageJsonLd,
   jsonLdScriptProps,
 } from "@/lib/schema"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
-
-const INDUSTRY_DATA: Record<string, {
-  name: string
-  dbName: string
-  title: string
-  description: string
-  requirements: string[]
-}> = {
-  'medical-devices': {
-    name: 'Medical Devices',
-    dbName: 'Medical Devices',
-    title: 'Medical Device Contract Manufacturers',
-    description: 'FDA-compliant manufacturing for medical devices and diagnostic equipment',
-    requirements: ['ISO 13485', 'FDA Registration', 'Clean Room', 'Traceability']
-  },
-  'aerospace-defense': {
-    name: 'Aerospace & Defense',
-    dbName: 'Aerospace/Defense',
-    title: 'Aerospace and Defense Manufacturers',
-    description: 'AS9100 certified manufacturing for aviation and defense applications',
-    requirements: ['AS9100', 'ITAR', 'NADCAP', 'First Article Inspection']
-  },
-  'automotive': {
-    name: 'Automotive',
-    dbName: 'Automotive',
-    title: 'Automotive Electronics Manufacturers',
-    description: 'IATF 16949 certified manufacturing for automotive electronics and components',
-    requirements: ['IATF 16949', 'PPAP', 'APQP', 'Automotive Grade Components']
-  },
-  'industrial-controls': {
-    name: 'Industrial Controls',
-    dbName: 'Industrial Controls',
-    title: 'Industrial Control System Manufacturers',
-    description: 'Rugged electronics manufacturing for industrial automation and control systems',
-    requirements: ['UL Certification', 'Conformal Coating', 'Extended Temperature', 'Vibration Testing']
-  },
-  'consumer-electronics': {
-    name: 'Consumer Electronics',
-    dbName: 'Consumer Electronics',
-    title: 'Consumer Electronics Contract Manufacturers',
-    description: 'High-volume manufacturing for consumer electronic products',
-    requirements: ['RoHS Compliant', 'FCC Certification', 'High Volume', 'Cost Optimization']
-  }
-}
+import {
+  getIndustryBySlug,
+  getIndustrySlugs,
+  getRelatedIndustries,
+  type IndustrySlug,
+} from "@/lib/industries"
 
 export async function generateStaticParams() {
-  return Object.keys(INDUSTRY_DATA).map(industry => ({
-    industry
+  return getIndustrySlugs().map(industry => ({
+    industry,
   }))
 }
 
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: Promise<{ industry: string }> 
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ industry: string }>
 }): Promise<Metadata> {
   const { industry } = await params
-  const industryData = INDUSTRY_DATA[industry]
-  
+  const industryData = getIndustryBySlug(industry)
+
   if (!industryData) {
     return {
       title: 'Industry Not Found | CM Directory',
       description: 'The requested industry page could not be found.'
     }
   }
-  
+
   const pageUrl = getCanonicalUrl(`/industries/${industry}`)
 
   return {
@@ -111,12 +74,12 @@ export default async function IndustryPage({
 }) {
   const [{ industry }, sp] = await Promise.all([params, searchParams])
   const initialFilters = parseFiltersFromSearchParams(sp)
-  const industryData = INDUSTRY_DATA[industry]
-  
+  const industryData = getIndustryBySlug(industry)
+
   if (!industryData) {
     notFound()
   }
-  
+
   // Fetch companies in this industry
   const { data: companies } = await supabase
     .from('companies')
@@ -129,11 +92,12 @@ export default async function IndustryPage({
     `)
     .eq('industries.industry_name', industryData.dbName)
     .eq('is_active', true)
-  
+
   const typedCompanies = companies as Company[] | null
-  
+
   const canonicalUrl = getCanonicalUrl(`/industries/${industry}`)
   const breadcrumbBaseUrl = getCanonicalUrl("/industries")
+  const relatedIndustries = getRelatedIndustries(industryData.slug as IndustrySlug)
   const industrySchema = createCollectionPageJsonLd({
     name: industryData.title,
     description: industryData.description,
@@ -152,66 +116,93 @@ export default async function IndustryPage({
         <script {...jsonLdScriptProps(industrySchema)} />
         {/* Hero Section */}
         <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
-        <div className="container mx-auto px-4 py-12">
-          <nav className="flex items-center gap-2 text-sm text-blue-100 mb-6">
-            <Link href="/" className="hover:text-white">Home</Link>
-            <span>/</span>
-            <Link href="/industries" className="hover:text-white">Industries</Link>
-            <span>/</span>
-            <span className="text-white">{industryData.name}</span>
-          </nav>
-          
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-2xl font-semibold">
-              {industryData.name.split(" ")[0]}
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold mb-3">{industryData.title}</h1>
-              <p className="text-xl text-blue-100 max-w-3xl">{industryData.description}</p>
-            </div>
-          </div>
-          
-          <div className="mt-8">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3 inline-block">
-              <span className="text-2xl font-bold">{typedCompanies?.length || 0}</span>
-              <span className="text-blue-100 ml-2">Specialized Manufacturers</span>
+          <div className="container mx-auto px-4 py-12">
+            <Breadcrumbs
+              className="mb-6 text-blue-100"
+              items={[
+                { name: "Home", url: "/" },
+                { name: "Industries", url: "/industries" },
+                { name: industryData.name, url: canonicalUrl },
+              ]}
+            />
+
+            <div className="flex flex-col gap-6 md:flex-row md:items-start">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white/20 text-md font-semibold backdrop-blur-sm">
+                {industryData.name.split(" ")[0]}
+              </div>
+              <div>
+                <h1 className="mb-3 text-4xl font-bold">{industryData.title}</h1>
+                <p className="max-w-3xl text-xl text-blue-100">{industryData.description}</p>
+                <div className="mt-6 inline-flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2 text-sm text-blue-100">
+                  <span className="text-2xl font-bold text-white">{typedCompanies?.length || 0}</span>
+                  <span>Specialized Manufacturers</span>
+                </div>
+                <div className="mt-6">
+                  <Link
+                    href="/industries"
+                    className="inline-flex items-center text-sm font-medium text-blue-100 transition hover:text-white"
+                  >
+                    ← View all industries
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        {/* SEO Content */}
-        <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
-          <h2 className="text-2xl font-bold mb-4">{industryData.name} Manufacturing Requirements</h2>
-          <div className="prose max-w-none text-gray-700">
-            <p>
-              Contract manufacturers serving the {industryData.name.toLowerCase()} industry must meet
-              specific regulatory and quality requirements.
-            </p>
-            <h3 className="text-lg font-semibold mt-6 mb-3">Key Requirements</h3>
-            <ul>
-              {industryData.requirements.map(req => (
-                <li key={req}>{req}</li>
-              ))}
-            </ul>
+
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-8">
+          {/* SEO Content */}
+          <div className="mb-8 rounded-xl bg-white p-8 shadow-sm">
+            <h2 className="text-2xl font-bold mb-4">{industryData.name} Manufacturing Requirements</h2>
+            <div className="prose max-w-none text-gray-700">
+              <p>
+                Contract manufacturers serving the {industryData.name.toLowerCase()} industry must meet specific regulatory and quality requirements.
+              </p>
+              <h3 className="mt-6 text-lg font-semibold">Key Requirements</h3>
+              <ul>
+                {industryData.requirements.map(req => (
+                  <li key={req}>{req}</li>
+                ))}
+              </ul>
+            </div>
           </div>
+
+          {/* Company Listings */}
+          <h2 className="text-2xl font-bold mb-6">{industryData.name} Manufacturers</h2>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <FilterSidebar allCompanies={typedCompanies || []} />
+            </div>
+            <div className="lg:col-span-8">
+              <CompanyList allCompanies={typedCompanies || []} />
+            </div>
+          </div>
+
+          {/* Related industries */}
+          {relatedIndustries.length > 0 && (
+            <div className="mt-12 rounded-xl bg-white p-8 shadow-sm">
+              <h3 className="text-xl font-semibold text-gray-900">Explore related industries</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Expand your search with adjacent manufacturing specializations.
+              </p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                {relatedIndustries.map(related => (
+                  <Link
+                    key={related.slug}
+                    href={`/industries/${related.slug}`}
+                    className="group rounded-lg border border-gray-200 p-4 transition hover:border-blue-200 hover:shadow-md"
+                  >
+                    <span className="text-sm font-semibold text-blue-600 group-hover:text-blue-700">
+                      {related.name}
+                    </span>
+                    <p className="mt-2 text-sm text-gray-600">{related.summary}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        
-        {/* Company Listings */}
-        <h2 className="text-2xl font-bold mb-6">
-          {industryData.name} Manufacturers
-        </h2>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <FilterSidebar allCompanies={typedCompanies || []} />
-          </div>
-          <div className="lg:col-span-8">
-            <CompanyList allCompanies={typedCompanies || []} />
-          </div>
-        </div>
-      </div>
       </div>
     </FilterProvider>
   )
