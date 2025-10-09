@@ -1,78 +1,185 @@
-import type { CompanyWithRelations } from '@/types/company'
+import { getCanonicalUrl } from '@/lib/config'
+import type { CompanySocialLink, CompanyWithRelations } from '@/types/company'
 
-export function CompanySchema({ company }: { company: CompanyWithRelations }) {
+type CompanySchemaProps = {
+  company: CompanyWithRelations
+  /** Optional override for the canonical profile URL */
+  canonicalUrl?: string
+}
+
+const uniqueStrings = (values: Array<string | null | undefined>): string[] => {
+  const seen = new Set<string>()
+  for (const value of values) {
+    if (!value) continue
+    const trimmed = value.trim()
+    if (!trimmed || seen.has(trimmed)) continue
+    seen.add(trimmed)
+  }
+  return Array.from(seen)
+}
+
+const resolveCanonicalUrl = (
+  canonicalUrl: string | undefined,
+  company: Pick<CompanyWithRelations, 'slug' | 'cms_metadata'>,
+): string | undefined => {
+  if (canonicalUrl?.startsWith('http')) {
+    return canonicalUrl
+  }
+
+  if (canonicalUrl) {
+    return getCanonicalUrl(canonicalUrl)
+  }
+
+  const cmsCanonical = company.cms_metadata?.canonical_path
+  if (cmsCanonical) {
+    return cmsCanonical.startsWith('http') ? cmsCanonical : getCanonicalUrl(cmsCanonical)
+  }
+
+  if (company.slug) {
+    return getCanonicalUrl(`/companies/${company.slug}`)
+  }
+
+  return undefined
+}
+
+const extractVerifiedSocialUrls = (links?: CompanySocialLink[] | null): string[] => {
+  if (!links) return []
+  return links
+    .filter((link) => {
+      if (!link || typeof link.url !== 'string') return false
+      const verifiedFlag = link.is_verified ?? link.verified
+      return Boolean(verifiedFlag)
+    })
+    .map((link) => link.url)
+}
+
+export function CompanySchema({ company, canonicalUrl }: CompanySchemaProps) {
+  const canonicalProfileUrl = resolveCanonicalUrl(canonicalUrl, company)
+  const officialSiteUrl = company.website_url?.trim()
+  const profileUrl = canonicalProfileUrl ?? officialSiteUrl
+
+  const combinedSocialLinks = [
+    ...(company.cms_metadata?.social_links ?? []),
+    ...(company.social_links ?? []),
+  ]
+
+  const verifiedSocialUrls = uniqueStrings(extractVerifiedSocialUrls(combinedSocialLinks))
+  const sameAs = uniqueStrings([officialSiteUrl, ...verifiedSocialUrls])
+
+  const primaryFacility =
+    company.facilities?.find((facility) => facility?.is_primary) ?? company.facilities?.[0]
+
+  const address = primaryFacility
+    ? {
+        '@type': 'PostalAddress',
+        ...(primaryFacility.street_address && { streetAddress: primaryFacility.street_address }),
+        ...(primaryFacility.city && { addressLocality: primaryFacility.city }),
+        ...(primaryFacility.state && { addressRegion: primaryFacility.state }),
+        ...(primaryFacility.zip_code && { postalCode: primaryFacility.zip_code }),
+        addressCountry: primaryFacility.country || 'US',
+      }
+    : undefined
+
+  const primaryContact =
+    company.contacts?.find((contact) => contact?.is_primary) ?? company.contacts?.[0]
+
+  const contactDetails = primaryContact
+    ? {
+        ...(primaryContact.phone && { telephone: primaryContact.phone }),
+        ...(primaryContact.email && { email: primaryContact.email }),
+        ...(primaryContact.full_name && { name: primaryContact.full_name }),
+      }
+    : null
+
+  const contactPoint = contactDetails && Object.keys(contactDetails).length > 0
+    ? {
+        '@type': 'ContactPoint',
+        contactType: 'sales',
+        ...contactDetails,
+      }
+    : undefined
+
+  const capabilityLabels = new Set<string>()
+  company.capabilities?.forEach((cap) => {
+    if (!cap) return
+    if (cap.pcb_assembly_smt) capabilityLabels.add('SMT PCB Assembly')
+    if (cap.pcb_assembly_through_hole) capabilityLabels.add('Through-Hole PCB Assembly')
+    if (cap.pcb_assembly_fine_pitch) capabilityLabels.add('Fine Pitch Assembly')
+    if (cap.cable_harness_assembly) capabilityLabels.add('Cable & Harness Assembly')
+    if (cap.box_build_assembly) capabilityLabels.add('Box Build Assembly')
+    if (cap.prototyping) capabilityLabels.add('Prototyping Services')
+    if (cap.low_volume_production) capabilityLabels.add('Low Volume Production')
+    if (cap.medium_volume_production) capabilityLabels.add('Medium Volume Production')
+    if (cap.high_volume_production) capabilityLabels.add('High Volume Production')
+  })
+
+  const credentials = company.certifications
+    ?.map((cert) => {
+      if (!cert?.certification_type) return null
+      return {
+        '@type': 'EducationalOccupationalCredential',
+        name: cert.certification_type,
+        credentialCategory: 'certification',
+        ...(cert.issued_date && { datePublished: cert.issued_date }),
+        ...(cert.expiration_date && { expires: cert.expiration_date }),
+        ...(cert.status && { credentialStatus: cert.status }),
+      }
+    })
+    .filter((cert): cert is Record<string, unknown> => Boolean(cert))
+
+  const industries = company.industries
+    ?.map((ind) => {
+      if (!ind?.industry_name) return null
+      return {
+        '@type': 'Text',
+        name: ind.industry_name,
+      }
+    })
+    .filter((industry): industry is { '@type': 'Text'; name: string } => Boolean(industry))
+
+  const cmsLogoUrl = company.cms_metadata?.logo?.url
+  const logoUrl = cmsLogoUrl || company.logo_url || undefined
+
+  const imageUrls = uniqueStrings([
+    company.cms_metadata?.hero_image?.url,
+    ...(company.cms_metadata?.gallery_images?.map((asset) => asset?.url) ?? []),
+    logoUrl,
+  ])
+
+  const imageField = imageUrls.length === 0
+    ? undefined
+    : imageUrls.length === 1
+      ? imageUrls[0]
+      : imageUrls
+
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': profileUrl,
+    url: profileUrl,
     name: company.company_name,
-    url: company.website_url,
-    description: company.description,
-    
-    // Address from primary facility
-    address: company.facilities?.[0] ? {
-      '@type': 'PostalAddress',
-      streetAddress: company.facilities[0].street_address,
-      addressLocality: company.facilities[0].city,
-      addressRegion: company.facilities[0].state,
-      postalCode: company.facilities[0].zip_code,
-      addressCountry: company.facilities[0].country || 'US',
-    } : undefined,
-    
-    // Contact point
-    contactPoint: company.contacts?.[0] ? {
-      '@type': 'ContactPoint',
-      telephone: company.contacts[0].phone,
-      email: company.contacts[0].email,
-      contactType: 'sales',
-      name: company.contacts[0].full_name,
-    } : undefined,
-    
-    // Additional organization properties
-    ...(company.year_founded && { foundingDate: company.year_founded }),
-    
-    // Employee count
-    ...(company.employee_count_range && {
-      numberOfEmployees: {
-        '@type': 'QuantitativeValue',
-        value: company.employee_count_range,
-      }
-    }),
-    
-    // Capabilities as services/expertise
-    knowsAbout: company.capabilities?.flatMap((cap) => {
-      const capabilities: string[] = []
-      if (cap.pcb_assembly_smt) capabilities.push('SMT PCB Assembly')
-      if (cap.pcb_assembly_through_hole) capabilities.push('Through-Hole PCB Assembly')
-      if (cap.pcb_assembly_fine_pitch) capabilities.push('Fine Pitch Assembly')
-      if (cap.cable_harness_assembly) capabilities.push('Cable & Harness Assembly')
-      if (cap.box_build_assembly) capabilities.push('Box Build Assembly')
-      if (cap.prototyping) capabilities.push('Prototyping Services')
-      if (cap.low_volume_production) capabilities.push('Low Volume Production')
-      if (cap.medium_volume_production) capabilities.push('Medium Volume Production')
-      if (cap.high_volume_production) capabilities.push('High Volume Production')
-      return capabilities
-    }),
-    
-    // Certifications
-    hasCredential: company.certifications?.map((cert) => ({
-      '@type': 'EducationalOccupationalCredential',
-      name: cert.certification_type,
-      credentialCategory: 'certification',
-      ...(cert.issued_date && { datePublished: cert.issued_date }),
-      ...(cert.expiration_date && { expires: cert.expiration_date }),
-      ...(cert.status && { credentialStatus: cert.status }),
-    })),
-    
-    // Industries served
-    areaServed: company.industries?.map(ind => ({
-      '@type': 'Text',
-      name: ind.industry_name
-    })),
+    description: company.description ?? undefined,
+    ...(sameAs.length > 0 ? { sameAs } : {}),
+    ...(logoUrl ? { logo: logoUrl } : {}),
+    ...(imageField ? { image: imageField } : {}),
+    ...(address ? { address } : {}),
+    ...(contactPoint ? { contactPoint } : {}),
+    ...(company.year_founded ? { foundingDate: company.year_founded } : {}),
+    ...(company.employee_count_range
+      ? {
+          numberOfEmployees: {
+            '@type': 'QuantitativeValue',
+            value: company.employee_count_range,
+          },
+        }
+      : {}),
+    ...(capabilityLabels.size > 0 ? { knowsAbout: Array.from(capabilityLabels) } : {}),
+    ...(credentials && credentials.length > 0 ? { hasCredential: credentials } : {}),
+    ...(industries && industries.length > 0 ? { areaServed: industries } : {}),
   }
-  
-  // Remove undefined values for cleaner JSON
+
   const cleanSchema = JSON.parse(JSON.stringify(schema))
-  
+
   return (
     <script
       type="application/ld+json"

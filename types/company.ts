@@ -20,9 +20,49 @@ export type FilterContextType = {
   isPending: boolean
 }
 
+export type SocialPlatform =
+  | 'linkedin'
+  | 'facebook'
+  | 'instagram'
+  | 'twitter'
+  | 'x'
+  | 'youtube'
+  | 'tiktok'
+  | 'github'
+  | 'glassdoor'
+  | 'crunchbase'
+  | 'pinterest'
+  | 'yelp'
+  | 'other'
+  | string
+
+export interface CompanySocialLink {
+  platform: SocialPlatform
+  url: string
+  /** Indicates whether the URL has been verified by the content team */
+  is_verified?: boolean | null
+  /** Optional alternative flag used by legacy CMS exports */
+  verified?: boolean | null
+}
+
+export interface CompanyMediaAsset {
+  url: string
+  alt_text?: string | null
+  caption?: string | null
+  type?: 'logo' | 'hero' | 'gallery' | string | null
+}
+
+export interface CompanyCmsMetadata {
+  canonical_path?: string | null
+  logo?: CompanyMediaAsset | null
+  hero_image?: CompanyMediaAsset | null
+  gallery_images?: CompanyMediaAsset[] | null
+  social_links?: CompanySocialLink[] | null
+}
+
 export interface Company {
   // ❌ REMOVED: name: string (doesn't exist in DB)
-  
+
   // Primary fields
   id: string
   company_name: string
@@ -35,7 +75,9 @@ export interface Company {
   logo_url?: string | null
   description?: string | null
   key_differentiators?: string | null
-  
+  cms_metadata?: CompanyCmsMetadata | null
+  social_links?: CompanySocialLink[] | null
+
   // Metadata
   is_active?: boolean | null
   is_verified?: boolean | null
