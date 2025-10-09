@@ -6,6 +6,11 @@ import "./admin-glass.css"
 import { Toaster } from "sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { siteConfig } from "@/lib/config"
+import {
+  jsonLdScriptProps,
+  organizationJsonLd,
+  webSiteJsonLd,
+} from "@/lib/schema"
 
 const inter = Inter({
   variable: "--font-inter",
@@ -64,8 +69,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const rootStructuredData = [organizationJsonLd, webSiteJsonLd]
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {rootStructuredData.map((schema) => (
+          <script
+            key={schema["@type"]}
+            {...jsonLdScriptProps(schema)}
+          />
+        ))}
+      </head>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
         {children}
         <SpeedInsights />
