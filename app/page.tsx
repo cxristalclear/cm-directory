@@ -1,5 +1,4 @@
 import { Suspense } from "react"
-import Script from "next/script"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
@@ -130,21 +129,6 @@ export default async function Home({
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
       <SpeedInsights />
-      {/* Website JSON-LD */}
-      <Script id="website-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{
-        __html: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: siteConfig.name,
-          url: siteConfig.url,
-          potentialAction: {
-            "@type": "SearchAction",
-            target: `${siteConfig.url}?q={search_term_string}`,
-            "query-input": "required name=search_term_string"
-          }
-        })
-      }} />
-      
       <FilterProvider initialFilters={initialFilters}>
         <div className="min-h-screen bg-gray-50">
           <Header />
