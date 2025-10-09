@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase'
 import { getCanonicalUrl, siteConfig } from '@/lib/config'
+import { CAPABILITY_DEFINITIONS } from '@/lib/capabilities'
+import { CERTIFICATION_DIRECTORY } from '@/lib/certifications-data'
 import { getBuildTimestamp, toIsoString } from '@/lib/time'
 import { getStateMetadataByAbbreviation } from '@/lib/states'
 
@@ -89,31 +91,66 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     {
-      url: `${baseUrl}/manufacturers`,
+      url: getCanonicalUrl('/manufacturers'),
       changeFrequency: 'daily' as const,
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/industries`,
+      url: getCanonicalUrl('/industries'),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/about`,
+      url: getCanonicalUrl('/about'),
       changeFrequency: 'monthly' as const,
       priority: 0.5,
     },
     {
-      url: `${baseUrl}/add-your-company`,
+      url: getCanonicalUrl('/add-your-company'),
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     },
+    {
+      url: getCanonicalUrl('/capabilities'),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
+    {
+      url: getCanonicalUrl('/pcb-assembly-manufacturers'),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
+    {
+      url: getCanonicalUrl('/certifications'),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    },
   ]
+
+  const capabilityUrls = CAPABILITY_DEFINITIONS.map(capability => ({
+    url: getCanonicalUrl(`/capabilities/${capability.slug}`),
+    lastModified: buildTimestamp,
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }))
+
+  const certificationUrls = Object.values(CERTIFICATION_DIRECTORY).map(certification => ({
+    url: getCanonicalUrl(`/certifications/${certification.slug}`),
+    lastModified: buildTimestamp,
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }))
 
   const evergreenUrls = evergreenPages.map(page => ({
     ...page,
     lastModified: buildTimestamp,
   }))
 
-  return [...evergreenUrls, ...companyUrls, ...stateUrls]
+  return [
+    ...evergreenUrls,
+    ...capabilityUrls,
+    ...certificationUrls,
+    ...companyUrls,
+    ...stateUrls,
+  ]
 }
