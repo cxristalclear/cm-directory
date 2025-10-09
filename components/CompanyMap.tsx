@@ -6,7 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css"
 import { useFilters } from "../contexts/FilterContext"
 import { MapPin, RotateCcw } from "lucide-react"
 import type { FeatureCollection, Point } from "geojson"
-import type { Company, FacilityWithCompany } from "../types/company"
+import type { HomepageCompany, HomepageFacilityWithCompany } from "@/types/homepage"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 import { filterCompanies, getLocationFilteredFacilities } from "../utils/filtering"
 import { useDebounce } from "../hooks/useDebounce"
@@ -14,10 +14,10 @@ import { useDebounce } from "../hooks/useDebounce"
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
 interface CompanyMapProps {
-  allCompanies: Company[]
+  allCompanies: HomepageCompany[]
 }
 
-type FacilityWithCoordinates = FacilityWithCompany & {
+type FacilityWithCoordinates = HomepageFacilityWithCompany & {
   latitude: number
   longitude: number
 }

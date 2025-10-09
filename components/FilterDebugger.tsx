@@ -2,12 +2,12 @@
 'use client'
 
 import { useFilters } from '../contexts/FilterContext'
-import type { Company } from '../types/company'
+import type { HomepageCompany } from '@/types/homepage'
 import { useMemo } from 'react'
 import { filterCompanies, getLocationFilteredFacilities } from '../utils/filtering'
 
 interface FilterDebuggerProps {
-  allCompanies: Company[]
+  allCompanies: HomepageCompany[]
 }
 
 export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
