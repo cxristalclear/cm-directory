@@ -29,11 +29,6 @@ describe("schema helpers", () => {
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "CM Directory",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "query-input": "required name=search_term_string",
-          "target": "https://www.cm-directory.com/search?q={search_term_string}",
-        },
         "url": "https://www.cm-directory.com",
       }
     `)
