@@ -2,9 +2,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { CompanyFormData } from '@/types/admin'
 import type { Json } from '@/lib/database.types'
 
-type AuditFieldValue = string | number | boolean | null | Json | undefined
+type ChangeTrackedValue = string | number | boolean | null | Json | undefined
+type ChangeTrackingSnapshot = Partial<Record<string, ChangeTrackedValue>>
 
-function serializeAuditValue(value: AuditFieldValue): string | null {
+function serializeAuditValue(value: ChangeTrackedValue): string | null {
   if (value === null || value === undefined) {
     return null
   }
@@ -70,9 +71,12 @@ export async function ensureUniqueSlug(
 /**
  * Compare two objects and return array of changes
  */
-export function getFieldChanges(
-  oldData: Record<string, AuditFieldValue>,
-  newData: Record<string, AuditFieldValue>
+export function getFieldChanges<
+  OldData extends ChangeTrackingSnapshot,
+  NewData extends ChangeTrackingSnapshot
+>(
+  oldData: OldData,
+  newData: NewData
 ): Array<{
   field_name: string
   old_value: string | null

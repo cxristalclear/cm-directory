@@ -13,7 +13,48 @@ import {
   type JsonLd,
 } from "@/lib/schema"
 import { supabase } from "@/lib/supabase"
-import type { Company } from "@/types/company"
+import type { HomepageCompany } from "@/types/company"
+
+const HOMEPAGE_COMPANY_FIELDS = `
+  id,
+  slug,
+  company_name,
+  dba_name,
+  description,
+  employee_count_range,
+  is_active,
+  website_url,
+  updated_at,
+  facilities (
+    id,
+    company_id,
+    city,
+    state,
+    country,
+    latitude,
+    longitude,
+    facility_type,
+    is_primary
+  ),
+  capabilities!inner (
+    pcb_assembly_smt,
+    pcb_assembly_through_hole,
+    cable_harness_assembly,
+    box_build_assembly,
+    prototyping,
+    low_volume_production,
+    medium_volume_production,
+    high_volume_production
+  ),
+  certifications (
+    id,
+    certification_type
+  ),
+  industries (
+    id,
+    industry_name
+  )
+`
 
 export async function generateStaticParams() {
   return CAPABILITY_DEFINITIONS.map(({ slug }) => ({
@@ -98,23 +139,15 @@ export default async function CapabilityPage({
 
   let query = supabase
     .from("companies")
-    .select(
-      `
-        *,
-        capabilities!inner (*),
-        certifications (*),
-        industries (*),
-        facilities (*)
-      `,
-    )
+    .select(HOMEPAGE_COMPANY_FIELDS)
     .eq("is_active", true)
 
   for (const filter of definition.supabaseFilters) {
     query = query.eq(`capabilities.${filter.column}`, filter.value)
   }
 
-  const { data: companies } = await query
-  const typedCompanies = (companies ?? []) as Company[]
+  const { data: companies } = await query.returns<HomepageCompany[]>()
+  const typedCompanies: HomepageCompany[] = companies ?? []
 
   const canonicalUrl = getCanonicalUrl(`/capabilities/${definition.slug}`)
   const breadcrumbBaseUrl = getCanonicalUrl("/capabilities")
