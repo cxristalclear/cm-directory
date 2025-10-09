@@ -11,12 +11,12 @@ import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import { siteConfig, featureFlags } from "@/lib/config"
-import AddCompanyCallout from '@/components/AddCompanyCallout'
 
 // ⬇️ Added: app-level strict types + DB types
 import type { Company, Facility } from "@/types/company"
 import type { Database } from "@/lib/database.types"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import AddCompanyCallout from "@/components/AddCompanyCallout"
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -165,6 +165,7 @@ export default async function Home({
 
                 {/* Bottom Sidebar Ad */}
                 <AdPlaceholder width="100%" height="250px" label="Sidebar Skyscraper" />
+                <AddCompanyCallout className="mt-12" />
               </div>
 
               <div className="lg:col-span-9 space-y-4">
@@ -188,7 +189,6 @@ export default async function Home({
                     <CompanyList allCompanies={companies} />
                   </Suspense>
                 </div>
-                <AddCompanyCallout className="mt-12" />
                 {/* Bottom Content Ad */}
                 <div className="bg-white rounded-xl shadow-xl p-4">
                   <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide text-center">Sponsored</div>
