@@ -3,14 +3,14 @@
 import { useState, useMemo } from 'react'
 import { useFilters } from '../contexts/FilterContext'
 import { ChevronDown, X, Filter, MapPin, Globe, Settings, Layers } from 'lucide-react'
-import type { Company } from '../types/company'
+import type { HomepageCompany } from '@/types/homepage'
 import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
 import { getStateName } from '../utils/stateMapping'
 
 type FilterSection = 'countries' | 'states' | 'capabilities' | 'volume'
 
 interface FilterSidebarProps {
-  allCompanies: Company[]
+  allCompanies: HomepageCompany[]
 }
 
 // Country names mapping

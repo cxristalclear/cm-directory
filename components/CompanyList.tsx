@@ -5,11 +5,11 @@ import Link from "next/link"
 import { Award, Building2, ChevronRight, MapPin, Users } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
-import type { Company } from "@/types/company"
+import type { HomepageCompany } from "@/types/homepage"
 import { filterCompanies } from "@/utils/filtering"
 
 interface CompanyListProps {
-  allCompanies: Company[]
+  allCompanies: HomepageCompany[]
   limit?: number
 }
 

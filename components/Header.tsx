@@ -4,15 +4,9 @@ import Link from "next/link"
 import { Building2 } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
-import type { Company } from "@/types/company"
-import AddCompanyButton from '@/components/AddCompanyButton'
+import AddCompanyButton from "@/components/AddCompanyButton"
 
-
-interface HeaderProps {
-  companies?: Company[]
-}
-
-export default function Header({ }: HeaderProps) {
+export default function Header() {
   useFilters()
 
   return (
