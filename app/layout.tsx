@@ -6,6 +6,7 @@ import "./admin-glass.css"
 import { Toaster } from "sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { siteConfig } from "@/lib/config"
+import SiteFooter from "@/components/SiteFooter"
 import {
   jsonLdScriptProps,
   organizationJsonLd,
@@ -80,9 +81,16 @@ export default function RootLayout({
             {...jsonLdScriptProps(schema)}
           />
         ))}
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title={`${siteConfig.name} Updates`}
+          href={`${siteConfig.url}/feed.xml`}
+        />
       </head>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
         {children}
+        <SiteFooter />
         <SpeedInsights />
         <Toaster position="top-right" />
       </body>
