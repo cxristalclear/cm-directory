@@ -24,6 +24,7 @@ A Next.js application that helps users find and filter contract manufacturers ba
 - **SEO Optimized**
   - Dynamic metadata generation
   - Automatic sitemap generation
+  - RSS updates feed for Search Console and subscribers
   - Structured data (JSON-LD) for search engines
   - robots.txt configuration
 
@@ -162,6 +163,15 @@ To keep structured data accurate, content operations should populate the followi
 - `social_links[]` – legacy Supabase JSON column; continue marking verified links with `is_verified` to ensure they are eligible for discovery.
 
 Leaving these fields empty is safe—the schema output automatically omits undefined values.
+
+## 🔔 RSS Feed & Search Console
+
+- The live feed of company updates is exposed at `https://www.cm-directory.com/feed.xml` (also available locally at `/feed.xml`).
+- Submit the feed to Google Search Console alongside the sitemap so crawlers learn about profile refreshes faster:
+  1. Open Search Console for the CM Directory property.
+  2. Navigate to **Indexing → Sitemaps**.
+  3. Enter `https://www.cm-directory.com/feed.xml` in the submission form and click **Submit**.
+- The feed and sitemap share the `NEXT_PUBLIC_BUILD_TIMESTAMP` (or `BUILD_TIMESTAMP`) fallback, so triggering the existing build hook refreshes both documents together.
 
 ## 🧪 Testing
 

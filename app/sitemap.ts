@@ -1,25 +1,9 @@
 import { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase'
 import { siteConfig } from '@/lib/config'
+import { getBuildTimestamp, toIsoString } from '@/lib/time'
 
-function toIsoString(value: string | Date | null | undefined, fallback: string): string {
-  if (!value) {
-    return fallback
-  }
-
-  const dateValue = typeof value === 'string' ? new Date(value) : value
-  if (Number.isNaN(dateValue.getTime())) {
-    return fallback
-  }
-
-  return dateValue.toISOString()
-}
-
-const defaultBuildTimestamp = new Date().toISOString()
-const buildTimestamp = toIsoString(
-  process.env.NEXT_PUBLIC_BUILD_TIMESTAMP ?? process.env.BUILD_TIMESTAMP,
-  defaultBuildTimestamp
-)
+const buildTimestamp = getBuildTimestamp()
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = siteConfig.url

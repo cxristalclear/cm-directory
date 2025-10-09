@@ -1,4 +1,4 @@
-import { getCanonicalUrl } from '@/lib/config'
+import { resolveCompanyCanonicalUrl } from '@/lib/canonical'
 import type { CompanySocialLink, CompanyWithRelations } from '@/types/company'
 
 type CompanySchemaProps = {
@@ -50,30 +50,6 @@ const uniqueStrings = (values: Array<string | null | undefined>): string[] => {
   return Array.from(seen)
 }
 
-const resolveCanonicalUrl = (
-  canonicalUrl: string | undefined,
-  company: Pick<CompanyWithRelations, 'slug' | 'cms_metadata'>,
-): string | undefined => {
-  if (canonicalUrl?.startsWith('http')) {
-    return canonicalUrl
-  }
-
-  if (canonicalUrl) {
-    return getCanonicalUrl(canonicalUrl)
-  }
-
-  const cmsCanonical = company.cms_metadata?.canonical_path
-  if (cmsCanonical) {
-    return cmsCanonical.startsWith('http') ? cmsCanonical : getCanonicalUrl(cmsCanonical)
-  }
-
-  if (company.slug) {
-    return getCanonicalUrl(`/companies/${company.slug}`)
-  }
-
-  return undefined
-}
-
 const extractVerifiedSocialUrls = (links?: CompanySocialLink[] | null): string[] => {
   if (!links) return []
   return links
@@ -89,7 +65,7 @@ export const buildCompanyJsonLd = (
   company: CompanySchemaInput,
   canonicalUrl?: string,
 ) => {
-  const canonicalProfileUrl = resolveCanonicalUrl(canonicalUrl, company)
+  const canonicalProfileUrl = resolveCompanyCanonicalUrl(company, canonicalUrl)
   const officialSiteUrl = company.website_url.trim() || undefined
   const profileUrl = canonicalProfileUrl ?? officialSiteUrl
 
