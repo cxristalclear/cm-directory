@@ -47,7 +47,6 @@ const HOMEPAGE_COMPANY_FIELDS = `
   ),
   certifications (
     id,
-    certification_name,
     certification_type
   ),
   industries (
