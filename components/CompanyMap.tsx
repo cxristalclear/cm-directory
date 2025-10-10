@@ -9,6 +9,7 @@ import type { FeatureCollection, Point } from "geojson"
 import type { HomepageCompany, HomepageFacilityWithCompany } from "@/types/homepage"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 import { filterCompanies, getLocationFilteredFacilities } from "../utils/filtering"
+import { getFallbackBounds } from "../utils/locationBounds"
 import { useDebounce } from "../hooks/useDebounce"
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
@@ -292,6 +293,18 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     }
   }, [addClusteringLayers, mapStyle])
 
+  const resetView = useCallback(() => {
+    if (map.current) {
+      map.current.flyTo({
+        center: [-98.5795, 39.8283],
+        zoom: 3.5,
+        pitch: 0,
+        bearing: 0,
+        duration: 1500,
+      })
+    }
+  }, [])
+
   // Update layers when facilities change AND map is ready
   useEffect(() => {
     if (!map.current || !isStyleLoaded || isLoading) {
@@ -301,6 +314,30 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     addClusteringLayers(filteredFacilities.facilities)
 
     if (filteredFacilities.facilities.length === 0) {
+      const fallback = getFallbackBounds(filters)
+
+      if (!map.current) {
+        return
+      }
+
+      if (fallback) {
+        if (fallback.selectionCount > 1) {
+          map.current.fitBounds(fallback.bounds, {
+            padding: { top: 50, bottom: 50, left: 50, right: 50 },
+            maxZoom: 8,
+            duration: 1000,
+          })
+        } else {
+          map.current.flyTo({
+            center: fallback.center,
+            zoom: fallback.zoom,
+            duration: 1200,
+          })
+        }
+      } else {
+        resetView()
+      }
+
       return
     }
 
@@ -319,25 +356,20 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         })
       }
     }, 100)
-  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers])
+  }, [
+    filteredFacilities.facilities,
+    isStyleLoaded,
+    isLoading,
+    addClusteringLayers,
+    filters,
+    resetView,
+  ])
 
   const handleStyleChange = (newStyle: string) => {
     if (map.current && newStyle !== mapStyle) {
       setMapStyle(newStyle)
       setIsStyleLoaded(false)
       map.current.setStyle(newStyle)
-    }
-  }
-
-  const resetView = () => {
-    if (map.current) {
-      map.current.flyTo({
-        center: [-98.5795, 39.8283],
-        zoom: 3.5,
-        pitch: 0,
-        bearing: 0,
-        duration: 1500,
-      })
     }
   }
 
