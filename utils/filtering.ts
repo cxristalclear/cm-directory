@@ -13,8 +13,11 @@ export function filterCompanies(
 
   // Countries filter
   if (filters.countries.length > 0) {
-    filtered = filtered.filter((company) => 
-      company.facilities?.some((f) => filters.countries.includes(f.country || 'US'))
+    filtered = filtered.filter((company) =>
+      company.facilities?.some((f) => {
+        if (!f.country) return false
+        return filters.countries.includes(f.country)
+      })
     )
   }
 
@@ -86,9 +89,10 @@ export function filterFacilitiesByLocation(
 
   // Apply country filter to facilities
   if (filters.countries.length > 0) {
-    filtered = filtered.filter((facility) =>
-      filters.countries.includes(facility.country || 'US')
-    )
+    filtered = filtered.filter((facility) => {
+      if (!facility.country) return false
+      return filters.countries.includes(facility.country)
+    })
   }
 
   // Apply state filter to facilities
