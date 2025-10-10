@@ -83,13 +83,14 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     if (!map.current) return
 
     const facilities = facilitiesToAdd || currentFacilitiesRef.current
-    if (facilities.length === 0) return
 
     // Remove existing layers and source if they exist
     if (map.current.getLayer('clusters')) map.current.removeLayer('clusters')
     if (map.current.getLayer('cluster-count')) map.current.removeLayer('cluster-count')
     if (map.current.getLayer('unclustered-point')) map.current.removeLayer('unclustered-point')
     if (map.current.getSource('facilities')) map.current.removeSource('facilities')
+
+    if (facilities.length === 0) return
 
     // Create GeoJSON from facilities
     const geojson: FeatureCollection<Point, FacilityFeatureProperties> = {
@@ -293,29 +294,31 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
   // Update layers when facilities change AND map is ready
   useEffect(() => {
-    if (!map.current || !isStyleLoaded || isLoading || filteredFacilities.facilities.length === 0) {
+    if (!map.current || !isStyleLoaded || isLoading) {
       return
     }
 
     addClusteringLayers(filteredFacilities.facilities)
 
-    // Fit bounds to show all facilities
-    if (filteredFacilities.facilities.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds()
-      filteredFacilities.facilities.forEach((facility) => {
-        bounds.extend([facility.longitude, facility.latitude])
-      })
-
-      setTimeout(() => {
-        if (map.current) {
-          map.current.fitBounds(bounds, {
-            padding: { top: 50, bottom: 50, left: 50, right: 50 },
-            maxZoom: 10,
-            duration: 1000,
-          })
-        }
-      }, 100)
+    if (filteredFacilities.facilities.length === 0) {
+      return
     }
+
+    // Fit bounds to show all facilities
+    const bounds = new mapboxgl.LngLatBounds()
+    filteredFacilities.facilities.forEach((facility) => {
+      bounds.extend([facility.longitude, facility.latitude])
+    })
+
+    setTimeout(() => {
+      if (map.current) {
+        map.current.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+          maxZoom: 10,
+          duration: 1000,
+        })
+      }
+    }, 100)
   }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers])
 
   const handleStyleChange = (newStyle: string) => {
