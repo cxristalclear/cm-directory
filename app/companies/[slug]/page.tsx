@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import type { CompanyWithRelations } from "@/types/company"
 import { CompanySchema } from "@/components/CompanySchema"
 import CompanyDetailClient from "./CompanyDetailClient"
-import { getAbsoluteUrl, siteConfig } from "@/lib/config"
+import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 // Generate dynamic metadata for SEO
 export async function generateMetadata({ 
@@ -63,7 +63,7 @@ export async function generateMetadata({
   
   const certifications = typedCompany.certifications?.map((c: { certification_type: string }) => c.certification_type).slice(0, 3).join(', ')
   
-  const pageUrl = getAbsoluteUrl(`/companies/${slug}`)
+  const pageUrl = getCanonicalUrl(`/companies/${slug}`)
 
   return {
     title: `${typedCompany.company_name} - Contract Manufacturer${location ? ` in ${location}` : ''} | CM Directory`,

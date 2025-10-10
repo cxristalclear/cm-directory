@@ -3,8 +3,15 @@ import type { Metadata } from "next"
 import { Inter, Poppins } from "next/font/google"
 import "./globals.css"
 import "./admin-glass.css"
-import { Toaster } from 'sonner'
+import { Toaster } from "sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { OG_IMAGE_PATH, siteConfig } from "@/lib/config"
+import SiteFooter from "@/components/SiteFooter"
+import {
+  jsonLdScriptProps,
+  organizationJsonLd,
+  webSiteJsonLd,
+} from "@/lib/schema"
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,10 +26,44 @@ const poppins = Poppins({
   display: "swap",
 })
 
+export const metadataBase = new URL(siteConfig.url)
+
+const defaultTitle = `${siteConfig.name} - Find Contract Manufacturers`
+const defaultDescription =
+  "Discover and connect with verified contract manufacturers worldwide. Search by location, capabilities, and certifications."
+const ogImageUrl = new URL(OG_IMAGE_PATH, metadataBase).toString()
+
 export const metadata: Metadata = {
-  title: "CM Directory - Find Contract Manufacturers",
-  description:
-    "Discover and connect with verified contract manufacturers worldwide. Search by location, capabilities, and certifications.",
+  metadataBase,
+  title: {
+    default: defaultTitle,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: defaultDescription,
+  alternates: {
+    canonical: siteConfig.url,
+  },
+  openGraph: {
+    title: siteConfig.name,
+    description: defaultDescription,
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    images: [
+      {
+        url: ogImageUrl,
+        width: 1200,
+        height: 630,
+        alt: siteConfig.name,
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.name,
+    description: defaultDescription,
+    images: [ogImageUrl],
+  },
 }
 
 export default function RootLayout({
@@ -30,9 +71,27 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const rootStructuredData = [organizationJsonLd, webSiteJsonLd]
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>{children}
+      <head>
+        {rootStructuredData.map((schema) => (
+          <script
+            key={schema["@type"]}
+            {...jsonLdScriptProps(schema)}
+          />
+        ))}
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title={`${siteConfig.name} Updates`}
+          href={`${siteConfig.url}/feed.xml`}
+        />
+      </head>
+      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
+        {children}
+        <SiteFooter />
         <SpeedInsights />
         <Toaster position="top-right" />
       </body>

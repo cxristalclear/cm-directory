@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { supabase } from '@/lib/supabase'
-import { getAbsoluteUrl, siteConfig } from '@/lib/config'
+import { getCanonicalUrl, siteConfig } from '@/lib/config'
 
 export async function generateMetadata({ 
   params 
@@ -53,7 +53,7 @@ export async function generateMetadata({
     .map((c: { capability_type: string }) => c.capability_type)
     .join(', ') || ''
   
-  const pageUrl = getAbsoluteUrl(`/companies/${slug}`)
+  const pageUrl = getCanonicalUrl(`/companies/${slug}`)
 
   const ogImages = typedCompany.logo_url
     ? [{ url: typedCompany.logo_url }]
