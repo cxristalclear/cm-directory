@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import Script from "next/script"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
@@ -11,12 +11,54 @@ import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import { siteConfig, featureFlags } from "@/lib/config"
-import AddCompanyCallout from '@/components/AddCompanyCallout'
+import AddCompanyCallout from "@/components/AddCompanyCallout"
+import type { PageProps } from "@/types/nxt"
+import type { HomepageCompany } from "@/types/homepage"
 
-// ⬇️ Added: app-level strict types + DB types
-import type { Company, Facility } from "@/types/company"
-import type { Database } from "@/lib/database.types"
-import { SpeedInsights } from "@vercel/speed-insights/next"
+export const revalidate = 300
+
+const COMPANY_FIELDS = `
+  id,
+  slug,
+  company_name,
+  dba_name,
+  description,
+  employee_count_range,
+  is_active,
+  website_url,
+  updated_at,
+  facilities (
+    id,
+    company_id,
+    city,
+    state,
+    country,
+    latitude,
+    longitude,
+    facility_type,
+    is_primary
+  ),
+  capabilities (
+    pcb_assembly_smt,
+    pcb_assembly_through_hole,
+    cable_harness_assembly,
+    box_build_assembly,
+    prototyping,
+    low_volume_production,
+    medium_volume_production,
+    high_volume_production
+  ),
+  certifications (
+    id,
+    certification_type
+  ),
+  industries (
+    id,
+    industry_name
+  )
+`
+
+const MAX_COMPANIES = 500
 
 export const metadata = {
   title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
@@ -49,97 +91,47 @@ const AdPlaceholder = ({ width, height, label, className = "" }: { width: string
   </div>
 )
 
-// ---------- DB Row Shapes (nullable from Supabase) ----------
-type DbFacility = Database["public"]["Tables"]["facilities"]["Row"]
-type DbCompany =
-  Database["public"]["Tables"]["companies"]["Row"] & {
-    facilities: DbFacility[] | null
-    capabilities: Database["public"]["Tables"]["capabilities"]["Row"][] | null
-    certifications: Database["public"]["Tables"]["certifications"]["Row"][] | null
-    industries: Database["public"]["Tables"]["industries"]["Row"][] | null
-  }
-
-// ---------- Normalizers (nullable -> strict app types) ----------
-function normalizeFacility(f: DbFacility, fallbackCompanyId: string): Facility {
-  // Ensure `company_id` is a string to satisfy the strict Facility type
-  return {
-    ...f,
-    company_id: (f.company_id ?? fallbackCompanyId ?? "") as string,
-  } as Facility
-}
-
-function normalizeCompany(c: DbCompany): Company {
-  // If your Company type has other non-null fields, set defaults here similarly.
-  const companyId: string = c.id ?? ""
-
-  return {
-    ...c,
-    facilities: (c.facilities ?? []).map((f) => normalizeFacility(f, companyId)),
-    capabilities: c.capabilities ?? [],
-    certifications: c.certifications ?? [],
-    industries: c.industries ?? [],
-  } as Company
-}
-
 // ---------- Data Fetch ----------
-async function getData(): Promise<DbCompany[]> {
+async function getData(): Promise<HomepageCompany[]> {
   try {
     const { data, error } = await supabase
       .from("companies")
-      .select(`
-        *,
-        facilities(*),
-        capabilities(*),
-        certifications(*),
-        industries(*)
-      `)
+      .select(COMPANY_FIELDS)
       .eq("is_active", true)
+      .order("updated_at", { ascending: false })
+      .limit(MAX_COMPANIES)
+      .returns<HomepageCompany[]>()
 
     if (error) {
-      console.error('Error fetching companies:', error)
+      console.error("Error fetching companies:", error)
       return []
     }
 
-    return (data ?? []) as DbCompany[]
+    return data ?? []
   } catch (error) {
-    console.error('Unexpected error fetching companies:', error)
+    console.error("Unexpected error fetching companies:", error)
     return []
   }
 }
 
+type HomeSearchParams = Record<string, string | string[] | undefined>
+
 export default async function Home({
   searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>
-}) {
-  const sp = await searchParams
-  const initialFilters = parseFiltersFromSearchParams(sp)
+}: PageProps<Record<string, string | string[]>, HomeSearchParams>) {
+  const resolvedSearchParams: HomeSearchParams = (await searchParams) ?? {}
+
+  const initialFilters = parseFiltersFromSearchParams(resolvedSearchParams)
 
   // Fetch DB rows (nullable), then normalize to strict app types once here.
-  const companiesDb = await getData()
-  const companies: Company[] = companiesDb.map(normalizeCompany)
+  const companies = await getData()
 
   return (
     <Suspense fallback={<div className="p-4">Loading…</div>}>
       <SpeedInsights />
-      {/* Website JSON-LD */}
-      <Script id="website-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{
-        __html: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: siteConfig.name,
-          url: siteConfig.url,
-          potentialAction: {
-            "@type": "SearchAction",
-            target: `${siteConfig.url}?q={search_term_string}`,
-            "query-input": "required name=search_term_string"
-          }
-        })
-      }} />
-      
       <FilterProvider initialFilters={initialFilters}>
         <div className="min-h-screen bg-gray-50">
-          <Header companies={companies} />
+          <Header />
 
           <main className="container mx-auto px-4 py-6">
             {/* Top Content Ad - Native/Sponsored */}
@@ -165,6 +157,7 @@ export default async function Home({
 
                 {/* Bottom Sidebar Ad */}
                 <AdPlaceholder width="100%" height="250px" label="Sidebar Skyscraper" />
+                <AddCompanyCallout className="mt-12" />
               </div>
 
               <div className="lg:col-span-9 space-y-4">
@@ -188,7 +181,6 @@ export default async function Home({
                     <CompanyList allCompanies={companies} />
                   </Suspense>
                 </div>
-                <AddCompanyCallout className="mt-12" />
                 {/* Bottom Content Ad */}
                 <div className="bg-white rounded-xl shadow-xl p-4">
                   <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide text-center">Sponsored</div>
