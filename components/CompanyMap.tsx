@@ -293,6 +293,18 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     }
   }, [addClusteringLayers, mapStyle])
 
+  const resetView = useCallback(() => {
+    if (map.current) {
+      map.current.flyTo({
+        center: [-98.5795, 39.8283],
+        zoom: 3.5,
+        pitch: 0,
+        bearing: 0,
+        duration: 1500,
+      })
+    }
+  }, [])
+
   // Update layers when facilities change AND map is ready
   useEffect(() => {
     if (!map.current || !isStyleLoaded || isLoading) {
@@ -360,18 +372,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       map.current.setStyle(newStyle)
     }
   }
-
-  const resetView = useCallback(() => {
-    if (map.current) {
-      map.current.flyTo({
-        center: [-98.5795, 39.8283],
-        zoom: 3.5,
-        pitch: 0,
-        bearing: 0,
-        duration: 1500,
-      })
-    }
-  }, [])
 
   // Show demo message if no token
   if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN === "pk.demo_token") {
