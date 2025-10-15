@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import AddCompanyButton from "@/components/AddCompanyButton"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { jsonLdScriptProps, type JsonLd } from "@/lib/schema"
+import { Building2 } from "lucide-react"
 
 const benefits = [
   {
@@ -172,19 +173,67 @@ export default function AddYourCompanyPage() {
     <div className="min-h-screen bg-gray-50">
       <script {...jsonLdScriptProps(howToSchema)} />
 
+      <section className="relative overflow-hidden">
+              <div className="gradient-bg">
+                {/* Top nav with home link */}
+                <nav className="relative z-10 border-b border-white/10">
+                  <div className="container mx-auto px-4 py-4">
+                    <div className="flex items-center justify-between">
+                      <Link href="/" className="flex items-center space-x-3">
+                        <div className="h-10 w-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                          <Building2 className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h1 className="font-sans text-xl font-bold text-white">CM Directory</h1>
+                          <p className="text-xs text-blue-100">Manufacturing Network</p>
+                        </div>
+                      </Link>
+      
+                      <div className="hidden md:flex items-center space-x-6">
+                        <Link
+                          href="/"
+                          className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/30"
+                        >
+                          Back to Directory
+                        </Link>
+                        <Link
+                          href="/add-your-company"
+                          className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/30"
+                        >
+                          Add Your Company
+                      </Link>
+                      </div>
+                    </div>
+                  </div>
+                </nav>
+      
+                {/* Hero copy */}
+                <div className="relative z-10 py-12 md:py-16 text-center">
+                  <div className="container mx-auto px-4">
+                    <span className="inline-flex items-center rounded-full bg-white/10 px-4 py-1 text-sm font-semibold uppercase tracking-wide text-blue-100">
+                      Become a verified supplier
+                    </span>
+                    <h1 className="mx-auto max-w-4xl font-sans text-4xl font-semibold leading-tight text-white md:text-5xl">
+                      Showcase your manufacturing team to electronics innovators
+                    </h1>
+                    <p className="mx-auto mt-4 max-w-3xl text-lg leading-relaxed text-blue-100">
+                CM Directory connects vetted EMS partners with hardware companies that are ready to place production orders. Share what you build, highlight compliance credentials, and win programs that match your line capabilities.
+                    </p>
+                  </div>
+                </div>
+      
+                {/* Decorative glow */}
+                <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                  <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+                  <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+                </div>
+              </div>
+            </section>
+
       <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
         <div className="container mx-auto px-4 py-16">
           <div className="grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-center">
             <div className="space-y-6">
-              <span className="inline-flex items-center rounded-full bg-white/10 px-4 py-1 text-sm font-semibold uppercase tracking-wide text-blue-100">
-                Become a verified supplier
-              </span>
-              <h1 className="text-4xl font-bold sm:text-5xl">
-                Showcase your manufacturing team to electronics innovators
-              </h1>
-              <p className="text-lg text-blue-100">
-                CM Directory connects vetted EMS partners with hardware companies that are ready to place production orders. Share what you build, highlight compliance credentials, and win programs that match your line capabilities.
-              </p>
               <ul className="grid gap-4 sm:grid-cols-2">
                 {benefits.map(benefit => (
                   <li
