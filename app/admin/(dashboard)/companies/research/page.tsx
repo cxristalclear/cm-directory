@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import CompanyForm from '@/components/admin/CompanyForm'
+import { createClient } from '@/lib/supabase-client'
+import AiCompanyResearch from '@/components/admin/AiCompanyResearch'
 import type { CompanyFormData } from '@/types/admin'
 import type { Database } from '@/lib/database.types'
 import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData } from '@/lib/admin/utils'
@@ -17,16 +17,13 @@ type CertificationInsert = Database['public']['Tables']['certifications']['Inser
 type TechnicalSpecsInsert = Database['public']['Tables']['technical_specs']['Insert']
 type BusinessInfoInsert = Database['public']['Tables']['business_info']['Insert']
 
-export default function AddCompanyPage() {
+export default function AiResearchPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   const handleSubmit = async (formData: CompanyFormData, isDraft: boolean) => {
     setLoading(true)
-
-    let createdCompanyId: string | null = null
-
     try {
       // Validate data
       const validation = validateCompanyData(formData)
@@ -50,7 +47,7 @@ export default function AddCompanyPage() {
         dba_name: formData.dba_name || null,
         slug: uniqueSlug,
         description: formData.description || null,
-        website_url: formData.website_url || '',
+        website_url: formData.website_url || '', // Empty string instead of null
         year_founded: formData.year_founded || null,
         employee_count_range: formData.employee_count_range || null,
         annual_revenue_range: formData.annual_revenue_range || null,
@@ -68,9 +65,6 @@ export default function AddCompanyPage() {
 
       if (companyError) throw companyError
       if (!company) throw new Error('Company creation failed')
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      createdCompanyId = company.id
 
       // Insert facilities
       if (formData.facilities && formData.facilities.length > 0) {
@@ -195,26 +189,27 @@ export default function AddCompanyPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="glass-card p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold gradient-text">Add Company</h1>
+            <h1 className="text-3xl font-semibold gradient-text">🤖 AI Company Research</h1>
             <p className="mt-2 text-sm text-[var(--text-muted)]">
-              Create a new company profile in the directory
+              Use AI to automatically research and populate company data
             </p>
           </div>
           <button
             type="button"
-            onClick={() => router.push('/admin/companies/research')}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            onClick={() => router.push('/admin/companies/add')}
+            className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
           >
-            <span>🤖</span>
-            AI Research Instead
+            Manual Entry Instead →
           </button>
         </div>
       </div>
 
-      <CompanyForm onSubmit={handleSubmit} loading={loading} />
+      {/* AI Research Component */}
+      <AiCompanyResearch onSaveCompany={handleSubmit} />
     </div>
   )
 }
