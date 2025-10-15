@@ -1,69 +1,155 @@
 import { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase'
-import { siteConfig } from '@/lib/config'
+import { getCanonicalUrl, siteConfig } from '@/lib/config'
+import { CAPABILITY_DEFINITIONS } from '@/lib/capabilities'
+import { CERTIFICATION_DIRECTORY } from '@/lib/certifications-data'
+import { getBuildTimestamp, toIsoString } from '@/lib/time'
+import { getStateMetadataByAbbreviation } from '@/lib/states'
+
+const buildTimestamp = getBuildTimestamp()
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = siteConfig.url
-  
-  // Fetch all companies
+
   const { data: companies } = await supabase
     .from('companies')
     .select('slug, updated_at')
     .eq('is_active', true)
-  
-  // Fetch unique states with companies
+
   const { data: facilities } = await supabase
     .from('facilities')
-    .select('state')
+    .select('state, updated_at')
     .not('state', 'is', null)
-  
-  type FacilityState = { state: string }
-  const typedFacilities = (facilities || []) as FacilityState[]
-  const uniqueStates = [...new Set(typedFacilities.map(f => f.state))]
-  
-  type CompanySlug = { slug: string; updated_at: string }
-  const typedCompanies = (companies || []) as CompanySlug[]
-  
-  // Build sitemap entries
-  const companyUrls = typedCompanies.map(company => ({
-    url: `${baseUrl}/companies/${company.slug}`,
-    lastModified: company.updated_at,
+
+  type CompanyRow = { slug: string | null; updated_at: string | null }
+  type FacilityRow = { state: string | null; updated_at: string | null }
+  type ValidCompany = { slug: string; updated_at: string | null }
+
+  const typedCompanies = (companies ?? []) as CompanyRow[]
+  const typedFacilities = (facilities ?? []) as FacilityRow[]
+
+  const validCompanies = typedCompanies.filter((company): company is ValidCompany => Boolean(company.slug))
+
+  const states = new Map<string, NonNullable<ReturnType<typeof getStateMetadataByAbbreviation>>>()
+  const latestFacilityTimestamp = new Map<string, number>()
+
+  for (const facility of typedFacilities) {
+    if (!facility.state) {
+      continue
+    }
+
+    const stateMetadata = getStateMetadataByAbbreviation(facility.state)
+    if (!stateMetadata) {
+      continue
+    }
+
+    states.set(stateMetadata.slug, stateMetadata)
+
+    if (!facility.updated_at) {
+      continue
+    }
+
+    const parsed = Date.parse(facility.updated_at)
+    if (Number.isNaN(parsed)) {
+      continue
+    }
+
+    const current = latestFacilityTimestamp.get(stateMetadata.slug)
+    if (current === undefined || parsed > current) {
+      latestFacilityTimestamp.set(stateMetadata.slug, parsed)
+    }
+  }
+
+  const fallbackTimestamp = buildTimestamp
+
+  const companyUrls = validCompanies.map(company => ({
+    url: getCanonicalUrl(`/companies/${company.slug}`),
+    lastModified: toIsoString(company.updated_at, fallbackTimestamp),
     changeFrequency: 'weekly' as const,
     priority: 0.8,
   }))
-  
-  const stateUrls = uniqueStates.map(state => ({
-    url: `${baseUrl}/manufacturers/${state.toLowerCase()}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }))
-  
-  return [
+
+  const stateUrls = Array.from(states.values()).map((stateMetadata) => {
+    const latestTimestamp = latestFacilityTimestamp.get(stateMetadata.slug)
+    const lastModified =
+      typeof latestTimestamp === 'number'
+        ? new Date(latestTimestamp).toISOString()
+        : fallbackTimestamp
+
+    return {
+      url: getCanonicalUrl(`/manufacturers/${stateMetadata.slug}`),
+      lastModified,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }
+  })
+
+  const evergreenPages = [
     {
       url: baseUrl,
-      lastModified: new Date(),
       changeFrequency: 'daily' as const,
       priority: 1,
     },
     {
-      url: `${baseUrl}/manufacturers`,
-      lastModified: new Date(),
+      url: getCanonicalUrl('/manufacturers'),
       changeFrequency: 'daily' as const,
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
+      url: getCanonicalUrl('/industries'),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
+    {
+      url: getCanonicalUrl('/about'),
       changeFrequency: 'monthly' as const,
       priority: 0.5,
     },
     {
-      url: `${baseUrl}/add-your-company`,
-      lastModified: new Date(),
+      url: getCanonicalUrl('/add-your-company'),
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     },
+    {
+      url: getCanonicalUrl('/capabilities'),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
+    {
+      url: getCanonicalUrl('/pcb-assembly-manufacturers'),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
+    {
+      url: getCanonicalUrl('/certifications'),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    },
+  ]
+
+  const capabilityUrls = CAPABILITY_DEFINITIONS.map(capability => ({
+    url: getCanonicalUrl(`/capabilities/${capability.slug}`),
+    lastModified: buildTimestamp,
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }))
+
+  const certificationUrls = Object.values(CERTIFICATION_DIRECTORY).map(certification => ({
+    url: getCanonicalUrl(`/certifications/${certification.slug}`),
+    lastModified: buildTimestamp,
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }))
+
+  const evergreenUrls = evergreenPages.map(page => ({
+    ...page,
+    lastModified: buildTimestamp,
+  }))
+
+  return [
+    ...evergreenUrls,
+    ...capabilityUrls,
+    ...certificationUrls,
     ...companyUrls,
     ...stateUrls,
   ]

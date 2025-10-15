@@ -1,16 +1,23 @@
-import type { Company, FilterState, Facility } from '../types/company'
-import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
+import type { FilterState } from "../types/company"
+import type { HomepageCompany, HomepageFacility } from "@/types/homepage"
+import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 
 /**
  * Filter companies based on all filter criteria
  */
-export function filterCompanies(companies: Company[], filters: FilterState): Company[] {
+export function filterCompanies(
+  companies: HomepageCompany[],
+  filters: FilterState,
+): HomepageCompany[] {
   let filtered = [...companies]
 
   // Countries filter
   if (filters.countries.length > 0) {
-    filtered = filtered.filter((company) => 
-      company.facilities?.some((f) => filters.countries.includes(f.country || 'US'))
+    filtered = filtered.filter((company) =>
+      company.facilities?.some((f) => {
+        if (!f.country) return false
+        return filters.countries.includes(f.country)
+      })
     )
   }
 
@@ -75,16 +82,17 @@ export function filterCompanies(companies: Company[], filters: FilterState): Com
  * This ensures only facilities matching the selected locations are displayed
  */
 export function filterFacilitiesByLocation(
-  facilities: Facility[],
+  facilities: HomepageFacility[],
   filters: FilterState
-): Facility[] {
+): HomepageFacility[] {
   let filtered = [...facilities]
 
   // Apply country filter to facilities
   if (filters.countries.length > 0) {
-    filtered = filtered.filter((facility) =>
-      filters.countries.includes(facility.country || 'US')
-    )
+    filtered = filtered.filter((facility) => {
+      if (!facility.country) return false
+      return filters.countries.includes(facility.country)
+    })
   }
 
   // Apply state filter to facilities
@@ -102,10 +110,10 @@ export function filterFacilitiesByLocation(
  * Use this when you need to display only facilities that match location filters
  * This is the KEY function that solves the "showing all locations" problem
  */
-export function getLocationFilteredFacilities<T extends Facility>(
-  companies: Company[],
+export function getLocationFilteredFacilities<T extends HomepageFacility>(
+  companies: HomepageCompany[],
   filters: FilterState,
-  facilitiesMapper: (company: Company, facility: Facility) => T
+  facilitiesMapper: (company: HomepageCompany, facility: HomepageFacility) => T
 ): T[] {
   // First filter companies by all criteria (countries, states, capabilities, volume)
   const filteredCompanies = filterCompanies(companies, filters)

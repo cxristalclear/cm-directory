@@ -3,14 +3,14 @@
 import { useState, useMemo } from 'react'
 import { useFilters } from '../contexts/FilterContext'
 import { ChevronDown, X, Filter, MapPin, Globe, Settings, Layers } from 'lucide-react'
-import type { Company } from '../types/company'
+import type { HomepageCompany } from '@/types/company'
 import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
 import { getStateName } from '../utils/stateMapping'
 
 type FilterSection = 'countries' | 'states' | 'capabilities' | 'volume'
 
 interface FilterSidebarProps {
-  allCompanies: Company[]
+  allCompanies: HomepageCompany[]
 }
 
 // Country names mapping
@@ -66,8 +66,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
 
     allCompanies.forEach(company => {
       // Pre-calculate matching for each filter type (exclude itself)
-      const matchesCountries = filters.countries.length === 0 || 
-        company.facilities?.some(f => filters.countries.includes(f.country || 'US'))
+      const matchesCountries = filters.countries.length === 0 ||
+        company.facilities?.some(f => {
+          if (!f.country) return false
+          return filters.countries.includes(f.country)
+        })
 
       const matchesStates = filters.states.length === 0 ||
         company.facilities?.some(f =>
@@ -101,7 +104,8 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       // Count COUNTRIES (exclude countries filter)
       if (matchesStates && matchesCapabilities && matchesVolume) {
         company.facilities?.forEach(facility => {
-          const country = facility.country || 'US'
+          if (!facility.country) return
+          const country = facility.country
           counts.countries.set(country, (counts.countries.get(country) || 0) + 1)
         })
       }
@@ -109,7 +113,8 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       // Count STATES (exclude states filter)
       if (matchesCountries && matchesCapabilities && matchesVolume) {
         company.facilities?.forEach(facility => {
-          if (filters.countries.length === 0 || filters.countries.includes(facility.country || 'US')) {
+          if (!facility.country) return
+          if (filters.countries.length === 0 || filters.countries.includes(facility.country)) {
             if (facility.state) {
               counts.states.set(facility.state, (counts.states.get(facility.state) || 0) + 1)
             }

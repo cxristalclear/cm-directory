@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Building2 } from "lucide-react";
-import AddCompanyButton from "@/components/AddCompanyButton";
 
 export const metadata: Metadata = {
   title: "About | Contract Manufacturer Directory",
@@ -37,7 +36,12 @@ export default function AboutPage() {
                   >
                     Back to Directory
                   </Link>
-                  <AddCompanyButton variant="secondary" />
+                  <Link
+                    href="/add-your-company"
+                    className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/30"
+                  >
+                    Add Your Company
+                </Link>
                 </div>
               </div>
             </div>
