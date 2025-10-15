@@ -6,18 +6,19 @@ import "mapbox-gl/dist/mapbox-gl.css"
 import { useFilters } from "../contexts/FilterContext"
 import { MapPin, RotateCcw } from "lucide-react"
 import type { FeatureCollection, Point } from "geojson"
-import type { Company, FacilityWithCompany } from "../types/company"
+import type { HomepageCompany, HomepageFacilityWithCompany } from "@/types/homepage"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 import { filterCompanies, getLocationFilteredFacilities } from "../utils/filtering"
+import { getFallbackBounds } from "../utils/locationBounds"
 import { useDebounce } from "../hooks/useDebounce"
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
 interface CompanyMapProps {
-  allCompanies: Company[]
+  allCompanies: HomepageCompany[]
 }
 
-type FacilityWithCoordinates = FacilityWithCompany & {
+type FacilityWithCoordinates = HomepageFacilityWithCompany & {
   latitude: number
   longitude: number
 }
@@ -83,13 +84,14 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     if (!map.current) return
 
     const facilities = facilitiesToAdd || currentFacilitiesRef.current
-    if (facilities.length === 0) return
 
     // Remove existing layers and source if they exist
     if (map.current.getLayer('clusters')) map.current.removeLayer('clusters')
     if (map.current.getLayer('cluster-count')) map.current.removeLayer('cluster-count')
     if (map.current.getLayer('unclustered-point')) map.current.removeLayer('unclustered-point')
     if (map.current.getSource('facilities')) map.current.removeSource('facilities')
+
+    if (facilities.length === 0) return
 
     // Create GeoJSON from facilities
     const geojson: FeatureCollection<Point, FacilityFeatureProperties> = {
@@ -291,42 +293,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     }
   }, [addClusteringLayers, mapStyle])
 
-  // Update layers when facilities change AND map is ready
-  useEffect(() => {
-    if (!map.current || !isStyleLoaded || isLoading || filteredFacilities.facilities.length === 0) {
-      return
-    }
-
-    addClusteringLayers(filteredFacilities.facilities)
-
-    // Fit bounds to show all facilities
-    if (filteredFacilities.facilities.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds()
-      filteredFacilities.facilities.forEach((facility) => {
-        bounds.extend([facility.longitude, facility.latitude])
-      })
-
-      setTimeout(() => {
-        if (map.current) {
-          map.current.fitBounds(bounds, {
-            padding: { top: 50, bottom: 50, left: 50, right: 50 },
-            maxZoom: 10,
-            duration: 1000,
-          })
-        }
-      }, 100)
-    }
-  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers])
-
-  const handleStyleChange = (newStyle: string) => {
-    if (map.current && newStyle !== mapStyle) {
-      setMapStyle(newStyle)
-      setIsStyleLoaded(false)
-      map.current.setStyle(newStyle)
-    }
-  }
-
-  const resetView = () => {
+  const resetView = useCallback(() => {
     if (map.current) {
       map.current.flyTo({
         center: [-98.5795, 39.8283],
@@ -335,6 +302,74 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         bearing: 0,
         duration: 1500,
       })
+    }
+  }, [])
+
+  // Update layers when facilities change AND map is ready
+  useEffect(() => {
+    if (!map.current || !isStyleLoaded || isLoading) {
+      return
+    }
+
+    addClusteringLayers(filteredFacilities.facilities)
+
+    if (filteredFacilities.facilities.length === 0) {
+      const fallback = getFallbackBounds(filters)
+
+      if (!map.current) {
+        return
+      }
+
+      if (fallback) {
+        if (fallback.selectionCount > 1) {
+          map.current.fitBounds(fallback.bounds, {
+            padding: { top: 50, bottom: 50, left: 50, right: 50 },
+            maxZoom: 8,
+            duration: 1000,
+          })
+        } else {
+          map.current.flyTo({
+            center: fallback.center,
+            zoom: fallback.zoom,
+            duration: 1200,
+          })
+        }
+      } else {
+        resetView()
+      }
+
+      return
+    }
+
+    // Fit bounds to show all facilities
+    const bounds = new mapboxgl.LngLatBounds()
+    filteredFacilities.facilities.forEach((facility) => {
+      bounds.extend([facility.longitude, facility.latitude])
+    })
+
+    setTimeout(() => {
+      if (map.current) {
+        map.current.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+          maxZoom: 10,
+          duration: 1000,
+        })
+      }
+    }, 100)
+  }, [
+    filteredFacilities.facilities,
+    isStyleLoaded,
+    isLoading,
+    addClusteringLayers,
+    filters,
+    resetView,
+  ])
+
+  const handleStyleChange = (newStyle: string) => {
+    if (map.current && newStyle !== mapStyle) {
+      setMapStyle(newStyle)
+      setIsStyleLoaded(false)
+      map.current.setStyle(newStyle)
     }
   }
 

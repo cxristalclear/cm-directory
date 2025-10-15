@@ -6,72 +6,55 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { getAbsoluteUrl, siteConfig } from "@/lib/config"
+import { getCanonicalUrl, siteConfig } from "@/lib/config"
+import {
+  createCollectionPageJsonLd,
+  jsonLdScriptProps,
+} from "@/lib/schema"
+import {
+  getAllStateMetadata,
+  getStateMetadataBySlug,
+  stateSlugFromAbbreviation,
+} from "@/lib/states"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
-// State data with SEO-friendly names and info
-const STATE_DATA: Record<string, {
-  name: string
-  abbreviation: string
-  fullName: string
-  description: string
-  majorCities: string[]
-}> = {
-  'california': {
-    name: 'California',
-    abbreviation: 'CA',
-    fullName: 'California',
-    description: 'Silicon Valley and Southern California host advanced electronics and medical device manufacturers',
-    majorCities: ['Los Angeles', 'San Diego', 'San Jose', 'San Francisco']
-  },
-  'texas': {
-    name: 'Texas',
-    abbreviation: 'TX',
-    fullName: 'Texas',
-    description: 'Major manufacturing hub with aerospace, defense, and energy sector specializations',
-    majorCities: ['Houston', 'Dallas', 'Austin', 'San Antonio']
-  },
-  'ohio': {
-    name: 'Ohio',
-    abbreviation: 'OH',
-    fullName: 'Ohio',
-    description: 'Traditional manufacturing powerhouse with automotive and industrial expertise',
-    majorCities: ['Columbus', 'Cleveland', 'Cincinnati', 'Dayton']
-  },
-  'michigan': {
-    name: 'Michigan',
-    abbreviation: 'MI',
-    fullName: 'Michigan',
-    description: 'Automotive manufacturing capital with growing medical device and aerospace sectors',
-    majorCities: ['Detroit', 'Grand Rapids', 'Warren', 'Sterling Heights']
-  },
-  // Add more states as needed
+const cityListFormatter = new Intl.ListFormat("en-US", {
+  style: "long",
+  type: "conjunction",
+})
+
+const formatCityList = (cities: string[]): string | null => {
+  if (cities.length === 0) {
+    return null
+  }
+
+  return cityListFormatter.format(cities)
 }
 
 // Generate static params for all states
 export async function generateStaticParams() {
-  // Get unique states from your database
   const { data: facilities } = await supabase
-    .from('facilities')
-    .select('state')
-    .not('state', 'is', null)
+    .from("facilities")
+    .select("state")
+    .not("state", "is", null)
 
   type FacilityState = { state: string }
   const typedFacilities = (facilities || []) as FacilityState[]
 
-  const uniqueStates = [
-    ...new Set(
-      typedFacilities
-        .map((facility) => facility.state)
-        .filter((state): state is string => typeof state === 'string' && state.length > 0)
-        .map((state) => state.toLowerCase()),
-    ),
-  ]
+  const uniqueSlugs = new Set<string>()
 
-  return uniqueStates
-    .filter((state) => STATE_DATA[state]) // Only states we have data for
-    .map((state) => ({ state }))
+  typedFacilities
+    .map((facility) => facility.state)
+    .filter((state): state is string => typeof state === "string" && state.length > 0)
+    .forEach((state) => {
+      const slug = stateSlugFromAbbreviation(state)
+      if (slug) {
+        uniqueSlugs.add(slug)
+      }
+    })
+
+  return Array.from(uniqueSlugs).map((state) => ({ state }))
 }
 
 // Generate metadata for SEO
@@ -81,43 +64,41 @@ export async function generateMetadata({
   params: Promise<{ state: string }>
 }): Promise<Metadata> {
   const { state } = await params
-  const stateData = STATE_DATA[state.toLowerCase()]
-  
-  if (!stateData) {
+  const stateMetadata = getStateMetadataBySlug(state)
+
+  if (!stateMetadata) {
     return {
-      title: 'State Not Found | CM Directory',
-      description: 'The requested state page could not be found.'
+      title: "State Not Found | CM Directory",
+      description: "The requested state page could not be found.",
     }
   }
-  
-  // Get company count for this state
-  const { count } = await supabase
-    .from('facilities')
-    .select('*', { count: 'exact', head: true })
-    .eq('state', stateData.abbreviation)
 
-  const pageUrl = getAbsoluteUrl(`/manufacturers/${state}`)
-  const manufacturersIndexUrl = getAbsoluteUrl('/manufacturers')
-  const homeUrl = getAbsoluteUrl('/')
+  const { count } = await supabase
+    .from("facilities")
+    .select("*", { count: "exact", head: true })
+    .eq("state", stateMetadata.abbreviation)
+
+  const companyCount = count ?? 0
+  const countLabel = companyCount > 0 ? `${companyCount}+ ` : ""
+
+  const pageUrl = getCanonicalUrl(`/manufacturers/${stateMetadata.slug}`)
 
   return {
-    title: `Contract Manufacturers in ${stateData.fullName} | ${count || 0}+ Verified Companies`,
-    description: `Find ${count || ''} verified contract manufacturers in ${stateData.fullName}. ${stateData.description}. Compare capabilities, certifications, and get quotes from local manufacturing partners.`,
-
+    title: `Contract Manufacturers in ${stateMetadata.name} | ${companyCount}+ Verified Companies`,
+    description: `Find ${countLabel}verified contract manufacturers in ${stateMetadata.name}. Compare capabilities, certifications, and connect with local manufacturing partners.`,
     openGraph: {
-      title: `${stateData.fullName} Contract Manufacturers Directory`,
-      description: `Browse verified contract manufacturers in ${stateData.fullName}. ${stateData.description}`,
-      type: 'website',
+      title: `${stateMetadata.name} Contract Manufacturers Directory`,
+      description: `Browse verified contract manufacturers in ${stateMetadata.name}. Compare capabilities, certifications, and supplier experience.`,
+      type: "website",
       url: pageUrl,
       siteName: siteConfig.name,
       images: [
         {
           url: siteConfig.ogImage,
-          alt: `${stateData.fullName} Contract Manufacturers Directory`,
+          alt: `${stateMetadata.name} Contract Manufacturers Directory`,
         },
       ],
     },
-
     alternates: {
       canonical: pageUrl,
     },
@@ -133,21 +114,24 @@ export default async function StateManufacturersPage({
 }) {
   const [{ state }, sp] = await Promise.all([params, searchParams])
   const urlFilters = parseFiltersFromSearchParams(sp)
-  const stateData = STATE_DATA[state.toLowerCase()]
+  const stateMetadata = getStateMetadataBySlug(state)
+
+  if (!stateMetadata) {
+    notFound()
+  }
+
   const initialFilters = {
     countries: urlFilters.countries.length > 0 ? urlFilters.countries : [],
-    states: urlFilters.states.length > 0 ? urlFilters.states : [stateData.abbreviation],
+    states:
+      urlFilters.states.length > 0
+        ? urlFilters.states
+        : [stateMetadata.abbreviation],
     capabilities: urlFilters.capabilities,
     productionVolume: urlFilters.productionVolume,
   }
 
-  if (!stateData) {
-    notFound()
-  }
-  
-  // Fetch all companies in this state
   const { data } = await supabase
-    .from('companies')
+    .from("companies")
     .select(`
       *,
       facilities!inner (
@@ -159,12 +143,11 @@ export default async function StateManufacturersPage({
       certifications (certification_type),
       industries (industry_name)
     `)
-    .eq('facilities.state', stateData.abbreviation)
-    .eq('is_active', true)
+    .eq("facilities.state", stateMetadata.abbreviation)
+    .eq("is_active", true)
 
   const companies: Company[] = (data ?? []) as Company[]
-  
-  // Type for aggregation
+
   type CompanyWithTypedRelations = {
     facilities: Array<{ city: string | null }> | null
     capabilities: Array<{
@@ -172,90 +155,109 @@ export default async function StateManufacturersPage({
       cable_harness_assembly: boolean | null
       box_build_assembly: boolean | null
     }> | null
-    certifications: Array<{ certification_type: string }> | null
+    certifications: Array<{ certification_type: string | null }> | null
   }
-  
-  // Get aggregated stats
+
+  const certificationSet = new Set<string>()
+  const capabilitySet = new Set<string>()
+  const cityCounts = new Map<string, number>()
+
+  companies.forEach((company) => {
+    const typedCompany = company as unknown as CompanyWithTypedRelations
+
+    typedCompany.certifications?.forEach((certification) => {
+      const name = certification?.certification_type
+      if (typeof name === "string" && name.length > 0) {
+        certificationSet.add(name)
+      }
+    })
+
+    typedCompany.capabilities?.forEach((capability) => {
+      if (capability?.pcb_assembly_smt) {
+        capabilitySet.add("SMT Assembly")
+      }
+      if (capability?.cable_harness_assembly) {
+        capabilitySet.add("Cable Assembly")
+      }
+      if (capability?.box_build_assembly) {
+        capabilitySet.add("Box Build")
+      }
+    })
+
+    typedCompany.facilities?.forEach((facility) => {
+      const city = facility?.city?.trim()
+      if (!city) {
+        return
+      }
+
+      cityCounts.set(city, (cityCounts.get(city) ?? 0) + 1)
+    })
+  })
+
+  const sortedCities = Array.from(cityCounts.entries())
+    .sort((a, b) => {
+      if (b[1] !== a[1]) {
+        return b[1] - a[1]
+      }
+
+      return a[0].localeCompare(b[0])
+    })
+    .map(([city]) => city)
+
   const stats = {
     totalCompanies: companies.length,
-    certifications: [
-      ...new Set(
-        companies.flatMap((company) => {
-          const typedCompany = company as unknown as CompanyWithTypedRelations
-          return (typedCompany.certifications ?? [])
-            .map((certification) => certification?.certification_type)
-            .filter((cert): cert is string => typeof cert === 'string' && cert.length > 0)
-        }),
-      ),
-    ],
-    capabilities: [
-      ...new Set(
-        companies.flatMap((company) => {
-          const typedCompany = company as unknown as CompanyWithTypedRelations
-          const cap = typedCompany.capabilities?.[0]
-          const caps: string[] = []
-          if (cap?.pcb_assembly_smt) caps.push('SMT Assembly')
-          if (cap?.cable_harness_assembly) caps.push('Cable Assembly')
-          if (cap?.box_build_assembly) caps.push('Box Build')
-          return caps
-        }),
-      ),
-    ],
-    cities: [
-      ...new Set(
-        companies.flatMap((company) => {
-          const typedCompany = company as unknown as CompanyWithTypedRelations
-          return (typedCompany.facilities ?? [])
-            .map((facility) => facility?.city)
-            .filter((city): city is string => typeof city === 'string' && city.length > 0)
-        }),
-      ),
-    ],
+    certifications: Array.from(certificationSet),
+    capabilities: Array.from(capabilitySet),
+    cities: sortedCities,
   }
-  
-  // Schema for state page
-  const pageUrl = getAbsoluteUrl(`/manufacturers/${state}`)
-  const manufacturersIndexUrl = getAbsoluteUrl('/manufacturers')
-  const homeUrl = getAbsoluteUrl('/')
-  const stateSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: `Contract Manufacturers in ${stateData.fullName}`,
-    description: stateData.description,
-    url: pageUrl,
+
+  const highlightedCities = stats.cities.slice(0, 4)
+  const highlightedCitiesDescription = formatCityList(highlightedCities)
+
+  const heroDescriptionParts = [
+    `Discover verified electronics manufacturing partners across ${stateMetadata.name}.`,
+    highlightedCitiesDescription
+      ? `Key hubs include ${highlightedCitiesDescription}.`
+      : undefined,
+  ].filter(Boolean) as string[]
+
+  const heroDescription = heroDescriptionParts.join(" ")
+
+  const overviewIntro =
+    stats.totalCompanies > 0
+      ? `${stateMetadata.name} is home to ${stats.totalCompanies} contract manufacturers serving diverse industries including aerospace, medical devices, automotive, and consumer electronics.`
+      : `${stateMetadata.name} manufacturers support aerospace, medical device, automotive, and consumer electronics programs across the region.`
+
+  const overviewParagraph = `${overviewIntro}${
+    highlightedCitiesDescription
+      ? ` Major manufacturing centers include ${highlightedCitiesDescription}.`
+      : ""
+  }`
+
+  const canonicalUrl = getCanonicalUrl(`/manufacturers/${stateMetadata.slug}`)
+  const manufacturersIndexUrl = getCanonicalUrl("/manufacturers")
+  const homeUrl = getCanonicalUrl("/")
+
+  const stateSchema = createCollectionPageJsonLd({
+    name: `Contract Manufacturers in ${stateMetadata.name}`,
+    description: heroDescription || undefined,
+    url: canonicalUrl,
     numberOfItems: stats.totalCompanies,
-    breadcrumb: {
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        {
-          '@type': 'ListItem',
-          position: 1,
-          name: 'Home',
-          item: homeUrl,
-        },
-        {
-          '@type': 'ListItem',
-          position: 2,
-          name: 'Manufacturers',
-          item: manufacturersIndexUrl,
-        },
-        {
-          '@type': 'ListItem',
-          position: 3,
-          name: stateData.fullName,
-          item: pageUrl,
-        }
-      ]
-    }
-  }
-  
+    breadcrumbs: [
+      { name: "Home", url: homeUrl },
+      { name: "Manufacturers", url: manufacturersIndexUrl },
+      { name: stateMetadata.name, url: canonicalUrl },
+    ],
+  })
+
+  const relatedStates = getAllStateMetadata()
+    .filter((metadata) => metadata.slug !== stateMetadata.slug)
+    .slice(0, 8)
+
   return (
     <FilterProvider initialFilters={initialFilters}>
       <>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(stateSchema) }}
-        />
+        <script {...jsonLdScriptProps(stateSchema)} />
 
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
           {/* Hero Section */}
@@ -267,23 +269,25 @@ export default async function StateManufacturersPage({
               <span>/</span>
               <Link href="/manufacturers" className="hover:text-white">Manufacturers</Link>
               <span>/</span>
-              <span className="text-white">{stateData.fullName}</span>
+              <span className="text-white">{stateMetadata.name}</span>
             </nav>
-            
+
             <div className="flex items-start gap-4 mb-6">
               <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-2xl font-semibold">
-                {stateData.abbreviation}
+                {stateMetadata.abbreviation}
               </div>
               <div>
                 <h1 className="text-4xl font-bold mb-3">
-                  Contract Manufacturers in {stateData.fullName}
+                  Contract Manufacturers in {stateMetadata.name}
                 </h1>
-                <p className="text-xl text-blue-100 max-w-3xl">
-                  {stateData.description}
-                </p>
+                {heroDescription && (
+                  <p className="text-xl text-blue-100 max-w-3xl">
+                    {heroDescription}
+                  </p>
+                )}
               </div>
             </div>
-            
+
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
@@ -305,45 +309,42 @@ export default async function StateManufacturersPage({
             </div>
           </div>
         </div>
-        
+
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
           {/* SEO Content Section */}
           <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
             <h2 className="text-2xl font-bold mb-4">
-              Finding Contract Manufacturers in {stateData.fullName}
+              Finding Contract Manufacturers in {stateMetadata.name}
             </h2>
             <div className="prose max-w-none text-gray-700">
               <p>
-                {stateData.fullName} is home to {stats.totalCompanies} contract manufacturers 
-                serving diverse industries including aerospace, medical devices, automotive, 
-                and consumer electronics. Major manufacturing centers include{' '}
-                {stateData.majorCities.slice(0, 3).join(', ')}, and {stateData.majorCities[3]}.
+                {overviewParagraph}
               </p>
-              
+
               <h3 className="text-lg font-semibold mt-6 mb-3">Key Manufacturing Capabilities</h3>
               <p>
-                Contract manufacturers in {stateData.fullName} offer a comprehensive range of services
+                Contract manufacturers in {stateMetadata.name} offer a comprehensive range of services
                 including PCB assembly, cable harness manufacturing, box build assembly, and full
                 turnkey production. Many facilities maintain certifications such as ISO 9001,
                 ISO 13485 for medical devices, and AS9100 for aerospace applications.
               </p>
-              
+
               <h3 className="text-lg font-semibold mt-6 mb-3">Industries Served</h3>
               <p>
-                The state&apos;s manufacturing sector supports critical industries with specialized requirements. From prototype development to high-volume production, {stateData.fullName}&apos;s contract manufacturers provide scalable solutions for companies of all sizes.
+                The state’s manufacturing sector supports critical industries with specialized requirements. From prototype development to high-volume production, {stateMetadata.name}’s contract manufacturers provide scalable solutions for companies of all sizes.
               </p>
             </div>
-            
+
             {/* Popular Cities */}
             {stats.cities.length > 0 && (
               <div className="mt-8 pt-8 border-t">
-                <h3 className="font-semibold mb-4">Manufacturing Hubs in {stateData.fullName}</h3>
+                <h3 className="font-semibold mb-4">Manufacturing Hubs in {stateMetadata.name}</h3>
                 <div className="flex flex-wrap gap-2">
                   {stats.cities.slice(0, 10).map(city => (
                     <Link
                       key={city}
-                      href={`/manufacturers/${state}/${city.toLowerCase().replace(/\s+/g, '-')}`}
+                      href={`/manufacturers/${stateMetadata.slug}/${city.toLowerCase().replace(/\s+/g, '-')}`}
                       className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
                     >
                       {city}
@@ -354,17 +355,17 @@ export default async function StateManufacturersPage({
               </div>
             )}
           </div>
-          
+
           {/* Company Listings */}
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              All Manufacturers in {stateData.fullName}
+              All Manufacturers in {stateMetadata.name}
             </h2>
             <p className="text-gray-600">
               Browse {stats.totalCompanies} verified contract manufacturers below
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-4">
               <FilterSidebar allCompanies={companies || []} />
@@ -378,19 +379,16 @@ export default async function StateManufacturersPage({
           <div className="mt-12 bg-white rounded-xl shadow-sm p-8">
             <h2 className="text-xl font-bold mb-4">Explore Other States</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(STATE_DATA)
-                .filter(([key]) => key !== state.toLowerCase())
-                .slice(0, 8)
-                .map(([stateKey, data]) => (
-                  <Link
-                    key={stateKey}
-                    href={`/manufacturers/${stateKey}`}
-                    className="p-4 border rounded-lg hover:border-blue-500 hover:shadow-md transition-all"
-                  >
-                    <div className="font-semibold text-gray-900">{data.name}</div>
-                    <div className="text-sm text-gray-500 mt-1">View manufacturers →</div>
-                  </Link>
-                ))}
+              {relatedStates.map((metadata) => (
+                <Link
+                  key={metadata.slug}
+                  href={`/manufacturers/${metadata.slug}`}
+                  className="p-4 border rounded-lg hover:border-blue-500 hover:shadow-md transition-all"
+                >
+                  <div className="font-semibold text-gray-900">{metadata.name}</div>
+                  <div className="text-sm text-gray-500 mt-1">View manufacturers →</div>
+                </Link>
+              ))}
             </div>
           </div>
         </div>

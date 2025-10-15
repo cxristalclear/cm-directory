@@ -5,66 +5,57 @@ import Link from "next/link"
 import { Award, Building2, ChevronRight, MapPin, Users } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
-import type { Company } from "@/types/company"
+import type { HomepageCompany } from "@/types/company"
 import { filterCompanies } from "@/utils/filtering"
-import Pagination from "./Pagination"
 
 interface CompanyListProps {
-  allCompanies: Company[]
+  allCompanies: HomepageCompany[]
   limit?: number
 }
 
 const DEFAULT_LIMIT = 12 // Increased from 9 for better pagination
 
-function createSummary(totalCount: number, visibleCount: number, currentPage: number, totalPages: number): string {
+function createSummary(totalCount: number, visibleCount: number): string {
   if (totalCount === 0) {
     return "No results"
   }
 
-  if (currentPage === totalPages && visibleCount === totalCount) {
+  if (visibleCount >= totalCount) {
     return `${totalCount} results`
   }
 
-  const startIndex = (currentPage - 1) * DEFAULT_LIMIT + 1
-  const endIndex = Math.min(currentPage * DEFAULT_LIMIT, totalCount)
-
-  return `Showing ${startIndex}-${endIndex} of ${totalCount} results`
+  return `Showing ${visibleCount} of ${totalCount} results`
 }
 
 export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: CompanyListProps) {
   const { filters, setFilteredCount } = useFilters()
-  const [currentPage, setCurrentPage] = useState(1)
+  const [pagesLoaded, setPagesLoaded] = useState(1)
 
   const filteredCompanies = useMemo(() => {
     return filterCompanies(allCompanies, filters)
   }, [allCompanies, filters])
 
-  // Reset to page 1 when filters change
+  // Reset to the first set of results when filters change
   useEffect(() => {
-    setCurrentPage(1)
+    setPagesLoaded(1)
   }, [filters])
 
   useEffect(() => {
     setFilteredCount(filteredCompanies.length)
   }, [filteredCompanies.length, setFilteredCount])
 
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredCompanies.length / limit)
-  const startIndex = (currentPage - 1) * limit
-  const endIndex = startIndex + limit
-  const visibleCompanies = filteredCompanies.slice(startIndex, endIndex)
-  const summary = createSummary(filteredCompanies.length, visibleCompanies.length, currentPage, totalPages)
-
-  // Scroll to top when page changes
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage)
-    
-    // Smooth scroll to top of company list
-    const element = document.querySelector('.companies-directory')
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const totalPages = Math.max(1, Math.ceil(filteredCompanies.length / limit))
+  useEffect(() => {
+    if (pagesLoaded > totalPages) {
+      setPagesLoaded(totalPages)
     }
-  }
+  }, [pagesLoaded, totalPages])
+
+  const visibleCompanies = useMemo(() => {
+    return filteredCompanies.slice(0, pagesLoaded * limit)
+  }, [filteredCompanies, pagesLoaded, limit])
+  const summary = createSummary(filteredCompanies.length, visibleCompanies.length)
+  const canLoadMore = pagesLoaded < totalPages
 
   if (filteredCompanies.length === 0) {
     return (
@@ -226,13 +217,16 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
         })}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+      {canLoadMore && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setPagesLoaded(prev => Math.min(prev + 1, totalPages))}
+            className="inline-flex items-center rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          >
+            Load more manufacturers
+          </button>
+        </div>
       )}
     </div>
   )

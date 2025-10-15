@@ -5,8 +5,17 @@ import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import CompanyForm from '@/components/admin/CompanyForm'
 import type { CompanyFormData } from '@/types/admin'
+import type { Database } from '@/lib/database.types'
 import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData } from '@/lib/admin/utils'
 import { toast } from 'sonner'
+
+type CompanyInsert = Database['public']['Tables']['companies']['Insert']
+type FacilityInsert = Database['public']['Tables']['facilities']['Insert']
+type CapabilitiesInsert = Database['public']['Tables']['capabilities']['Insert']
+type IndustryInsert = Database['public']['Tables']['industries']['Insert']
+type CertificationInsert = Database['public']['Tables']['certifications']['Insert']
+type TechnicalSpecsInsert = Database['public']['Tables']['technical_specs']['Insert']
+type BusinessInfoInsert = Database['public']['Tables']['business_info']['Insert']
 
 export default function AddCompanyPage() {
   const [loading, setLoading] = useState(false)
@@ -36,33 +45,36 @@ export default function AddCompanyPage() {
       const uniqueSlug = await ensureUniqueSlug(supabase, baseSlug)
 
       // Insert company
+      const companyInsert: CompanyInsert = {
+        company_name: formData.company_name,
+        dba_name: formData.dba_name || null,
+        slug: uniqueSlug,
+        description: formData.description || null,
+        website_url: formData.website_url || '',
+        year_founded: formData.year_founded || null,
+        employee_count_range: formData.employee_count_range || null,
+        annual_revenue_range: formData.annual_revenue_range || null,
+        key_differentiators: formData.key_differentiators || null,
+        is_active: !isDraft,
+        is_verified: formData.is_verified || false,
+        verified_until: formData.verified_until || null,
+      }
+
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .insert({
-          company_name: formData.company_name,
-          dba_name: formData.dba_name || null,
-          slug: uniqueSlug,
-          description: formData.description || null,
-          website_url: formData.website_url || null,
-          year_founded: formData.year_founded || null,
-          employee_count_range: formData.employee_count_range || null,
-          annual_revenue_range: formData.annual_revenue_range || null,
-          key_differentiators: formData.key_differentiators || null,
-          is_active: !isDraft,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        .insert(companyInsert)
         .select()
         .single()
 
       if (companyError) throw companyError
-      if (!company) throw new Error('Company creation returned no data')
+      if (!company) throw new Error('Company creation failed')
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       createdCompanyId = company.id
 
       // Insert facilities
       if (formData.facilities && formData.facilities.length > 0) {
-        const facilitiesData = formData.facilities.map(f => ({
+        const facilitiesInsert: FacilityInsert[] = formData.facilities.map((f) => ({
           company_id: company.id,
           facility_type: f.facility_type,
           street_address: f.street_address || null,
@@ -75,40 +87,42 @@ export default function AddCompanyPage() {
 
         const { error: facilitiesError } = await supabase
           .from('facilities')
-          .insert(facilitiesData)
+          .insert(facilitiesInsert)
 
         if (facilitiesError) throw facilitiesError
       }
 
       // Insert capabilities
       if (formData.capabilities) {
+        const capabilitiesInsert: CapabilitiesInsert = {
+          company_id: company.id,
+          ...formData.capabilities,
+        }
+
         const { error: capabilitiesError } = await supabase
           .from('capabilities')
-          .insert({
-            company_id: company.id,
-            ...formData.capabilities,
-          })
+          .insert(capabilitiesInsert)
 
         if (capabilitiesError) throw capabilitiesError
       }
 
       // Insert industries
       if (formData.industries && formData.industries.length > 0) {
-        const industriesData = formData.industries.map(i => ({
+        const industriesInsert: IndustryInsert[] = formData.industries.map((i) => ({
           company_id: company.id,
           industry_name: i.industry_name,
         }))
 
         const { error: industriesError } = await supabase
           .from('industries')
-          .insert(industriesData)
+          .insert(industriesInsert)
 
         if (industriesError) throw industriesError
       }
 
       // Insert certifications
       if (formData.certifications && formData.certifications.length > 0) {
-        const certificationsData = formData.certifications.map(c => ({
+        const certificationsInsert: CertificationInsert[] = formData.certifications.map((c) => ({
           company_id: company.id,
           certification_type: c.certification_type,
           certificate_number: c.certificate_number || null,
@@ -119,82 +133,60 @@ export default function AddCompanyPage() {
 
         const { error: certificationsError } = await supabase
           .from('certifications')
-          .insert(certificationsData)
+          .insert(certificationsInsert)
 
         if (certificationsError) throw certificationsError
       }
 
       // Insert technical specs
       if (formData.technical_specs) {
-        const { error: techSpecsError } = await supabase
-          .from('technical_specs')
-          .insert({
-            company_id: company.id,
-            ...formData.technical_specs,
-          })
+        const technicalSpecsInsert: TechnicalSpecsInsert = {
+          company_id: company.id,
+          ...formData.technical_specs,
+        }
 
-        if (techSpecsError) throw techSpecsError
+        const { error: technicalSpecsError } = await supabase
+          .from('technical_specs')
+          .insert(technicalSpecsInsert)
+
+        if (technicalSpecsError) throw technicalSpecsError
       }
 
       // Insert business info
       if (formData.business_info) {
+        const businessInfoInsert: BusinessInfoInsert = {
+          company_id: company.id,
+          ...formData.business_info,
+        }
+
         const { error: businessInfoError } = await supabase
           .from('business_info')
-          .insert({
-            company_id: company.id,
-            ...formData.business_info,
-          })
+          .insert(businessInfoInsert)
 
         if (businessInfoError) throw businessInfoError
       }
 
-      // Log creation in change log
+      // Log change
       await logCompanyChanges(
         supabase,
         company.id,
-        [{ field_name: 'company_created', old_value: null, new_value: formData.company_name }],
-        user.email || 'admin',
-        user.user_metadata?.name || user.email || 'Admin',
+        [
+          {
+            field_name: 'company_name',
+            old_value: null,
+            new_value: company.company_name,
+          },
+        ],
+        user.email || 'unknown',
+        user.user_metadata?.full_name || user.email || 'Admin',
         'created'
       )
 
-      toast.success(`Company ${isDraft ? 'saved as draft' : 'published'} successfully!`)
+      toast.success(`Company ${isDraft ? 'saved as draft' : 'created'} successfully!`)
       router.push('/admin/companies')
       router.refresh()
     } catch (error) {
       console.error('Error creating company:', error)
-
-      if (createdCompanyId) {
-        const relatedTables = [
-          'facilities',
-          'capabilities',
-          'industries',
-          'certifications',
-          'technical_specs',
-          'business_info',
-        ] as const
-
-        for (const table of relatedTables) {
-          const { error: cleanupError } = await supabase
-            .from(table)
-            .delete()
-            .eq('company_id', createdCompanyId)
-
-          if (cleanupError) {
-            console.error(`Failed to cleanup ${table} for company ${createdCompanyId}:`, cleanupError)
-          }
-        }
-
-        const { error: rollbackError } = await supabase
-          .from('companies')
-          .delete()
-          .eq('id', createdCompanyId)
-
-        if (rollbackError) {
-          console.error(`Failed to rollback company ${createdCompanyId}:`, rollbackError)
-        }
-      }
-
       toast.error('Failed to create company. Please try again.')
     } finally {
       setLoading(false)
@@ -211,7 +203,14 @@ export default function AddCompanyPage() {
               Create a new company profile in the directory
             </p>
           </div>
-          {/* Action buttons should use the admin-btn-* styles when added */}
+          <button
+            type="button"
+            onClick={() => router.push('/admin/companies/research')}
+            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            <span>🤖</span>
+            AI Research Instead
+          </button>
         </div>
       </div>
 
