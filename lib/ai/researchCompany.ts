@@ -211,6 +211,9 @@ Remember:
         employees_at_location?: number | null
         key_capabilities?: string
         is_primary?: boolean
+        latitude?: number | string | null
+        longitude?: number | string | null
+        location?: unknown
       }>
       capabilities?: {
         pcb_assembly_smt?: boolean
@@ -312,6 +315,19 @@ Remember:
       }
     }
 
+    const parseCoordinate = (value: unknown): number | null => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value
+      }
+
+      if (typeof value === 'string') {
+        const parsed = Number.parseFloat(value)
+        return Number.isFinite(parsed) ? parsed : null
+      }
+
+      return null
+    }
+
     // Step 5: Map to CompanyFormData structure
     const companyData: CompanyFormData = {
       company_name: parsedData.company_name || companyName,
@@ -333,6 +349,9 @@ Remember:
             zip_code: f.zip_code || undefined,
             country: f.country || 'US',
             is_primary: f.is_primary || false,
+            latitude: parseCoordinate(f.latitude ?? null),
+            longitude: parseCoordinate(f.longitude ?? null),
+            location: f.location ?? undefined,
           }))
         : [],
 
