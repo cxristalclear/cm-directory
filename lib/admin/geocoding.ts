@@ -1,3 +1,5 @@
+import type { Point } from 'geojson'
+
 import type { FacilityFormData } from '@/types/admin'
 export type FetchImplementation = typeof fetch
 
@@ -22,6 +24,10 @@ export type GeocodeFacilitySuccess = {
   latitude: number
   longitude: number
   location: string
+}
+
+export type GeocodeFacilityPoint = GeocodeFacilitySuccess & {
+  point: Point
 }
 
 export type GeocodeFacilityErrorCode =
@@ -150,5 +156,24 @@ export async function geocodeFacility(
     latitude,
     longitude,
     location: feature.place_name ?? address,
+  }
+}
+
+export function createGeoJSONPoint(latitude: number, longitude: number): Point {
+  return {
+    type: 'Point',
+    coordinates: [longitude, latitude],
+  }
+}
+
+export async function geocodeFacilityToPoint(
+  facility: FacilityAddressLike,
+  options: GeocodeFacilityOptions = {},
+): Promise<GeocodeFacilityPoint> {
+  const result = await geocodeFacility(facility, options)
+
+  return {
+    ...result,
+    point: createGeoJSONPoint(result.latitude, result.longitude),
   }
 }
