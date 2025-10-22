@@ -92,13 +92,13 @@ export default function AiResearchPage() {
           const geocodeResult = geocodingResults[index]
 
           if (geocodeResult?.status === 'fulfilled') {
-            const { latitude, longitude, point } = geocodeResult.value
+            const { latitude, longitude, pointWkt } = geocodeResult.value
 
             return {
               ...baseFacility,
               latitude,
               longitude,
-              location: point,
+              location: pointWkt,
             }
           }
 
