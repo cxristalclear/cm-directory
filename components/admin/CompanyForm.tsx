@@ -31,29 +31,45 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const updateFacilities = (
+    updater: (facilities: FacilityFormData[]) => FacilityFormData[],
+  ) => {
+    setFormData((prev) => {
+      const currentFacilities = prev.facilities ? [...prev.facilities] : []
+      const nextFacilities = updater(currentFacilities)
+      return { ...prev, facilities: nextFacilities }
+    })
+  }
+
   const handleSubmit = (isDraft: boolean) => {
     onSubmit(formData, isDraft)
   }
 
   // Facility management
   const addFacility = () => {
-    const newFacility: FacilityFormData = {
-      facility_type: 'Manufacturing',
-      country: 'US',
-      is_primary: (formData.facilities?.length || 0) === 0,
-    }
-    updateField('facilities', [...(formData.facilities || []), newFacility])
+    updateFacilities((facilities) => [
+      ...facilities,
+      {
+        facility_type: 'Manufacturing',
+        country: 'US',
+        is_primary: facilities.length === 0,
+        latitude: null,
+        longitude: null,
+        location: null,
+      },
+    ])
   }
 
   const updateFacility = <K extends keyof FacilityFormData>(index: number, field: K, value: FacilityFormData[K]) => {
-    const updated = [...(formData.facilities || [])]
-    updated[index] = { ...updated[index], [field]: value }
-    updateField('facilities', updated)
+    updateFacilities((facilities) =>
+      facilities.map((facility, i) =>
+        i === index ? { ...facility, [field]: value } : facility,
+      ),
+    )
   }
 
   const removeFacility = (index: number) => {
-    const updated = formData.facilities?.filter((_, i) => i !== index) || []
-    updateField('facilities', updated)
+    updateFacilities((facilities) => facilities.filter((_, i) => i !== index))
   }
 
   // Industry management
