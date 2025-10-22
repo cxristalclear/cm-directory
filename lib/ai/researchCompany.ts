@@ -1,5 +1,5 @@
 /**
- * Main Company Research Logic
+ * Main Company Research Logic with Enhanced Validation Logging
  * Orchestrates ZoomInfo enrichment and OpenAI research
  */
 
@@ -436,6 +436,58 @@ Remember:
         awards_recognition: parsedData.awards || undefined,
       } : {},
     }
+
+    // ============================================================================
+    // VALIDATION LOGGING - Check what AI actually returned
+    // ============================================================================
+    console.log('\n=== AI RESEARCH DATA VALIDATION ===')
+    
+    // Check facilities
+    console.log(`Facilities: ${companyData.facilities?.length || 0} found`)
+    if (!companyData.facilities || companyData.facilities.length === 0) {
+      console.warn('⚠️ WARNING: AI returned no facilities data')
+    }
+    
+    // Check capabilities
+    const capabilitiesCount = companyData.capabilities 
+      ? Object.values(companyData.capabilities).filter(v => v === true).length 
+      : 0
+    console.log(`Capabilities: ${capabilitiesCount} enabled`)
+    if (capabilitiesCount === 0) {
+      console.warn('⚠️ WARNING: AI returned no enabled capabilities')
+    }
+    
+    // Check industries
+    console.log(`Industries: ${companyData.industries?.length || 0} found`)
+    if (!companyData.industries || companyData.industries.length === 0) {
+      console.warn('⚠️ WARNING: AI returned no industries data')
+    }
+    
+    // Check certifications
+    console.log(`Certifications: ${companyData.certifications?.length || 0} found`)
+    if (!companyData.certifications || companyData.certifications.length === 0) {
+      console.warn('⚠️ WARNING: AI returned no certifications data')
+    }
+    
+    // Check technical specs
+    const techSpecsCount = companyData.technical_specs
+      ? Object.values(companyData.technical_specs).filter(v => v !== null && v !== undefined && v !== false).length
+      : 0
+    console.log(`Technical Specs: ${techSpecsCount} fields filled`)
+    if (techSpecsCount === 0) {
+      console.warn('⚠️ WARNING: AI returned no technical specs data')
+    }
+    
+    // Check business info
+    const businessInfoCount = companyData.business_info
+      ? Object.values(companyData.business_info).filter(v => v !== null && v !== undefined && v !== false).length
+      : 0
+    console.log(`Business Info: ${businessInfoCount} fields filled`)
+    if (businessInfoCount === 0) {
+      console.warn('⚠️ WARNING: AI returned no business info data')
+    }
+    
+    console.log('===================================\n')
 
     return {
       success: true,
