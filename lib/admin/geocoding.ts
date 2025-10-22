@@ -28,6 +28,7 @@ export type GeocodeFacilitySuccess = {
 
 export type GeocodeFacilityPoint = GeocodeFacilitySuccess & {
   point: Point
+  pointWkt: string
 }
 
 export type GeocodeFacilityErrorCode =
@@ -166,6 +167,10 @@ export function createGeoJSONPoint(latitude: number, longitude: number): Point {
   }
 }
 
+export function formatPointAsWkt(latitude: number, longitude: number): string {
+  return `POINT(${longitude} ${latitude})`
+}
+
 export async function geocodeFacilityToPoint(
   facility: FacilityAddressLike,
   options: GeocodeFacilityOptions = {},
@@ -175,5 +180,6 @@ export async function geocodeFacilityToPoint(
   return {
     ...result,
     point: createGeoJSONPoint(result.latitude, result.longitude),
+    pointWkt: formatPointAsWkt(result.latitude, result.longitude),
   }
 }
