@@ -75,7 +75,7 @@ export default function AiResearchPage() {
           city: f.city || null,
           state: f.state || null,
           zip_code: f.zip_code || null,
-          country: f.country || 'US',
+          country: f.country || null,
           is_primary: f.is_primary || false,
         }))
 
