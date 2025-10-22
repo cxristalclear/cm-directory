@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { PostgrestError } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase-client'
 import AiCompanyResearch from '@/components/admin/AiCompanyResearch'
 import type { CompanyFormData } from '@/types/admin'
@@ -19,25 +18,6 @@ type CertificationInsert = Database['public']['Tables']['certifications']['Inser
 type TechnicalSpecsInsert = Database['public']['Tables']['technical_specs']['Insert']
 type BusinessInfoInsert = Database['public']['Tables']['business_info']['Insert']
 
-const isProduction = process.env.NODE_ENV === 'production'
-
-const logSupabaseError = (tableName: string, payload: unknown, error: PostgrestError | null) => {
-  if (!error || isProduction) {
-    return
-  }
-
-  console.error(`Failed to write to ${tableName}`, {
-    table: tableName,
-    payload,
-    error: {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-    },
-  })
-}
-
 export default function AiResearchPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -45,9 +25,6 @@ export default function AiResearchPage() {
 
   const handleSubmit = async (formData: CompanyFormData, isDraft: boolean) => {
     setLoading(true)
-    let uniqueSlug: string | undefined
-    let companyId: string | undefined
-
     try {
       // Validate data
       const validation = validateCompanyData(formData)
@@ -63,16 +40,15 @@ export default function AiResearchPage() {
 
       // Generate unique slug
       const baseSlug = generateSlug(formData.company_name)
-      const ensuredSlug = await ensureUniqueSlug(supabase, baseSlug)
-      uniqueSlug = ensuredSlug
+      const uniqueSlug = await ensureUniqueSlug(supabase, baseSlug)
 
       // Insert company
       const companyInsert: CompanyInsert = {
         company_name: formData.company_name,
         dba_name: formData.dba_name || null,
-        slug: ensuredSlug,
+        slug: uniqueSlug,
         description: formData.description || null,
-        website_url: formData.website_url || '', // Empty string instead of null
+        website_url: formData.website_url || '',
         year_founded: formData.year_founded || null,
         employee_count_range: formData.employee_count_range || null,
         annual_revenue_range: formData.annual_revenue_range || null,
@@ -88,16 +64,16 @@ export default function AiResearchPage() {
         .select()
         .single()
 
-      if (companyError) {
-        logSupabaseError('companies', companyInsert, companyError)
-        throw companyError
-      }
+      if (companyError) throw companyError
       if (!company) throw new Error('Company creation failed')
-      companyId = company.id
 
-      // Insert facilities
+      // ========================================================================
+      // FIX: Insert facilities with proper geocoding
+      // ========================================================================
       if (formData.facilities && formData.facilities.length > 0) {
         const facilities = formData.facilities
+
+        // Build base facilities WITHOUT the location field
         const baseFacilities: FacilityInsert[] = facilities.map((f) => ({
           company_id: company.id,
           facility_type: f.facility_type,
@@ -107,26 +83,30 @@ export default function AiResearchPage() {
           zip_code: f.zip_code || null,
           country: f.country || null,
           is_primary: f.is_primary || false,
-          latitude: typeof f.latitude === 'number' ? f.latitude : null,
-          longitude: typeof f.longitude === 'number' ? f.longitude : null,
-          location: f.location ?? null,
+          latitude: null,
+          longitude: null,
+          // ✅ CRITICAL FIX: Don't set location field
+          // Database trigger will auto-populate it from lat/lng
         }))
 
+        // Geocode all facilities in parallel
         const geocodingResults = await Promise.allSettled(
           facilities.map((facility) => geocodeFacilityToPoint(facility))
         )
 
+        // Prepare final facilities with geocoding results
         const facilitiesInsert: FacilityInsert[] = baseFacilities.map((baseFacility, index) => {
           const geocodeResult = geocodingResults[index]
 
           if (geocodeResult?.status === 'fulfilled') {
-            const { latitude, longitude, pointWkt } = geocodeResult.value
+            const { latitude, longitude } = geocodeResult.value
 
+            // ✅ Only set latitude and longitude
+            // The database trigger will create geometry from these
             return {
               ...baseFacility,
               latitude,
               longitude,
-              location: pointWkt,
             }
           }
 
@@ -159,10 +139,11 @@ export default function AiResearchPage() {
           return baseFacility
         })
 
+        // Insert all facilities
         const { error: facilitiesError } = await supabase.from('facilities').insert(facilitiesInsert)
 
         if (facilitiesError) {
-          logSupabaseError('facilities', facilitiesInsert, facilitiesError)
+          console.error('Failed to insert facilities:', facilitiesError)
           throw facilitiesError
         }
       }
@@ -178,10 +159,7 @@ export default function AiResearchPage() {
           .from('capabilities')
           .insert(capabilitiesInsert)
 
-        if (capabilitiesError) {
-          logSupabaseError('capabilities', capabilitiesInsert, capabilitiesError)
-          throw capabilitiesError
-        }
+        if (capabilitiesError) throw capabilitiesError
       }
 
       // Insert industries
@@ -195,10 +173,7 @@ export default function AiResearchPage() {
           .from('industries')
           .insert(industriesInsert)
 
-        if (industriesError) {
-          logSupabaseError('industries', industriesInsert, industriesError)
-          throw industriesError
-        }
+        if (industriesError) throw industriesError
       }
 
       // Insert certifications
@@ -216,10 +191,7 @@ export default function AiResearchPage() {
           .from('certifications')
           .insert(certificationsInsert)
 
-        if (certificationsError) {
-          logSupabaseError('certifications', certificationsInsert, certificationsError)
-          throw certificationsError
-        }
+        if (certificationsError) throw certificationsError
       }
 
       // Insert technical specs
@@ -233,10 +205,7 @@ export default function AiResearchPage() {
           .from('technical_specs')
           .insert(technicalSpecsInsert)
 
-        if (technicalSpecsError) {
-          logSupabaseError('technical_specs', technicalSpecsInsert, technicalSpecsError)
-          throw technicalSpecsError
-        }
+        if (technicalSpecsError) throw technicalSpecsError
       }
 
       // Insert business info
@@ -250,80 +219,30 @@ export default function AiResearchPage() {
           .from('business_info')
           .insert(businessInfoInsert)
 
-        if (businessInfoError) {
-          logSupabaseError('business_info', businessInfoInsert, businessInfoError)
-          throw businessInfoError
-        }
+        if (businessInfoError) throw businessInfoError
       }
 
       // Log change
-      const changeLogChanges = [
-        {
-          field_name: 'company_name',
-          old_value: null,
-          new_value: company.company_name,
-        },
-      ]
-
-      const changeLogPayload = changeLogChanges.map((change) => ({
-        company_id: company.id,
-        changed_by_email: user.email || 'unknown',
-        changed_by_name: user.user_metadata?.full_name || user.email || 'Admin',
-        change_type: 'created' as const,
-        field_name: change.field_name,
-        old_value: change.old_value,
-        new_value: change.new_value,
-        changed_at: new Date().toISOString(),
-      }))
-
-      try {
-        await logCompanyChanges(
-          supabase,
-          company.id,
-          changeLogChanges,
-          user.email || 'unknown',
-          user.user_metadata?.full_name || user.email || 'Admin',
-          'created'
-        )
-      } catch (logError) {
-        if (!isProduction) {
-          const postgrestError = logError as PostgrestError | undefined
-          console.error('Failed to write to company_change_log', {
-            table: 'company_change_log',
-            payload: changeLogPayload,
-            error: {
-              message: postgrestError?.message,
-              details: postgrestError?.details,
-              hint: postgrestError?.hint,
-              code: postgrestError?.code,
-            },
-          })
-        }
-        throw logError
-      }
+      await logCompanyChanges(
+        supabase,
+        company.id,
+        [
+          {
+            field_name: 'company_name',
+            old_value: null,
+            new_value: company.company_name,
+          },
+        ],
+        user.email || 'unknown',
+        user.user_metadata?.full_name || user.email || 'Admin',
+        'created'
+      )
 
       toast.success(`Company ${isDraft ? 'saved as draft' : 'created'} successfully!`)
       router.push('/admin/companies')
       router.refresh()
     } catch (error) {
-      const structuredError = {
-        error,
-        message: error instanceof Error ? error.message : undefined,
-        stack: error instanceof Error ? error.stack : undefined,
-        slug: uniqueSlug,
-        companyId,
-      }
-
-      if (isProduction) {
-        console.error('Error creating company', {
-          message: structuredError.message,
-          slug: structuredError.slug,
-          companyId: structuredError.companyId,
-        })
-      } else {
-        console.error('Error creating company', structuredError)
-      }
-
+      console.error('Error creating company:', error)
       toast.error('Failed to create company. Please try again.')
     } finally {
       setLoading(false)
