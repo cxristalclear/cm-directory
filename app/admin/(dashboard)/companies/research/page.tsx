@@ -7,6 +7,7 @@ import AiCompanyResearch from '@/components/admin/AiCompanyResearch'
 import type { CompanyFormData } from '@/types/admin'
 import type { Database } from '@/lib/database.types'
 import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData } from '@/lib/admin/utils'
+import { geocodeFacilityToPoint, GeocodeFacilityError } from '@/lib/admin/geocoding'
 import { toast } from 'sonner'
 
 type CompanyInsert = Database['public']['Tables']['companies']['Insert']
@@ -68,7 +69,8 @@ export default function AiResearchPage() {
 
       // Insert facilities
       if (formData.facilities && formData.facilities.length > 0) {
-        const facilitiesInsert: FacilityInsert[] = formData.facilities.map((f) => ({
+        const facilities = formData.facilities
+        const baseFacilities: FacilityInsert[] = facilities.map((f) => ({
           company_id: company.id,
           facility_type: f.facility_type,
           street_address: f.street_address || null,
@@ -82,9 +84,54 @@ export default function AiResearchPage() {
           location: f.location ?? null,
         }))
 
-        const { error: facilitiesError } = await supabase
-          .from('facilities')
-          .insert(facilitiesInsert)
+        const geocodingResults = await Promise.allSettled(
+          facilities.map((facility) => geocodeFacilityToPoint(facility))
+        )
+
+        const facilitiesInsert: FacilityInsert[] = baseFacilities.map((baseFacility, index) => {
+          const geocodeResult = geocodingResults[index]
+
+          if (geocodeResult?.status === 'fulfilled') {
+            const { latitude, longitude, point } = geocodeResult.value
+
+            return {
+              ...baseFacility,
+              latitude,
+              longitude,
+              location: point,
+            }
+          }
+
+          if (geocodeResult?.status === 'rejected') {
+            const error = geocodeResult.reason
+            const facility = facilities[index]
+            const facilityLabel =
+              facility?.facility_type ||
+              facility?.city ||
+              facility?.street_address ||
+              `Facility ${index + 1}`
+
+            let errorMessage = 'Unknown error occurred while geocoding.'
+
+            if (error instanceof GeocodeFacilityError) {
+              errorMessage = error.message
+            } else if (error instanceof Error) {
+              errorMessage = error.message
+            }
+
+            const reasonSuffix = errorMessage ? ` (${errorMessage})` : ''
+
+            toast.warning(`Unable to geocode ${facilityLabel}. Saved without coordinates${reasonSuffix}.`)
+            console.warn('Failed to geocode facility before insertion', {
+              facility: facilities[index],
+              error,
+            })
+          }
+
+          return baseFacility
+        })
+
+        const { error: facilitiesError } = await supabase.from('facilities').insert(facilitiesInsert)
 
         if (facilitiesError) throw facilitiesError
       }
