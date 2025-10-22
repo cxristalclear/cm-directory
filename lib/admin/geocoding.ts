@@ -1,6 +1,4 @@
 import type { FacilityFormData } from '@/types/admin'
-import type { RequestInit as NodeFetchRequestInit } from 'node-fetch'
-
 interface FetchResponseLike {
   ok: boolean
   status: number
@@ -8,8 +6,8 @@ interface FetchResponseLike {
 }
 
 export type FetchImplementation = (
-  input: string | URL,
-  init?: RequestInit | NodeFetchRequestInit,
+  input: unknown,
+  init?: unknown,
 ) => Promise<FetchResponseLike>
 
 export type NullableString = string | null | undefined
