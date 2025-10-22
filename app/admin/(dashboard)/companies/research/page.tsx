@@ -77,7 +77,7 @@ export default function AiResearchPage() {
           city: f.city || null,
           state: f.state || null,
           zip_code: f.zip_code || null,
-          country: f.country || 'US',
+          country: f.country || null,
           is_primary: f.is_primary || false,
           latitude: typeof f.latitude === 'number' ? f.latitude : null,
           longitude: typeof f.longitude === 'number' ? f.longitude : null,
