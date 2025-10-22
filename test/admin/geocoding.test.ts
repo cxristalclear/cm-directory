@@ -2,7 +2,9 @@ import {
   buildFacilityAddress,
   geocodeFacilityToPoint,
   createGeoJSONPoint,
+  formatPointAsWkt,
 } from '@/lib/admin/geocoding'
+import type { FetchImplementation } from '@/lib/admin/geocoding'
 
 const baseFacility = {
   street_address: '123 Main St',
@@ -35,8 +37,14 @@ describe('createGeoJSONPoint', () => {
   })
 })
 
+describe('formatPointAsWkt', () => {
+  it('formats longitude and latitude into a POINT WKT string', () => {
+    expect(formatPointAsWkt(42.3601, -71.0589)).toBe('POINT(-71.0589 42.3601)')
+  })
+})
+
 describe('geocodeFacilityToPoint', () => {
-  let originalFetch: typeof global.fetch | undefined
+  let originalFetch: FetchImplementation | undefined
 
   beforeEach(() => {
     originalFetch = global.fetch
@@ -71,7 +79,7 @@ describe('geocodeFacilityToPoint', () => {
       json: jsonMock,
     })
 
-    global.fetch = fetchMock as unknown as typeof global.fetch
+    global.fetch = fetchMock as unknown as FetchImplementation
 
     const result = await geocodeFacilityToPoint({ ...baseFacility })
 
@@ -87,12 +95,13 @@ describe('geocodeFacilityToPoint', () => {
       type: 'Point',
       coordinates: [-71.0589, 42.3601],
     })
+    expect(result.pointWkt).toBe('POINT(-71.0589 42.3601)')
     expect(jsonMock).toHaveBeenCalledTimes(1)
   })
 
   it('throws an invalid-address error when the facility has no usable address', async () => {
     const fetchMock = jest.fn()
-    global.fetch = fetchMock as unknown as typeof global.fetch
+    global.fetch = fetchMock as unknown as FetchImplementation
 
     await expect(
       geocodeFacilityToPoint({
@@ -117,7 +126,7 @@ describe('geocodeFacilityToPoint', () => {
 
   it('wraps fetch rejections in a GeocodeFacilityError', async () => {
     const fetchMock = jest.fn().mockRejectedValue(new Error('network down'))
-    global.fetch = fetchMock as unknown as typeof global.fetch
+    global.fetch = fetchMock as unknown as FetchImplementation
 
     await expect(geocodeFacilityToPoint({ ...baseFacility })).rejects.toMatchObject({
       code: 'request-failed',
