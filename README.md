@@ -44,7 +44,7 @@ Before you begin, ensure you have the following installed:
 - Node.js (v18 or higher)
 - npm or yarn package manager
 - A Supabase account and project
-- (Optional) A Mapbox account for map visualization
+- (Optional, but required for the AI Research importer) A Mapbox account for map visualization and facility geocoding
 
 ## 🔧 Installation
 
@@ -78,7 +78,7 @@ Fill in your environment variables:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Mapbox Configuration (Optional)
+# Mapbox Configuration (Required for AI Research importer & facility geocoding)
 NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_access_token
 
 # Site Configuration (Required)
@@ -216,7 +216,7 @@ The application can be deployed to any platform that supports Next.js:
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Your Supabase anonymous key |
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | No | Mapbox access token for map visualization |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Conditional | Mapbox access token for map visualization and required for the AI Research importer |
 | `NEXT_PUBLIC_SITE_URL` | Yes | Full URL of your deployed site |
 | `NEXT_PUBLIC_SITE_NAME` | No | Name of your site (default: "CM Directory") |
 | `NEXT_PUBLIC_TWITTER_URL` | Yes | Public Twitter/X profile URL referenced in metadata |
@@ -226,6 +226,14 @@ The application can be deployed to any platform that supports Next.js:
 | `NEXT_PUBLIC_SHOW_DEBUG` | No | Show debug information (default: false) |
 
 > 🚀 **Deployment reminder:** Coordinate with DevOps to ensure `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_TWITTER_URL`, `NEXT_PUBLIC_LINKEDIN_URL`, and `NEXT_PUBLIC_GITHUB_URL` are populated with the marketing-approved production URLs in every environment.
+
+## 🧠 AI Research Importer
+
+The admin dashboard includes an AI-assisted importer that enriches facility data and automatically geocodes addresses so they appear on maps. To enable geocoding, provide a valid `NEXT_PUBLIC_MAPBOX_TOKEN` in your environment. Without a token, the importer will surface a warning for each facility and save it without latitude/longitude data.
+
+- **Where to configure it:** Add the token to `.env.local` (and your deployment platform) under `NEXT_PUBLIC_MAPBOX_TOKEN`.
+- **Troubleshooting:** A missing or invalid token raises a "Mapbox access token is not configured" toast in the importer. Double-check that the variable is defined, has no extra whitespace, and that the Mapbox account has geocoding permissions.
+- **Geocoding failures:** Network or API errors can also prevent geocoding. The UI continues the import without coordinates so operators can retry later without losing company records.
 
 ## 📚 Key Features Documentation
 

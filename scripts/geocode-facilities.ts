@@ -6,6 +6,13 @@ import fetch from 'node-fetch'
 import * as dotenv from 'dotenv'
 import * as path from 'path'
 
+import {
+  buildFacilityAddress,
+  geocodeFacility,
+  GeocodeFacilityError,
+  type FetchImplementation,
+} from '@/lib/admin/geocoding'
+
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
@@ -100,50 +107,6 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 // Utility function to delay execution
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
-// Build address string from facility data
-function buildAddress(facility: Facility): string {
-  const parts = []
-  
-  if (facility.street_address) parts.push(facility.street_address)
-  if (facility.city) parts.push(facility.city)
-  if (facility.state) parts.push(facility.state)
-  if (facility.zip_code) parts.push(facility.zip_code)
-  if (facility.country) parts.push(facility.country)
-  
-  // If we have no address components, return empty
-  if (parts.length === 0) return ''
-  
-  // If we only have state and/or country, add the company name for better geocoding
-  if (parts.length <= 2 && !facility.street_address && !facility.city) {
-    return parts.join(', ')
-  }
-  
-  return parts.join(', ')
-}
-
-// Geocode a single address using Mapbox API
-async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
-  if (!address) return null
-  
-  try {
-    const encodedAddress = encodeURIComponent(address)
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${CONFIG.MAPBOX_TOKEN}&limit=1`
-    
-    const response = await fetch(url)
-    const data = await response.json() as any
-    
-    if (data.features && data.features.length > 0) {
-      const [lng, lat] = data.features[0].center
-      return { lat, lng }
-    }
-    
-    return null
-  } catch (error) {
-    console.error(`Geocoding error for "${address}":`, error)
-    return null
-  }
-}
-
 // Main function to process facilities
 async function processFacilities() {
   console.log('🚀 Starting Geocoding Script')
@@ -233,7 +196,7 @@ async function processFacilities() {
     console.log(`📦 Processing batch ${Math.floor(i / CONFIG.BATCH_SIZE) + 1}/${Math.ceil(facilitiesToProcess.length / CONFIG.BATCH_SIZE)}`)
     
     for (const { facility, companyName } of batch) {
-      const address = buildAddress(facility)
+      const address = buildFacilityAddress(facility)
       
       if (!address) {
         results.push({
@@ -255,12 +218,24 @@ async function processFacilities() {
         console.log(`   Current: ${facility.latitude}, ${facility.longitude}`)
       }
       
-      const coords = await geocodeAddress(address)
-      
-      if (coords) {
+      let geocodedResult: Awaited<ReturnType<typeof geocodeFacility>> | null = null
+      let geocodingError: unknown
+
+      try {
+        geocodedResult = await geocodeFacility(facility, {
+          mapboxToken: CONFIG.MAPBOX_TOKEN,
+          fetchImpl: fetch as unknown as FetchImplementation,
+          addressOverride: address,
+        })
+      } catch (error) {
+        geocodingError = error
+      }
+
+      if (geocodedResult) {
+        const coords = { lat: geocodedResult.latitude, lng: geocodedResult.longitude }
         let status: GeocodingResult['status'] = 'updated'
         let distance: number | undefined
-        
+
         // Calculate distance if validating existing coordinates
         if (facility.latitude && facility.longitude && CONFIG.MODE === 'VALIDATE_ALL') {
           distance = calculateDistance(
@@ -269,7 +244,7 @@ async function processFacilities() {
             coords.lat,
             coords.lng
           )
-          
+
           if (distance < CONFIG.DISTANCE_THRESHOLD_KM) {
             status = 'validated'
             console.log(`   ✅ Validated: Within ${distance.toFixed(2)}km of geocoded location`)
@@ -280,7 +255,7 @@ async function processFacilities() {
         } else {
           console.log(`   ✅ Found: ${coords.lat}, ${coords.lng}`)
         }
-        
+
         results.push({
           facilityId: facility.id,
           companyName,
@@ -291,6 +266,13 @@ async function processFacilities() {
           status
         })
       } else {
+        const errorMessage =
+          geocodingError instanceof GeocodeFacilityError
+            ? `${geocodingError.code}: ${geocodingError.message}`
+            : geocodingError instanceof Error
+              ? geocodingError.message
+              : 'Geocoding failed'
+
         results.push({
           facilityId: facility.id,
           companyName,
@@ -298,9 +280,12 @@ async function processFacilities() {
           currentCoords: { lat: facility.latitude || null, lng: facility.longitude || null },
           newCoords: null,
           status: 'missing',
-          error: 'Geocoding failed'
+          error: errorMessage
         })
-        console.log(`   ❌ Could not geocode address`)
+
+        const errorCode =
+          geocodingError instanceof GeocodeFacilityError ? ` (${geocodingError.code})` : ''
+        console.log(`   ❌ Could not geocode address${errorCode}`)
       }
       
       // Delay between API calls to respect rate limits

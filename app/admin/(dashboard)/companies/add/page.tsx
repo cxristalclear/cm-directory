@@ -83,6 +83,9 @@ export default function AddCompanyPage() {
           zip_code: f.zip_code || null,
           country: f.country || 'US',
           is_primary: f.is_primary || false,
+          latitude: typeof f.latitude === 'number' ? f.latitude : null,
+          longitude: typeof f.longitude === 'number' ? f.longitude : null,
+          location: f.location ?? null,
         }))
 
         const { error: facilitiesError } = await supabase

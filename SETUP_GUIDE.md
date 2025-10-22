@@ -10,7 +10,7 @@ Before starting, make sure you have:
 - [ ] Git installed ([Download](https://git-scm.com/))
 - [ ] A code editor (VS Code recommended)
 - [ ] A Supabase account ([Sign up](https://supabase.com/))
-- [ ] (Optional) A Mapbox account ([Sign up](https://www.mapbox.com/))
+- [ ] (Optional, but required for the AI Research importer) A Mapbox account ([Sign up](https://www.mapbox.com/))
 
 ## 🚀 Step-by-Step Setup
 
@@ -66,7 +66,7 @@ npm install
    NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/cm-directory
    NEXT_PUBLIC_GITHUB_URL=https://github.com/cm-directory/app
 
-   # Mapbox (Optional - leave blank to skip map features)
+   # Mapbox (Required for AI Research importer & facility geocoding)
    NEXT_PUBLIC_MAPBOX_TOKEN=
 
    # Feature Flags
@@ -96,6 +96,8 @@ npm run import-companies
 # Geocode facilities (requires Mapbox token)
 npm run geocode
 ```
+
+> 🤖 **AI Research importer:** The admin dashboard includes an AI-powered importer that also geocodes facilities. It relies on `NEXT_PUBLIC_MAPBOX_TOKEN`. If the token is missing or invalid, you'll see a toast explaining that the Mapbox access token is not configured. The importer still saves facilities without coordinates so you can update the token and retry later.
 
 ### Step 6: Run Tests
 
@@ -144,6 +146,12 @@ Make sure everything is working:
 2. Get your access token
 3. Add it to `NEXT_PUBLIC_MAPBOX_TOKEN` in `.env.local`
 4. Restart the dev server
+
+### Issue: AI Research importer warns about geocoding
+
+**Solution**:
+- A missing `NEXT_PUBLIC_MAPBOX_TOKEN` triggers a "Mapbox access token is not configured" warning and facilities are saved without coordinates. Confirm the token is present locally and in any deployed environment.
+- If the token is set but Mapbox returns an error (rate limits, invalid address, network outage), the importer logs the failure, shows a toast, and still completes the company import without latitude/longitude. Fix the underlying issue and rerun geocoding later if you need map points.
 
 ### Issue: Port 3000 already in use
 
