@@ -1,14 +1,5 @@
 import type { FacilityFormData } from '@/types/admin'
-interface FetchResponseLike {
-  ok: boolean
-  status: number
-  json(): Promise<unknown>
-}
-
-export type FetchImplementation = (
-  input: unknown,
-  init?: unknown,
-) => Promise<FetchResponseLike>
+export type FetchImplementation = typeof fetch
 
 export type NullableString = string | null | undefined
 
@@ -100,7 +91,8 @@ export async function geocodeFacility(
   }
 
   const fetchImplementation: FetchImplementation | undefined =
-    options.fetchImpl ?? (typeof globalThis.fetch === 'function' ? globalThis.fetch : undefined)
+    options.fetchImpl ??
+    (typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : undefined)
 
   if (!fetchImplementation) {
     throw new GeocodeFacilityError(
@@ -112,7 +104,7 @@ export async function geocodeFacility(
   const encodedAddress = encodeURIComponent(address)
   const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}&limit=1`
 
-  let response: FetchResponseLike
+  let response: Awaited<ReturnType<FetchImplementation>>
 
   try {
     response = await fetchImplementation(url)

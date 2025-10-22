@@ -10,6 +10,7 @@ import {
   buildFacilityAddress,
   geocodeFacility,
   GeocodeFacilityError,
+  type FetchImplementation,
 } from '@/lib/admin/geocoding'
 
 // Load environment variables from .env.local
@@ -223,7 +224,7 @@ async function processFacilities() {
       try {
         geocodedResult = await geocodeFacility(facility, {
           mapboxToken: CONFIG.MAPBOX_TOKEN,
-          fetchImpl: fetch,
+          fetchImpl: fetch as unknown as FetchImplementation,
           addressOverride: address,
         })
       } catch (error) {
