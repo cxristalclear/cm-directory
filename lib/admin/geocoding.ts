@@ -1,4 +1,16 @@
 import type { FacilityFormData } from '@/types/admin'
+import type { RequestInit as NodeFetchRequestInit } from 'node-fetch'
+
+interface FetchResponseLike {
+  ok: boolean
+  status: number
+  json(): Promise<unknown>
+}
+
+export type FetchImplementation = (
+  input: string | URL,
+  init?: RequestInit | NodeFetchRequestInit,
+) => Promise<FetchResponseLike>
 
 export type NullableString = string | null | undefined
 
@@ -13,7 +25,7 @@ export type FacilityAddressLike = {
 
 export interface GeocodeFacilityOptions {
   mapboxToken?: string
-  fetchImpl?: typeof fetch
+  fetchImpl?: FetchImplementation
   addressOverride?: string
 }
 
@@ -89,9 +101,10 @@ export async function geocodeFacility(
     throw new GeocodeFacilityError('missing-token', 'Mapbox access token is not configured.')
   }
 
-  const fetchImpl = options.fetchImpl ?? globalThis.fetch
+  const fetchImplementation: FetchImplementation | undefined =
+    options.fetchImpl ?? (typeof globalThis.fetch === 'function' ? globalThis.fetch : undefined)
 
-  if (typeof fetchImpl !== 'function') {
+  if (!fetchImplementation) {
     throw new GeocodeFacilityError(
       'request-failed',
       'A fetch implementation is required to contact the Mapbox Geocoding API.'
@@ -101,10 +114,10 @@ export async function geocodeFacility(
   const encodedAddress = encodeURIComponent(address)
   const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}&limit=1`
 
-  let response: Response
+  let response: FetchResponseLike
 
   try {
-    response = await fetchImpl(url)
+    response = await fetchImplementation(url)
   } catch (error) {
     throw new GeocodeFacilityError(
       'request-failed',
