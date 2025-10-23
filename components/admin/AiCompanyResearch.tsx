@@ -12,6 +12,14 @@ interface ResearchedCompany {
   enrichmentInfo: string
 }
 
+interface BatchSaveProgress {
+  current: number
+  total: number
+  failed: number
+  currentCompanyName: string
+  errors: Array<{ index: number; company: string; reason: string }>
+}
+
 interface AiCompanyResearchProps {
   onSaveCompany: (data: CompanyFormData, isDraft: boolean) => Promise<void>
   onAllCompaniesSaved?: () => void
@@ -30,6 +38,16 @@ export default function AiCompanyResearch({
   const [researchedCompanies, setResearchedCompanies] = useState<ResearchedCompany[]>([])
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  
+  // Batch save state
+  const [isSavingAll, setIsSavingAll] = useState(false)
+  const [batchSaveProgress, setBatchSaveProgress] = useState<BatchSaveProgress>({
+    current: 0,
+    total: 0,
+    failed: 0,
+    currentCompanyName: '',
+    errors: [],
+  })
 
   const handleSingleResearch = async () => {
     if (!companyName.trim()) {
@@ -136,6 +154,73 @@ export default function AiCompanyResearch({
     }
   }
 
+  const handleSaveAll = async () => {
+    if (researchedCompanies.length === 0) return
+
+    setIsSavingAll(true)
+    setBatchSaveProgress({
+      current: 0,
+      total: researchedCompanies.length,
+      failed: 0,
+      currentCompanyName: '',
+      errors: [],
+    })
+
+    const errors: Array<{ index: number; company: string; reason: string }> = []
+    let successCount = 0
+    let failCount = 0
+
+    for (let i = 0; i < researchedCompanies.length; i++) {
+      const company = researchedCompanies[i]
+      
+      try {
+        setBatchSaveProgress(prev => ({
+          ...prev,
+          currentCompanyName: company.data.company_name,
+        }))
+
+        await onSaveCompany(company.data, false)
+        successCount++
+        
+        setBatchSaveProgress(prev => ({
+          ...prev,
+          current: prev.current + 1,
+        }))
+      } catch (err) {
+        failCount++
+        const reason = err instanceof Error ? err.message : 'Unknown error'
+        errors.push({
+          index: i,
+          company: company.data.company_name,
+          reason,
+        })
+
+        setBatchSaveProgress(prev => ({
+          ...prev,
+          current: prev.current + 1,
+          failed: prev.failed + 1,
+          errors: [...prev.errors, { index: i, company: company.data.company_name, reason }],
+        }))
+      }
+    }
+
+    setIsSavingAll(false)
+
+    // Show result
+    if (failCount === 0) {
+      // All succeeded - redirect
+      if (onAllCompaniesSaved) {
+        onAllCompaniesSaved()
+      }
+    } else {
+      // Some failed - show summary
+      setError(
+        `Saved ${successCount} of ${researchedCompanies.length} companies. ` +
+        `${failCount} failed. Check the summary below to retry.`
+      )
+    }
+  }
+
   const handleEdit = (updatedData: CompanyFormData) => {
     const updated = [...researchedCompanies]
     updated[currentPreviewIndex] = {
@@ -143,6 +228,53 @@ export default function AiCompanyResearch({
       data: updatedData
     }
     setResearchedCompanies(updated)
+  }
+
+  const handleRetryFailedCompanies = async () => {
+    if (batchSaveProgress.errors.length === 0) return
+
+    setIsSavingAll(true)
+    const newErrors: Array<{ index: number; company: string; reason: string }> = []
+    let failCount = 0
+
+    for (const errorItem of batchSaveProgress.errors) {
+      const company = researchedCompanies[errorItem.index]
+      if (!company) continue
+
+      try {
+        setBatchSaveProgress(prev => ({
+          ...prev,
+          currentCompanyName: company.data.company_name,
+        }))
+
+        await onSaveCompany(company.data, false)
+      } catch (err) {
+        failCount++
+        const reason = err instanceof Error ? err.message : 'Unknown error'
+        newErrors.push({
+          index: errorItem.index,
+          company: company.data.company_name,
+          reason,
+        })
+      }
+    }
+
+    setIsSavingAll(false)
+
+    if (failCount === 0) {
+      // All succeeded now
+      if (onAllCompaniesSaved) {
+        onAllCompaniesSaved()
+      }
+    } else {
+      // Still some failures
+      setBatchSaveProgress(prev => ({
+        ...prev,
+        failed: failCount,
+        errors: newErrors,
+      }))
+      setError(`Still ${failCount} companies failed. Please try again or continue manually.`)
+    }
   }
 
   const currentCompany = researchedCompanies[currentPreviewIndex]
@@ -166,7 +298,7 @@ export default function AiCompanyResearch({
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
-            disabled={loading}
+            disabled={loading || isSavingAll}
           >
             Single Company
           </button>
@@ -178,7 +310,7 @@ export default function AiCompanyResearch({
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
-            disabled={loading}
+            disabled={loading || isSavingAll}
           >
             Batch Mode
           </button>
@@ -197,7 +329,7 @@ export default function AiCompanyResearch({
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="e.g., Acme Manufacturing"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={loading}
+                disabled={loading || isSavingAll}
               />
             </div>
 
@@ -212,14 +344,14 @@ export default function AiCompanyResearch({
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="https://example.com"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={loading}
+                disabled={loading || isSavingAll}
               />
             </div>
 
             <button
               type="button"
               onClick={handleSingleResearch}
-              disabled={loading || !companyName.trim()}
+              disabled={loading || !companyName.trim() || isSavingAll}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <span>🔍</span>
@@ -241,14 +373,14 @@ export default function AiCompanyResearch({
                 rows={8}
                 placeholder="Acme Corp, https://acme.com&#10;TechCo, https://techco.com&#10;Manufacturing Inc, https://mfg.com"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                disabled={loading}
+                disabled={loading || isSavingAll}
               />
             </div>
 
             <button
               type="button"
               onClick={handleBatchResearch}
-              disabled={loading || !batchInput.trim()}
+              disabled={loading || !batchInput.trim() || isSavingAll}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <span>🔍</span>
@@ -281,6 +413,13 @@ export default function AiCompanyResearch({
           onCancel={() => {
             setResearchedCompanies([])
             setCurrentPreviewIndex(0)
+            setBatchSaveProgress({
+              current: 0,
+              total: 0,
+              failed: 0,
+              currentCompanyName: '',
+              errors: [],
+            })
           }}
           currentIndex={currentPreviewIndex + 1}
           totalCount={researchedCompanies.length}
@@ -291,6 +430,11 @@ export default function AiCompanyResearch({
               setCurrentPreviewIndex(currentPreviewIndex - 1)
             }
           }}
+          onSaveAll={handleSaveAll}
+          isSavingAll={isSavingAll}
+          batchSaveProgress={isSavingAll ? batchSaveProgress : undefined}
+          batchSaveErrors={batchSaveProgress.errors.length > 0 ? batchSaveProgress.errors : undefined}
+          onRetryFailed={batchSaveProgress.errors.length > 0 ? handleRetryFailedCompanies : undefined}
         />
       )}
     </div>
