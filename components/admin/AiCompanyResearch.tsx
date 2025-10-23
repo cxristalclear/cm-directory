@@ -14,21 +14,19 @@ interface ResearchedCompany {
 
 interface AiCompanyResearchProps {
   onSaveCompany: (data: CompanyFormData, isDraft: boolean) => Promise<void>
+  onAllCompaniesSaved?: () => void
 }
 
-export default function AiCompanyResearch({ onSaveCompany }: AiCompanyResearchProps) {
+export default function AiCompanyResearch({ 
+  onSaveCompany, 
+  onAllCompaniesSaved 
+}: AiCompanyResearchProps) {
   const [mode, setMode] = useState<Mode>('single')
   const [loading, setLoading] = useState(false)
-  
-  // Single mode state
   const [companyName, setCompanyName] = useState('')
   const [website, setWebsite] = useState('')
-  
-  // Batch mode state
   const [batchInput, setBatchInput] = useState('')
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, company: '' })
-  
-  // Results state
   const [researchedCompanies, setResearchedCompanies] = useState<ResearchedCompany[]>([])
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -118,15 +116,17 @@ export default function AiCompanyResearch({ onSaveCompany }: AiCompanyResearchPr
     try {
       await onSaveCompany(currentCompany.data, isDraft)
       
-      // Remove saved company from list
       const updated = researchedCompanies.filter((_, i) => i !== currentPreviewIndex)
       setResearchedCompanies(updated)
       
-      // Adjust preview index
       if (updated.length > 0) {
         setCurrentPreviewIndex(Math.min(currentPreviewIndex, updated.length - 1))
       } else {
-        // All companies saved, reset form
+        // All companies saved - trigger redirect callback
+        if (onAllCompaniesSaved) {
+          onAllCompaniesSaved()
+        }
+        // Reset form
         setCompanyName('')
         setWebsite('')
         setBatchInput('')
@@ -149,7 +149,6 @@ export default function AiCompanyResearch({ onSaveCompany }: AiCompanyResearchPr
 
   return (
     <div className="space-y-6">
-      {/* Research Input Card */}
       <div className="glass-card p-6">
         <div className="flex items-center gap-4 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
@@ -158,7 +157,6 @@ export default function AiCompanyResearch({ onSaveCompany }: AiCompanyResearchPr
           </h2>
         </div>
 
-        {/* Mode Toggle */}
         <div className="flex gap-4 mb-6">
           <button
             type="button"
@@ -186,7 +184,6 @@ export default function AiCompanyResearch({ onSaveCompany }: AiCompanyResearchPr
           </button>
         </div>
 
-        {/* Single Mode Inputs */}
         {mode === 'single' && (
           <div className="space-y-4">
             <div>
@@ -231,7 +228,6 @@ export default function AiCompanyResearch({ onSaveCompany }: AiCompanyResearchPr
           </div>
         )}
 
-        {/* Batch Mode Inputs */}
         {mode === 'batch' && (
           <div className="space-y-4">
             <div>
@@ -269,7 +265,6 @@ export default function AiCompanyResearch({ onSaveCompany }: AiCompanyResearchPr
           </div>
         )}
 
-        {/* Error Display */}
         {error && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-800">{error}</p>
@@ -277,7 +272,6 @@ export default function AiCompanyResearch({ onSaveCompany }: AiCompanyResearchPr
         )}
       </div>
 
-      {/* Preview Section */}
       {researchedCompanies.length > 0 && currentCompany && (
         <CompanyPreview
           companyData={currentCompany.data}
