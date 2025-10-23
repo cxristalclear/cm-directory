@@ -49,6 +49,9 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
       zip_code: f.zip_code || undefined,
       country: f.country || 'US',
       is_primary: f.is_primary || false,
+      latitude: typeof f.latitude === 'number' ? f.latitude : null,
+      longitude: typeof f.longitude === 'number' ? f.longitude : null,
+      location: f.location ?? null,
     })) || [],
     capabilities: company.capabilities?.[0] ? {
       pcb_assembly_smt: company.capabilities[0].pcb_assembly_smt || undefined,
@@ -207,6 +210,9 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
           zip_code: f.zip_code || null,
           country: f.country || 'US',
           is_primary: f.is_primary || false,
+          latitude: typeof f.latitude === 'number' ? f.latitude : null,
+          longitude: typeof f.longitude === 'number' ? f.longitude : null,
+          location: f.location ?? null,
         }))
 
         console.log('Inserting facilities:', facilitiesData)
