@@ -142,7 +142,7 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
         dba_name: formData.dba_name || null,
         slug: newSlug || null,
         description: formData.description || null,
-        website_url: formData.website_url, // Optional string, undefined if empty
+        website_url: formData.website_url || '',
         year_founded: formData.year_founded || null,
         employee_count_range: formData.employee_count_range || null,
         annual_revenue_range: formData.annual_revenue_range || null,
