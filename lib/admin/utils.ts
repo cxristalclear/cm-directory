@@ -57,7 +57,7 @@ export async function ensureUniqueSlug(
       query.neq('id', excludeId)
     }
 
-    const { data } = await query.single()
+    const { data } = await query.maybeSingle()
 
     if (!data) {
       return uniqueSlug
