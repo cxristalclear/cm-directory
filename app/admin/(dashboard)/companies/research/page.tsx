@@ -112,8 +112,7 @@ export default function AiResearchPage() {
             let latitude = facility.latitude
             let longitude = facility.longitude
 
-            // ✅ Use compatibility function
-            if ((!latitude || !longitude) && hasMinimumAddressData(facility) && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+            if ((latitude == null || longitude == null) && hasMinimumAddressData(facility) && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
               try {
                 console.log(`📍 Geocoding: ${facility.city}, ${facility.state || facility.state_province}`)
                 const coordinates = await geocodeFacilityToPoint(facility)
@@ -125,8 +124,9 @@ export default function AiResearchPage() {
               }
             } else if (!hasMinimumAddressData(facility)) {
               console.warn('⚠️ Skipping geocoding - insufficient address data:', facility)
+            } else if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+              console.warn('⚠️ Skipping geocoding - missing NEXT_PUBLIC_MAPBOX_TOKEN')
             }
-
             // ✅ Use compatibility function to write to both columns
             facilitiesData.push(prepareFacilityForDB({
               company_id: companyId,

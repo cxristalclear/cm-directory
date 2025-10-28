@@ -5,7 +5,15 @@
 
 import { callOpenAI } from './openaiClient'
 import { enrichCompanyData, formatEnrichmentData } from './zoomInfoEnrich'
-import type { CompanyFormData } from '@/types/admin'
+import type {
+  BusinessInfoFormData,
+  CapabilitiesFormData,
+  CertificationFormData,
+  CompanyFormData,
+  FacilityFormData,
+  IndustryFormData,
+  TechnicalSpecsFormData,
+} from '@/types/admin'
 
 // System prompt from custom_cm_search_instructions.txt
 const SYSTEM_PROMPT = `You are a B2B company data researcher specializing in electronics manufacturing. Your goal is to return accurate, verified data about manufacturing companies in a structured JSON format.
@@ -145,7 +153,7 @@ Return a single JSON object (not an array) with this structure. Use null for unk
 - Use null if not found in ZoomInfo data or company website
 
 ## CAPABILITIES
-- Set to true ONLY if explicitly stated on company website or in ZoomInfo data
+- Set to true if stated on company website or in ZoomInfo data
 - Look for: services page, capabilities page, process descriptions
 - Keywords to look for:
   - "SMT assembly", "surface mount" → pcb_assembly_smt: true
@@ -223,6 +231,285 @@ export interface ResearchResult {
   data?: CompanyFormData
   error?: string
   enrichmentData?: string
+}
+
+const truthyStrings = new Set(['true', 'yes', 'y', '1'])
+const falsyStrings = new Set(['false', 'no', 'n', '0'])
+
+const ensureBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') {
+    return value
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (truthyStrings.has(normalized)) {
+      return true
+    }
+    if (falsyStrings.has(normalized)) {
+      return false
+    }
+  }
+  if (typeof value === 'number') {
+    if (value === 1) {
+      return true
+    }
+    if (value === 0) {
+      return false
+    }
+  }
+  return undefined
+}
+
+const mergeBoolean = (preferred: unknown, fallback: boolean = false): boolean => {
+  const normalized = ensureBoolean(preferred)
+  if (normalized !== undefined) {
+    return normalized
+  }
+  return fallback
+}
+
+const normalizeString = (value: unknown): string | undefined => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : undefined
+  }
+  return undefined
+}
+
+const normalizeNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value.replace(/[^0-9.\-]/g, ''))
+    if (Number.isFinite(parsed)) {
+      return parsed
+    }
+  }
+  return undefined
+}
+
+const normalizeArray = <T>(value: unknown): T[] => {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is T => item != null)
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(/[,;|\n]/)
+      .map(part => part.trim())
+      .filter(Boolean) as unknown as T[]
+  }
+  if (value && typeof value === 'object') {
+    return [value as T]
+  }
+  return []
+}
+
+const normalizeFacility = (facility: Record<string, unknown>): FacilityFormData => {
+  const street =
+    normalizeString(facility.street_address) ??
+    normalizeString(facility.streetAddress) ??
+    normalizeString(facility.address) ??
+    normalizeString(facility.street)
+
+  const state =
+    normalizeString(facility.state) ??
+    normalizeString(facility.state_province) ??
+    normalizeString(facility.province)
+
+  const zip =
+    normalizeString(facility.zip_code) ??
+    normalizeString(facility.zipCode) ??
+    normalizeString(facility.postal_code) ??
+    normalizeString(facility.zip)
+
+  return {
+    facility_type: normalizeString(facility.facility_type) ?? 'Manufacturing',
+    street_address: street,
+    city: normalizeString(facility.city),
+    state,
+    zip_code: zip,
+    country: normalizeString(facility.country) ?? 'US',
+    is_primary: mergeBoolean(facility.is_primary, false),
+    latitude: normalizeNumber(facility.latitude) ?? null,
+    longitude: normalizeNumber(facility.longitude) ?? null,
+    location: facility.location ?? undefined,
+  }
+}
+
+const normalizeCapabilities = (raw: unknown): CapabilitiesFormData => {
+  if (!raw) {
+    return {}
+  }
+
+  // Handle simple string array results
+  if (Array.isArray(raw)) {
+    const entries = normalizeArray<string>(raw).map(item => item.toLowerCase())
+    const includes = (key: string): boolean => entries.some(entry => entry.includes(key))
+    return {
+      pcb_assembly_smt: includes('smt'),
+      pcb_assembly_through_hole: includes('through'),
+      pcb_assembly_mixed: includes('mixed'),
+      pcb_assembly_fine_pitch: includes('fine pitch'),
+      cable_harness_assembly: includes('cable') || includes('harness'),
+      box_build_assembly: includes('box build') || includes('box-build'),
+      testing_ict: includes('ict'),
+      testing_functional: includes('functional'),
+      testing_environmental: includes('environmental'),
+      testing_rf_wireless: includes('rf') || includes('wireless'),
+      design_services: includes('design'),
+      supply_chain_management: includes('supply'),
+      prototyping: includes('prototype'),
+      low_volume_production: includes('low volume'),
+      medium_volume_production: includes('medium volume'),
+      high_volume_production: includes('high volume'),
+      turnkey_services: includes('turnkey'),
+      consigned_services: includes('consigned'),
+    }
+  }
+
+  if (typeof raw !== 'object' || raw === null) {
+    return {}
+  }
+
+  const obj = raw as Record<string, unknown>
+
+  const mapBoolean = (key: keyof CapabilitiesFormData, fallbackKey?: string): boolean => {
+    const value = obj[key as string] ?? (fallbackKey ? obj[fallbackKey] : undefined)
+    return mergeBoolean(value, false)
+  }
+
+  return {
+    pcb_assembly_smt: mapBoolean('pcb_assembly_smt'),
+    pcb_assembly_through_hole: mapBoolean('pcb_assembly_through_hole'),
+    pcb_assembly_mixed: mapBoolean('pcb_assembly_mixed'),
+    pcb_assembly_fine_pitch: mapBoolean('pcb_assembly_fine_pitch'),
+    cable_harness_assembly: mapBoolean('cable_harness_assembly'),
+    box_build_assembly: mapBoolean('box_build_assembly'),
+    testing_ict: mapBoolean('testing_ict'),
+    testing_functional: mapBoolean('testing_functional'),
+    testing_environmental: mapBoolean('testing_environmental'),
+    testing_rf_wireless: mapBoolean('testing_rf_wireless'),
+    design_services: mapBoolean('design_services'),
+    supply_chain_management: mapBoolean('supply_chain_management'),
+    prototyping: mapBoolean('prototyping'),
+    low_volume_production: mapBoolean('low_volume_production'),
+    medium_volume_production: mapBoolean('medium_volume_production'),
+    high_volume_production: mapBoolean('high_volume_production'),
+    turnkey_services: mapBoolean('turnkey_services'),
+    consigned_services: mapBoolean('consigned_services'),
+  }
+}
+
+const normalizeIndustries = (raw: unknown): IndustryFormData[] => {
+  if (!raw) {
+    return []
+  }
+
+  if (Array.isArray(raw)) {
+    return raw
+      .map(item => {
+        if (typeof item === 'string') {
+          const industry = normalizeString(item)
+          return industry ? { industry_name: industry } : undefined
+        }
+        if (typeof item === 'object' && item) {
+          const industry = normalizeString((item as Record<string, unknown>).industry_name)
+          return industry ? { industry_name: industry } : undefined
+        }
+        return undefined
+      })
+      .filter((item): item is IndustryFormData => Boolean(item))
+  }
+
+  if (typeof raw === 'string') {
+    return normalizeArray<string>(raw).map(industry => ({ industry_name: industry }))
+  }
+
+  return []
+}
+
+const normalizeCertifications = (raw: unknown): CertificationFormData[] => {
+  const validStatuses: CertificationFormData['status'][] = ['Active', 'Expired', 'Pending']
+  if (!raw) {
+    return []
+  }
+
+  return normalizeArray<unknown>(raw).map(item => {
+    if (typeof item === 'string') {
+      const name = normalizeString(item)
+      return {
+        certification_type: name ?? '',
+        status: 'Active',
+      }
+    }
+
+    if (typeof item !== 'object' || item === null) {
+      return {
+        certification_type: '',
+        status: 'Active',
+      }
+    }
+
+    const entry = item as Record<string, unknown>
+    const rawStatus = normalizeString(entry.status)
+    const status = validStatuses.find(candidate => candidate === rawStatus) ?? 'Active'
+
+    return {
+      certification_type: normalizeString(entry.certification_type) ?? '',
+      certificate_number: normalizeString(entry.certificate_number),
+      status,
+      issued_date: normalizeString(entry.issue_date) ?? normalizeString(entry.issued_date),
+      expiration_date: normalizeString(entry.expiration_date),
+    }
+  })
+}
+
+const normalizeTechnicalSpecs = (raw: unknown): TechnicalSpecsFormData => {
+  if (!raw || typeof raw !== 'object') {
+    return {}
+  }
+
+  const specs = raw as Record<string, unknown>
+
+  return {
+    smallest_component_size: normalizeString(specs.smallest_component_size),
+    finest_pitch_capability: normalizeString(specs.finest_pitch_capability),
+    max_pcb_size_inches: normalizeString(specs.max_pcb_size_inches),
+    max_pcb_layers: normalizeNumber(specs.max_pcb_layers),
+    lead_free_soldering: mergeBoolean(specs.lead_free_soldering, false),
+    conformal_coating: mergeBoolean(specs.conformal_coating, false),
+    potting_encapsulation: mergeBoolean(specs.potting_encapsulation, false),
+    x_ray_inspection: mergeBoolean(specs.x_ray_inspection, false),
+    aoi_inspection: mergeBoolean(specs.aoi_inspection, false),
+    flying_probe_testing: mergeBoolean(specs.flying_probe_testing, false),
+    burn_in_testing: mergeBoolean(specs.burn_in_testing, false),
+    clean_room_class: normalizeString(specs.clean_room_class),
+  }
+}
+
+const normalizeBusinessInfo = (raw: unknown): BusinessInfoFormData => {
+  if (!raw || typeof raw !== 'object') {
+    return {}
+  }
+
+  const info = raw as Record<string, unknown>
+
+  return {
+    min_order_qty: normalizeString(info.min_order_qty),
+    prototype_lead_time: normalizeString(info.prototype_lead_time),
+    production_lead_time: normalizeString(info.production_lead_time),
+    payment_terms: normalizeString(info.payment_terms),
+    rush_order_capability: mergeBoolean(info.rush_order_capability ?? info.rush_orders, false),
+    twenty_four_seven_production: mergeBoolean(
+      info.twenty_four_seven_production ?? info.twentyfour_seven,
+      false
+    ),
+    engineering_support_hours: normalizeString(info.engineering_support_hours),
+    sales_territory: normalizeString(info.sales_territory),
+    notable_customers: normalizeString(info.notable_customers),
+    awards_recognition: normalizeString(info.awards_recognition ?? info.awards),
+  }
 }
 
 /**
@@ -403,20 +690,31 @@ Return a single JSON object (not an array) following the exact schema provided i
       }
     }
 
-    const parseCoordinate = (value: unknown): number | null => {
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        return value
-      }
+    // Step 5: Map to CompanyFormData structure
+    const facilities = Array.isArray(parsedData.facilities)
+      ? parsedData.facilities
+          .map(facility => {
+            if (!facility || typeof facility !== 'object') {
+              return undefined
+            }
+            return normalizeFacility(facility as Record<string, unknown>)
+          })
+          .filter((facility): facility is FacilityFormData => Boolean(facility?.city && facility?.state))
+      : []
 
-      if (typeof value === 'string') {
-        const parsed = Number.parseFloat(value)
-        return Number.isFinite(parsed) ? parsed : null
-      }
+    const capabilities = normalizeCapabilities(parsedData.capabilities)
+    const industries = normalizeIndustries(parsedData.industries)
+    const certifications = normalizeCertifications(parsedData.certifications)
+    const technicalSpecs = normalizeTechnicalSpecs(parsedData.technical_specs)
+    const businessInfo = normalizeBusinessInfo(parsedData.business_info)
 
-      return null
+    if (!businessInfo.notable_customers) {
+      businessInfo.notable_customers = normalizeString(parsedData.notable_customers)
+    }
+    if (!businessInfo.awards_recognition) {
+      businessInfo.awards_recognition = normalizeString(parsedData.awards)
     }
 
-    // Step 5: Map to CompanyFormData structure
     const companyData: CompanyFormData = {
       company_name: parsedData.company_name || companyName,
       dba_name: parsedData.dba_name || undefined,
@@ -428,101 +726,22 @@ Return a single JSON object (not an array) following the exact schema provided i
       key_differentiators: parsedData.key_differentiators || undefined,
 
       // Map facilities
-      facilities: Array.isArray(parsedData.facilities) 
-        ? parsedData.facilities.map((f) => ({
-            facility_type: f.facility_type || 'Manufacturing',
-            street_address: f.street_address || undefined,
-            city: f.city || undefined,
-            state: f.state || undefined,
-            zip_code: f.zip_code || undefined,
-            country: f.country || 'US',
-            is_primary: f.is_primary || false,
-            latitude: parseCoordinate(f.latitude ?? null),
-            longitude: parseCoordinate(f.longitude ?? null),
-            location: f.location ?? undefined,
-          }))
-        : [],
+      facilities,
 
       // Map capabilities
-      capabilities: parsedData.capabilities ? {
-        pcb_assembly_smt: parsedData.capabilities.pcb_assembly_smt || false,
-        pcb_assembly_through_hole: parsedData.capabilities.pcb_assembly_through_hole || false,
-        pcb_assembly_mixed: parsedData.capabilities.pcb_assembly_mixed || false,
-        pcb_assembly_fine_pitch: parsedData.capabilities.pcb_assembly_fine_pitch || false,
-        cable_harness_assembly: parsedData.capabilities.cable_harness_assembly || false,
-        box_build_assembly: parsedData.capabilities.box_build_assembly || false,
-        testing_ict: parsedData.capabilities.testing_ict || false,
-        testing_functional: parsedData.capabilities.testing_functional || false,
-        testing_environmental: parsedData.capabilities.testing_environmental || false,
-        testing_rf_wireless: parsedData.capabilities.testing_rf_wireless || false,
-        design_services: parsedData.capabilities.design_services || false,
-        supply_chain_management: parsedData.capabilities.supply_chain_management || false,
-        prototyping: parsedData.capabilities.prototyping || false,
-        low_volume_production: parsedData.capabilities.low_volume_production || false,
-        medium_volume_production: parsedData.capabilities.medium_volume_production || false,
-        high_volume_production: parsedData.capabilities.high_volume_production || false,
-        turnkey_services: parsedData.capabilities.turnkey_services || false,
-        consigned_services: parsedData.capabilities.consigned_services || false,
-      } : {},
+      capabilities,
 
       // Map industries
-      industries: Array.isArray(parsedData.industries)
-        ? parsedData.industries.map((i) => ({
-            industry_name: i.industry_name || '',
-          }))
-        : [],
+      industries,
 
       // Map certifications
-      certifications: Array.isArray(parsedData.certifications)
-        ? parsedData.certifications.map((c) => {
-            // Validate status to match the strict type
-            const validStatuses = ['Active', 'Expired', 'Pending'] as const
-            type ValidStatus = typeof validStatuses[number]
-            const status = c.status as ValidStatus | null | undefined
-            const validatedStatus: 'Active' | 'Expired' | 'Pending' | null | undefined = 
-              status && validStatuses.includes(status as ValidStatus) 
-                ? (status as 'Active' | 'Expired' | 'Pending')
-                : 'Active'
-
-            return {
-              certification_type: c.certification_type || '',
-              certificate_number: c.certificate_number || undefined,
-              status: validatedStatus,
-              issued_date: c.issue_date || c.issued_date || undefined,
-              expiration_date: c.expiration_date || undefined,
-            }
-          })
-        : [],
+      certifications,
 
       // Map technical specs
-      technical_specs: parsedData.technical_specs ? {
-        smallest_component_size: parsedData.technical_specs.smallest_component_size || undefined,
-        finest_pitch_capability: parsedData.technical_specs.finest_pitch_capability || undefined,
-        max_pcb_size_inches: parsedData.technical_specs.max_pcb_size_inches || undefined,
-        max_pcb_layers: parsedData.technical_specs.max_pcb_layers || undefined,
-        lead_free_soldering: parsedData.technical_specs.lead_free_soldering || false,
-        conformal_coating: parsedData.technical_specs.conformal_coating || false,
-        potting_encapsulation: parsedData.technical_specs.potting_encapsulation || false,
-        x_ray_inspection: parsedData.technical_specs.x_ray_inspection || false,
-        aoi_inspection: parsedData.technical_specs.aoi_inspection || false,
-        flying_probe_testing: parsedData.technical_specs.flying_probe_testing || false,
-        burn_in_testing: parsedData.technical_specs.burn_in_testing || false,
-        clean_room_class: parsedData.technical_specs.clean_room_class || undefined,
-      } : {},
+      technical_specs: technicalSpecs,
 
       // Map business info
-      business_info: parsedData.business_info ? {
-        min_order_qty: parsedData.business_info.min_order_qty || undefined,
-        prototype_lead_time: parsedData.business_info.prototype_lead_time || undefined,
-        production_lead_time: parsedData.business_info.production_lead_time || undefined,
-        payment_terms: parsedData.business_info.payment_terms || undefined,
-        rush_order_capability: parsedData.business_info.rush_orders || parsedData.business_info.rush_order_capability || false,
-        twenty_four_seven_production: parsedData.business_info.twentyfour_seven || parsedData.business_info.twenty_four_seven_production || false,
-        engineering_support_hours: parsedData.business_info.engineering_support_hours || undefined,
-        sales_territory: parsedData.business_info.sales_territory || undefined,
-        notable_customers: parsedData.notable_customers || undefined,
-        awards_recognition: parsedData.awards || undefined,
-      } : {},
+      business_info: businessInfo,
     }
 
     // ============================================================================
