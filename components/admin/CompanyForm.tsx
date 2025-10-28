@@ -340,8 +340,11 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                     placeholder="CA, TX, Ontario, Bayern, etc."
                     value={facility.state || facility.state_province || ''}
                     onChange={(e) => {
-                      updateFacility(index, 'state', e.target.value.toUpperCase())
-                      updateFacility(index, 'state_province', e.target.value.toUpperCase())
+                      const value = e.target.value.length <= 2 
+                        ? e.target.value.toUpperCase() 
+                        : e.target.value
+                      updateFacility(index, 'state', value)
+                      updateFacility(index, 'state_province', value)
                     }}
                     className="mt-1 block w-full admin-input"
                   />
