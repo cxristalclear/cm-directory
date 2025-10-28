@@ -63,8 +63,12 @@ export function hasMinimumAddressData(facility: FacilityAddress): boolean {
 /**
  * Build display address string
  */
-export function buildDisplayAddress(facility: FacilityAddress): string {
+export function buildDisplayAddress(
+  facility: FacilityAddress,
+  options?: { excludeCountries?: string[] }
+): string {
   const parts: string[] = []
+  const excludeCountries = options?.excludeCountries ?? ['US']
   
   if (facility.street_address) parts.push(facility.street_address)
   if (facility.city) parts.push(facility.city)
@@ -75,7 +79,7 @@ export function buildDisplayAddress(facility: FacilityAddress): string {
   const postal = getPostalCode(facility)
   if (postal) parts.push(postal)
   
-  if (facility.country && facility.country !== 'US') {
+  if (facility.country && !excludeCountries.includes(facility.country)) {
     parts.push(facility.country)
   }
   
