@@ -191,12 +191,13 @@ export function normalizeWebsiteUrl(url: string | null | undefined): string {
   if (!trimmed) return ''
   
   // Already has protocol
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return trimmed
+  if (trimmed.toLowerCase().startsWith('http://') || trimmed.toLowerCase().startsWith('https://')) {
+    return isValidUrl(trimmed) ? trimmed : ''
   }
   
   // Add https:// by default
-  return `https://${trimmed}`
+  const normalized = `https://${trimmed}`
+  return isValidUrl(normalized) ? normalized : ''
 }
 
 /**
