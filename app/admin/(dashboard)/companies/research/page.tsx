@@ -5,9 +5,10 @@ import { createClient } from '@/lib/supabase-client'
 import AiCompanyResearch from '@/components/admin/AiCompanyResearch'
 import type { CompanyFormData } from '@/types/admin'
 import type { Database } from '@/lib/database.types'
-import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData } from '@/lib/admin/utils'
+import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData, normalizeWebsiteUrl } from '@/lib/admin/utils'
 import { geocodeFacilityToPoint } from '@/lib/admin/geocoding'
 import { toast } from 'sonner'
+import { prepareFacilityForDB, hasMinimumAddressData } from '@/lib/admin/addressCompat'
 
 type CompanyInsert = Database['public']['Tables']['companies']['Insert']
 type FacilityInsert = Database['public']['Tables']['facilities']['Insert']
@@ -75,7 +76,7 @@ export default function AiResearchPage() {
           company_name: formData.company_name,
           dba_name: formData.dba_name || null,
           description: formData.description || null,
-          website_url: formData.website_url || '',
+          website_url: normalizeWebsiteUrl(formData.website_url),
           year_founded: formData.year_founded || null,
           employee_count_range: formData.employee_count_range || null,
           annual_revenue_range: formData.annual_revenue_range || null,
@@ -99,7 +100,6 @@ export default function AiResearchPage() {
 
       // Insert facilities
       if (formData.facilities && formData.facilities.length > 0) {
-        // Check if company already has facilities
         const { data: existingFacilities } = await supabase
           .from('facilities')
           .select('id')
@@ -112,28 +112,36 @@ export default function AiResearchPage() {
             let latitude = facility.latitude
             let longitude = facility.longitude
 
-            if ((!latitude || !longitude) && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+            // ✅ Use compatibility function
+            if ((!latitude || !longitude) && hasMinimumAddressData(facility) && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
               try {
+                console.log(`📍 Geocoding: ${facility.city}, ${facility.state || facility.state_province}`)
                 const coordinates = await geocodeFacilityToPoint(facility)
                 latitude = coordinates.latitude
                 longitude = coordinates.longitude
+                console.log(`✓ Geocoded to: ${latitude}, ${longitude}`)
               } catch (error) {
                 console.warn('⚠️ Geocoding failed:', error)
               }
+            } else if (!hasMinimumAddressData(facility)) {
+              console.warn('⚠️ Skipping geocoding - insufficient address data:', facility)
             }
 
-            facilitiesData.push({
+            // ✅ Use compatibility function to write to both columns
+            facilitiesData.push(prepareFacilityForDB({
               company_id: companyId,
               facility_type: facility.facility_type,
               street_address: facility.street_address || null,
               city: facility.city || null,
-              state: facility.state || null,
-              zip_code: facility.zip_code || null,
+              state: facility.state,
+              state_province: facility.state_province,
+              zip_code: facility.zip_code,
+              postal_code: facility.postal_code,
               country: facility.country || 'US',
               is_primary: facility.is_primary || false,
               latitude: latitude || null,
               longitude: longitude || null,
-            })
+            }))
           }
 
           const { error: facilitiesError } = await supabase
