@@ -27,5 +27,6 @@
   "python-envs.defaultEnvManager": "ms-python.python:system",
   "python-envs.pythonProjects": [],
   "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.validate.enable": true
+  "typescript.validate.enable": true,
+  "chatgpt.openOnStartup": true
 }
