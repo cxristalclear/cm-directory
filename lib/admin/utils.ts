@@ -182,6 +182,24 @@ export function validateCompanyData(data: CompanyFormData): { valid: boolean; er
 }
 
 /**
+ * Normalize website URL to ensure it has a valid protocol
+ */
+export function normalizeWebsiteUrl(url: string | null | undefined): string {
+  if (!url) return ''
+  
+  const trimmed = url.trim()
+  if (!trimmed) return ''
+  
+  // Already has protocol
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed
+  }
+  
+  // Add https:// by default
+  return `https://${trimmed}`
+}
+
+/**
  * Validate URL format
  */
 function isValidUrl(url: string): boolean {

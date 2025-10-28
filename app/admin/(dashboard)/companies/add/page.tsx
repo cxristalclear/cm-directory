@@ -6,8 +6,9 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import CompanyForm from '@/components/admin/CompanyForm'
 import type { CompanyFormData } from '@/types/admin'
 import type { Database } from '@/lib/database.types'
-import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData } from '@/lib/admin/utils'
+import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData, normalizeWebsiteUrl } from '@/lib/admin/utils'
 import { toast } from 'sonner'
+import { prepareFacilityForDB } from '@/lib/admin/addressCompat'
 
 type CompanyInsert = Database['public']['Tables']['companies']['Insert']
 type FacilityInsert = Database['public']['Tables']['facilities']['Insert']
@@ -50,7 +51,7 @@ export default function AddCompanyPage() {
         dba_name: formData.dba_name || null,
         slug: uniqueSlug,
         description: formData.description || null,
-        website_url: formData.website_url || '',
+        website_url: normalizeWebsiteUrl(formData.website_url),
         year_founded: formData.year_founded || null,
         employee_count_range: formData.employee_count_range || null,
         annual_revenue_range: formData.annual_revenue_range || null,
@@ -74,19 +75,23 @@ export default function AddCompanyPage() {
 
       // Insert facilities
       if (formData.facilities && formData.facilities.length > 0) {
-        const facilitiesInsert: FacilityInsert[] = formData.facilities.map((f) => ({
+        const facilitiesInsert: FacilityInsert[] = formData.facilities.map((f) => 
+          prepareFacilityForDB({
           company_id: company.id,
           facility_type: f.facility_type,
           street_address: f.street_address || null,
           city: f.city || null,
-          state: f.state || null,
-          zip_code: f.zip_code || null,
+          state: f.state,
+          state_province: f.state_province,
+          zip_code: f.zip_code,
+          postal_code: f.postal_code,
           country: f.country || 'US',
           is_primary: f.is_primary || false,
           latitude: typeof f.latitude === 'number' ? f.latitude : null,
           longitude: typeof f.longitude === 'number' ? f.longitude : null,
           location: f.location ?? null,
-        }))
+        })
+      )
 
         const { error: facilitiesError } = await supabase
           .from('facilities')
