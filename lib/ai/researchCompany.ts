@@ -512,231 +512,6 @@ const normalizeBusinessInfo = (raw: unknown): BusinessInfoFormData => {
   }
 }
 
-interface ParsedCompanyData {
-  company_name?: string
-  dba_name?: string
-  slug?: string
-  website?: string
-  logo_url?: string
-  description?: string
-  public_description?: string
-  year_founded?: number
-  employee_count_range?: string
-  annual_revenue_range?: string
-  revenue_range?: string
-  is_active?: boolean
-  is_verified?: boolean
-  facilities?: Array<{
-    facility_type?: string
-    street_address?: string
-    city?: string
-    state?: string
-    zip_code?: string
-    country?: string
-    facility_size_sqft?: number | null
-    employees_at_location?: number | null
-    key_capabilities?: string
-    is_primary?: boolean
-    latitude?: number | string | null
-    longitude?: number | string | null
-    location?: unknown
-  }>
-  capabilities?: {
-    pcb_assembly_smt?: boolean
-    pcb_assembly_through_hole?: boolean
-    pcb_assembly_mixed?: boolean
-    pcb_assembly_fine_pitch?: boolean
-    cable_harness_assembly?: boolean
-    box_build_assembly?: boolean
-    testing_ict?: boolean
-    testing_functional?: boolean
-    testing_environmental?: boolean
-    testing_rf_wireless?: boolean
-    design_services?: boolean
-    supply_chain_management?: boolean
-    prototyping?: boolean
-    low_volume_production?: boolean
-    medium_volume_production?: boolean
-    high_volume_production?: boolean
-    turnkey_services?: boolean
-    consigned_services?: boolean
-    lead_free_soldering?: boolean
-  }
-  industries?: Array<{
-    industry_name?: string
-    is_specialization?: boolean
-    years_experience?: number
-    notable_projects?: string
-  }>
-  certifications?: Array<{
-    certification_type?: string
-    status?: string
-    certificate_number?: string
-    issue_date?: string
-    issued_date?: string
-    expiration_date?: string
-    issuing_body?: string
-    scope?: string
-  }>
-  technical_specs?: {
-    smallest_component_size?: string
-    finest_pitch_capability?: string
-    max_pcb_size_inches?: string
-    max_pcb_layers?: number
-    lead_free_soldering?: boolean
-    conformal_coating?: boolean
-    potting_encapsulation?: boolean
-    x_ray_inspection?: boolean
-    aoi_inspection?: boolean
-    flying_probe_testing?: boolean
-    burn_in_testing?: boolean
-    clean_room_class?: string
-    additional_specs?: string
-  }
-  business_info?: {
-    min_order_qty?: string
-    prototype_lead_time?: string
-    production_lead_time?: string
-    payment_terms?: string
-    rush_orders?: boolean
-    rush_order_capability?: boolean
-    twentyfour_seven?: boolean
-    twenty_four_seven_production?: boolean
-    engineering_support_hours?: string
-    sales_territory?: string
-  }
-  key_differentiators?: string
-  notable_customers?: string
-  awards?: string
-  research_date?: string
-  data_confidence?: string
-  research_notes?: string
-}
-
-const parseAiResponse = (rawResponse: string): ParsedCompanyData => {
-  if (rawResponse === undefined || rawResponse === null) {
-    throw new Error('Empty AI response from model')
-  }
-
-  let cleanedResponse = rawResponse.trim()
-  if (cleanedResponse.startsWith('```json')) {
-    cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '')
-  }
-  if (cleanedResponse.startsWith('```')) {
-    cleanedResponse = cleanedResponse.replace(/```\n?/g, '')
-  }
-
-  const parsed: unknown = JSON.parse(cleanedResponse)
-
-  if (Array.isArray(parsed)) {
-    return (parsed[0] ?? {}) as ParsedCompanyData
-  }
-
-  return parsed as ParsedCompanyData
-}
-
-const mapParsedCompanyData = (
-  parsedData: ParsedCompanyData,
-  companyName: string,
-  website?: string
-): CompanyFormData => {
-  const facilities = Array.isArray(parsedData.facilities)
-    ? parsedData.facilities
-        .map(facility => {
-          if (!facility || typeof facility !== 'object') {
-            return undefined
-          }
-          return normalizeFacility(facility as Record<string, unknown>)
-        })
-        .filter((facility): facility is FacilityFormData => Boolean(facility?.city && facility?.state))
-    : []
-
-  const capabilities = normalizeCapabilities(parsedData.capabilities)
-  const industries = normalizeIndustries(parsedData.industries)
-  const certifications = normalizeCertifications(parsedData.certifications)
-  const technicalSpecs = normalizeTechnicalSpecs(parsedData.technical_specs)
-  const businessInfo = normalizeBusinessInfo(parsedData.business_info)
-
-  if (!businessInfo.notable_customers) {
-    businessInfo.notable_customers = normalizeString(parsedData.notable_customers)
-  }
-  if (!businessInfo.awards_recognition) {
-    businessInfo.awards_recognition = normalizeString(parsedData.awards)
-  }
-
-  return {
-    company_name: parsedData.company_name || companyName,
-    dba_name: parsedData.dba_name || undefined,
-    description: parsedData.description || parsedData.public_description || undefined,
-    website_url: parsedData.website || website || undefined,
-    year_founded: parsedData.year_founded || undefined,
-    employee_count_range: parsedData.employee_count_range || undefined,
-    annual_revenue_range: parsedData.annual_revenue_range || parsedData.revenue_range || undefined,
-    key_differentiators: parsedData.key_differentiators || undefined,
-    facilities,
-    capabilities,
-    industries,
-    certifications,
-    technical_specs: technicalSpecs,
-    business_info: businessInfo,
-  }
-}
-
-const countEnabledCapabilities = (capabilities?: CapabilitiesFormData): number => {
-  if (!capabilities) {
-    return 0
-  }
-  return Object.values(capabilities).filter(value => value === true).length
-}
-
-const countFilledTechnicalSpecs = (technicalSpecs?: TechnicalSpecsFormData): number => {
-  if (!technicalSpecs) {
-    return 0
-  }
-  return Object.values(technicalSpecs).filter(
-    value => value !== null && value !== undefined && value !== false && value !== ''
-  ).length
-}
-
-const countFilledBusinessInfo = (businessInfo?: BusinessInfoFormData): number => {
-  if (!businessInfo) {
-    return 0
-  }
-  return Object.values(businessInfo).filter(
-    value => value !== null && value !== undefined && value !== false && value !== ''
-  ).length
-}
-
-const findMissingSections = (companyData: CompanyFormData): string[] => {
-  const missing: string[] = []
-
-  if (!companyData.facilities || companyData.facilities.length === 0) {
-    missing.push('facilities (city and state required)')
-  }
-
-  if (countEnabledCapabilities(companyData.capabilities) === 0) {
-    missing.push('capabilities')
-  }
-
-  if (!companyData.industries || companyData.industries.length === 0) {
-    missing.push('industries')
-  }
-
-  if (!companyData.certifications || companyData.certifications.length === 0) {
-    missing.push('certifications')
-  }
-
-  if (countFilledTechnicalSpecs(companyData.technical_specs) === 0) {
-    missing.push('technical_specs')
-  }
-
-  if (countFilledBusinessInfo(companyData.business_info) === 0) {
-    missing.push('business_info')
-  }
-
-  return missing
-}
-
 /**
  * Research a single company using ZoomInfo and OpenAI
  */
@@ -779,7 +554,7 @@ ${enrichmentDataString || 'No enrichment data available - rely on web research'}
 
 Return a single JSON object (not an array) following the exact schema provided in the system prompt.`
 
-    const MAX_ATTEMPTS = process.env.NODE_ENV === 'test' ? 1 : 2
+    const MAX_ATTEMPTS = 2
     let attempt = 0
     let currentUserMessage = baseUserMessage
     let parsedData: ParsedCompanyData | null = null
@@ -795,7 +570,7 @@ Return a single JSON object (not an array) following the exact schema provided i
       const aiResponse = await callOpenAI(SYSTEM_PROMPT, currentUserMessage, temperature)
 
       try {
-        parsedData = parseAiResponse(aiResponse)
+        parsedData = aiResponse(aiResponse)
       } catch (parseError) {
         console.error('Failed to parse OpenAI response as JSON:', parseError)
         lastParseError = parseError instanceof Error ? parseError : new Error(String(parseError))
@@ -815,7 +590,7 @@ The previous response could not be parsed as valid JSON. Please return a single 
       }
 
       companyData = mapParsedCompanyData(parsedData, companyName, website)
-      missingSections = findMissingSections(companyData)
+      missingSections = missingSections(companyData)
 
       if (missingSections.length === 0 || attempt >= MAX_ATTEMPTS) {
         if (missingSections.length > 0) {
