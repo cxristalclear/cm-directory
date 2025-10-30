@@ -29,8 +29,14 @@ export default function AddCompanyPage() {
     let createdCompanyId: string | null = null
 
     try {
+      // Normalize website URL before validation - ensure it has http:// or https://
+      const normalizedFormData = {
+        ...formData,
+        website_url: normalizeWebsiteUrl(formData.website_url),
+      }
+
       // Validate data
-      const validation = validateCompanyData(formData)
+      const validation = validateCompanyData(normalizedFormData)
       if (!validation.valid) {
         toast.error(validation.errors.join(', '))
         setLoading(false)
@@ -45,20 +51,20 @@ export default function AddCompanyPage() {
       const baseSlug = generateSlug(formData.company_name)
       const uniqueSlug = await ensureUniqueSlug(supabase, baseSlug)
 
-      // Insert company
+      // Insert company with normalized website URL
       const companyInsert: CompanyInsert = {
-        company_name: formData.company_name,
-        dba_name: formData.dba_name || null,
+        company_name: normalizedFormData.company_name,
+        dba_name: normalizedFormData.dba_name || null,
         slug: uniqueSlug,
-        description: formData.description || null,
-        website_url: normalizeWebsiteUrl(formData.website_url),
-        year_founded: formData.year_founded || null,
-        employee_count_range: formData.employee_count_range || null,
-        annual_revenue_range: formData.annual_revenue_range || null,
-        key_differentiators: formData.key_differentiators || null,
+        description: normalizedFormData.description || null,
+        website_url: normalizedFormData.website_url,
+        year_founded: normalizedFormData.year_founded || null,
+        employee_count_range: normalizedFormData.employee_count_range || null,
+        annual_revenue_range: normalizedFormData.annual_revenue_range || null,
+        key_differentiators: normalizedFormData.key_differentiators || null,
         is_active: !isDraft,
-        is_verified: formData.is_verified || false,
-        verified_until: formData.verified_until || null,
+        is_verified: normalizedFormData.is_verified || false,
+        verified_until: normalizedFormData.verified_until || null,
       }
 
       const { data: company, error: companyError } = await supabase
@@ -74,8 +80,8 @@ export default function AddCompanyPage() {
       createdCompanyId = company.id
 
       // Insert facilities
-      if (formData.facilities && formData.facilities.length > 0) {
-        const facilitiesInsert: FacilityInsert[] = formData.facilities.map((f) => 
+      if (normalizedFormData.facilities && normalizedFormData.facilities.length > 0) {
+        const facilitiesInsert: FacilityInsert[] = normalizedFormData.facilities.map((f) => 
           prepareFacilityForDB({
           company_id: company.id,
           facility_type: f.facility_type,
@@ -101,10 +107,10 @@ export default function AddCompanyPage() {
       }
 
       // Insert capabilities
-      if (formData.capabilities) {
+      if (normalizedFormData.capabilities) {
         const capabilitiesInsert: CapabilitiesInsert = {
           company_id: company.id,
-          ...formData.capabilities,
+          ...normalizedFormData.capabilities,
         }
 
         const { error: capabilitiesError } = await supabase
@@ -115,8 +121,8 @@ export default function AddCompanyPage() {
       }
 
       // Insert industries
-      if (formData.industries && formData.industries.length > 0) {
-        const industriesInsert: IndustryInsert[] = formData.industries.map((i) => ({
+      if (normalizedFormData.industries && normalizedFormData.industries.length > 0) {
+        const industriesInsert: IndustryInsert[] = normalizedFormData.industries.map((i) => ({
           company_id: company.id,
           industry_name: i.industry_name,
         }))
@@ -129,8 +135,8 @@ export default function AddCompanyPage() {
       }
 
       // Insert certifications
-      if (formData.certifications && formData.certifications.length > 0) {
-        const certificationsInsert: CertificationInsert[] = formData.certifications.map((c) => ({
+      if (normalizedFormData.certifications && normalizedFormData.certifications.length > 0) {
+        const certificationsInsert: CertificationInsert[] = normalizedFormData.certifications.map((c) => ({
           company_id: company.id,
           certification_type: c.certification_type,
           certificate_number: c.certificate_number || null,
@@ -147,10 +153,10 @@ export default function AddCompanyPage() {
       }
 
       // Insert technical specs
-      if (formData.technical_specs) {
+      if (normalizedFormData.technical_specs) {
         const technicalSpecsInsert: TechnicalSpecsInsert = {
           company_id: company.id,
-          ...formData.technical_specs,
+          ...normalizedFormData.technical_specs,
         }
 
         const { error: technicalSpecsError } = await supabase
@@ -161,10 +167,10 @@ export default function AddCompanyPage() {
       }
 
       // Insert business info
-      if (formData.business_info) {
+      if (normalizedFormData.business_info) {
         const businessInfoInsert: BusinessInfoInsert = {
           company_id: company.id,
-          ...formData.business_info,
+          ...normalizedFormData.business_info,
         }
 
         const { error: businessInfoError } = await supabase
@@ -191,11 +197,19 @@ export default function AddCompanyPage() {
       )
 
       toast.success(`Company ${isDraft ? 'saved as draft' : 'created'} successfully!`)
+      
+      // Only redirect on successful creation
       router.push('/admin/companies')
       router.refresh()
     } catch (error) {
       console.error('Error creating company:', error)
-      toast.error('Failed to create company. Please try again.')
+      
+      // User-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create company'
+      toast.error(`Import failed: ${errorMessage}. Your research data is still above - please fix and try again.`)
+      
+      // Do NOT redirect - stay on the page so user can see and fix the data
+      // Data remains in the form and can be corrected
     } finally {
       setLoading(false)
     }

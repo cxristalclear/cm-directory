@@ -163,8 +163,11 @@ export function validateCompanyData(data: CompanyFormData): { valid: boolean; er
     errors.push('Company name is required')
   }
 
-  if (data.website_url && !isValidUrl(data.website_url)) {
-    errors.push('Website URL is invalid')
+  // Website is optional, but if provided, it must be valid
+  if (data.website_url && typeof data.website_url === 'string' && data.website_url.trim()) {
+    if (!isValidUrl(data.website_url)) {
+      errors.push('Website URL is invalid. Please use a format like https://example.com or example.com')
+    }
   }
 
   if (data.year_founded) {
@@ -182,26 +185,7 @@ export function validateCompanyData(data: CompanyFormData): { valid: boolean; er
 }
 
 /**
- * Normalize website URL to ensure it has a valid protocol
- */
-export function normalizeWebsiteUrl(url: string | null | undefined): string {
-  if (!url) return ''
-  
-  const trimmed = url.trim()
-  if (!trimmed) return ''
-  
-  // Already has protocol
-  if (trimmed.toLowerCase().startsWith('http://') || trimmed.toLowerCase().startsWith('https://')) {
-    return isValidUrl(trimmed) ? trimmed : ''
-  }
-  
-  // Add https:// by default
-  const normalized = `https://${trimmed}`
-  return isValidUrl(normalized) ? normalized : ''
-}
-
-/**
- * Validate URL format
+ * Validate URL format - must have protocol for this function
  */
 function isValidUrl(url: string): boolean {
   try {
@@ -210,6 +194,49 @@ function isValidUrl(url: string): boolean {
   } catch {
     return false
   }
+}
+
+/**
+ * Normalize website URL to ensure it has a valid protocol (https:// or http://)
+ * Smart handling for common cases:
+ * - If already has protocol, validate and return as-is
+ * - If has www. prefix but no protocol, add https://
+ * - Otherwise, add https:// by default
+ * - Returns empty string if URL is invalid
+ */
+export function normalizeWebsiteUrl(url: string | null | undefined): string {
+  if (!url) return ''
+  
+  const trimmed = url.trim()
+  if (!trimmed) return ''
+  
+  // Already has protocol
+  const lowerUrl = trimmed.toLowerCase()
+  if (lowerUrl.startsWith('http://') || lowerUrl.startsWith('https://')) {
+    if (isValidUrl(trimmed)) {
+      return trimmed
+    }
+    console.warn(`URL validation failed for: ${trimmed}`)
+    return ''
+  }
+  
+  // Try with https:// first (more secure default)
+  const normalizedHttps = `https://${trimmed}`
+  if (isValidUrl(normalizedHttps)) {
+    console.log(`Normalized URL: ${trimmed} -> ${normalizedHttps}`)
+    return normalizedHttps
+  }
+  
+  // Fall back to http:// if https fails
+  const normalizedHttp = `http://${trimmed}`
+  if (isValidUrl(normalizedHttp)) {
+    console.log(`Normalized URL: ${trimmed} -> ${normalizedHttp}`)
+    return normalizedHttp
+  }
+  
+  // Both failed - URL is invalid
+  console.warn(`URL normalization failed for: ${url}`)
+  return ''
 }
 
 /**
