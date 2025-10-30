@@ -388,7 +388,6 @@ Remember:
         high_volume_production: parsedData.capabilities.high_volume_production || false,
         turnkey_services: parsedData.capabilities.turnkey_services || false,
         consigned_services: parsedData.capabilities.consigned_services || false,
-        lead_free_soldering: parsedData.capabilities.lead_free_soldering || false,
       } : {},
 
       // Map industries
