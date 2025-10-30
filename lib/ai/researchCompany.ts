@@ -8,7 +8,7 @@ import { enrichCompanyData, formatEnrichmentData } from './zoomInfoEnrich'
 import type { CompanyFormData } from '@/types/admin'
 
 // System prompt from custom_cm_search_instructions.txt
-const SYSTEM_PROMPT = `You are a structured data collection agent for electronics manufacturing companies. Your job is to return a **single fully completed JSON object** based on the given schema.
+const SYSTEM_PROMPT = `You are a structured data collection agent for electronics manufacturing companies. Your job is to return a **fully completed JSON array** of 1 company per request, based on the given schema.
 
 1. You must fill out all fields – **if data is missing**, use:
    - "" for empty strings  
@@ -29,7 +29,7 @@ If ZoomInfo enrichCompany() returns nothing, leave note in research_notes and co
 Always fill the following fields:
 - company_name, slug, website, description, facilities, capabilities, certifications, technical_specs, industries, business_info, research_notes, research_date, data_confidence
 
-Return a **single valid JSON object** matching this exact structure:
+Return a **single valid JSON array** with one object matching this exact structure:
 {
   "company_name": "string",
   "dba_name": "string",
@@ -185,7 +185,7 @@ Please research this company thoroughly and return a complete JSON object with a
 Remember:
 - Return ONLY valid JSON, no markdown or explanations
 - Fill ALL fields - use empty strings/arrays/null for missing data
-- The response must be a single JSON object (not array)
+- The response must be a single JSON array containing one company object
 - Generate a URL-friendly slug from the company name
 - Set research_date to today's date: ${new Date().toISOString().split('T')[0]}
 - Include comprehensive capabilities, facilities, and certifications data`
@@ -388,6 +388,7 @@ Remember:
         high_volume_production: parsedData.capabilities.high_volume_production || false,
         turnkey_services: parsedData.capabilities.turnkey_services || false,
         consigned_services: parsedData.capabilities.consigned_services || false,
+        lead_free_soldering: parsedData.capabilities.lead_free_soldering || false,
       } : {},
 
       // Map industries
@@ -502,7 +503,8 @@ export function parseBatchInput(input: string): Array<{ name: string; website?: 
  */
 export async function researchBatchCompanies(
   companies: Array<{ name: string; website?: string }>,
-  onProgress?: (index: number, total: number, company: string) => void
+    onProgress?: (index: number, total: number, company: string) => void,
+    delayMs: number = 1000
 ): Promise<ResearchResult[]> {
   const results: ResearchResult[] = []
 
@@ -518,7 +520,7 @@ export async function researchBatchCompanies(
 
     // Add a small delay between requests to avoid rate limiting
     if (i < companies.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, delayMs))
     }
   }
 
