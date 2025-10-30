@@ -1,515 +1,142 @@
 /**
- * Main Company Research Logic with Enhanced Validation Logging
+ * Main Company Research Logic
  * Orchestrates ZoomInfo enrichment and OpenAI research
  */
 
 import { callOpenAI } from './openaiClient'
 import { enrichCompanyData, formatEnrichmentData } from './zoomInfoEnrich'
-import type {
-  BusinessInfoFormData,
-  CapabilitiesFormData,
-  CertificationFormData,
-  CompanyFormData,
-  FacilityFormData,
-  IndustryFormData,
-  TechnicalSpecsFormData,
-} from '@/types/admin'
+import type { CompanyFormData } from '@/types/admin'
 
 // System prompt from custom_cm_search_instructions.txt
-const SYSTEM_PROMPT = `You are a B2B company data researcher specializing in electronics manufacturing. Your goal is to return accurate, verified data about manufacturing companies in a structured JSON format.
+const SYSTEM_PROMPT = `You are a structured data collection agent for electronics manufacturing companies. Your job is to return a **single fully completed JSON object** based on the given schema.
 
-# CORE PRINCIPLES (CRITICAL)
-1. **ACCURACY OVER COMPLETENESS** - Only include information you can verify from reliable sources
-2. **NO FABRICATION** - If data is not available, leave it as null/empty - do NOT make up information
-3. **NO ASSUMPTIONS** - Do not infer capabilities or details that aren't explicitly stated
-4. **VERIFY ADDRESSES** - Only include facility locations with verifiable city AND state information
+1. You must fill out all fields – **if data is missing**, use:
+   - "" for empty strings  
+   - [] for empty arrays  
+   - null for nulls  
+   - true/false for booleans
 
-# RESPONSE FORMAT
-Return a single JSON object (not an array) with this structure. Use null for unknown values, never use placeholder text.
+2. You must **never ask questions or request permission to proceed**. Just fill in what you can and return the full JSON.
 
+3. You must always return **valid JSON** and only JSON. Never include explanations, markdown, or text.
+
+4. You should never stop early. Fill the entire JSON object completely. Use placeholder values only when you've confirmed the data is not available.
+
+5. Follow the rules for lead_time, certifications, industries, and capabilities strictly.
+
+If ZoomInfo enrichCompany() returns nothing, leave note in research_notes and continue with public sources.
+
+Always fill the following fields:
+- company_name, slug, website, description, facilities, capabilities, certifications, technical_specs, industries, business_info, research_notes, research_date, data_confidence
+
+Return a **single valid JSON object** matching this exact structure:
 {
-  "company_name": "string (REQUIRED)",
-  "dba_name": null,
-  "website_url": "string (REQUIRED - use actual URL if found)",
-  "description": "string (2-3 sentence overview from company's about page)",
-  "year_founded": null,
-  "employee_count_range": null,
-  "annual_revenue_range": null,
-  "key_differentiators": null,
-  
+  "company_name": "string",
+  "dba_name": "string",
+  "slug": "string",
+  "website": "string",
+  "logo_url": "string",
+  "description": "string",
+  "public_description": "string",
+  "year_founded": 2015,
+  "employee_count_range": "250-500",
+  "annual_revenue_range": "$50M-150M",
+  "is_active": true,
+  "is_verified": true,
   "facilities": [
     {
-      "facility_type": "HQ | Manufacturing | Engineering | Sales Office",
-      "street_address": null,
-      "city": "REQUIRED - must be real verified city",
-      "state": "REQUIRED - must be real verified 2-letter state code (e.g., CA, TX, NY)",
-      "zip_code": null,
-      "country": "US",
+      "facility_type": "HQ | Manufacturing",
+      "street_address": "string",
+      "city": "string",
+      "state": "string",
+      "zip_code": "string",
+      "country": "USA",
+      "facility_size_sqft": null,
+      "employees_at_location": 100,
+      "key_capabilities": "string",
       "is_primary": true
     }
   ],
-  
   "capabilities": {
-    "pcb_assembly_smt": false,
-    "pcb_assembly_through_hole": false,
-    "pcb_assembly_mixed": false,
+    "pcb_assembly_smt": true,
+    "pcb_assembly_through_hole": true,
+    "pcb_assembly_mixed": true,
     "pcb_assembly_fine_pitch": false,
-    "cable_harness_assembly": false,
-    "box_build_assembly": false,
-    "testing_ict": false,
-    "testing_functional": false,
+    "cable_harness_assembly": true,
+    "box_build_assembly": true,
+    "testing_ict": true,
+    "testing_functional": true,
     "testing_environmental": false,
     "testing_rf_wireless": false,
-    "design_services": false,
-    "supply_chain_management": false,
-    "prototyping": false,
-    "low_volume_production": false,
-    "medium_volume_production": false,
+    "design_services": true,
+    "supply_chain_management": true,
+    "prototyping": true,
+    "low_volume_production": true,
+    "medium_volume_production": true,
     "high_volume_production": false,
-    "turnkey_services": false,
-    "consigned_services": false
+    "turnkey_services": true,
+    "consigned_services": true,
+    "lead_free_soldering": true
   },
-  
   "industries": [
     {
-      "industry_name": "string (e.g., Medical Devices, Aerospace, Industrial)"
+      "industry_name": "string",
+      "is_specialization": true,
+      "years_experience": 5,
+      "notable_projects": "string"
     }
   ],
-  
   "certifications": [
     {
-      "certification_type": "string (e.g., ISO 9001, ISO 13485, AS9100)",
+      "certification_type": "ISO9001",
       "status": "Active",
-      "certificate_number": null,
-      "issued_date": null,
-      "expiration_date": null
+      "certificate_number": "string",
+      "issue_date": "2023-05-31",
+      "expiration_date": "2026-05-30",
+      "issuing_body": "string",
+      "scope": "string"
     }
   ],
-  
   "technical_specs": {
-    "smallest_component_size": null,
-    "finest_pitch_capability": null,
-    "max_pcb_size_inches": null,
-    "max_pcb_layers": null,
-    "lead_free_soldering": false,
-    "conformal_coating": false,
-    "potting_encapsulation": false,
-    "x_ray_inspection": false,
-    "aoi_inspection": false,
-    "flying_probe_testing": false,
-    "burn_in_testing": false,
-    "clean_room_class": null
+    "smallest_component_size": "01005",
+    "finest_pitch_capability": "0.3mm",
+    "max_pcb_size_inches": "20x24",
+    "max_pcb_layers": 40,
+    "lead_free_soldering": true,
+    "conformal_coating": true,
+    "potting_encapsulation": true,
+    "x_ray_inspection": true,
+    "aoi_inspection": true,
+    "flying_probe_testing": true,
+    "burn_in_testing": true,
+    "clean_room_class": "ISO Class 7",
+    "additional_specs": "string"
   },
-  
   "business_info": {
-    "min_order_qty": null,
-    "prototype_lead_time": null,
-    "production_lead_time": null,
-    "payment_terms": null,
-    "rush_order_capability": false,
-    "twenty_four_seven_production": false,
-    "engineering_support_hours": null,
-    "sales_territory": null,
-    "notable_customers": null,
-    "awards_recognition": null
-  }
+    "min_order_qty": "No minimum",
+    "prototype_lead_time": "2-3 weeks",
+    "production_lead_time": "4-6 weeks",
+    "payment_terms": "Net 30",
+    "rush_orders": true,
+    "twentyfour_seven": false,
+    "engineering_support_hours": "8AM-6PM EST",
+    "sales_territory": "Global"
+  },
+  "key_differentiators": "string",
+  "notable_customers": "string",
+  "awards": "string",
+  "research_date": "2025-10-15",
+  "data_confidence": "High",
+  "research_notes": "string"
 }
 
-# CRITICAL FIELD RULES
-
-## FACILITIES (MOST IMPORTANT)
-⚠️ **CRITICAL FACILITY RULES - FOLLOW EXACTLY:**
-- If you find a verifiable facility location, you MUST include BOTH city AND state
-- City must be a real, specific city name (e.g., "Austin", "San Diego", "Phoenix")
-- State must be a valid 2-letter US state code (e.g., "TX", "CA", "AZ", "NY")
-- If you ONLY find "California" or "United States" without a specific city, return facilities: []
-- If you ONLY find a country without city/state, return facilities: []
-- Do NOT use "San Jose, CA" as a default - only use it if explicitly verified
-- Do NOT infer locations from area codes, time zones, or vague references
-- Valid sources: company website contact page, about page, Google Maps listing, LinkedIn company page
-- facility_type options: "HQ", "Manufacturing", "Engineering", "Sales Office"
-- Set is_primary: true for the headquarters or main location
-
-**Examples of VALID facility data:**
-✅ { "city": "Austin", "state": "TX", "facility_type": "HQ" }
-✅ { "city": "San Jose", "state": "CA", "street_address": "1234 Technology Dr" }
-✅ { "city": "Phoenix", "state": "AZ", "facility_type": "Manufacturing" }
-
-**Examples of INVALID facility data:**
-❌ { "city": null, "state": "CA" } - missing city
-❌ { "city": "California", "state": "CA" } - city is actually a state
-❌ { "country": "US" } - missing city and state
-❌ { "city": "San Jose", "state": "CA" } - when you're not sure and just guessing
-
-## COMPANY NAME & WEBSITE
-- company_name: Use official legal name or DBA from website/ZoomInfo
-- website_url: Must be valid URL starting with http:// or https://
-- description: 2-3 sentences from company's website about page, NOT marketing copy
-
-## EMPLOYEE COUNT & REVENUE
-- Only use these ranges: 
-  - employee_count_range: "<50" | "50-150" | "150-500" | "500-1000" | "1000+"
-  - annual_revenue_range: "<$10M" | "$10M-50M" | "$50M-150M" | "$150M+"
-- Use null if not found in ZoomInfo data or company website
-
-## CAPABILITIES
-- Set to true if stated on company website or in ZoomInfo data
-- Look for: services page, capabilities page, process descriptions
-- Keywords to look for:
-  - "SMT assembly", "surface mount" → pcb_assembly_smt: true
-  - "through-hole", "thru-hole" → pcb_assembly_through_hole: true
-  - "box build", "system integration" → box_build_assembly: true
-  - "design services", "DFM" → design_services: true
-  - "prototyping", "NPI" → prototyping: true
-  - "turnkey" → turnkey_services: true
-  - "consignment" → consigned_services: true
-- Default all to false if not mentioned
-
-## INDUSTRIES
-- Only include industries explicitly mentioned on website or in ZoomInfo
-- Use standard names: Medical Devices, Aerospace, Industrial, Automotive, Consumer Electronics, Telecommunications, Defense, IoT
-- Do NOT infer from location or other context
-
-## CERTIFICATIONS
-- Only include if explicitly listed on website (usually on About, Quality, or Certifications page)
-- Common ones: ISO 9001, ISO 13485, AS9100, IPC-A-610, ISO 14001, ITAR
-- Set status to "Active" unless explicitly stated as expired
-- Leave dates as null unless found
-
-## TECHNICAL SPECS
-- Only populate if found in technical specifications or capabilities pages
-- smallest_component_size: "01005", "0201", "0402", etc.
-- finest_pitch_capability: "0.3mm", "0.4mm", "0.5mm", etc.
-- max_pcb_size_inches: "18x24", "20x24", etc.
-- max_pcb_layers: integer only if explicitly stated
-- Boolean fields: true only if explicitly mentioned
-
-## BUSINESS INFO
-- min_order_qty: Use exact phrasing if found (e.g., "No minimum", "100 units", "$1000")
-- lead times: Use format like "2-3 weeks", "4-6 weeks"
-- payment_terms: "Net 30", "Net 60", "50% upfront", etc.
-- Only include if explicitly stated on website
-
-# RESEARCH PROCESS
-
-1. **Start with ZoomInfo data** - Use provided enrichment data as foundation
-2. **Visit company website** - Prioritize About, Capabilities, Services, Contact pages
-3. **Verify critical fields** - Double-check facility locations against multiple sources
-4. **Set booleans conservatively** - Only true if explicitly confirmed
-5. **Leave gaps** - Use null/empty for missing data rather than guessing
-
-# DATA SOURCES PRIORITY
-1. Company's official website (highest priority)
-2. ZoomInfo enrichment data
-3. LinkedIn company page
-4. Industry directories (IPC, ECIA, etc.)
-5. Do NOT use: Yelp, random blogs, outdated archived pages
-
-# QUALITY CHECKS BEFORE RETURNING
-
-✅ Verify:
-- [ ] company_name is the official company name
-- [ ] website_url is valid and accessible
-- [ ] Every facility has BOTH city AND state, or facilities array is empty
-- [ ] No facility uses "San Jose, CA" unless explicitly verified
-- [ ] Capabilities are explicitly stated, not assumed
-- [ ] Certifications are from official sources
-- [ ] No placeholder or fake data anywhere
-
-# OUTPUT REQUIREMENTS
-- Return ONLY valid JSON
-- No markdown code blocks (no \`\`\`json)
-- No explanatory text before or after JSON
-- No comments within JSON
-- All strings properly escaped
-- All dates in "YYYY-MM-DD" format if included
-
-Remember: It is better to return minimal accurate data than complete fabricated data. When in doubt, use null or empty arrays.`;
+You must only return JSON with proper formatting and escaping and nothing else.`
 
 export interface ResearchResult {
   success: boolean
   data?: CompanyFormData
   error?: string
   enrichmentData?: string
-}
-
-const truthyStrings = new Set(['true', 'yes', 'y', '1'])
-const falsyStrings = new Set(['false', 'no', 'n', '0'])
-
-const ensureBoolean = (value: unknown): boolean | undefined => {
-  if (typeof value === 'boolean') {
-    return value
-  }
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase()
-    if (truthyStrings.has(normalized)) {
-      return true
-    }
-    if (falsyStrings.has(normalized)) {
-      return false
-    }
-  }
-  if (typeof value === 'number') {
-    if (value === 1) {
-      return true
-    }
-    if (value === 0) {
-      return false
-    }
-  }
-  return undefined
-}
-
-const mergeBoolean = (preferred: unknown, fallback: boolean = false): boolean => {
-  const normalized = ensureBoolean(preferred)
-  if (normalized !== undefined) {
-    return normalized
-  }
-  return fallback
-}
-
-const normalizeString = (value: unknown): string | undefined => {
-  if (typeof value === 'string') {
-    const trimmed = value.trim()
-    return trimmed.length > 0 ? trimmed : undefined
-  }
-  return undefined
-}
-
-const normalizeNumber = (value: unknown): number | undefined => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value
-  }
-  if (typeof value === 'string') {
-    const parsed = Number.parseFloat(value.replace(/[^0-9.\-]/g, ''))
-    if (Number.isFinite(parsed)) {
-      return parsed
-    }
-  }
-  return undefined
-}
-
-const normalizeArray = <T>(value: unknown): T[] => {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is T => item != null)
-  }
-  if (typeof value === 'string') {
-    return value
-      .split(/[,;|\n]/)
-      .map(part => part.trim())
-      .filter(Boolean) as unknown as T[]
-  }
-  if (value && typeof value === 'object') {
-    return [value as T]
-  }
-  return []
-}
-
-const normalizeFacility = (facility: Record<string, unknown>): FacilityFormData => {
-  const street =
-    normalizeString(facility.street_address) ??
-    normalizeString(facility.streetAddress) ??
-    normalizeString(facility.address) ??
-    normalizeString(facility.street)
-
-  const state =
-    normalizeString(facility.state) ??
-    normalizeString(facility.state_province) ??
-    normalizeString(facility.province)
-
-  const zip =
-    normalizeString(facility.zip_code) ??
-    normalizeString(facility.zipCode) ??
-    normalizeString(facility.postal_code) ??
-    normalizeString(facility.zip)
-
-  return {
-    facility_type: normalizeString(facility.facility_type) ?? 'Manufacturing',
-    street_address: street,
-    city: normalizeString(facility.city),
-    state,
-    zip_code: zip,
-    country: normalizeString(facility.country) ?? 'US',
-    is_primary: mergeBoolean(facility.is_primary, false),
-    latitude: normalizeNumber(facility.latitude) ?? null,
-    longitude: normalizeNumber(facility.longitude) ?? null,
-    location: facility.location ?? undefined,
-  }
-}
-
-const normalizeCapabilities = (raw: unknown): CapabilitiesFormData => {
-  if (!raw) {
-    return {}
-  }
-
-  // Handle simple string array results
-  if (Array.isArray(raw)) {
-    const entries = normalizeArray<string>(raw).map(item => item.toLowerCase())
-    const includes = (key: string): boolean => entries.some(entry => entry.includes(key))
-    return {
-      pcb_assembly_smt: includes('smt'),
-      pcb_assembly_through_hole: includes('through'),
-      pcb_assembly_mixed: includes('mixed'),
-      pcb_assembly_fine_pitch: includes('fine pitch'),
-      cable_harness_assembly: includes('cable') || includes('harness'),
-      box_build_assembly: includes('box build') || includes('box-build'),
-      testing_ict: includes('ict'),
-      testing_functional: includes('functional'),
-      testing_environmental: includes('environmental'),
-      testing_rf_wireless: includes('rf') || includes('wireless'),
-      design_services: includes('design'),
-      supply_chain_management: includes('supply'),
-      prototyping: includes('prototype'),
-      low_volume_production: includes('low volume'),
-      medium_volume_production: includes('medium volume'),
-      high_volume_production: includes('high volume'),
-      turnkey_services: includes('turnkey'),
-      consigned_services: includes('consigned'),
-    }
-  }
-
-  if (typeof raw !== 'object' || raw === null) {
-    return {}
-  }
-
-  const obj = raw as Record<string, unknown>
-
-  const mapBoolean = (key: keyof CapabilitiesFormData, fallbackKey?: string): boolean => {
-    const value = obj[key as string] ?? (fallbackKey ? obj[fallbackKey] : undefined)
-    return mergeBoolean(value, false)
-  }
-
-  return {
-    pcb_assembly_smt: mapBoolean('pcb_assembly_smt'),
-    pcb_assembly_through_hole: mapBoolean('pcb_assembly_through_hole'),
-    pcb_assembly_mixed: mapBoolean('pcb_assembly_mixed'),
-    pcb_assembly_fine_pitch: mapBoolean('pcb_assembly_fine_pitch'),
-    cable_harness_assembly: mapBoolean('cable_harness_assembly'),
-    box_build_assembly: mapBoolean('box_build_assembly'),
-    testing_ict: mapBoolean('testing_ict'),
-    testing_functional: mapBoolean('testing_functional'),
-    testing_environmental: mapBoolean('testing_environmental'),
-    testing_rf_wireless: mapBoolean('testing_rf_wireless'),
-    design_services: mapBoolean('design_services'),
-    supply_chain_management: mapBoolean('supply_chain_management'),
-    prototyping: mapBoolean('prototyping'),
-    low_volume_production: mapBoolean('low_volume_production'),
-    medium_volume_production: mapBoolean('medium_volume_production'),
-    high_volume_production: mapBoolean('high_volume_production'),
-    turnkey_services: mapBoolean('turnkey_services'),
-    consigned_services: mapBoolean('consigned_services'),
-  }
-}
-
-const normalizeIndustries = (raw: unknown): IndustryFormData[] => {
-  if (!raw) {
-    return []
-  }
-
-  if (Array.isArray(raw)) {
-    return raw
-      .map(item => {
-        if (typeof item === 'string') {
-          const industry = normalizeString(item)
-          return industry ? { industry_name: industry } : undefined
-        }
-        if (typeof item === 'object' && item) {
-          const industry = normalizeString((item as Record<string, unknown>).industry_name)
-          return industry ? { industry_name: industry } : undefined
-        }
-        return undefined
-      })
-      .filter((item): item is IndustryFormData => Boolean(item))
-  }
-
-  if (typeof raw === 'string') {
-    return normalizeArray<string>(raw).map(industry => ({ industry_name: industry }))
-  }
-
-  return []
-}
-
-const normalizeCertifications = (raw: unknown): CertificationFormData[] => {
-  const validStatuses: CertificationFormData['status'][] = ['Active', 'Expired', 'Pending']
-  if (!raw) {
-    return []
-  }
-
-  return normalizeArray<unknown>(raw).map(item => {
-    if (typeof item === 'string') {
-      const name = normalizeString(item)
-      return {
-        certification_type: name ?? '',
-        status: 'Active',
-      }
-    }
-
-    if (typeof item !== 'object' || item === null) {
-      return {
-        certification_type: '',
-        status: 'Active',
-      }
-    }
-
-    const entry = item as Record<string, unknown>
-    const rawStatus = normalizeString(entry.status)
-    const status = validStatuses.find(candidate => candidate === rawStatus) ?? 'Active'
-
-    return {
-      certification_type: normalizeString(entry.certification_type) ?? '',
-      certificate_number: normalizeString(entry.certificate_number),
-      status,
-      issued_date: normalizeString(entry.issue_date) ?? normalizeString(entry.issued_date),
-      expiration_date: normalizeString(entry.expiration_date),
-    }
-  })
-}
-
-const normalizeTechnicalSpecs = (raw: unknown): TechnicalSpecsFormData => {
-  if (!raw || typeof raw !== 'object') {
-    return {}
-  }
-
-  const specs = raw as Record<string, unknown>
-
-  return {
-    smallest_component_size: normalizeString(specs.smallest_component_size),
-    finest_pitch_capability: normalizeString(specs.finest_pitch_capability),
-    max_pcb_size_inches: normalizeString(specs.max_pcb_size_inches),
-    max_pcb_layers: normalizeNumber(specs.max_pcb_layers),
-    lead_free_soldering: mergeBoolean(specs.lead_free_soldering, false),
-    conformal_coating: mergeBoolean(specs.conformal_coating, false),
-    potting_encapsulation: mergeBoolean(specs.potting_encapsulation, false),
-    x_ray_inspection: mergeBoolean(specs.x_ray_inspection, false),
-    aoi_inspection: mergeBoolean(specs.aoi_inspection, false),
-    flying_probe_testing: mergeBoolean(specs.flying_probe_testing, false),
-    burn_in_testing: mergeBoolean(specs.burn_in_testing, false),
-    clean_room_class: normalizeString(specs.clean_room_class),
-  }
-}
-
-const normalizeBusinessInfo = (raw: unknown): BusinessInfoFormData => {
-  if (!raw || typeof raw !== 'object') {
-    return {}
-  }
-
-  const info = raw as Record<string, unknown>
-
-  return {
-    min_order_qty: normalizeString(info.min_order_qty),
-    prototype_lead_time: normalizeString(info.prototype_lead_time),
-    production_lead_time: normalizeString(info.production_lead_time),
-    payment_terms: normalizeString(info.payment_terms),
-    rush_order_capability: mergeBoolean(info.rush_order_capability ?? info.rush_orders, false),
-    twenty_four_seven_production: mergeBoolean(
-      info.twenty_four_seven_production ?? info.twentyfour_seven,
-      false
-    ),
-    engineering_support_hours: normalizeString(info.engineering_support_hours),
-    sales_territory: normalizeString(info.sales_territory),
-    notable_customers: normalizeString(info.notable_customers),
-    awards_recognition: normalizeString(info.awards_recognition ?? info.awards),
-  }
 }
 
 /**
@@ -520,141 +147,319 @@ export async function researchCompany(
   website?: string
 ): Promise<ResearchResult> {
   try {
-    console.log(`Starting research for: ${companyName}`)
+    // Step 1: Call ZoomInfo enrichment
+    console.log(`🤖 Starting research for: ${companyName}`)
     console.log(`Enriching data for ${companyName}...`)
-
+    
     const enrichmentResponse = await enrichCompanyData(companyName, website)
-
-    console.log('ZoomInfo enrichment result:', {
+    
+    console.log('📊 ZoomInfo enrichment result:', {
       success: enrichmentResponse.success,
-      hasData: Boolean(enrichmentResponse.data),
-      error: enrichmentResponse.error,
+      hasData: !!enrichmentResponse.data,
+      error: enrichmentResponse.error
     })
-
+    
     const enrichmentDataString = formatEnrichmentData(enrichmentResponse)
-    console.log('Formatted enrichment data:', enrichmentDataString)
-
-    const baseUserMessage = `Research and return complete JSON data for the following company:
-
-**Company Name:** ${companyName}
-${website ? `**Website:** ${website}` : '**Website:** Not provided - please find it'}
-
-**ZoomInfo Enrichment Data:**
-${enrichmentDataString || 'No enrichment data available - rely on web research'}
-
-**Instructions:**
-1. Visit the company's website if available
-2. Find their About, Capabilities, Services, and Contact pages
-3. Verify the facility location - MUST have both city AND state
-4. Only mark capabilities as true if explicitly mentioned
-5. Return accurate, verified data only
-6. Use null for any data you cannot verify
-
-**Current Date:** ${new Date().toISOString().split('T')[0]}
-
-Return a single JSON object (not an array) following the exact schema provided in the system prompt.`
-
-    const MAX_ATTEMPTS = 2
-    let attempt = 0
-    let currentUserMessage = baseUserMessage
-    let parsedData: ParsedCompanyData | null = null
-    let companyData: CompanyFormData | null = null
-    let lastParseError: Error | null = null
-    let missingSections: string[] = []
-
-    while (attempt < MAX_ATTEMPTS) {
-      attempt += 1
-      console.log(`Calling OpenAI for research... (attempt ${attempt})`)
-      const temperature = attempt === 1 ? 0.3 : 0.2
-
-      const aiResponse = await callOpenAI(SYSTEM_PROMPT, currentUserMessage, temperature)
-
-      try {
-        parsedData = aiResponse(aiResponse)
-      } catch (parseError) {
-        console.error('Failed to parse OpenAI response as JSON:', parseError)
-        lastParseError = parseError instanceof Error ? parseError : new Error(String(parseError))
-
-        if (attempt >= MAX_ATTEMPTS) {
-          return {
-            success: false,
-            error: 'Failed to parse AI response as JSON',
-            enrichmentData: enrichmentDataString,
-          }
-        }
-
-        currentUserMessage = `${baseUserMessage}
-
-The previous response could not be parsed as valid JSON. Please return a single JSON object that matches the required schema.`
-        continue
-      }
-
-      companyData = mapParsedCompanyData(parsedData, companyName, website)
-      missingSections = missingSections(companyData)
-
-      if (missingSections.length === 0 || attempt >= MAX_ATTEMPTS) {
-        if (missingSections.length > 0) {
-          console.warn(`Missing sections after attempt ${attempt}: ${missingSections.join(', ')}`)
-        }
-        break
-      }
-
-      console.warn(
-        `AI response missing sections (${missingSections.join(', ')}). Requesting retry.`
-      )
-
-      currentUserMessage = `${baseUserMessage}
-
-The previous JSON response was missing verified data for: ${missingSections.join(', ')}.
-Research the company again using the provided ZoomInfo data and official sources. Preserve accurate facts already supplied while adding details for the missing sections when evidence exists.
-
-Previous response:
-${JSON.stringify(parsedData, null, 2)}
-`
+    
+    // Log if enrichment was successful
+    if (enrichmentResponse.success && enrichmentResponse.data) {
+      console.log('✅ ZoomInfo enrichment SUCCESSFUL - Data will be included in OpenAI prompt')
+      console.log('📋 ZoomInfo data being sent to OpenAI:')
+      console.log(enrichmentDataString)
+    } else {
+      console.warn('⚠️  ZoomInfo enrichment FAILED or returned no data')
+      console.warn('OpenAI will rely on public web research only')
     }
 
-    if (!companyData) {
-      const errorMessage = lastParseError?.message ?? 'Failed to obtain AI research data'
+    // Step 2: Prepare user message with enrichment data
+    const userMessage = `Research the following company and return complete JSON data:
+
+Company Name: ${companyName}
+${website ? `Website: ${website}` : ''}
+
+ZoomInfo Enrichment Data:
+${enrichmentDataString}
+
+Please research this company thoroughly and return a complete JSON object with all fields filled according to the schema. Use the ZoomInfo data as a starting point, but enhance it with additional research from public sources, the company website, and industry knowledge.
+
+Remember:
+- Return ONLY valid JSON, no markdown or explanations
+- Fill ALL fields - use empty strings/arrays/null for missing data
+- The response must be a single JSON object (not array)
+- Generate a URL-friendly slug from the company name
+- Set research_date to today's date: ${new Date().toISOString().split('T')[0]}
+- Include comprehensive capabilities, facilities, and certifications data`
+
+    // Step 3: Call OpenAI with system prompt
+    console.log('📡 Calling OpenAI for research...')
+    console.log('📨 Full prompt being sent to OpenAI (length: ' + userMessage.length + ' chars)')
+    
+    const aiResponse = await callOpenAI(SYSTEM_PROMPT, userMessage, 0.3)
+    
+    console.log('✅ OpenAI response received (length: ' + aiResponse.length + ' chars)')
+
+    // Step 4: Parse and validate JSON response
+    interface ParsedCompanyData {
+      company_name?: string
+      dba_name?: string
+      slug?: string
+      website?: string
+      logo_url?: string
+      description?: string
+      public_description?: string
+      year_founded?: number
+      employee_count_range?: string
+      annual_revenue_range?: string
+      revenue_range?: string
+      is_active?: boolean
+      is_verified?: boolean
+      facilities?: Array<{
+        facility_type?: string
+        street_address?: string
+        city?: string
+        state?: string
+        zip_code?: string
+        country?: string
+        facility_size_sqft?: number | null
+        employees_at_location?: number | null
+        key_capabilities?: string
+        is_primary?: boolean
+        latitude?: number | string | null
+        longitude?: number | string | null
+        location?: unknown
+      }>
+      capabilities?: {
+        pcb_assembly_smt?: boolean
+        pcb_assembly_through_hole?: boolean
+        pcb_assembly_mixed?: boolean
+        pcb_assembly_fine_pitch?: boolean
+        cable_harness_assembly?: boolean
+        box_build_assembly?: boolean
+        testing_ict?: boolean
+        testing_functional?: boolean
+        testing_environmental?: boolean
+        testing_rf_wireless?: boolean
+        design_services?: boolean
+        supply_chain_management?: boolean
+        prototyping?: boolean
+        low_volume_production?: boolean
+        medium_volume_production?: boolean
+        high_volume_production?: boolean
+        turnkey_services?: boolean
+        consigned_services?: boolean
+        lead_free_soldering?: boolean
+      }
+      industries?: Array<{
+        industry_name?: string
+        is_specialization?: boolean
+        years_experience?: number
+        notable_projects?: string
+      }>
+      certifications?: Array<{
+        certification_type?: string
+        status?: string
+        certificate_number?: string
+        issue_date?: string
+        issued_date?: string
+        expiration_date?: string
+        issuing_body?: string
+        scope?: string
+      }>
+      technical_specs?: {
+        smallest_component_size?: string
+        finest_pitch_capability?: string
+        max_pcb_size_inches?: string
+        max_pcb_layers?: number
+        lead_free_soldering?: boolean
+        conformal_coating?: boolean
+        potting_encapsulation?: boolean
+        x_ray_inspection?: boolean
+        aoi_inspection?: boolean
+        flying_probe_testing?: boolean
+        burn_in_testing?: boolean
+        clean_room_class?: string
+        additional_specs?: string
+      }
+      business_info?: {
+        min_order_qty?: string
+        prototype_lead_time?: string
+        production_lead_time?: string
+        payment_terms?: string
+        rush_orders?: boolean
+        rush_order_capability?: boolean
+        twentyfour_seven?: boolean
+        twenty_four_seven_production?: boolean
+        engineering_support_hours?: string
+        sales_territory?: string
+      }
+      key_differentiators?: string
+      notable_customers?: string
+      awards?: string
+      research_date?: string
+      data_confidence?: string
+      research_notes?: string
+    }
+
+    let parsedData: ParsedCompanyData
+    try {
+      // Remove any markdown code blocks if present
+      let cleanedResponse = aiResponse.trim()
+      if (cleanedResponse.startsWith('```json')) {
+        cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '')
+      }
+      if (cleanedResponse.startsWith('```')) {
+        cleanedResponse = cleanedResponse.replace(/```\n?/g, '')
+      }
+
+      const parsed: unknown = JSON.parse(cleanedResponse)
+      
+      // If it's an array, get the first element
+      if (Array.isArray(parsed)) {
+        parsedData = parsed[0] as ParsedCompanyData
+      } else {
+        parsedData = parsed as ParsedCompanyData
+      }
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', parseError)
       return {
         success: false,
-        error: errorMessage,
+        error: 'Failed to parse AI response as JSON',
         enrichmentData: enrichmentDataString,
       }
     }
 
-    const capabilitiesCount = countEnabledCapabilities(companyData.capabilities)
-    const techSpecsCount = countFilledTechnicalSpecs(companyData.technical_specs)
-    const businessInfoCount = countFilledBusinessInfo(companyData.business_info)
+    const parseCoordinate = (value: unknown): number | null => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value
+      }
 
-    console.log('\n=== AI RESEARCH DATA VALIDATION ===')
-    console.log(`Facilities: ${companyData.facilities?.length || 0} found`)
-    if (!companyData.facilities || companyData.facilities.length === 0) {
-      console.warn('WARNING: AI returned no facilities data')
+      if (typeof value === 'string') {
+        const parsed = Number.parseFloat(value)
+        return Number.isFinite(parsed) ? parsed : null
+      }
+
+      return null
     }
-    console.log(`Capabilities: ${capabilitiesCount} enabled`)
-    if (capabilitiesCount === 0) {
-      console.warn('WARNING: AI returned no enabled capabilities')
+
+    // Step 5: Map to CompanyFormData structure
+    const companyData: CompanyFormData = {
+      company_name: parsedData.company_name || companyName,
+      dba_name: parsedData.dba_name || undefined,
+      description: parsedData.description || parsedData.public_description || undefined,
+      website_url: parsedData.website || website || undefined,
+      year_founded: parsedData.year_founded || undefined,
+      employee_count_range: parsedData.employee_count_range || undefined,
+      annual_revenue_range: parsedData.annual_revenue_range || parsedData.revenue_range || undefined,
+      key_differentiators: parsedData.key_differentiators || undefined,
+
+      // Map facilities
+      facilities: Array.isArray(parsedData.facilities) 
+        ? parsedData.facilities.map((f) => ({
+            facility_type: f.facility_type || 'Manufacturing',
+            street_address: f.street_address || undefined,
+            city: f.city || undefined,
+            state: f.state || undefined,
+            zip_code: f.zip_code || undefined,
+            country: f.country || 'US',
+            is_primary: f.is_primary || false,
+            latitude: parseCoordinate(f.latitude ?? null),
+            longitude: parseCoordinate(f.longitude ?? null),
+            location: f.location ?? undefined,
+          }))
+        : [],
+
+      // Map capabilities
+      capabilities: parsedData.capabilities ? {
+        pcb_assembly_smt: parsedData.capabilities.pcb_assembly_smt || false,
+        pcb_assembly_through_hole: parsedData.capabilities.pcb_assembly_through_hole || false,
+        pcb_assembly_mixed: parsedData.capabilities.pcb_assembly_mixed || false,
+        pcb_assembly_fine_pitch: parsedData.capabilities.pcb_assembly_fine_pitch || false,
+        cable_harness_assembly: parsedData.capabilities.cable_harness_assembly || false,
+        box_build_assembly: parsedData.capabilities.box_build_assembly || false,
+        testing_ict: parsedData.capabilities.testing_ict || false,
+        testing_functional: parsedData.capabilities.testing_functional || false,
+        testing_environmental: parsedData.capabilities.testing_environmental || false,
+        testing_rf_wireless: parsedData.capabilities.testing_rf_wireless || false,
+        design_services: parsedData.capabilities.design_services || false,
+        supply_chain_management: parsedData.capabilities.supply_chain_management || false,
+        prototyping: parsedData.capabilities.prototyping || false,
+        low_volume_production: parsedData.capabilities.low_volume_production || false,
+        medium_volume_production: parsedData.capabilities.medium_volume_production || false,
+        high_volume_production: parsedData.capabilities.high_volume_production || false,
+        turnkey_services: parsedData.capabilities.turnkey_services || false,
+        consigned_services: parsedData.capabilities.consigned_services || false,
+      } : {},
+
+      // Map industries
+      industries: Array.isArray(parsedData.industries)
+        ? parsedData.industries.map((i) => ({
+            industry_name: i.industry_name || '',
+          }))
+        : [],
+
+      // Map certifications
+      certifications: Array.isArray(parsedData.certifications)
+        ? parsedData.certifications.map((c) => {
+            // Validate status to match the strict type
+            const validStatuses = ['Active', 'Expired', 'Pending'] as const
+            type ValidStatus = typeof validStatuses[number]
+            const status = c.status as ValidStatus | null | undefined
+            const validatedStatus: 'Active' | 'Expired' | 'Pending' | null | undefined = 
+              status && validStatuses.includes(status as ValidStatus) 
+                ? (status as 'Active' | 'Expired' | 'Pending')
+                : 'Active'
+
+            return {
+              certification_type: c.certification_type || '',
+              certificate_number: c.certificate_number || undefined,
+              status: validatedStatus,
+              issued_date: c.issue_date || c.issued_date || undefined,
+              expiration_date: c.expiration_date || undefined,
+            }
+          })
+        : [],
+
+      // Map technical specs
+      technical_specs: parsedData.technical_specs ? {
+        smallest_component_size: parsedData.technical_specs.smallest_component_size || undefined,
+        finest_pitch_capability: parsedData.technical_specs.finest_pitch_capability || undefined,
+        max_pcb_size_inches: parsedData.technical_specs.max_pcb_size_inches || undefined,
+        max_pcb_layers: parsedData.technical_specs.max_pcb_layers || undefined,
+        lead_free_soldering: parsedData.technical_specs.lead_free_soldering || false,
+        conformal_coating: parsedData.technical_specs.conformal_coating || false,
+        potting_encapsulation: parsedData.technical_specs.potting_encapsulation || false,
+        x_ray_inspection: parsedData.technical_specs.x_ray_inspection || false,
+        aoi_inspection: parsedData.technical_specs.aoi_inspection || false,
+        flying_probe_testing: parsedData.technical_specs.flying_probe_testing || false,
+        burn_in_testing: parsedData.technical_specs.burn_in_testing || false,
+        clean_room_class: parsedData.technical_specs.clean_room_class || undefined,
+      } : {},
+
+      // Map business info
+      business_info: parsedData.business_info ? {
+        min_order_qty: parsedData.business_info.min_order_qty || undefined,
+        prototype_lead_time: parsedData.business_info.prototype_lead_time || undefined,
+        production_lead_time: parsedData.business_info.production_lead_time || undefined,
+        payment_terms: parsedData.business_info.payment_terms || undefined,
+        rush_order_capability: parsedData.business_info.rush_orders || parsedData.business_info.rush_order_capability || false,
+        twenty_four_seven_production: parsedData.business_info.twentyfour_seven || parsedData.business_info.twenty_four_seven_production || false,
+        engineering_support_hours: parsedData.business_info.engineering_support_hours || undefined,
+        sales_territory: parsedData.business_info.sales_territory || undefined,
+        notable_customers: parsedData.notable_customers || undefined,
+        awards_recognition: parsedData.awards || undefined,
+      } : {},
     }
-    console.log(`Industries: ${companyData.industries?.length || 0} found`)
-    if (!companyData.industries || companyData.industries.length === 0) {
-      console.warn('WARNING: AI returned no industries data')
-    }
-    console.log(`Certifications: ${companyData.certifications?.length || 0} found`)
-    if (!companyData.certifications || companyData.certifications.length === 0) {
-      console.warn('WARNING: AI returned no certifications data')
-    }
-    console.log(`Technical Specs: ${techSpecsCount} fields filled`)
-    if (techSpecsCount === 0) {
-      console.warn('WARNING: AI returned no technical specs data')
-    }
-    console.log(`Business Info: ${businessInfoCount} fields filled`)
-    if (businessInfoCount === 0) {
-      console.warn('WARNING: AI returned no business info data')
-    }
-    if (missingSections.length > 0) {
-      console.warn(`Sections still missing after retries: ${missingSections.join(', ')}`)
-    }
-    console.log('===================================\n')
+
+    // Log final results summary
+    console.log('\n=== 🎯 RESEARCH COMPLETE ===')
+    console.log(`Company: ${companyData.company_name}`)
+    console.log(`Facilities: ${companyData.facilities?.length || 0}`)
+    console.log(`Capabilities: ${Object.values(companyData.capabilities || {}).filter(Boolean).length}`)
+    console.log(`Industries: ${companyData.industries?.length || 0}`)
+    console.log(`Certifications: ${companyData.certifications?.length || 0}`)
+    console.log(`Business Info Fields: ${Object.values(companyData.business_info || {}).filter(v => v !== undefined && v !== null).length}`)
+    console.log(`Technical Specs Fields: ${Object.values(companyData.technical_specs || {}).filter(v => v !== undefined && v !== null).length}`)
+    console.log('=======================\n')
 
     return {
       success: true,
