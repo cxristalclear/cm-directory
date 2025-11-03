@@ -12,9 +12,7 @@ class SafeCookieStorage {
       for (const cookie of cookies) {
         const [name, value] = cookie.split('=')
         if (name === key && value) {
-          if (name === key && value) {
-            return decodeURIComponent(value)
-          }
+          return decodeURIComponent(value)
         }
       }
       return null
