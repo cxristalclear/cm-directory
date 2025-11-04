@@ -14,6 +14,7 @@ import { siteConfig, featureFlags } from "@/lib/config"
 import AddCompanyCallout from "@/components/AddCompanyCallout"
 import type { PageProps } from "@/types/nxt"
 import type { HomepageCompany } from "@/types/homepage"
+import Navbar from "@/components/navbar"
 
 export const revalidate = 300
 
@@ -131,8 +132,8 @@ export default async function Home({
       <SpeedInsights />
       <FilterProvider initialFilters={initialFilters}>
         <div className="min-h-screen bg-gray-50">
+          <Navbar />
           <Header />
-
           <main className="container mx-auto px-4 py-6">
             {/* Top Content Ad - Native/Sponsored */}
             <div className="mb-6 bg-white rounded-xl shadow-xl p-4">
