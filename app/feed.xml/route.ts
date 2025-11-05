@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase'
 import { siteConfig } from '@/lib/config'
 import { resolveCompanyCanonicalUrl } from '@/lib/canonical'
 import { getBuildTimestamp, toIsoString } from '@/lib/time'
-import type { Company } from '@/lib/supabase'
+import type { Company } from '@/types/company'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +11,10 @@ type CompanyFeedRow = Pick<
   'slug' | 'company_name' | 'description' | 'updated_at'
 > & {
   cms_metadata: Company['cms_metadata']
+}
+
+type SupabaseCompanyRow = Omit<CompanyFeedRow, 'cms_metadata'> & {
+  cms_metadata?: Company['cms_metadata']
 }
 
 type CanonicalMetadata = {
@@ -119,9 +123,10 @@ function serializeFeed(items: FeedItem[]): string {
 }
 
 export async function GET(): Promise<Response> {
+  const columns = 'slug, company_name, description, updated_at, cms_metadata'
   const { data, error } = await supabase
     .from('companies')
-    .select('slug, company_name, description, updated_at, cms_metadata')
+    .select(columns as unknown as '*')
     .eq('is_active', true)
     .order('updated_at', { ascending: false, nullsFirst: false })
     .limit(50)
@@ -131,12 +136,13 @@ export async function GET(): Promise<Response> {
     return new Response('Unable to load feed', { status: 500 })
   }
 
-  const rows: CompanyFeedRow[] = (data ?? []).map((row) => ({
+  const supabaseRows = (data ?? []) as SupabaseCompanyRow[]
+  const rows: CompanyFeedRow[] = supabaseRows.map((row) => ({
     slug: row.slug,
     company_name: row.company_name,
     description: row.description,
     updated_at: row.updated_at,
-    cms_metadata: row.cms_metadata,
+    cms_metadata: row.cms_metadata ?? null,
   }))
   const items = buildFeedItems(rows)
   const body = serializeFeed(items)
