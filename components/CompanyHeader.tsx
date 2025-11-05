@@ -10,7 +10,7 @@ interface CompanyHeaderProps {
 }
 
 export default function CompanyHeader({ }: CompanyHeaderProps) {
-  const ADD_COMPANY_PATH = "/add-company"
+  const ADD_COMPANY_PATH = "/add-your-company"
 
   return (
     <header className="relative overflow-hidden">
