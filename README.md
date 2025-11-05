@@ -81,6 +81,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 # Mapbox Configuration (Required for AI Research importer & facility geocoding)
 NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_access_token
 
+# AI Integrations (Required for AI Research importer)
+OPENAI_API_KEY=your_openai_api_key
+ZOOMINFO_WEBHOOK_URL=https://hook.example.com/your-make-scenario
+
 # Site Configuration (Required)
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SITE_NAME=CM Directory
@@ -217,6 +221,8 @@ The application can be deployed to any platform that supports Next.js:
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Your Supabase anonymous key |
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Conditional | Mapbox access token for map visualization and required for the AI Research importer |
+| `OPENAI_API_KEY` | Conditional | Server-only key for OpenAI requests used by the AI importer (never expose via `NEXT_PUBLIC_`) |
+| `ZOOMINFO_WEBHOOK_URL` | Conditional | Server-only Make.com webhook URL for ZoomInfo enrichment calls |
 | `NEXT_PUBLIC_SITE_URL` | Yes | Full URL of your deployed site |
 | `NEXT_PUBLIC_SITE_NAME` | No | Name of your site (default: "CM Directory") |
 | `NEXT_PUBLIC_TWITTER_URL` | Yes | Public Twitter/X profile URL referenced in metadata |
@@ -231,6 +237,7 @@ The application can be deployed to any platform that supports Next.js:
 
 The admin dashboard includes an AI-assisted importer that enriches facility data and automatically geocodes addresses so they appear on maps. To enable geocoding, provide a valid `NEXT_PUBLIC_MAPBOX_TOKEN` in your environment. Without a token, the importer will surface a warning for each facility and save it without latitude/longitude data.
 
+- **Security:** Configure `OPENAI_API_KEY` and `ZOOMINFO_WEBHOOK_URL` as server-side environment variables (locally in `.env.local`, in production via your hosting provider). Do not prefix them with `NEXT_PUBLIC_` and never commit real keys to the repository.
 - **Where to configure it:** Add the token to `.env.local` (and your deployment platform) under `NEXT_PUBLIC_MAPBOX_TOKEN`.
 - **Troubleshooting:** A missing or invalid token raises a "Mapbox access token is not configured" toast in the importer. Double-check that the variable is defined, has no extra whitespace, and that the Mapbox account has geocoding permissions.
 - **Geocoding failures:** Network or API errors can also prevent geocoding. The UI continues the import without coordinates so operators can retry later without losing company records.

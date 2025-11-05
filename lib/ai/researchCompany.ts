@@ -1,3 +1,5 @@
+import 'server-only'
+
 /**
  * Main Company Research Logic
  * Orchestrates ZoomInfo enrichment and OpenAI research
@@ -473,28 +475,6 @@ Remember:
       error: error instanceof Error ? error.message : 'Unknown error occurred',
     }
   }
-}
-
-/**
- * Parse batch input (CSV format: name, website)
- */
-export function parseBatchInput(input: string): Array<{ name: string; website?: string }> {
-  const lines = input.trim().split('\n')
-  const companies: Array<{ name: string; website?: string }> = []
-
-  for (const line of lines) {
-    if (!line.trim()) continue
-
-    const parts = line.split(',').map(p => p.trim())
-    if (parts.length >= 1) {
-      companies.push({
-        name: parts[0],
-        website: parts[1] || undefined,
-      })
-    }
-  }
-
-  return companies
 }
 
 /**
