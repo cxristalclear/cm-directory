@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { ArrowRight } from "lucide-react"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import { FilterProvider } from "@/contexts/FilterContext"
@@ -341,15 +340,13 @@ export default async function StateManufacturersPage({
               <div className="mt-8 pt-8 border-t">
                 <h3 className="font-semibold mb-4">Manufacturing Hubs in {stateMetadata.name}</h3>
                 <div className="flex flex-wrap gap-2">
-                  {stats.cities.slice(0, 10).map(city => (
-                    <Link
+                  {stats.cities.slice(0, 10).map((city) => (
+                    <span
                       key={city}
-                      href={`/manufacturers/${stateMetadata.slug}/${city.toLowerCase().replace(/\s+/g, '-')}`}
-                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
+                      className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium"
                     >
                       {city}
-                      <ArrowRight className="inline w-3 h-3 ml-1" />
-                    </Link>
+                    </span>
                   ))}
                 </div>
               </div>
