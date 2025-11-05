@@ -1,3 +1,5 @@
+require('@testing-library/jest-dom')
+
 // Mock mapboxgl
 jest.mock('mapbox-gl', () => ({
   Popup: jest.fn(() => ({
