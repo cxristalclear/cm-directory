@@ -12,3 +12,7 @@
 ## PR Instructions
 - Title format: [Fix] Short description
 - Include a one-line summary and a "Testing Done" section
+- Generate docstrings
+- Create PR with unit tests
+- Post copyable unit tests in a comment
+- Commit unit tests in the feature branch
