@@ -1,3 +1,5 @@
+import 'server-only'
+
 /**
  * OpenAI API Client
  * Wrapper for making calls to OpenAI GPT-4o
@@ -36,10 +38,10 @@ export async function callOpenAI(
   userMessage: string,
   temperature: number = 0.3
 ): Promise<string> {
-  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY
+  const apiKey = process.env.OPENAI_API_KEY
 
   if (!apiKey) {
-    throw new Error('NEXT_PUBLIC_OPENAI_API_KEY environment variable is not set')
+    throw new Error('OPENAI_API_KEY environment variable is not set')
   }
 
   try {

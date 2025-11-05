@@ -28,11 +28,4 @@
   "python-envs.pythonProjects": [],
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.validate.enable": true,
-  "terminal.integrated.defaultProfile.windows": "Git Bash",
-  "terminal.integrated.profiles.windows": {
-    "Git Bash": {
-      "path": "C:\\Program Files\\Git\\bin\\bash.exe",
-      "args": ["-l"]
-    }
-  }
 }
