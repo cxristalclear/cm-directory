@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const result = await researchCompany(companyName, website)
 
     return NextResponse.json(result, {
-      status: result.success ? 200 : 502,
+      status: result.success ? 200 : 422,
     })
   } catch (error) {
     console.error('AI research API error:', error)
