@@ -5,9 +5,10 @@ import { createClient } from '@/lib/supabase-client'
 import AiCompanyResearch from '@/components/admin/AiCompanyResearch'
 import type { CompanyFormData } from '@/types/admin'
 import type { Database } from '@/lib/database.types'
-import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData } from '@/lib/admin/utils'
+import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData, normalizeWebsiteUrl } from '@/lib/admin/utils'
 import { geocodeFacilityToPoint } from '@/lib/admin/geocoding'
 import { toast } from 'sonner'
+import { prepareFacilityForDB, hasMinimumAddressData } from '@/lib/admin/addressCompat'
 
 type CompanyInsert = Database['public']['Tables']['companies']['Insert']
 type FacilityInsert = Database['public']['Tables']['facilities']['Insert']
@@ -24,12 +25,23 @@ export default function AiResearchPage() {
   const handleSubmit = async (formData: CompanyFormData, isDraft: boolean) => {
     console.log('=== AI RESEARCH IMPORT STARTED ===')
     console.log('Company Name:', formData.company_name)
-    console.log('Website URL:', formData.website_url)
+    console.log('Original Website URL:', formData.website_url)
     
     try {
-      const validation = validateCompanyData(formData)
+      // ⭐ NORMALIZE WEBSITE URL FIRST - before validation!
+      const normalizedFormData = {
+        ...formData,
+        website_url: normalizeWebsiteUrl(formData.website_url),
+      }
+      
+      console.log('Normalized Website URL:', normalizedFormData.website_url)
+
+      // Now validate with the normalized URL
+      const validation = validateCompanyData(normalizedFormData)
       if (!validation.valid) {
         toast.error(validation.errors.join(', '))
+        // ⭐ DO NOT RETURN - let user know to edit and retry
+        console.warn('Validation failed - user should edit:', validation.errors)
         return
       }
 
@@ -41,8 +53,8 @@ export default function AiResearchPage() {
       // ============================================================================
       console.log('\n--- Checking for Duplicate Company ---')
       
-      const normalizedWebsite = formData.website_url?.toLowerCase().trim()
-      const normalizedName = formData.company_name.trim()
+      const normalizedWebsite = normalizedFormData.website_url?.toLowerCase().trim()
+      const normalizedName = normalizedFormData.company_name.trim()
 
       // Check by company name
       const { data: existingByName } = await supabase
@@ -66,23 +78,23 @@ export default function AiResearchPage() {
         toast.info(`Company already exists: ${existingCompany.company_name}. Updating missing data...`)
         companyId = existingCompany.id
       } else {
-        // Create new company
+        // Create new company with normalized URL
         console.log('No duplicate found. Creating new company...')
-        let newSlug = generateSlug(formData.company_name)
+        let newSlug = generateSlug(normalizedFormData.company_name)
         newSlug = await ensureUniqueSlug(supabase, newSlug)
 
         const companyInsert: CompanyInsert = {
-          company_name: formData.company_name,
-          dba_name: formData.dba_name || null,
-          description: formData.description || null,
-          website_url: formData.website_url || '',
-          year_founded: formData.year_founded || null,
-          employee_count_range: formData.employee_count_range || null,
-          annual_revenue_range: formData.annual_revenue_range || null,
-          key_differentiators: formData.key_differentiators || null,
+          company_name: normalizedFormData.company_name,
+          dba_name: normalizedFormData.dba_name || null,
+          description: normalizedFormData.description || null,
+          website_url: normalizedFormData.website_url,
+          year_founded: normalizedFormData.year_founded || null,
+          employee_count_range: normalizedFormData.employee_count_range || null,
+          annual_revenue_range: normalizedFormData.annual_revenue_range || null,
+          key_differentiators: normalizedFormData.key_differentiators || null,
           slug: newSlug,
-          is_verified: formData.is_verified || false,
-          verified_until: formData.verified_until || null,
+          is_verified: normalizedFormData.is_verified || false,
+          verified_until: normalizedFormData.verified_until || null,
           is_active: !isDraft,
         }
 
@@ -98,8 +110,7 @@ export default function AiResearchPage() {
       }
 
       // Insert facilities
-      if (formData.facilities && formData.facilities.length > 0) {
-        // Check if company already has facilities
+      if (normalizedFormData.facilities && normalizedFormData.facilities.length > 0) {
         const { data: existingFacilities } = await supabase
           .from('facilities')
           .select('id')
@@ -108,32 +119,40 @@ export default function AiResearchPage() {
         if (!existingFacilities || existingFacilities.length === 0) {
           const facilitiesData: FacilityInsert[] = []
 
-          for (const facility of formData.facilities) {
+          for (const facility of normalizedFormData.facilities) {
             let latitude = facility.latitude
             let longitude = facility.longitude
 
-            if ((!latitude || !longitude) && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+            if ((latitude == null || longitude == null) && hasMinimumAddressData(facility) && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
               try {
+                console.log(`📍 Geocoding: ${facility.city}, ${facility.state || facility.state_province}`)
                 const coordinates = await geocodeFacilityToPoint(facility)
                 latitude = coordinates.latitude
                 longitude = coordinates.longitude
+                console.log(`✓ Geocoded to: ${latitude}, ${longitude}`)
               } catch (error) {
                 console.warn('⚠️ Geocoding failed:', error)
               }
+            } else if (!hasMinimumAddressData(facility)) {
+              console.warn('⚠️ Skipping geocoding - insufficient address data:', facility)
+            } else if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+              console.warn('⚠️ Skipping geocoding - missing NEXT_PUBLIC_MAPBOX_TOKEN')
             }
-
-            facilitiesData.push({
+            // ✅ Use compatibility function to write to both columns
+            facilitiesData.push(prepareFacilityForDB({
               company_id: companyId,
               facility_type: facility.facility_type,
               street_address: facility.street_address || null,
               city: facility.city || null,
-              state: facility.state || null,
-              zip_code: facility.zip_code || null,
+              state: facility.state,
+              state_province: facility.state_province,
+              zip_code: facility.zip_code,
+              postal_code: facility.postal_code,
               country: facility.country || 'US',
               is_primary: facility.is_primary || false,
               latitude: latitude || null,
               longitude: longitude || null,
-            })
+            }))
           }
 
           const { error: facilitiesError } = await supabase
@@ -147,8 +166,8 @@ export default function AiResearchPage() {
       }
 
       // Insert capabilities
-      const hasCapabilities = formData.capabilities
-        ? Object.values(formData.capabilities).filter(v => v !== null && v !== undefined && v !== false).length > 0
+      const hasCapabilities = normalizedFormData.capabilities
+        ? Object.values(normalizedFormData.capabilities).filter(v => v !== null && v !== undefined && v !== false).length > 0
         : false
 
       if (hasCapabilities) {
@@ -161,7 +180,7 @@ export default function AiResearchPage() {
         if (!existing) {
           const capabilitiesInsert: CapabilitiesInsert = {
             company_id: companyId,
-            ...formData.capabilities,
+            ...normalizedFormData.capabilities,
           }
 
           const { error: capabilitiesError } = await supabase
@@ -173,14 +192,14 @@ export default function AiResearchPage() {
       }
 
       // Insert industries
-      if (formData.industries && formData.industries.length > 0) {
+      if (normalizedFormData.industries && normalizedFormData.industries.length > 0) {
         const { data: existingIndustries } = await supabase
           .from('industries')
           .select('industry_name')
           .eq('company_id', companyId)
 
         const existingNames = new Set(existingIndustries?.map(i => i.industry_name) || [])
-        const newIndustries = formData.industries.filter(i => !existingNames.has(i.industry_name))
+        const newIndustries = normalizedFormData.industries.filter(i => !existingNames.has(i.industry_name))
 
         if (newIndustries.length > 0) {
           const industriesInsert: IndustryInsert[] = newIndustries.map((i) => ({
@@ -197,14 +216,14 @@ export default function AiResearchPage() {
       }
 
       // Insert certifications
-      if (formData.certifications && formData.certifications.length > 0) {
+      if (normalizedFormData.certifications && normalizedFormData.certifications.length > 0) {
         const { data: existingCertifications } = await supabase
           .from('certifications')
           .select('certification_type')
           .eq('company_id', companyId)
 
         const existingTypes = new Set(existingCertifications?.map(c => c.certification_type) || [])
-        const newCertifications = formData.certifications.filter(c => !existingTypes.has(c.certification_type))
+        const newCertifications = normalizedFormData.certifications.filter(c => !existingTypes.has(c.certification_type))
 
         if (newCertifications.length > 0) {
           const certificationsInsert: CertificationInsert[] = newCertifications.map((c) => ({
@@ -225,8 +244,8 @@ export default function AiResearchPage() {
       }
 
       // Insert technical specs
-      const techSpecsCount = formData.technical_specs
-        ? Object.values(formData.technical_specs).filter(v => v !== null && v !== undefined && v !== false).length
+      const techSpecsCount = normalizedFormData.technical_specs
+        ? Object.values(normalizedFormData.technical_specs).filter(v => v !== null && v !== undefined && v !== false).length
         : 0
 
       if (techSpecsCount > 0) {
@@ -239,7 +258,7 @@ export default function AiResearchPage() {
         if (!existing) {
           const technicalSpecsInsert: TechnicalSpecsInsert = {
             company_id: companyId,
-            ...formData.technical_specs,
+            ...normalizedFormData.technical_specs,
           }
 
           const { error: technicalSpecsError } = await supabase
@@ -251,8 +270,8 @@ export default function AiResearchPage() {
       }
 
       // Insert business info
-      const businessInfoCount = formData.business_info
-        ? Object.values(formData.business_info).filter(v => v !== null && v !== undefined && v !== false).length
+      const businessInfoCount = normalizedFormData.business_info
+        ? Object.values(normalizedFormData.business_info).filter(v => v !== null && v !== undefined && v !== false).length
         : 0
 
       if (businessInfoCount > 0) {
@@ -265,7 +284,7 @@ export default function AiResearchPage() {
         if (!existing) {
           const businessInfoInsert: BusinessInfoInsert = {
             company_id: companyId,
-            ...formData.business_info,
+            ...normalizedFormData.business_info,
           }
 
           const { error: businessInfoError } = await supabase
@@ -279,7 +298,7 @@ export default function AiResearchPage() {
       await logCompanyChanges(
         supabase,
         companyId,
-        [{ field_name: 'company_name', old_value: null, new_value: formData.company_name }],
+        [{ field_name: 'company_name', old_value: null, new_value: normalizedFormData.company_name }],
         user.email || 'unknown',
         user.user_metadata?.full_name || user.email || 'Admin',
         'created'
@@ -293,16 +312,22 @@ export default function AiResearchPage() {
       console.error('=== AI RESEARCH IMPORT FAILED ===')
       console.error('Error:', error)
       
+      let errorMessage = 'Failed to save company. '
+      
       if (error && typeof error === 'object' && 'code' in error) {
         const dbError = error as { code: string; message: string }
         if (dbError.code === '23505') {
-          toast.error('Database duplicate error. If this persists, try a slightly different company name.')
+          errorMessage += 'Database duplicate error. If this persists, try a slightly different company name.'
         } else {
-          toast.error(`Database error: ${dbError.message}`)
+          errorMessage += `Database error: ${dbError.message}`
         }
-      } else {
-        toast.error('Failed to save company. Check console for details.')
+      } else if (error instanceof Error) {
+        errorMessage += error.message
       }
+      
+      // ⭐ CRITICAL: Show error WITHOUT redirecting - user can edit and retry
+      toast.error(errorMessage + ' Please edit the data and try again.')
+      console.log('Error shown to user - they can edit and retry without losing research data')
     }
   }
 

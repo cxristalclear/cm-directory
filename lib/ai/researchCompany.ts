@@ -1,5 +1,5 @@
 /**
- * Main Company Research Logic with Enhanced Validation Logging
+ * Main Company Research Logic
  * Orchestrates ZoomInfo enrichment and OpenAI research
  */
 
@@ -160,7 +160,16 @@ export async function researchCompany(
     })
     
     const enrichmentDataString = formatEnrichmentData(enrichmentResponse)
-    console.log('📝 Formatted enrichment data:', enrichmentDataString)
+    
+    // Log if enrichment was successful
+    if (enrichmentResponse.success && enrichmentResponse.data) {
+      console.log('✅ ZoomInfo enrichment SUCCESSFUL - Data will be included in OpenAI prompt')
+      console.log('📋 ZoomInfo data being sent to OpenAI:')
+      console.log(enrichmentDataString)
+    } else {
+      console.warn('⚠️  ZoomInfo enrichment FAILED or returned no data')
+      console.warn('OpenAI will rely on public web research only')
+    }
 
     // Step 2: Prepare user message with enrichment data
     const userMessage = `Research the following company and return complete JSON data:
@@ -182,8 +191,12 @@ Remember:
 - Include comprehensive capabilities, facilities, and certifications data`
 
     // Step 3: Call OpenAI with system prompt
-    console.log('Calling OpenAI for research...')
+    console.log('📡 Calling OpenAI for research...')
+    console.log('📨 Full prompt being sent to OpenAI (length: ' + userMessage.length + ' chars)')
+    
     const aiResponse = await callOpenAI(SYSTEM_PROMPT, userMessage, 0.3)
+    
+    console.log('✅ OpenAI response received (length: ' + aiResponse.length + ' chars)')
 
     // Step 4: Parse and validate JSON response
     interface ParsedCompanyData {
@@ -437,57 +450,16 @@ Remember:
       } : {},
     }
 
-    // ============================================================================
-    // VALIDATION LOGGING - Check what AI actually returned
-    // ============================================================================
-    console.log('\n=== AI RESEARCH DATA VALIDATION ===')
-    
-    // Check facilities
-    console.log(`Facilities: ${companyData.facilities?.length || 0} found`)
-    if (!companyData.facilities || companyData.facilities.length === 0) {
-      console.warn('⚠️ WARNING: AI returned no facilities data')
-    }
-    
-    // Check capabilities
-    const capabilitiesCount = companyData.capabilities 
-      ? Object.values(companyData.capabilities).filter(v => v === true).length 
-      : 0
-    console.log(`Capabilities: ${capabilitiesCount} enabled`)
-    if (capabilitiesCount === 0) {
-      console.warn('⚠️ WARNING: AI returned no enabled capabilities')
-    }
-    
-    // Check industries
-    console.log(`Industries: ${companyData.industries?.length || 0} found`)
-    if (!companyData.industries || companyData.industries.length === 0) {
-      console.warn('⚠️ WARNING: AI returned no industries data')
-    }
-    
-    // Check certifications
-    console.log(`Certifications: ${companyData.certifications?.length || 0} found`)
-    if (!companyData.certifications || companyData.certifications.length === 0) {
-      console.warn('⚠️ WARNING: AI returned no certifications data')
-    }
-    
-    // Check technical specs
-    const techSpecsCount = companyData.technical_specs
-      ? Object.values(companyData.technical_specs).filter(v => v !== null && v !== undefined && v !== false).length
-      : 0
-    console.log(`Technical Specs: ${techSpecsCount} fields filled`)
-    if (techSpecsCount === 0) {
-      console.warn('⚠️ WARNING: AI returned no technical specs data')
-    }
-    
-    // Check business info
-    const businessInfoCount = companyData.business_info
-      ? Object.values(companyData.business_info).filter(v => v !== null && v !== undefined && v !== false).length
-      : 0
-    console.log(`Business Info: ${businessInfoCount} fields filled`)
-    if (businessInfoCount === 0) {
-      console.warn('⚠️ WARNING: AI returned no business info data')
-    }
-    
-    console.log('===================================\n')
+    // Log final results summary
+    console.log('\n=== 🎯 RESEARCH COMPLETE ===')
+    console.log(`Company: ${companyData.company_name}`)
+    console.log(`Facilities: ${companyData.facilities?.length || 0}`)
+    console.log(`Capabilities: ${Object.values(companyData.capabilities || {}).filter(Boolean).length}`)
+    console.log(`Industries: ${companyData.industries?.length || 0}`)
+    console.log(`Certifications: ${companyData.certifications?.length || 0}`)
+    console.log(`Business Info Fields: ${Object.values(companyData.business_info || {}).filter(v => v !== undefined && v !== null).length}`)
+    console.log(`Technical Specs Fields: ${Object.values(companyData.technical_specs || {}).filter(v => v !== undefined && v !== null).length}`)
+    console.log('=======================\n')
 
     return {
       success: true,
@@ -530,7 +502,8 @@ export function parseBatchInput(input: string): Array<{ name: string; website?: 
  */
 export async function researchBatchCompanies(
   companies: Array<{ name: string; website?: string }>,
-  onProgress?: (index: number, total: number, company: string) => void
+    onProgress?: (index: number, total: number, company: string) => void,
+    delayMs: number = 1000
 ): Promise<ResearchResult[]> {
   const results: ResearchResult[] = []
 
@@ -546,7 +519,7 @@ export async function researchBatchCompanies(
 
     // Add a small delay between requests to avoid rate limiting
     if (i < companies.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, delayMs))
     }
   }
 
