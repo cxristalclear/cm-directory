@@ -69,6 +69,10 @@ npm install
    # Mapbox (Required for AI Research importer & facility geocoding)
    NEXT_PUBLIC_MAPBOX_TOKEN=
 
+   # AI Integrations (Required for AI Research importer)
+   OPENAI_API_KEY=
+   ZOOMINFO_WEBHOOK_URL=
+
    # Feature Flags
    NEXT_PUBLIC_SHOW_DEBUG=false
    ```
@@ -97,7 +101,7 @@ npm run import-companies
 npm run geocode
 ```
 
-> 🤖 **AI Research importer:** The admin dashboard includes an AI-powered importer that also geocodes facilities. It relies on `NEXT_PUBLIC_MAPBOX_TOKEN`. If the token is missing or invalid, you'll see a toast explaining that the Mapbox access token is not configured. The importer still saves facilities without coordinates so you can update the token and retry later.
+> 🤖 **AI Research importer:** The admin dashboard includes an AI-powered importer that also geocodes facilities. It relies on `NEXT_PUBLIC_MAPBOX_TOKEN` for geocoding, plus server-only `OPENAI_API_KEY` and `ZOOMINFO_WEBHOOK_URL` values for AI enrichment. If the Mapbox token is missing or invalid, you'll see a toast explaining that the geocoder is not configured. The importer still saves facilities without coordinates so you can update the token and retry later.
 
 ### Step 6: Run Tests
 
