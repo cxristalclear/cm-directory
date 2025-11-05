@@ -30,6 +30,8 @@ export interface FacilityFormData {
   city?: string | null
   state?: string | null
   zip_code?: string | null
+  state_province?: string | null
+  postal_code?: string | null
   country?: string | null
   is_primary?: boolean
   latitude?: number | null
