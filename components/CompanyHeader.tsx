@@ -4,12 +4,9 @@ import Link from "next/link"
 import { Building2} from 'lucide-react'
 
 
-interface CompanyHeaderProps {
-  companyName?: string
-  showBackButton?: boolean
-}
 
-export default function CompanyHeader({ }: CompanyHeaderProps) {
+
+export default function CompanyHeader() {
   const ADD_COMPANY_PATH = "/add-company"
 
   return (
@@ -34,12 +31,12 @@ export default function CompanyHeader({ }: CompanyHeaderProps) {
                 <a href="/about" className="text-sm font-medium text-white/90 hover:text-white">
                   About
                 </a>
-                <a
+                <Link
                   href={ADD_COMPANY_PATH}
                   className="inline-flex items-center justify-center rounded-lg bg-white/90 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm ring-1 ring-white/70 backdrop-blur hover:bg-white"
                 >
                   Add Your Company
-                </a>
+                </Link>
               </div>
             </div>
           </div>

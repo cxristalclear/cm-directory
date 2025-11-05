@@ -1,3 +1,5 @@
+import 'server-only'
+
 /**
  * ZoomInfo Enrichment via Make.com Webhook
  * Calls the Make.com webhook to enrich company data from ZoomInfo
@@ -72,7 +74,13 @@ export interface ZoomInfoEnrichmentResponse {
   error?: string
 }
 
-const WEBHOOK_URL = 'https://hook.us1.make.celonis.com/obav4qf8bnmsmf19xfpsr62bjsx2qy6t'
+function getWebhookUrl(): string {
+  const webhookUrl = process.env.ZOOMINFO_WEBHOOK_URL
+  if (!webhookUrl) {
+    throw new Error('ZOOMINFO_WEBHOOK_URL environment variable is not set')
+  }
+  return webhookUrl
+}
 
 /**
  * Enrich company data using ZoomInfo via Make.com webhook
@@ -81,10 +89,12 @@ export async function enrichCompanyData(
   companyName: string,
   website?: string
 ): Promise<ZoomInfoEnrichmentResponse> {
+  const webhookUrl = getWebhookUrl()
+
   console.log('ZoomInfo Enrichment Request:', {
     companyName,
     website,
-    webhookUrl: WEBHOOK_URL
+    webhookConfigured: Boolean(webhookUrl),
   })
 
   try {
@@ -99,7 +109,7 @@ export async function enrichCompanyData(
 
     console.log('Sending to webhook:', JSON.stringify(requestBody, null, 2))
 
-    const response = await fetch(WEBHOOK_URL, {
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

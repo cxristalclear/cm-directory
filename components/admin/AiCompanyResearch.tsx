@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { researchCompany, researchBatchCompanies, parseBatchInput } from '@/lib/ai/researchCompany'
 import type { CompanyFormData } from '@/types/admin'
 import CompanyPreview from './CompanyPreview'
+import { parseBatchInput } from '@/lib/ai/batchInput'
 
 type Mode = 'single' | 'batch'
 
@@ -23,6 +23,36 @@ interface BatchSaveProgress {
 interface AiCompanyResearchProps {
   onSaveCompany: (data: CompanyFormData, isDraft: boolean) => Promise<void>
   onAllCompaniesSaved?: () => void
+}
+
+interface ResearchResultResponse {
+  success: boolean
+  data?: CompanyFormData
+  error?: string
+  enrichmentData?: string
+}
+
+async function requestResearch(companyName: string, website?: string): Promise<ResearchResultResponse> {
+  const payload = {
+    companyName,
+    ...(website ? { website } : {}),
+  }
+
+  const response = await fetch('/api/ai/research', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const data = (await response.json().catch(() => null)) as ResearchResultResponse | null
+
+  if (!data) {
+    throw new Error('Unexpected response from AI research service')
+  }
+
+  return data
 }
 
 export default function AiCompanyResearch({ 
@@ -50,17 +80,20 @@ export default function AiCompanyResearch({
   })
 
   const handleSingleResearch = async () => {
-    if (!companyName.trim()) {
+    const normalizedName = companyName.trim()
+    if (!normalizedName) {
       setError('Please enter a company name')
       return
     }
+
+    const normalizedWebsite = website.trim() ? website.trim() : undefined
 
     setLoading(true)
     setError(null)
     setResearchedCompanies([])
 
     try {
-      const result = await researchCompany(companyName, website || undefined)
+      const result = await requestResearch(normalizedName, normalizedWebsite)
 
       if (result.success && result.data) {
         setResearchedCompanies([{
@@ -96,27 +129,66 @@ export default function AiCompanyResearch({
     setBatchProgress({ current: 0, total: companies.length, company: '' })
 
     try {
-      const results = await researchBatchCompanies(
-        companies,
-        (current, total, company) => {
-          setBatchProgress({ current, total, company })
-        }
-      )
+      const successful: ResearchedCompany[] = []
+      const errors: Array<{ index: number; company: string; reason: string }> = []
 
-      const successful = results
-        .filter(r => r.success && r.data)
-        .map(r => ({
-          data: r.data!,
-          enrichmentInfo: r.enrichmentData || 'No enrichment data available'
-        }))
+      for (let i = 0; i < companies.length; i++) {
+        const raw = companies[i]
+        const normalizedName = raw.name.trim()
+        const normalizedWebsite = raw.website?.trim() ? raw.website.trim() : undefined
+
+        if (!normalizedName) {
+          errors.push({
+            index: i,
+            company: raw.name,
+            reason: 'Company name is required',
+          })
+          continue
+        }
+
+        setBatchProgress({
+          current: i + 1,
+          total: companies.length,
+          company: normalizedName,
+        })
+
+        try {
+          const result = await requestResearch(normalizedName, normalizedWebsite)
+
+          if (result.success && result.data) {
+            successful.push({
+              data: result.data,
+              enrichmentInfo: result.enrichmentData || 'No enrichment data available',
+            })
+          } else {
+            errors.push({
+              index: i,
+              company: normalizedName,
+              reason: result.error || 'Failed to research company',
+            })
+          }
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : 'Unknown error'
+          errors.push({
+            index: i,
+            company: normalizedName,
+            reason,
+          })
+        }
+      }
 
       if (successful.length === 0) {
-        setError('No companies were successfully researched')
+        setError(errors[0]?.reason || 'No companies were successfully researched')
       } else {
         setResearchedCompanies(successful)
         setCurrentPreviewIndex(0)
+
         if (successful.length < companies.length) {
-          setError(`Successfully researched ${successful.length} of ${companies.length} companies`)
+          const firstFailure = errors[0]?.reason
+          const message = firstFailure
+            ? `Successfully researched ${successful.length} of ${companies.length} companies. Example failure: ${firstFailure}`
+            : `Successfully researched ${successful.length} of ${companies.length} companies`
+          setError(message)
         }
       }
     } catch (err) {
