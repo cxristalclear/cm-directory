@@ -2,6 +2,7 @@ import type { Point } from 'geojson'
 
 import type { FacilityFormData } from '@/types/admin'
 export type FetchImplementation = typeof fetch
+import { getStateProvince, getPostalCode } from './addressCompat'
 
 export type NullableString = string | null | undefined
 
@@ -71,8 +72,8 @@ export function buildFacilityAddress(facility: FacilityAddressLike): string {
 
   addPart(facility.street_address)
   addPart(facility.city)
-  addPart(facility.state)
-  addPart(facility.zip_code)
+  addPart(getStateProvince(facility))  // ✅ Uses compatibility layer
+  addPart(getPostalCode(facility))     // ✅ Uses compatibility layer
   addPart(facility.country)
 
   return parts.join(', ')

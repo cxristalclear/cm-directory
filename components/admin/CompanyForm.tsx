@@ -333,23 +333,32 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">State</label>
+                  <label className="block text-sm font-medium text-gray-700">State/Province</label>
                   <input
                     type="text"
-                    maxLength={2}
-                    placeholder="CA"
-                    value={facility.state || ''}
-                    onChange={(e) => updateFacility(index, 'state', e.target.value.toUpperCase())}
+                    maxLength={50}
+                    placeholder="CA, TX, Ontario, Bayern, etc."
+                    value={facility.state || facility.state_province || ''}
+                    onChange={(e) => {
+                      const value = e.target.value.length <= 2 
+                        ? e.target.value.toUpperCase() 
+                        : e.target.value
+                      updateFacility(index, 'state', value)
+                      updateFacility(index, 'state_province', value)
+                    }}
                     className="mt-1 block w-full admin-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
+                  <label className="block text-sm font-medium text-gray-700">ZIP/Postal Code</label>
                   <input
                     type="text"
-                    value={facility.zip_code || ''}
-                    onChange={(e) => updateFacility(index, 'zip_code', e.target.value)}
+                    value={facility.zip_code || facility.postal_code || ''}
+                    onChange={(e) => {
+                      updateFacility(index, 'zip_code', e.target.value)
+                      updateFacility(index, 'postal_code', e.target.value)
+                    }}
                     className="mt-1 block w-full admin-input"
                   />
                 </div>
