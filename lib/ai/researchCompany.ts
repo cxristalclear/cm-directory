@@ -8,6 +8,9 @@ import 'server-only'
 import { callOpenAI } from './openaiClient'
 import { enrichCompanyData, formatEnrichmentData } from './zoomInfoEnrich'
 import type { CompanyFormData } from '@/types/admin'
+import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/database.types'
+import { normalizeWebsiteUrl } from '@/lib/admin/utils'
 
 // System prompt from custom_cm_search_instructions.txt
 const SYSTEM_PROMPT = `You are a structured data collection agent for electronics manufacturing companies. Your job is to return a **fully completed JSON array** of 1 company per request, based on the given schema.
@@ -139,6 +142,72 @@ export interface ResearchResult {
   data?: CompanyFormData
   error?: string
   enrichmentData?: string
+  enrichmentRaw?: unknown
+}
+
+const adminSupabase =
+  typeof process !== 'undefined' &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      )
+    : null
+
+const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000
+type EnrichmentResponse = Awaited<ReturnType<typeof enrichCompanyData>>
+type EnrichmentPayload = NonNullable<EnrichmentResponse['data']>
+
+function extractEnrichedCompanyName(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== 'object') return undefined
+  const candidate =
+    (payload as { company_name?: unknown }).company_name ??
+    (payload as { name?: unknown }).name
+  return typeof candidate === 'string' && candidate.trim() ? candidate.trim() : undefined
+}
+
+async function getCachedEnrichmentSnapshot(companyName: string, website?: string) {
+  if (!adminSupabase) {
+    return null
+  }
+
+  const filters: string[] = []
+  const trimmedName = companyName.trim()
+  if (trimmedName) {
+    const sanitizedName = trimmedName.replace(/%/g, '\\%').replace(/_/g, '\\_')
+    filters.push(`company_name.ilike.%${sanitizedName}%`)
+  }
+
+  const normalizedWebsite = website ? normalizeWebsiteUrl(website) : undefined
+  if (normalizedWebsite) {
+    filters.push(`website_url.eq.${normalizedWebsite}`)
+  }
+
+  if (filters.length === 0) {
+    return null
+  }
+
+  const thirtyDaysAgo = new Date(Date.now() - ONE_MONTH_MS).toISOString()
+
+  const { data, error } = await adminSupabase
+    .from('company_research_history')
+    .select('enrichment_snapshot, created_at, company_name, website_url')
+    .gte('created_at', thirtyDaysAgo)
+    .or(filters.join(','))
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (error) {
+    console.warn('Unable to fetch cached enrichment snapshot:', error)
+    return null
+  }
+
+  const snapshot = data?.find(entry => entry.enrichment_snapshot)?.enrichment_snapshot
+  if (snapshot) {
+    console.log('⚡ Using cached enrichment snapshot from research history (skipping ZoomInfo)')
+  }
+  return snapshot ?? null
 }
 
 /**
@@ -149,12 +218,26 @@ export async function researchCompany(
   website?: string
 ): Promise<ResearchResult> {
   try {
-    // Step 1: Call ZoomInfo enrichment
+    // Step 1: Call ZoomInfo enrichment (or reuse cached snapshot)
     console.log(`🤖 Starting research for: ${companyName}`)
     console.log(`Enriching data for ${companyName}...`)
-    
-    const enrichmentResponse = await enrichCompanyData(companyName, website)
-    
+
+    let enrichmentResponse: EnrichmentResponse
+    const cachedSnapshot = await getCachedEnrichmentSnapshot(companyName, website)
+
+    if (cachedSnapshot) {
+      enrichmentResponse = {
+        success: true,
+        data: cachedSnapshot,
+      }
+    } else {
+      enrichmentResponse = await enrichCompanyData(companyName, website)
+    }
+
+    const enrichmentPayload = enrichmentResponse.data ?? null
+    const enrichedCompanyName = extractEnrichedCompanyName(enrichmentPayload)
+    const effectiveCompanyName = enrichedCompanyName || companyName
+
     console.log('📊 ZoomInfo enrichment result:', {
       success: enrichmentResponse.success,
       hasData: !!enrichmentResponse.data,
@@ -176,7 +259,7 @@ export async function researchCompany(
     // Step 2: Prepare user message with enrichment data
     const userMessage = `Research the following company and return complete JSON data:
 
-Company Name: ${companyName}
+Company Name: ${effectiveCompanyName}
 ${website ? `Website: ${website}` : ''}
 
 ZoomInfo Enrichment Data:
@@ -327,6 +410,7 @@ Remember:
         success: false,
         error: 'Failed to parse AI response as JSON',
         enrichmentData: enrichmentDataString,
+        enrichmentRaw: enrichmentPayload,
       }
     }
 
@@ -345,7 +429,7 @@ Remember:
 
     // Step 5: Map to CompanyFormData structure
     const companyData: CompanyFormData = {
-      company_name: parsedData.company_name || companyName,
+      company_name: parsedData.company_name || enrichedCompanyName || companyName,
       dba_name: parsedData.dba_name || undefined,
       description: parsedData.description || parsedData.public_description || undefined,
       website_url: parsedData.website || website || undefined,
@@ -362,7 +446,7 @@ Remember:
             city: f.city || undefined,
             state: f.state || undefined,
             zip_code: f.zip_code || undefined,
-            country: f.country || 'US',
+            country: f.country && f.country.trim() ? f.country : undefined,
             is_primary: f.is_primary || false,
             latitude: parseCoordinate(f.latitude ?? null),
             longitude: parseCoordinate(f.longitude ?? null),
@@ -467,12 +551,14 @@ Remember:
       success: true,
       data: companyData,
       enrichmentData: enrichmentDataString,
+      enrichmentRaw: enrichmentPayload,
     }
   } catch (error) {
     console.error('Error researching company:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
+      enrichmentRaw: null,
     }
   }
 }
