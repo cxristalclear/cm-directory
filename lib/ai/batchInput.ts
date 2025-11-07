@@ -1,6 +1,6 @@
 /**
- * Parse batch input (CSV format: name, website)
- * Kept client-safe so we can reuse in the admin importer UI.
+ * Parse batch input (CSV format: name, website).
+ * Kept client-safe so importer UI helpers can safely reuse the logic.
  */
 export function parseBatchInput(input: string): Array<{ name: string; website?: string }> {
   const lines = input.trim().split('\n')
