@@ -17,6 +17,13 @@ const designerStyles = (() => {
   return match ? match[1] : ""
 })()
 
+const embedOverrides = `
+.jotform-container .form-all {
+  box-shadow: none !important;
+  border: none !important;
+}
+`
+
 const inlineScripts = (() => {
   const scripts: string[] = []
   const regex = /<script([^>]*)>([\s\S]*?)<\/script>/g
@@ -82,10 +89,11 @@ export default function JotformEmbed() {
         {designerStyles && (
           <style dangerouslySetInnerHTML={{ __html: designerStyles }} />
         )}
+        <style dangerouslySetInnerHTML={{ __html: embedOverrides }} />
       </div>
 
       <div
-        className="jotform-container"
+        className="jotform-container shadow-none"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: formMarkup }}
       />
