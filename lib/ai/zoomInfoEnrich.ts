@@ -109,6 +109,7 @@ export async function enrichCompanyData(
     if (normalizedWebsite) {
       const formattedWebsite = normalizeWebsiteUrl(normalizedWebsite) || normalizedWebsite
       requestBody.company_website = formattedWebsite
+      requestBody.website = formattedWebsite
     }
 
     console.log('Sending to webhook:', JSON.stringify(requestBody, null, 2))
@@ -131,7 +132,18 @@ export async function enrichCompanyData(
       }
     }
 
-    const responseData = await response.json()
+    const rawText = await response.text()
+    let responseData: unknown = null
+    try {
+      responseData = rawText ? JSON.parse(rawText) : null
+    } catch (parseError) {
+      console.warn('ZoomInfo webhook returned non-JSON payload:', rawText)
+      return {
+        success: false,
+        error: 'ZoomInfo webhook returned non-JSON response',
+      }
+    }
+
     console.log('ZoomInfo raw response:', JSON.stringify(responseData, null, 2))
 
     let normalizedResponse: ZoomInfoEnrichmentResponse
