@@ -31,7 +31,8 @@ async function testZoomInfo() {
   const testCompany = {
     action: 'enrich_company',
     company_name: 'Flex Ltd',
-    website: 'https://flex.com'
+    company_website: 'https://flex.com',
+    website: 'https://flex.com',
   }
 
   console.log('📤 Sending request:')

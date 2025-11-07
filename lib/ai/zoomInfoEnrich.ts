@@ -1,4 +1,5 @@
 import 'server-only'
+import { normalizeWebsiteUrl } from '@/lib/admin/utils'
 
 /**
  * ZoomInfo Enrichment via Make.com Webhook
@@ -8,6 +9,7 @@ import 'server-only'
 export interface ZoomInfoEnrichmentRequest {
   action: string
   company_name: string
+  company_website?: string
   website?: string
   location?: {
     city?: string
@@ -103,8 +105,10 @@ export async function enrichCompanyData(
       company_name: companyName,
     }
 
-    if (website) {
-      requestBody.website = website
+    const normalizedWebsite = website?.trim() || ''
+    if (normalizedWebsite) {
+      const formattedWebsite = normalizeWebsiteUrl(normalizedWebsite) || normalizedWebsite
+      requestBody.company_website = formattedWebsite
     }
 
     console.log('Sending to webhook:', JSON.stringify(requestBody, null, 2))
