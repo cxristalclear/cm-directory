@@ -105,13 +105,13 @@ export default async function ChecklistPage({ params }: ChecklistPageProps) {
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
-                  className="rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm hover:border-blue-300"
+                  className="btn btn--outline-primary"
                 >
                   Download PDF
                 </button>
                 <button
                   type="button"
-                  className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:border-gray-400"
+                  className="btn btn--outline"
                 >
                   Print checklist
                 </button>

@@ -57,14 +57,14 @@ export default function Error({
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={reset}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              className="btn btn--primary btn--lg flex-1"
             >
               <RefreshCcw className="w-4 h-4" />
               Try Again
             </button>
             <Link
               href="/"
-              className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+              className="btn btn--muted btn--lg flex-1"
             >
               <Home className="w-4 h-4" />
               Go Home
@@ -76,7 +76,7 @@ export default function Error({
             Need help?{' '}
             <a
               href="mailto:support@cm-directory.com"
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="btn btn--link font-medium"
             >
               Contact Support
             </a>
