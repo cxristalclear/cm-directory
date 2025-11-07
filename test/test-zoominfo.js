@@ -8,7 +8,9 @@
  */
 
 // Load environment variables from .env.local
-require('dotenv').config({ path: '.env.local' })
+import * as dotenv from 'dotenv'
+
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
 // Get webhook URL from environment variable
 const WEBHOOK_URL = process.env.ZOOMINFO_WEBHOOK_URL
