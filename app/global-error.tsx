@@ -1,7 +1,12 @@
 'use client'
 
 import { useEffect } from 'react'
+<<<<<<< HEAD
 import { AlertTriangle, Home, Link } from 'lucide-react'
+=======
+import NextLink from 'next/link'
+import { AlertTriangle, Home } from 'lucide-react'
+>>>>>>> 12f2bb7 (temp: bring in local work)
 
 export default function GlobalError({
   error,
@@ -45,6 +50,7 @@ export default function GlobalError({
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={reset}
+<<<<<<< HEAD
                   className="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Reload Page
@@ -56,6 +62,19 @@ export default function GlobalError({
                   <Home className="w-4 h-4" />
                   Go Home
                 </Link>
+=======
+                  className="btn btn--primary btn--lg flex-1"
+                >
+                  Reload Page
+                </button>
+                <NextLink
+                  href="/"
+                  className="btn btn--muted btn--lg flex-1"
+                >
+                  <Home className="w-4 h-4" />
+                  Go Home
+                </NextLink>
+>>>>>>> 12f2bb7 (temp: bring in local work)
               </div>
             </div>
           </div>

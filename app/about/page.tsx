@@ -1,6 +1,10 @@
 // app/about/page.tsx
 import type { Metadata } from "next";
+<<<<<<< HEAD
 import Link from "next/link";
+=======
+import Link from 'next/link';
+>>>>>>> 12f2bb7 (temp: bring in local work)
 import { Building2 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -37,11 +41,19 @@ export default function AboutPage() {
                     Back to Directory
                   </Link>
                   <Link
+<<<<<<< HEAD
                     href="/add-your-company"
                     className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/30"
                   >
                     Add Your Company
                 </Link>
+=======
+                    href="/list-your-company"
+                    className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/30"
+                  >
+                    Add Your Company
+                  </Link>
+>>>>>>> 12f2bb7 (temp: bring in local work)
                 </div>
               </div>
             </div>
@@ -120,7 +132,10 @@ export default function AboutPage() {
                   title="Detailed Profiles"
                   desc="Capability matrices, equipment, minimum feature sizes, cert expirations, lead times, MOQs, and contacts."
                 />
+<<<<<<< HEAD
                 <Feature title="Compare & Export (roadmap)" desc="Side-by-side comparison and export for reviews." />
+=======
+>>>>>>> 12f2bb7 (temp: bring in local work)
               </div>
             </Card>
 
@@ -133,6 +148,7 @@ export default function AboutPage() {
                 safeguards in a later phase.
               </p>
             </Card>
+<<<<<<< HEAD
 
             <Card>
               <SectionTitle title="Roadmap" />
@@ -145,6 +161,8 @@ export default function AboutPage() {
                 <TimelineItem title="Ongoing" body="Data depth, coverage expansion, and verification tooling." />
               </ol>
             </Card>
+=======
+>>>>>>> 12f2bb7 (temp: bring in local work)
           </div>
 
           {/* Right column */}
@@ -167,7 +185,11 @@ export default function AboutPage() {
                 Tell us what capabilities, certifications, or filters would make your search faster and more precise.
               </p>
               <Link
+<<<<<<< HEAD
                 href="/"
+=======
+                href="/contact"
+>>>>>>> 12f2bb7 (temp: bring in local work)
                 className="mt-4 inline-flex items-center justify-center rounded-full border border-blue-600 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
               >
                 Submit Feedback
@@ -239,4 +261,8 @@ function TimelineItem({ title, body }: { title: string; body: string }) {
       <p className="mt-1 text-neutral-700">{body}</p>
     </li>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 12f2bb7 (temp: bring in local work)

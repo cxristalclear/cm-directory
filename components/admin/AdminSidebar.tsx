@@ -1,16 +1,28 @@
 'use client'
 
 import Link from 'next/link'
+<<<<<<< HEAD
 import { usePathname } from 'next/navigation'
+=======
+import { usePathname, useRouter } from 'next/navigation'
+>>>>>>> 12f2bb7 (temp: bring in local work)
 import { 
   LayoutDashboard, 
   Building2, 
   Plus, 
   List,
   Menu,
+<<<<<<< HEAD
   X
 } from 'lucide-react'
 import { useState } from 'react'
+=======
+  X,
+  LogOut
+} from 'lucide-react'
+import { useState } from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+>>>>>>> 12f2bb7 (temp: bring in local work)
 
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -20,7 +32,19 @@ const navigation = [
 
 export default function AdminSidebar() {
   const pathname = usePathname()
+<<<<<<< HEAD
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+=======
+  const router = useRouter()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const supabase = createClientComponentClient()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/admin/login')
+    router.refresh()
+  }
+>>>>>>> 12f2bb7 (temp: bring in local work)
 
   return (
     <>
@@ -47,13 +71,21 @@ export default function AdminSidebar() {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
+<<<<<<< HEAD
             <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-200">
+=======
+          <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-200">
+>>>>>>> 12f2bb7 (temp: bring in local work)
             <Building2 className="h-8 w-8 text-blue-600" />
             <div>
               <h1 className="text-lg admin-sidebar-logo">CM Directory</h1>
               <p className="text-xs text-gray-500">Admin Dashboard</p>
             </div>
+<<<<<<< HEAD
             </div>
+=======
+          </div>
+>>>>>>> 12f2bb7 (temp: bring in local work)
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1">
@@ -74,6 +106,20 @@ export default function AdminSidebar() {
               )
             })}
           </nav>
+<<<<<<< HEAD
+=======
+
+          {/* Logout button at bottom */}
+          <div className="px-4 py-6 border-t border-gray-200">
+            <button
+              onClick={handleLogout}
+              className="admin-btn-secondary flex items-center gap-3 text-sm w-full text-left hover:bg-red-50 hover:text-red-600 transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+              Logout
+            </button>
+          </div>
+>>>>>>> 12f2bb7 (temp: bring in local work)
         </div>
       </div>
 
@@ -86,4 +132,8 @@ export default function AdminSidebar() {
       )}
     </>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 12f2bb7 (temp: bring in local work)

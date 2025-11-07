@@ -6,6 +6,11 @@ import { ChevronDown, X, Filter, MapPin, Globe, Settings, Layers } from 'lucide-
 import type { HomepageCompany } from '@/types/company'
 import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
 import { getStateName } from '../utils/stateMapping'
+<<<<<<< HEAD
+=======
+import { getCountryName } from '@/utils/countryMapping'
+
+>>>>>>> 12f2bb7 (temp: bring in local work)
 
 type FilterSection = 'countries' | 'states' | 'capabilities' | 'volume'
 
@@ -13,6 +18,7 @@ interface FilterSidebarProps {
   allCompanies: HomepageCompany[]
 }
 
+<<<<<<< HEAD
 // Country names mapping
 const COUNTRIES: Record<string, string> = {
   'US': 'United States',
@@ -34,6 +40,8 @@ const getCountryName = (code: string): string => {
   return COUNTRIES[code] || code
 }
 
+=======
+>>>>>>> 12f2bb7 (temp: bring in local work)
 // Capability display names
 const CAPABILITY_NAMES: Record<CapabilitySlug, string> = {
   'smt': 'SMT Assembly',
@@ -208,7 +216,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
+<<<<<<< HEAD
         className="fixed left-4 bottom-4 z-30 bg-blue-600 text-white shadow-xl rounded-full p-4 lg:hidden hover:shadow-2xl transition-shadow"
+=======
+        className="btn btn--primary btn-fab fixed left-4 bottom-4 z-30 lg:hidden"
+>>>>>>> 12f2bb7 (temp: bring in local work)
       >
         <Filter className="w-6 h-6" />
         {activeFilterCount > 0 && (
@@ -241,14 +253,22 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearFilters}
+<<<<<<< HEAD
                   className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+=======
+                  className="btn btn--link text-xs font-medium"
+>>>>>>> 12f2bb7 (temp: bring in local work)
                 >
                   Clear all
                 </button>
               )}
               <button
                 onClick={() => setIsOpen(false)}
+<<<<<<< HEAD
                 className="lg:hidden p-1 hover:bg-gray-100 rounded"
+=======
+                className="btn-close lg:hidden"
+>>>>>>> 12f2bb7 (temp: bring in local work)
               >
                 <X className="w-4 h-4" />
               </button>
@@ -262,7 +282,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 <button
                   key={country}
                   onClick={() => handleCountryToggle(country)}
+<<<<<<< HEAD
                   className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
+=======
+                  className="btn btn--pill btn--pill-primary"
+>>>>>>> 12f2bb7 (temp: bring in local work)
                 >
                   {getCountryName(country)}
                   <X className="w-3 h-3" />
@@ -272,7 +296,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 <button
                   key={state}
                   onClick={() => handleStateToggle(state)}
+<<<<<<< HEAD
                   className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
+=======
+                  className="btn btn--pill btn--pill-primary"
+>>>>>>> 12f2bb7 (temp: bring in local work)
                 >
                   {getStateName(state)}
                   <X className="w-3 h-3" />
@@ -282,7 +310,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 <button
                   key={cap}
                   onClick={() => handleCapabilityToggle(cap)}
+<<<<<<< HEAD
                   className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
+=======
+                  className="btn btn--pill btn--pill-primary"
+>>>>>>> 12f2bb7 (temp: bring in local work)
                 >
                   {CAPABILITY_NAMES[cap]}
                   <X className="w-3 h-3" />
@@ -291,7 +323,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
               {filters.productionVolume && (
                 <button
                   onClick={() => handleVolumeChange(null)}
+<<<<<<< HEAD
                   className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
+=======
+                  className="btn btn--pill btn--pill-primary"
+>>>>>>> 12f2bb7 (temp: bring in local work)
                 >
                   {VOLUME_NAMES[filters.productionVolume]}
                   <X className="w-3 h-3" />
@@ -306,7 +342,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <button
               onClick={() => toggleSection('countries')}
+<<<<<<< HEAD
               className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+=======
+              className="btn-accordion"
+>>>>>>> 12f2bb7 (temp: bring in local work)
             >
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-gray-500" />
@@ -365,7 +405,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <button
               onClick={() => toggleSection('states')}
+<<<<<<< HEAD
               className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+=======
+              className="btn-accordion"
+>>>>>>> 12f2bb7 (temp: bring in local work)
             >
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-gray-500" />
@@ -424,7 +468,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <button
               onClick={() => toggleSection('capabilities')}
+<<<<<<< HEAD
               className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+=======
+              className="btn-accordion"
+>>>>>>> 12f2bb7 (temp: bring in local work)
             >
               <div className="flex items-center gap-2">
                 <Settings className="w-4 h-4 text-gray-500" />
@@ -481,7 +529,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <button
               onClick={() => toggleSection('volume')}
+<<<<<<< HEAD
               className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+=======
+              className="btn-accordion"
+>>>>>>> 12f2bb7 (temp: bring in local work)
             >
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-gray-500" />
@@ -544,4 +596,8 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       )}
     </>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 12f2bb7 (temp: bring in local work)
