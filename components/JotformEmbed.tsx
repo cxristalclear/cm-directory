@@ -1,5 +1,6 @@
 import fs from "node:fs"
 import path from "node:path"
+import Script from "next/script"
 
 const projectRoot = process.cwd()
 const htmlSource = fs.readFileSync(path.join(projectRoot, "Add_Your_Company_to_CM_Directory.html"), "utf-8")
@@ -32,6 +33,9 @@ const inlineScripts = (() => {
   return scripts
 })()
 
+const toScriptId = (prefix: string, value: string) =>
+  `${prefix}-${value.replace(/[^a-zA-Z0-9_-]/g, "-")}`
+
 const localScripts = [
   "vendor/jquery-1.8.0.min.js",
   "prototype.js",
@@ -48,7 +52,11 @@ const localScripts = [
   .map(relativePath => {
     const filePath = path.join(projectRoot, "js", relativePath)
     const content = fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf-8") : ""
-    return { id: relativePath, content }
+    return {
+      id: relativePath,
+      content,
+      scriptId: toScriptId("jotform-local", relativePath),
+    }
   })
   .filter(asset => asset.content.length > 0)
 
@@ -83,21 +91,23 @@ export default function JotformEmbed() {
       />
 
       {localScripts.map(asset => (
-        <script
+        <Script
           key={asset.id}
-          suppressHydrationWarning
+          id={asset.scriptId}
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{ __html: asset.content }}
         />
       ))}
 
       {remoteScripts.map(src => (
-        <script key={src} src={src} suppressHydrationWarning />
+        <Script key={src} src={src} strategy="afterInteractive" />
       ))}
 
       {inlineScripts.map((content, index) => (
-        <script
+        <Script
           key={`inline-${index}`}
-          suppressHydrationWarning
+          id={toScriptId("jotform-inline", `inline-${index}`)}
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{ __html: content }}
         />
       ))}
