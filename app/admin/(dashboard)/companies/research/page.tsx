@@ -109,60 +109,60 @@ export default function AiResearchPage() {
         console.log('✓ Company created with ID:', companyId)
       }
 
-      // Insert facilities
+      // Insert or replace facilities
       if (normalizedFormData.facilities && normalizedFormData.facilities.length > 0) {
-        const { data: existingFacilities } = await supabase
-          .from('facilities')
-          .select('id')
-          .eq('company_id', companyId)
+        const facilitiesData: FacilityInsert[] = []
 
-        if (!existingFacilities || existingFacilities.length === 0) {
-          const facilitiesData: FacilityInsert[] = []
+        for (const facility of normalizedFormData.facilities) {
+          let latitude = facility.latitude
+          let longitude = facility.longitude
 
-          for (const facility of normalizedFormData.facilities) {
-            let latitude = facility.latitude
-            let longitude = facility.longitude
-
-            if ((latitude == null || longitude == null) && hasMinimumAddressData(facility) && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
-              try {
-                console.log(`📍 Geocoding: ${facility.city}, ${facility.state || facility.state_province}`)
-                const coordinates = await geocodeFacilityToPoint(facility)
-                latitude = coordinates.latitude
-                longitude = coordinates.longitude
-                console.log(`✓ Geocoded to: ${latitude}, ${longitude}`)
-              } catch (error) {
-                console.warn('⚠️ Geocoding failed:', error)
-              }
-            } else if (!hasMinimumAddressData(facility)) {
-              console.warn('⚠️ Skipping geocoding - insufficient address data:', facility)
-            } else if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
-              console.warn('⚠️ Skipping geocoding - missing NEXT_PUBLIC_MAPBOX_TOKEN')
+          if ((latitude == null || longitude == null) && hasMinimumAddressData(facility) && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+            try {
+              console.log(`📍 Geocoding: ${facility.city}, ${facility.state || facility.state_province}`)
+              const coordinates = await geocodeFacilityToPoint(facility)
+              latitude = coordinates.latitude
+              longitude = coordinates.longitude
+              console.log(`✓ Geocoded to: ${latitude}, ${longitude}`)
+            } catch (error) {
+              console.warn('⚠️ Geocoding failed:', error)
             }
-            // ✅ Use compatibility function to write to both columns
-            facilitiesData.push(prepareFacilityForDB({
-              company_id: companyId,
-              facility_type: facility.facility_type,
-              street_address: facility.street_address || null,
-              city: facility.city || null,
-              state: facility.state,
-              state_province: facility.state_province,
-              zip_code: facility.zip_code,
-              postal_code: facility.postal_code,
-              country: facility.country || 'US',
-              is_primary: facility.is_primary || false,
-              latitude: latitude || null,
-              longitude: longitude || null,
-            }))
+          } else if (!hasMinimumAddressData(facility)) {
+            console.warn('⚠️ Skipping geocoding - insufficient address data:', facility)
+          } else if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+            console.warn('⚠️ Skipping geocoding - missing NEXT_PUBLIC_MAPBOX_TOKEN')
           }
 
-          const { error: facilitiesError } = await supabase
-            .from('facilities')
-            .insert(facilitiesData)
-
-          if (facilitiesError) console.error('Facilities error:', facilitiesError)
-        } else {
-          console.log('⚠ Skipping: Company already has facilities')
+          facilitiesData.push(prepareFacilityForDB({
+            company_id: companyId,
+            facility_type: facility.facility_type,
+            street_address: facility.street_address || null,
+            city: facility.city || null,
+            state: facility.state,
+            state_province: facility.state_province,
+            zip_code: facility.zip_code,
+            postal_code: facility.postal_code,
+            country: facility.country || 'US',
+            is_primary: facility.is_primary || false,
+            latitude: latitude || null,
+            longitude: longitude || null,
+          }))
         }
+
+        const { error: deleteFacilitiesError } = await supabase
+          .from('facilities')
+          .delete()
+          .eq('company_id', companyId)
+
+        if (deleteFacilitiesError) {
+          console.error('Facilities delete error:', deleteFacilitiesError)
+        }
+
+        const { error: facilitiesError } = await supabase
+          .from('facilities')
+          .insert(facilitiesData)
+
+        if (facilitiesError) console.error('Facilities error:', facilitiesError)
       }
 
       // Insert capabilities
@@ -171,76 +171,75 @@ export default function AiResearchPage() {
         : false
 
       if (hasCapabilities) {
-        const { data: existing } = await supabase
-          .from('capabilities')
-          .select('id')
-          .eq('company_id', companyId)
-          .maybeSingle()
-
-        if (!existing) {
-          const capabilitiesInsert: CapabilitiesInsert = {
-            company_id: companyId,
-            ...normalizedFormData.capabilities,
-          }
-
-          const { error: capabilitiesError } = await supabase
-            .from('capabilities')
-            .insert(capabilitiesInsert)
-
-          if (capabilitiesError) console.error('Capabilities error:', capabilitiesError)
+        const capabilitiesInsert: CapabilitiesInsert = {
+          company_id: companyId,
+          ...normalizedFormData.capabilities,
         }
+
+        const { error: deleteCapabilitiesError } = await supabase
+          .from('capabilities')
+          .delete()
+          .eq('company_id', companyId)
+
+        if (deleteCapabilitiesError) {
+          console.error('Capabilities delete error:', deleteCapabilitiesError)
+        }
+
+        const { error: capabilitiesError } = await supabase
+          .from('capabilities')
+          .insert(capabilitiesInsert)
+
+        if (capabilitiesError) console.error('Capabilities error:', capabilitiesError)
       }
 
       // Insert industries
       if (normalizedFormData.industries && normalizedFormData.industries.length > 0) {
-        const { data: existingIndustries } = await supabase
+        const industriesInsert: IndustryInsert[] = normalizedFormData.industries.map((i) => ({
+          company_id: companyId,
+          industry_name: i.industry_name,
+        }))
+
+        const { error: deleteIndustriesError } = await supabase
           .from('industries')
-          .select('industry_name')
+          .delete()
           .eq('company_id', companyId)
 
-        const existingNames = new Set(existingIndustries?.map(i => i.industry_name) || [])
-        const newIndustries = normalizedFormData.industries.filter(i => !existingNames.has(i.industry_name))
-
-        if (newIndustries.length > 0) {
-          const industriesInsert: IndustryInsert[] = newIndustries.map((i) => ({
-            company_id: companyId,
-            industry_name: i.industry_name,
-          }))
-
-          const { error: industriesError } = await supabase
-            .from('industries')
-            .insert(industriesInsert)
-
-          if (industriesError) console.error('Industries error:', industriesError)
+        if (deleteIndustriesError) {
+          console.error('Industries delete error:', deleteIndustriesError)
         }
+
+        const { error: industriesError } = await supabase
+          .from('industries')
+          .insert(industriesInsert)
+
+        if (industriesError) console.error('Industries error:', industriesError)
       }
 
       // Insert certifications
       if (normalizedFormData.certifications && normalizedFormData.certifications.length > 0) {
-        const { data: existingCertifications } = await supabase
+        const certificationsInsert: CertificationInsert[] = normalizedFormData.certifications.map((c) => ({
+          company_id: companyId,
+          certification_type: c.certification_type,
+          certificate_number: c.certificate_number || null,
+          status: c.status || 'Active',
+          issued_date: c.issued_date || null,
+          expiration_date: c.expiration_date || null,
+        }))
+
+        const { error: deleteCertificationsError } = await supabase
           .from('certifications')
-          .select('certification_type')
+          .delete()
           .eq('company_id', companyId)
 
-        const existingTypes = new Set(existingCertifications?.map(c => c.certification_type) || [])
-        const newCertifications = normalizedFormData.certifications.filter(c => !existingTypes.has(c.certification_type))
-
-        if (newCertifications.length > 0) {
-          const certificationsInsert: CertificationInsert[] = newCertifications.map((c) => ({
-            company_id: companyId,
-            certification_type: c.certification_type,
-            certificate_number: c.certificate_number || null,
-            status: c.status || 'Active',
-            issued_date: c.issued_date || null,
-            expiration_date: c.expiration_date || null,
-          }))
-
-          const { error: certificationsError } = await supabase
-            .from('certifications')
-            .insert(certificationsInsert)
-
-          if (certificationsError) console.error('Certifications error:', certificationsError)
+        if (deleteCertificationsError) {
+          console.error('Certifications delete error:', deleteCertificationsError)
         }
+
+        const { error: certificationsError } = await supabase
+          .from('certifications')
+          .insert(certificationsInsert)
+
+        if (certificationsError) console.error('Certifications error:', certificationsError)
       }
 
       // Insert technical specs
@@ -249,24 +248,25 @@ export default function AiResearchPage() {
         : 0
 
       if (techSpecsCount > 0) {
-        const { data: existing } = await supabase
-          .from('technical_specs')
-          .select('id')
-          .eq('company_id', companyId)
-          .maybeSingle()
-
-        if (!existing) {
-          const technicalSpecsInsert: TechnicalSpecsInsert = {
-            company_id: companyId,
-            ...normalizedFormData.technical_specs,
-          }
-
-          const { error: technicalSpecsError } = await supabase
-            .from('technical_specs')
-            .insert(technicalSpecsInsert)
-
-          if (technicalSpecsError) console.error('Technical specs error:', technicalSpecsError)
+        const technicalSpecsInsert: TechnicalSpecsInsert = {
+          company_id: companyId,
+          ...normalizedFormData.technical_specs,
         }
+
+        const { error: deleteTechSpecsError } = await supabase
+          .from('technical_specs')
+          .delete()
+          .eq('company_id', companyId)
+
+        if (deleteTechSpecsError) {
+          console.error('Technical specs delete error:', deleteTechSpecsError)
+        }
+
+        const { error: technicalSpecsError } = await supabase
+          .from('technical_specs')
+          .insert(technicalSpecsInsert)
+
+        if (technicalSpecsError) console.error('Technical specs error:', technicalSpecsError)
       }
 
       // Insert business info
@@ -275,24 +275,25 @@ export default function AiResearchPage() {
         : 0
 
       if (businessInfoCount > 0) {
-        const { data: existing } = await supabase
-          .from('business_info')
-          .select('id')
-          .eq('company_id', companyId)
-          .maybeSingle()
-
-        if (!existing) {
-          const businessInfoInsert: BusinessInfoInsert = {
-            company_id: companyId,
-            ...normalizedFormData.business_info,
-          }
-
-          const { error: businessInfoError } = await supabase
-            .from('business_info')
-            .insert(businessInfoInsert)
-
-          if (businessInfoError) console.error('Business info error:', businessInfoError)
+        const businessInfoInsert: BusinessInfoInsert = {
+          company_id: companyId,
+          ...normalizedFormData.business_info,
         }
+
+        const { error: deleteBusinessInfoError } = await supabase
+          .from('business_info')
+          .delete()
+          .eq('company_id', companyId)
+
+        if (deleteBusinessInfoError) {
+          console.error('Business info delete error:', deleteBusinessInfoError)
+        }
+
+        const { error: businessInfoError } = await supabase
+          .from('business_info')
+          .insert(businessInfoInsert)
+
+        if (businessInfoError) console.error('Business info error:', businessInfoError)
       }
 
       await logCompanyChanges(
