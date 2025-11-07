@@ -9,7 +9,9 @@ import {
   List,
   Menu,
   X,
-  LogOut
+  LogOut,
+  Sparkles,
+  History
 } from 'lucide-react'
 import { useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
@@ -18,6 +20,8 @@ const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Add Company', href: '/admin/companies/add', icon: Plus },
   { name: 'All Companies', href: '/admin/companies', icon: List },
+  { name: 'AI Research', href: '/admin/companies/research', icon: Sparkles },
+  { name: 'Research History', href: '/admin/companies/research/history', icon: History },
 ]
 
 export default function AdminSidebar() {

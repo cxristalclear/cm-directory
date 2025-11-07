@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 import AiCompanyResearch from '@/components/admin/AiCompanyResearch'
 import type { CompanyFormData } from '@/types/admin'
-import type { Database } from '@/lib/database.types'
+import type { Database, Json } from '@/lib/database.types'
 import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData, normalizeWebsiteUrl } from '@/lib/admin/utils'
 import { geocodeFacilityToPoint } from '@/lib/admin/geocoding'
 import { toast } from 'sonner'
@@ -17,6 +17,7 @@ type IndustryInsert = Database['public']['Tables']['industries']['Insert']
 type CertificationInsert = Database['public']['Tables']['certifications']['Insert']
 type TechnicalSpecsInsert = Database['public']['Tables']['technical_specs']['Insert']
 type BusinessInfoInsert = Database['public']['Tables']['business_info']['Insert']
+type ResearchHistoryInsert = Database['public']['Tables']['company_research_history']['Insert']
 
 export default function AiResearchPage() {
   const router = useRouter()
@@ -294,6 +295,30 @@ export default function AiResearchPage() {
           .insert(businessInfoInsert)
 
         if (businessInfoError) console.error('Business info error:', businessInfoError)
+      }
+
+      // Log research snapshot
+      const researchSnapshot = JSON.parse(JSON.stringify(normalizedFormData)) as Json
+      const historyInsert: ResearchHistoryInsert = {
+        company_id: companyId,
+        company_name: normalizedFormData.company_name,
+        website_url: normalizedFormData.website_url || null,
+        research_snapshot: researchSnapshot,
+        research_summary: normalizedFormData.description || normalizedFormData.key_differentiators || null,
+        research_notes: normalizedFormData.key_differentiators || null,
+        data_confidence: null,
+        source: 'ai_research',
+        created_by_email: user.email || 'unknown',
+        created_by_name: user.user_metadata?.full_name || user.email || 'Admin',
+        enrichment_snapshot: null,
+      }
+
+      const { error: historyError } = await supabase
+        .from('company_research_history')
+        .insert(historyInsert)
+
+      if (historyError) {
+        console.error('Research history insert error:', historyError)
       }
 
       await logCompanyChanges(

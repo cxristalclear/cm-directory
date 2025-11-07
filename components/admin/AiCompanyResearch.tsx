@@ -67,6 +67,22 @@ function splitNameAndWebsite(input: string): { name: string; website?: string } 
     }
   }
 
+  if (!websiteCandidate) {
+    const websiteRegex = /((?:https?:\/\/)?(?:www\.)?[a-z0-9][a-z0-9.-]+\.[a-z]{2,}(?:\/\S*)?)/i
+    const match = trimmed.match(websiteRegex)
+    if (match) {
+      const candidate = match[0]
+      if (looksLikeWebsite(candidate)) {
+        websiteCandidate = candidate
+        if (typeof match.index === 'number') {
+          const before = trimmed.slice(0, match.index).trim()
+          const after = trimmed.slice(match.index + candidate.length).trim()
+          name = before || after || trimmed.replace(candidate, '').trim()
+        }
+      }
+    }
+  }
+
   const normalizedWebsite = websiteCandidate
     ? normalizeWebsiteUrl(websiteCandidate) || undefined
     : undefined
