@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import EditCompanyForm from '@/components/admin/EditCompanyForm'
@@ -95,9 +96,18 @@ export default async function EditCompanyPage({
               Update company profile information
             </p>
             {company.updated_at && (
-              <p className="mt-2 text-xs text-[var(--text-muted)]">
-                Last modified: {new Date(company.updated_at).toLocaleString()}
-              </p>
+              <div className="mt-2 text-xs text-[var(--text-muted)] space-y-1">
+                <p>
+                  Last modified: {new Date(company.updated_at).toLocaleString()}
+                </p>
+                <Link
+                  href="/admin/companies/research"
+                  className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
+                >
+                  View recent AI research
+                  <span aria-hidden="true">→</span>
+                </Link>
+              </div>
             )}
           </div>
           {/* Action buttons should use the admin-btn-* styles when added */}
