@@ -126,7 +126,7 @@ export default function VenkelAd({ size = 'banner', className = '' }: VenkelAdPr
             </p>
             <p className="text-gray-700 mb-8 leading-relaxed max-w-2xl mx-auto">
               Factory-direct electronic components with free custom stocking programs. 
-              Save time and money with Venkel's Supply Chain Services.
+              Save time and money with Venkel&apos;s Supply Chain Services.
             </p>
             
             <div className="grid md:grid-cols-3 gap-6 mb-8">
