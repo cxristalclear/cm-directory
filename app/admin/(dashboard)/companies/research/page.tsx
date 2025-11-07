@@ -23,7 +23,7 @@ export default function AiResearchPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const handleSubmit = async (formData: CompanyFormData, isDraft: boolean) => {
+  const handleSubmit = async (formData: CompanyFormData, isDraft: boolean, enrichmentPayload?: unknown) => {
     console.log('=== AI RESEARCH IMPORT STARTED ===')
     console.log('Company Name:', formData.company_name)
     console.log('Original Website URL:', formData.website_url)
@@ -139,14 +139,14 @@ export default function AiResearchPage() {
             facility_type: facility.facility_type,
             street_address: facility.street_address || null,
             city: facility.city || null,
-            state: facility.state,
-            state_province: facility.state_province,
-            zip_code: facility.zip_code,
-            postal_code: facility.postal_code,
-            country: facility.country || 'US',
+            state: facility.state || null,
+            state_province: facility.state_province || null,
+            zip_code: facility.zip_code || null,
+            postal_code: facility.postal_code || null,
+            country: facility.country && facility.country.trim() ? facility.country : null,
             is_primary: facility.is_primary || false,
-            latitude: latitude || null,
-            longitude: longitude || null,
+            latitude: latitude ?? null,
+            longitude: longitude ?? null,
           }))
         }
 
@@ -298,19 +298,23 @@ export default function AiResearchPage() {
       }
 
       // Log research snapshot
-      const researchSnapshot = JSON.parse(JSON.stringify(normalizedFormData)) as Json
+      const sanitizedSnapshot = JSON.parse(JSON.stringify(normalizedFormData)) as Json
+      const enrichmentSnapshot = enrichmentPayload
+        ? (JSON.parse(JSON.stringify(enrichmentPayload)) as Json)
+        : null
+
       const historyInsert: ResearchHistoryInsert = {
         company_id: companyId,
         company_name: normalizedFormData.company_name,
         website_url: normalizedFormData.website_url || null,
-        research_snapshot: researchSnapshot,
+        research_snapshot: sanitizedSnapshot,
         research_summary: normalizedFormData.description || normalizedFormData.key_differentiators || null,
         research_notes: normalizedFormData.key_differentiators || null,
         data_confidence: null,
         source: 'ai_research',
         created_by_email: user.email || 'unknown',
         created_by_name: user.user_metadata?.full_name || user.email || 'Admin',
-        enrichment_snapshot: null,
+        enrichment_snapshot: enrichmentSnapshot,
       }
 
       const { error: historyError } = await supabase

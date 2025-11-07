@@ -136,6 +136,7 @@ export async function enrichCompanyData(
     let responseData: unknown = null
     try {
       responseData = rawText ? JSON.parse(rawText) : null
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (parseError) {
       console.warn('ZoomInfo webhook returned non-JSON payload:', rawText)
       return {

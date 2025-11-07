@@ -2,6 +2,10 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase-server"
 import type { Database } from "@/lib/database.types"
 
+type SearchParams = {
+  search?: string
+}
+
 type ResearchHistoryRow = Database["public"]["Tables"]["company_research_history"]["Row"] & {
   companies?: {
     slug?: string | null
@@ -10,10 +14,16 @@ type ResearchHistoryRow = Database["public"]["Tables"]["company_research_history
 
 export const revalidate = 0
 
-export default async function ResearchHistoryPage() {
+export default async function ResearchHistoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}) {
   const supabase = await createClient()
+  const { search = "" } = await searchParams
+  const searchTerm = search.trim()
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("company_research_history")
     .select(
       `
@@ -22,17 +32,23 @@ export default async function ResearchHistoryPage() {
         company_name,
         website_url,
         research_summary,
-        research_notes,
-        data_confidence,
         created_at,
         created_by_name,
         created_by_email,
-        research_snapshot,
+        data_confidence,
         companies:company_id (slug)
       `
     )
     .order("created_at", { ascending: false })
-    .limit(100)
+    .limit(200)
+
+  if (searchTerm) {
+    query = query.or(
+      `company_name.ilike.%${searchTerm}%,website_url.ilike.%${searchTerm}%,created_by_email.ilike.%${searchTerm}%`
+    )
+  }
+
+  const { data, error } = await query
 
   if (error) {
     console.error("Failed to load research history:", error)
@@ -52,12 +68,12 @@ export default async function ResearchHistoryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="glass-card p-6">
+      <div className="glass-card p-6 space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-semibold gradient-text">Research History</h1>
             <p className="mt-2 text-sm text-[var(--text-muted)]">
-              Review the most recent AI-generated research snapshots that were saved to the database.
+              Search AI-generated research snapshots by company, domain, or researcher.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -66,88 +82,119 @@ export default async function ResearchHistoryPage() {
             </Link>
           </div>
         </div>
+
+        <form
+          className="flex flex-col gap-3 sm:flex-row sm:items-center"
+          action="/admin/companies/research/history"
+        >
+          <input
+            type="search"
+            name="search"
+            defaultValue={searchTerm}
+            placeholder="Search by company, website, or researcher…"
+            className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+          />
+          <div className="flex gap-2">
+            <button type="submit" className="admin-btn-primary text-sm">
+              Search
+            </button>
+            {searchTerm && (
+              <Link href="/admin/companies/research/history" className="admin-btn-secondary text-sm">
+                Clear
+              </Link>
+            )}
+          </div>
+        </form>
       </div>
 
       {history.length === 0 ? (
         <div className="glass-card p-6 text-sm text-gray-600">
-          No research history has been saved yet. Run AI research on a company and save it to populate this list.
+          {searchTerm
+            ? `No results found for "${searchTerm}". Try a different search term.`
+            : "No research history has been saved yet. Run AI research on a company and save it to populate this list."}
         </div>
       ) : (
-        <div className="space-y-4">
-          {history.map(entry => {
-            const companySlug = entry.companies?.slug ?? null
-            const formattedDate = entry.created_at
-              ? new Date(entry.created_at).toLocaleString()
-              : "Unknown"
-            const createdBy = entry.created_by_name || entry.created_by_email || "Unknown"
+        <div className="glass-card p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead className="bg-gray-50">
+                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  <th className="px-4 py-3">Company</th>
+                  <th className="px-4 py-3">Website</th>
+                  <th className="px-4 py-3">Summary</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Saved</th>
+                  <th className="px-4 py-3">Researcher</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {history.map(entry => {
+                  const companySlug = entry.companies?.slug ?? null
+                  const formattedDate = entry.created_at
+                    ? new Date(entry.created_at).toLocaleString()
+                    : "Unknown"
+                  const createdBy = entry.created_by_name || entry.created_by_email || "Unknown"
+                  const identifier = companySlug || entry.company_id
 
-            return (
-              <div key={entry.id} className="glass-card p-5 space-y-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        {entry.company_name}
-                      </h2>
-                      {companySlug && (
-                        <Link
-                          href={`/admin/companies/edit/${companySlug}`}
-                          className="text-sm text-blue-600 hover:text-blue-700"
-                        >
-                          Edit Company →
-                        </Link>
-                      )}
-                    </div>
-                    {entry.website_url && (
-                      <a
-                        href={entry.website_url.startsWith("http") ? entry.website_url : `https://${entry.website_url}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-700 break-all"
-                      >
-                        {entry.website_url}
-                      </a>
-                    )}
-                  </div>
-                  <div className="text-right text-xs text-gray-500">
-                    <p>{formattedDate}</p>
-                    <p>By {createdBy}</p>
-                  </div>
-                </div>
-
-                {entry.research_summary && (
-                  <p className="text-sm text-gray-700">{entry.research_summary}</p>
-                )}
-
-                {entry.research_notes && (
-                  <div className="text-xs text-gray-600">
-                    <span className="font-semibold text-gray-800">Notes: </span>
-                    {entry.research_notes}
-                  </div>
-                )}
-
-                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                  {entry.data_confidence && (
-                    <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-blue-700">
-                      Confidence: {entry.data_confidence}
-                    </span>
-                  )}
-                  <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1">
-                    Snapshot ID: {entry.id.slice(0, 8)}…
-                  </span>
-                </div>
-
-                <details className="group rounded-md border border-dashed border-gray-200 bg-gray-50/60 p-4">
-                  <summary className="cursor-pointer text-sm font-medium text-gray-800">
-                    View research snapshot
-                  </summary>
-                  <pre className="mt-3 max-h-80 overflow-auto rounded bg-white p-3 text-xs leading-relaxed text-gray-800">
-                    {JSON.stringify(entry.research_snapshot, null, 2)}
-                  </pre>
-                </details>
-              </div>
-            )
-          })}
+                  return (
+                    <tr key={entry.id} className="text-gray-900">
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium text-gray-900">{entry.company_name}</span>
+                          {companySlug && (
+                            <Link
+                              href={`/admin/companies/edit/${companySlug}`}
+                              className="text-xs text-blue-600 hover:text-blue-700"
+                            >
+                              Edit company →
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        {entry.website_url ? (
+                          <a
+                            href={entry.website_url.startsWith("http") ? entry.website_url : `https://${entry.website_url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-600 hover:text-blue-700 break-all"
+                          >
+                            {entry.website_url}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 align-top text-gray-700">
+                        {entry.research_summary ? (
+                          <span className="line-clamp-3">{entry.research_summary}</span>
+                        ) : (
+                          <span className="text-gray-400">No summary</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 align-top text-xs text-gray-500 whitespace-nowrap">
+                        {formattedDate}
+                      </td>
+                      <td className="px-4 py-3 align-top text-xs text-gray-500">
+                        {createdBy}
+                      </td>
+                      <td className="px-4 py-3 align-top text-right">
+                        <div className="flex flex-col items-end gap-2">
+                          <Link
+                            href={`/admin/companies/research/history/${identifier}`}
+                            className="text-sm text-blue-600 hover:text-blue-700"
+                          >
+                            View history
+                          </Link>
+                          <span className="text-[11px] text-gray-400">ID {entry.id.slice(0, 8)}…</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

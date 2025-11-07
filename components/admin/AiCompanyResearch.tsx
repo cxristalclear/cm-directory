@@ -11,6 +11,7 @@ interface ResearchedCompany {
   id: string
   data: CompanyFormData
   enrichmentInfo: string
+  enrichmentPayload?: unknown
 }
 
 interface BatchSaveProgress {
@@ -22,7 +23,7 @@ interface BatchSaveProgress {
 }
 
 interface AiCompanyResearchProps {
-  onSaveCompany: (data: CompanyFormData, isDraft: boolean) => Promise<void>
+  onSaveCompany: (data: CompanyFormData, isDraft: boolean, enrichmentPayload?: unknown) => Promise<void>
   onAllCompaniesSaved?: () => void
 }
 
@@ -31,6 +32,7 @@ interface ResearchResultResponse {
   data?: CompanyFormData
   error?: string
   enrichmentData?: string
+  enrichmentRaw?: unknown
 }
 
 const WEBSITE_PATTERN = /^[a-z0-9][a-z0-9.-]+\.[a-z]{2,}$/i
@@ -198,7 +200,8 @@ export default function AiCompanyResearch({
         setResearchedCompanies([{
           id: createTempCompanyId(),
           data: result.data,
-          enrichmentInfo: result.enrichmentData || 'No enrichment data available'
+          enrichmentInfo: result.enrichmentData || 'No enrichment data available',
+          enrichmentPayload: result.enrichmentRaw,
         }])
         setCurrentPreviewIndex(0)
       } else {
@@ -277,6 +280,7 @@ export default function AiCompanyResearch({
               id: createTempCompanyId(),
               data: result.data,
               enrichmentInfo: result.enrichmentData || 'No enrichment data available',
+              enrichmentPayload: result.enrichmentRaw,
             })
           } else {
             errors.push({
@@ -325,7 +329,7 @@ export default function AiCompanyResearch({
     if (!currentCompany) return
 
     try {
-      await onSaveCompany(currentCompany.data, isDraft)
+      await onSaveCompany(currentCompany.data, isDraft, currentCompany.enrichmentPayload)
       
       const updated = researchedCompanies.filter(company => company.id !== currentCompany.id)
       setResearchedCompanies(updated)
@@ -373,7 +377,7 @@ export default function AiCompanyResearch({
           currentCompanyName: company.data.company_name,
         }))
 
-        await onSaveCompany(company.data, false)
+        await onSaveCompany(company.data, false, company.enrichmentPayload)
         successCount++
         savedCompanyIds.add(company.id)
         
@@ -449,7 +453,7 @@ export default function AiCompanyResearch({
           currentCompanyName: company.data.company_name,
         }))
 
-        await onSaveCompany(company.data, false)
+        await onSaveCompany(company.data, false, company.enrichmentPayload)
         retriedSuccessIds.add(company.id)
       } catch (err) {
         failCount++

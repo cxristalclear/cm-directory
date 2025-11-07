@@ -101,7 +101,7 @@ export default async function EditCompanyPage({
                   Last modified: {new Date(company.updated_at).toLocaleString()}
                 </p>
                 <Link
-                  href="/admin/companies/research/history"
+                  href={`/admin/companies/research/history/${company.slug ?? company.id}`}
                   className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
                 >
                   View research history
