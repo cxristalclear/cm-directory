@@ -1,12 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-<<<<<<< HEAD
 import { AlertTriangle, Home, Link, RefreshCcw } from 'lucide-react'
-=======
-import NextLink from 'next/link'
-import { AlertTriangle, Home, RefreshCcw } from 'lucide-react'
->>>>>>> 12f2bb7 (temp: bring in local work)
 
 export default function Error({
   error,
@@ -62,32 +57,18 @@ export default function Error({
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={reset}
-<<<<<<< HEAD
-              className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-=======
               className="btn btn--primary btn--lg flex-1"
->>>>>>> 12f2bb7 (temp: bring in local work)
             >
               <RefreshCcw className="w-4 h-4" />
               Try Again
             </button>
-<<<<<<< HEAD
             <Link
-              href="/"
-              className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <Home className="w-4 h-4" />
-              Go Home
-            </Link>
-=======
-            <NextLink
               href="/"
               className="btn btn--muted btn--lg flex-1"
             >
               <Home className="w-4 h-4" />
               Go Home
-            </NextLink>
->>>>>>> 12f2bb7 (temp: bring in local work)
+            </Link>
           </div>
 
           {/* Support Info */}
@@ -95,11 +76,7 @@ export default function Error({
             Need help?{' '}
             <a
               href="mailto:support@cm-directory.com"
-<<<<<<< HEAD
-              className="text-blue-600 hover:text-blue-700 font-medium"
-=======
               className="btn btn--link font-medium"
->>>>>>> 12f2bb7 (temp: bring in local work)
             >
               Contact Support
             </a>

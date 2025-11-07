@@ -202,8 +202,6 @@
   animation: shimmer 2s infinite;
 }
 
-<<<<<<< HEAD
-=======
 /* Button styles */
 /* stylelint-disable-next-line at-rule-no-unknown */
 @layer components {
@@ -316,7 +314,6 @@
   }
 }
 
->>>>>>> 12f2bb7 (temp: bring in local work)
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -333,8 +330,4 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 12f2bb7 (temp: bring in local work)

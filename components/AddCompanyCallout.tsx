@@ -33,11 +33,7 @@ export default function AddCompanyCallout({ className = '' }: AddCompanyCalloutP
 
           {/* Button below the text */}
           <Link
-<<<<<<< HEAD
-            href="/add-your-company"
-=======
             href="/list-your-company"
->>>>>>> 12f2bb7 (temp: bring in local work)
             className="mt-4 inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             <Plus className="w-5 h-5" />

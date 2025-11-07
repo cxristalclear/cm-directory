@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { researchCompany } from '@/lib/ai/researchCompany'
-<<<<<<< HEAD
-
-/**
- * Handle AI research requests from the admin importer.
- * Validates payload, delegates to the server-only research workflow, and
- * ensures secrets remain on the server.
- */
-export async function POST(request: NextRequest) {
-  try {
-=======
 import { createClient } from '@/lib/supabase-server'
 
 export async function POST(request: NextRequest) {
@@ -29,7 +19,6 @@ export async function POST(request: NextRequest) {
     console.log(`AI research requested by user: ${user.email}`)
 
     // Parse request body
->>>>>>> 12f2bb7 (temp: bring in local work)
     const body = await request.json().catch(() => null)
 
     if (!body || typeof body.companyName !== 'string') {
@@ -52,10 +41,7 @@ export async function POST(request: NextRequest) {
         ? body.website.trim()
         : undefined
 
-<<<<<<< HEAD
-=======
     // Proceed with research (now that user is authenticated)
->>>>>>> 12f2bb7 (temp: bring in local work)
     const result = await researchCompany(companyName, website)
 
     return NextResponse.json(result, {
@@ -68,8 +54,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 12f2bb7 (temp: bring in local work)
