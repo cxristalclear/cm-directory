@@ -557,7 +557,7 @@ export default function AiCompanyResearch({
           <div className="space-y-4">
             <div>
               <label htmlFor="batchInput" className="block text-sm font-medium text-gray-700 mb-1">
-                Paste multiple companies (one per line, optionally add website with "|" or ",")
+                Paste multiple companies (one per line, optionally add website with &quot;|&quot; or &quot;,&quot;)
               </label>
               <textarea
                 id="batchInput"
