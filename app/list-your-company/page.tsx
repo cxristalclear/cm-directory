@@ -4,10 +4,7 @@ import Navbar from "@/components/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { siteConfig } from "@/lib/config"
-<<<<<<< HEAD
-=======
 import JotformEmbed from "@/components/JotformEmbed"
->>>>>>> 12f2bb7 (temp: bring in local work)
 
 export const metadata: Metadata = {
   title: "List Your Company – Free Contract Manufacturer Directory Listing | CM Directory",
@@ -261,99 +258,6 @@ export default function ListYourCompanyPage() {
             <p className="text-xl mb-8 text-blue-100">
               List your contract manufacturing company for free and connect with OEMs, startups, and engineers searching for reliable partners.
             </p>
-<<<<<<< HEAD
-            <div className="flex gap-4 justify-center flex-wrap">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 rounded-xl px-8">
-                Submit Free Listing
-              </Button>
-              <Button size="lg" variant="outline" className="bg-blue-800 text-white hover:bg-blue-600 rounded-xl px-8">
-                Learn About Featured
-              </Button>
-            </div>
-            <p className="mt-6 text-blue-100 text-sm">
-              ✓ Free forever · ✓ No credit card required · ✓ Live in 1-2 days
-            </p>
-          </div>
-        </section>
-
-        {/* Benefits Grid */}
-        <section className="py-16 px-4 bg-white">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Why List on CM Directory?</h2>
-              <p className="text-xl text-slate-600">Join the leading platform connecting manufacturers with qualified buyers</p>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {benefits.map((benefit, index) => (
-                <Card key={index} className="border-slate-200 hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="text-4xl mb-4">{benefit.icon}</div>
-                    <h3 className="text-xl font-bold mb-2 text-slate-900">{benefit.title}</h3>
-                    <p className="text-slate-600">{benefit.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Free vs Featured Comparison */}
-        <section className="py-16 px-4 bg-slate-50">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Choose Your Plan</h2>
-              <p className="text-xl text-slate-600">Start free, upgrade anytime for maximum visibility</p>
-            </div>
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Free Plan */}
-              <Card className="border-slate-200 relative">
-                <CardContent className="p-8">
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold mb-2 text-slate-900">Free Listing</h3>
-                    <div className="text-4xl font-bold text-slate-900 mb-2">$0<span className="text-lg text-slate-600 font-normal">/forever</span></div>
-                    <p className="text-slate-600">Perfect for getting started</p>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {freeFeatures.map((feature, index) => (
-                      <li key={index} className="flex items-start text-slate-700">
-                        <span className="text-green-600 mr-3 text-xl flex-shrink-0">✓</span>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button className="w-full rounded-xl" size="lg">
-                    Get Started Free
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Featured Plan */}
-              <Card className="border-blue-300 border-2 relative shadow-xl">
-                <div className="absolute top-0 right-0 bg-blue-600 text-white px-4 py-1 rounded-bl-lg rounded-tr-lg text-sm font-semibold">
-                  POPULAR
-                </div>
-                <CardContent className="p-8">
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold mb-2 text-slate-900">Featured Placement</h3>
-                    <div className="text-4xl font-bold text-blue-600 mb-2">Custom<span className="text-lg text-slate-600 font-normal">/pricing</span></div>
-                    <p className="text-slate-600">Maximum visibility to buyers</p>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {featuredFeatures.map((feature, index) => (
-                      <li key={index} className="flex items-start text-slate-700">
-                        <span className="text-blue-600 mr-3 text-xl flex-shrink-0">✓</span>
-                        <span className={index === 0 ? 'font-semibold' : ''}>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button className="w-full rounded-xl bg-blue-600 hover:bg-blue-700" size="lg">
-                    Contact Sales
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-=======
->>>>>>> 12f2bb7 (temp: bring in local work)
           </div>
         </section>
 
@@ -393,126 +297,15 @@ export default function ListYourCompanyPage() {
                   <p className="text-lg text-slate-600">Fill out the form below and we&apos;ll get you live within 1-2 business days</p>
                 </div>
                 
-<<<<<<< HEAD
-                {/* Form Placeholder */}
-                <div className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Company Name *</label>
-                      <input 
-                        type="text" 
-                        placeholder="Acme Manufacturing Inc."
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Website URL *</label>
-                      <input 
-                        type="url" 
-                        placeholder="https://example.com"
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Primary Location (City) *</label>
-                      <input 
-                        type="text" 
-                        placeholder="San Jose"
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">State / Country *</label>
-                      <input 
-                        type="text" 
-                        placeholder="California, USA"
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Primary Capabilities * (Select all that apply)</label>
-                    <div className="grid md:grid-cols-2 gap-3">
-                      {['PCB Assembly (SMT)', 'PCB Assembly (Through-Hole)', 'Cable Harness Assembly', 'Box Build Assembly', 'Prototyping', 'Design Services'].map((cap) => (
-                        <label key={cap} className="flex items-center space-x-2 cursor-pointer">
-                          <input type="checkbox" className="w-4 h-4 text-blue-600 rounded" />
-                          <span className="text-slate-700">{cap}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Certifications (Select all that apply)</label>
-                    <div className="grid md:grid-cols-2 gap-3">
-                      {['ISO 9001', 'ISO 13485', 'AS9100', 'IPC-A-610', 'ITAR', 'RoHS'].map((cert) => (
-                        <label key={cert} className="flex items-center space-x-2 cursor-pointer">
-                          <input type="checkbox" className="w-4 h-4 text-blue-600 rounded" />
-                          <span className="text-slate-700">{cert}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Company Description *</label>
-                    <textarea 
-                      rows={4}
-                      placeholder="Brief description of your company, services, and what makes you unique..."
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Contact Email *</label>
-                      <input 
-                        type="email" 
-                        placeholder="sales@example.com"
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Contact Phone</label>
-                      <input 
-                        type="tel" 
-                        placeholder="+1 (555) 123-4567"
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-2">
-                    <input type="checkbox" className="w-4 h-4 text-blue-600 rounded mt-1" />
-                    <label className="text-sm text-slate-600">
-                      I agree to the terms of service and confirm that the information provided is accurate.
-                    </label>
-                  </div>
-
-                  <Button size="lg" className="w-full rounded-xl text-lg py-6">
-                    Submit Free Listing
-                  </Button>
-
-                  <p className="text-center text-sm text-slate-500">
-                    By submitting, you agree to our verification process. We&apos;ll contact you within 1-2 business days.
-                  </p>
-=======
                 {/* Embedded Jotform */}
                 <div>
                   <JotformEmbed />
->>>>>>> 12f2bb7 (temp: bring in local work)
                 </div>
               </CardContent>
             </Card>
           </div>
         </section>
 
-<<<<<<< HEAD
-=======
         {/* Benefits Grid */}
         <section className="py-16 px-4 bg-white">
           <div className="max-w-6xl mx-auto">
@@ -535,7 +328,6 @@ export default function ListYourCompanyPage() {
         </section>
 
 
->>>>>>> 12f2bb7 (temp: bring in local work)
         {/* FAQ Section */}
         <section className="py-16 px-4 bg-white">
           <div className="max-w-4xl mx-auto">
@@ -584,8 +376,4 @@ export default function ListYourCompanyPage() {
       </Suspense>
     </>
   )
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 12f2bb7 (temp: bring in local work)

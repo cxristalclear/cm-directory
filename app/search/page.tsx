@@ -291,11 +291,7 @@ export default async function SearchPage({
                           <button
                             key={label}
                             type="button"
-<<<<<<< HEAD
-                            className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 shadow-sm"
-=======
                             className="btn btn--pill btn--pill-primary shadow-sm"
->>>>>>> 12f2bb7 (temp: bring in local work)
                             aria-label={`Active filter ${label}`}
                           >
                             {label}

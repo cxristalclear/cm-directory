@@ -1,22 +1,12 @@
 "use client"
 
-<<<<<<< HEAD
-import Link from "next/link"
-import { Building2} from 'lucide-react'
-
-=======
 import Link from 'next/link'
 import { Building2 } from 'lucide-react'
->>>>>>> 12f2bb7 (temp: bring in local work)
 
 
 
 export default function CompanyHeader() {
-<<<<<<< HEAD
-  const ADD_COMPANY_PATH = "/add-company"
-=======
   const ADD_COMPANY_PATH = "/list-your-company"
->>>>>>> 12f2bb7 (temp: bring in local work)
 
   return (
     <header className="relative overflow-hidden">
@@ -59,8 +49,4 @@ export default function CompanyHeader() {
       </div>
     </header>
   )
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 12f2bb7 (temp: bring in local work)
