@@ -106,7 +106,7 @@ export default function ContactPage() {
 
               <button
                 type="submit"
-                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:from-blue-500 hover:to-indigo-500"
+                className="btn btn--primary btn--lg shadow-lg"
               >
                 Submit request
               </button>

@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link from 'next/link'
 import { Building2 } from "lucide-react"
 
 
@@ -28,10 +28,10 @@ export default function Navbar() {
                 About
               </Link>
               <Link
-                  href="/add-your-company"
-                  className="rounded-lg bg-blue-700/50 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-blue-700/30"
-                >
-                  Add Your Company
+                href="/list-your-company"
+                className="rounded-lg bg-blue-700/50 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-blue-700/30"
+              >
+                Add Your Company
               </Link>
             </div>
           </div>

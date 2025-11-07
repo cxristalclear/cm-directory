@@ -12,6 +12,7 @@ import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import { siteConfig, featureFlags } from "@/lib/config"
 import AddCompanyCallout from "@/components/AddCompanyCallout"
+import VenkelAd from "@/components/VenkelAd"
 import type { PageProps } from "@/types/nxt"
 import type { HomepageCompany } from "@/types/homepage"
 import Navbar from "@/components/navbar"
@@ -82,16 +83,6 @@ export const metadata = {
   },
 }
 
-const AdPlaceholder = ({ width, height, label, className = "" }: { width: string; height: string; label: string; className?: string }) => (
-  <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} style={{ width, height }}>
-    <div className="text-center text-gray-500">
-      <div className="text-sm font-medium">{label}</div>
-      <div className="text-xs mt-1">{width} × {height}</div>
-      <div className="text-xs text-gray-400 mt-1">Advertisement</div>
-    </div>
-  </div>
-)
-
 // ---------- Data Fetch ----------
 async function getData(): Promise<HomepageCompany[]> {
   try {
@@ -135,16 +126,8 @@ export default async function Home({
           <Navbar />
           <Header />
           <main className="container mx-auto px-4 py-6">
-            {/* Top Content Ad - Native/Sponsored */}
-            <div className="mb-6 bg-white rounded-xl shadow-xl p-4">
-              <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Featured Partner</div>
-              <AdPlaceholder
-                width="100%"
-                height="120px"
-                label="Sponsored Content / Featured Manufacturer"
-                className="border-blue-200"
-              />
-            </div>
+            {/* Top Venkel Ad - Banner */}
+            <VenkelAd size="banner" className="mb-6" />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Filter Sidebar */}
@@ -156,8 +139,8 @@ export default async function Home({
                   </Suspense>
                 </FilterErrorBoundary>
 
-                {/* Bottom Sidebar Ad */}
-                <AdPlaceholder width="100%" height="250px" label="Sidebar Skyscraper" />
+                {/* Sidebar Venkel Ad */}
+                <VenkelAd size="sidebar" />
                 <AddCompanyCallout className="mt-12" />
               </div>
 
@@ -182,16 +165,9 @@ export default async function Home({
                     <CompanyList allCompanies={companies} />
                   </Suspense>
                 </div>
-                {/* Bottom Content Ad */}
-                <div className="bg-white rounded-xl shadow-xl p-4">
-                  <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide text-center">Sponsored</div>
-                  <AdPlaceholder
-                    width="100%"
-                    height="150px"
-                    label="Bottom Banner / Native Content"
-                    className="border-green-200"
-                  />
-                </div>
+                
+                {/* Bottom Venkel Ad - Banner */}
+                <VenkelAd size="banner" />
               </div>
             </div>
           </main>

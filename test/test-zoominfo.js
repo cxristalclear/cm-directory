@@ -2,15 +2,30 @@
  * Test script for ZoomInfo webhook
  * Run this to test if the Make.com webhook is working
  * 
- * Usage: node test-zoominfo.js
+ * Usage: 
+ * 1. Make sure ZOOMINFO_WEBHOOK_URL is set in .env.local
+ * 2. Run: node test-zoominfo.js
  */
 
-const WEBHOOK_URL = 'https://hook.us1.make.celonis.com/obav4qf8bnmsmf19xfpsr62bjsx2qy6t'
+// Load environment variables from .env.local
+import * as dotenv from 'dotenv'
+
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
+
+// Get webhook URL from environment variable
+const WEBHOOK_URL = process.env.ZOOMINFO_WEBHOOK_URL
+
+if (!WEBHOOK_URL) {
+  console.error('❌ ERROR: ZOOMINFO_WEBHOOK_URL is not set in .env.local')
+  console.log('Please add this line to your .env.local file:')
+  console.log('ZOOMINFO_WEBHOOK_URL=https://hook.us1.make.celonis.com/your-webhook-id')
+  process.exit(1)
+}
 
 async function testZoomInfo() {
   console.log('🧪 Testing ZoomInfo Webhook')
   console.log('=' .repeat(50))
-  console.log('Webhook URL:', WEBHOOK_URL)
+  console.log('Webhook URL:', WEBHOOK_URL.substring(0, 40) + '...')
   console.log('')
 
   const testCompany = {

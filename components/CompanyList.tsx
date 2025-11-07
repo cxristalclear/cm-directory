@@ -222,7 +222,7 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
           <button
             type="button"
             onClick={() => setPagesLoaded(prev => Math.min(prev + 1, totalPages))}
-            className="inline-flex items-center rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+            className="btn btn--primary btn--lg rounded-full shadow-sm text-sm"
           >
             Load more manufacturers
           </button>
