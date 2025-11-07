@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { researchCompany } from '@/lib/ai/researchCompany'
 
+/**
+ * Handle AI research requests from the admin importer.
+ * Validates payload, delegates to the server-only research workflow, and
+ * ensures secrets remain on the server.
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)

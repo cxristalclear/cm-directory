@@ -32,6 +32,10 @@ interface ResearchResultResponse {
   enrichmentData?: string
 }
 
+/**
+ * Call the secure AI research API endpoint and return the normalized result.
+ * Keeps API details in one place and ensures consumer components get a typed response.
+ */
 async function requestResearch(companyName: string, website?: string): Promise<ResearchResultResponse> {
   const payload = {
     companyName,
@@ -49,7 +53,7 @@ async function requestResearch(companyName: string, website?: string): Promise<R
   const data = (await response.json().catch(() => null)) as ResearchResultResponse | null
 
   if (!data) {
-    throw new Error('Unexpected response from AI research service')
+    throw new Error(`Unexpected response from AI research service (HTTP ${response.status})`)
   }
 
   return data
