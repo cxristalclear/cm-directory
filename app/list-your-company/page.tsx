@@ -4,6 +4,10 @@ import Navbar from "@/components/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { siteConfig } from "@/lib/config"
+<<<<<<< HEAD
+=======
+import JotformEmbed from "@/components/JotformEmbed"
+>>>>>>> 12f2bb7 (temp: bring in local work)
 
 export const metadata: Metadata = {
   title: "List Your Company – Free Contract Manufacturer Directory Listing | CM Directory",
@@ -257,6 +261,7 @@ export default function ListYourCompanyPage() {
             <p className="text-xl mb-8 text-blue-100">
               List your contract manufacturing company for free and connect with OEMs, startups, and engineers searching for reliable partners.
             </p>
+<<<<<<< HEAD
             <div className="flex gap-4 justify-center flex-wrap">
               <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 rounded-xl px-8">
                 Submit Free Listing
@@ -347,6 +352,8 @@ export default function ListYourCompanyPage() {
                 </CardContent>
               </Card>
             </div>
+=======
+>>>>>>> 12f2bb7 (temp: bring in local work)
           </div>
         </section>
 
@@ -386,6 +393,7 @@ export default function ListYourCompanyPage() {
                   <p className="text-lg text-slate-600">Fill out the form below and we&apos;ll get you live within 1-2 business days</p>
                 </div>
                 
+<<<<<<< HEAD
                 {/* Form Placeholder */}
                 <div className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
@@ -492,12 +500,42 @@ export default function ListYourCompanyPage() {
                   <p className="text-center text-sm text-slate-500">
                     By submitting, you agree to our verification process. We&apos;ll contact you within 1-2 business days.
                   </p>
+=======
+                {/* Embedded Jotform */}
+                <div>
+                  <JotformEmbed />
+>>>>>>> 12f2bb7 (temp: bring in local work)
                 </div>
               </CardContent>
             </Card>
           </div>
         </section>
 
+<<<<<<< HEAD
+=======
+        {/* Benefits Grid */}
+        <section className="py-16 px-4 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-slate-900 mb-4">Why List on CM Directory?</h2>
+              <p className="text-xl text-slate-600">Join the leading platform connecting manufacturers with qualified buyers</p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {benefits.map((benefit, index) => (
+                <Card key={index} className="border-slate-200 hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="text-4xl mb-4">{benefit.icon}</div>
+                    <h3 className="text-xl font-bold mb-2 text-slate-900">{benefit.title}</h3>
+                    <p className="text-slate-600">{benefit.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+
+>>>>>>> 12f2bb7 (temp: bring in local work)
         {/* FAQ Section */}
         <section className="py-16 px-4 bg-white">
           <div className="max-w-4xl mx-auto">
@@ -546,4 +584,8 @@ export default function ListYourCompanyPage() {
       </Suspense>
     </>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 12f2bb7 (temp: bring in local work)

@@ -399,30 +399,51 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
           <div className="flex gap-1">
             <button
               onClick={() => handleStyleChange("mapbox://styles/mapbox/light-v11")}
+<<<<<<< HEAD
               className={`px-3 py-1.5 text-xs font-medium rounded transition-colors duration-200 ${
                 mapStyle === "mapbox://styles/mapbox/light-v11"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+=======
+              className={`btn-map-style ${
+                mapStyle === "mapbox://styles/mapbox/light-v11"
+                  ? "btn-map-style--active"
+                  : "btn-map-style--inactive"
+>>>>>>> 12f2bb7 (temp: bring in local work)
               }`}
             >
               Light
             </button>
             <button
               onClick={() => handleStyleChange("mapbox://styles/mapbox/outdoors-v12")}
+<<<<<<< HEAD
               className={`px-3 py-1.5 text-xs font-medium rounded transition-colors duration-200 ${
                 mapStyle === "mapbox://styles/mapbox/outdoors-v12"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+=======
+              className={`btn-map-style ${
+                mapStyle === "mapbox://styles/mapbox/outdoors-v12"
+                  ? "btn-map-style--active"
+                  : "btn-map-style--inactive"
+>>>>>>> 12f2bb7 (temp: bring in local work)
               }`}
             >
               Outdoors
             </button>
             <button
               onClick={() => handleStyleChange("mapbox://styles/mapbox/dark-v11")}
+<<<<<<< HEAD
               className={`px-3 py-1.5 text-xs font-medium rounded transition-colors duration-200 ${
                 mapStyle === "mapbox://styles/mapbox/dark-v11"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+=======
+              className={`btn-map-style ${
+                mapStyle === "mapbox://styles/mapbox/dark-v11"
+                  ? "btn-map-style--active"
+                  : "btn-map-style--inactive"
+>>>>>>> 12f2bb7 (temp: bring in local work)
               }`}
             >
               Dark
@@ -432,7 +453,11 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
         <button
           onClick={resetView}
+<<<<<<< HEAD
           className="bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/50 p-2 hover:bg-white transition-colors duration-200"
+=======
+          className="btn-map-reset"
+>>>>>>> 12f2bb7 (temp: bring in local work)
           title="Reset view"
         >
           <RotateCcw className="w-4 h-4 text-gray-600" />
@@ -464,4 +489,8 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       )}
     </div>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 12f2bb7 (temp: bring in local work)

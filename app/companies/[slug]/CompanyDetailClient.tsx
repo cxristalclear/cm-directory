@@ -115,41 +115,57 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
           <div className="flex gap-8 overflow-x-auto">
             <button
               onClick={() => setActiveTab('overview')}
+<<<<<<< HEAD
               className={`py-4 px-2 border-b-2 transition-colors font-medium whitespace-nowrap ${
                 activeTab === 'overview'
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
+=======
+              className={`btn-tab ${activeTab === 'overview' ? 'btn-tab--active' : 'btn-tab--inactive'}`}
+>>>>>>> 12f2bb7 (temp: bring in local work)
             >
               Overview
             </button>
             <button
               onClick={() => setActiveTab('capabilities')}
+<<<<<<< HEAD
               className={`py-4 px-2 border-b-2 transition-colors font-medium whitespace-nowrap ${
                 activeTab === 'capabilities'
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
+=======
+              className={`btn-tab ${activeTab === 'capabilities' ? 'btn-tab--active' : 'btn-tab--inactive'}`}
+>>>>>>> 12f2bb7 (temp: bring in local work)
             >
               Capabilities
             </button>
             <button
               onClick={() => setActiveTab('certifications')}
+<<<<<<< HEAD
               className={`py-4 px-2 border-b-2 transition-colors font-medium whitespace-nowrap ${
                 activeTab === 'certifications'
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
+=======
+              className={`btn-tab ${activeTab === 'certifications' ? 'btn-tab--active' : 'btn-tab--inactive'}`}
+>>>>>>> 12f2bb7 (temp: bring in local work)
             >
               Certifications
             </button>
             <button
               onClick={() => setActiveTab('technical')}
+<<<<<<< HEAD
               className={`py-4 px-2 border-b-2 transition-colors font-medium whitespace-nowrap ${
                 activeTab === 'technical'
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
+=======
+              className={`btn-tab ${activeTab === 'technical' ? 'btn-tab--active' : 'btn-tab--inactive'}`}
+>>>>>>> 12f2bb7 (temp: bring in local work)
             >
               Technical Specs
             </button>
@@ -543,4 +559,8 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
       </div>
     </div>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 12f2bb7 (temp: bring in local work)

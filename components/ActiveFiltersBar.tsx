@@ -22,7 +22,11 @@ function Chip({ label, onRemove }: ChipProps) {
             event.stopPropagation()
             onRemove()
           }}
+<<<<<<< HEAD
           className="rounded-full p-1 text-neutral-500 hover:bg-neutral-200/60 hover:text-neutral-700"
+=======
+          className="btn-chip-remove"
+>>>>>>> 12f2bb7 (temp: bring in local work)
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -135,11 +139,19 @@ export default function ActiveFiltersBar() {
         <button
           type="button"
           onClick={clearFilters}
+<<<<<<< HEAD
           className="text-sm font-medium text-blue-700 hover:text-blue-800"
+=======
+          className="btn btn--link text-sm font-medium"
+>>>>>>> 12f2bb7 (temp: bring in local work)
         >
           Clear all
         </button>
       )}
     </div>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 12f2bb7 (temp: bring in local work)
