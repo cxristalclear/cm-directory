@@ -135,6 +135,8 @@ Return a **single valid JSON array** with one object matching this exact structu
   "research_notes": "string"
 }
 
+CRITICAL: NEVER guess addresses. Use exact addresses from ZoomInfo enrichment. If ZoomInfo provides no address, use the address on the company website. If no address is found, leave address fields empty.
+
 You must only return JSON with proper formatting and escaping and nothing else.`
 
 export interface ResearchResult {
