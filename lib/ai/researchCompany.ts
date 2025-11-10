@@ -157,7 +157,36 @@ const adminSupabase =
 
 const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000
 type EnrichmentResponse = Awaited<ReturnType<typeof enrichCompanyData>>
-type EnrichmentPayload = NonNullable<EnrichmentResponse['data']>
+
+function normalizeCompanyNameForComparison(name?: string | null): string | null {
+  if (!name) return null
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export function snapshotMatchesRequest(parameters: {
+  requestedName?: string
+  requestedWebsite?: string
+  snapshotName?: string | null
+  snapshotWebsite?: string | null
+}): boolean {
+  const { requestedName, requestedWebsite, snapshotName, snapshotWebsite } = parameters
+
+  if (requestedWebsite && snapshotWebsite) {
+    return snapshotWebsite === requestedWebsite
+  }
+
+  const normalizedRequest = normalizeCompanyNameForComparison(requestedName)
+  const normalizedSnapshot = normalizeCompanyNameForComparison(snapshotName)
+
+  if (!normalizedRequest || !normalizedSnapshot) {
+    return false
+  }
+
+  return normalizedRequest === normalizedSnapshot
+}
 
 function extractEnrichedCompanyName(payload: unknown): string | undefined {
   if (!payload || typeof payload !== 'object') return undefined
@@ -172,40 +201,48 @@ async function getCachedEnrichmentSnapshot(companyName: string, website?: string
     return null
   }
 
-  const filters: string[] = []
   const trimmedName = companyName.trim()
-  if (trimmedName) {
-    const sanitizedName = trimmedName.replace(/%/g, '\\%').replace(/_/g, '\\_')
-    filters.push(`company_name.ilike.%${sanitizedName}%`)
-  }
-
   const normalizedWebsite = website ? normalizeWebsiteUrl(website) : undefined
-  if (normalizedWebsite) {
-    filters.push(`website_url.eq.${normalizedWebsite}`)
-  }
-
-  if (filters.length === 0) {
+  if (!trimmedName && !normalizedWebsite) {
     return null
   }
 
   const thirtyDaysAgo = new Date(Date.now() - ONE_MONTH_MS).toISOString()
 
-  const { data, error } = await adminSupabase
+  let query = adminSupabase
     .from('company_research_history')
     .select('enrichment_snapshot, created_at, company_name, website_url')
     .gte('created_at', thirtyDaysAgo)
-    .or(filters.join(','))
     .order('created_at', { ascending: false })
-    .limit(1)
+
+  if (normalizedWebsite) {
+    query = query.eq('website_url', normalizedWebsite)
+  } else {
+    const sanitizedName = trimmedName.replace(/%/g, '\\%').replace(/_/g, '\\_')
+    query = query.ilike('company_name', sanitizedName)
+  }
+
+  const { data, error } = await query.limit(5)
 
   if (error) {
     console.warn('Unable to fetch cached enrichment snapshot:', error)
     return null
   }
 
-  const snapshot = data?.find(entry => entry.enrichment_snapshot)?.enrichment_snapshot
+  const matchingEntry = data?.find(entry =>
+    snapshotMatchesRequest({
+      requestedName: trimmedName,
+      requestedWebsite: normalizedWebsite,
+      snapshotName: entry.company_name,
+      snapshotWebsite: entry.website_url ?? undefined,
+    })
+  )
+
+  const snapshot = matchingEntry?.enrichment_snapshot
   if (snapshot) {
     console.log('⚡ Using cached enrichment snapshot from research history (skipping ZoomInfo)')
+  } else if (data && data.length > 0) {
+    console.log('ℹ️  Cached enrichment snapshot ignored due to non-matching company metadata')
   }
   return snapshot ?? null
 }

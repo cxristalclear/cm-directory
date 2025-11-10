@@ -1,57 +1,41 @@
-import Link from "next/link"
-import { createClient } from "@/lib/supabase-server"
-import type { Database } from "@/lib/database.types"
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase-server";
 
-type SearchParams = {
-  search?: string
-}
+export const revalidate = 0;
 
-type ResearchHistoryRow = Database["public"]["Tables"]["company_research_history"]["Row"] & {
-  companies?: {
-    slug?: string | null
-  } | null
-}
-
-export const revalidate = 0
-
-export default async function ResearchHistoryPage({
-  searchParams,
+export default async function CompanyResearchHistoryPage({
+  params,
 }: {
-  searchParams: Promise<SearchParams>
+  params: { identifier: string };
 }) {
-  const supabase = await createClient()
-  const { search = "" } = await searchParams
-  const searchTerm = search.trim()
+  const supabase = await createClient();
+  const { identifier } = params;
 
-  let query = supabase
-    .from("company_research_history")
-    .select(
-      `
-        id,
-        company_id,
-        company_name,
-        website_url,
-        research_summary,
-        created_at,
-        created_by_name,
-        created_by_email,
-        data_confidence,
-        companies:company_id (slug)
-      `
-    )
-    .order("created_at", { ascending: false })
-    .limit(200)
-
-  if (searchTerm) {
-    query = query.or(
-      `company_name.ilike.%${searchTerm}%,website_url.ilike.%${searchTerm}%,created_by_email.ilike.%${searchTerm}%`
-    )
-  }
-
-  const { data, error } = await query
+  // One round-trip: try slug or id in a single query
+  const { data: company, error } = await supabase
+    .from("companies")
+    .select("id, company_name, slug, website_url")
+    .or(`slug.eq.${identifier},id.eq.${identifier}`)
+    .maybeSingle();
 
   if (error) {
-    console.error("Failed to load research history:", error)
+    console.error("Error fetching company:", error);
+  }
+  if (!company) {
+    notFound();
+  }
+
+  const { data: history, error: historyError } = await supabase
+    .from("company_research_history")
+    .select(
+      "id, research_summary, research_notes, research_snapshot, enrichment_snapshot, created_at, created_by_name, created_by_email, data_confidence"
+    )
+    .eq("company_id", company.id)
+    .order("created_at", { ascending: false });
+
+  if (historyError) {
+    console.error("Failed to load company research history:", historyError);
     return (
       <div className="space-y-6">
         <div className="glass-card p-6">
@@ -59,144 +43,109 @@ export default async function ResearchHistoryPage({
           <p className="mt-2 text-sm text-red-600">
             Unable to load research history. Please try again later.
           </p>
+          <Link href="/admin/companies/research/history" className="admin-btn-secondary mt-4 inline-flex">
+            ← Back to research history
+          </Link>
         </div>
       </div>
-    )
+    );
   }
-
-  const history = (data ?? []) as ResearchHistoryRow[]
 
   return (
     <div className="space-y-6">
-      <div className="glass-card p-6 space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold gradient-text">Research History</h1>
-            <p className="mt-2 text-sm text-[var(--text-muted)]">
-              Search AI-generated research snapshots by company, domain, or researcher.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link href="/admin/companies/research" className="admin-btn-secondary">
-              ← Back to Research
-            </Link>
-          </div>
+      <div className="glass-card p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold gradient-text">{company.company_name}</h1>
+          {company.website_url && (
+            <a
+              href={company.website_url.startsWith("http") ? company.website_url : `https://${company.website_url}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-700 break-all"
+            >
+              {company.website_url}
+            </a>
+          )}
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
+            {history?.length ? `${history.length} saved research snapshot${history.length === 1 ? "" : "s"}.` : "No research history saved yet."}
+          </p>
         </div>
-
-        <form
-          className="flex flex-col gap-3 sm:flex-row sm:items-center"
-          action="/admin/companies/research/history"
-        >
-          <input
-            type="search"
-            name="search"
-            defaultValue={searchTerm}
-            placeholder="Search by company, website, or researcher…"
-            className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-          />
-          <div className="flex gap-2">
-            <button type="submit" className="admin-btn-primary text-sm">
-              Search
-            </button>
-            {searchTerm && (
-              <Link href="/admin/companies/research/history" className="admin-btn-secondary text-sm">
-                Clear
-              </Link>
-            )}
-          </div>
-        </form>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/companies/research/history" className="admin-btn-secondary">
+            ← All research history
+          </Link>
+          {company.slug && (
+            <Link href={`/admin/companies/edit/${company.slug}`} className="admin-btn-primary">
+              Edit Company
+            </Link>
+          )}
+        </div>
       </div>
 
-      {history.length === 0 ? (
+      {!history?.length ? (
         <div className="glass-card p-6 text-sm text-gray-600">
-          {searchTerm
-            ? `No results found for "${searchTerm}". Try a different search term.`
-            : "No research history has been saved yet. Run AI research on a company and save it to populate this list."}
+          No research history exists for this company.
         </div>
       ) : (
-        <div className="glass-card p-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  <th className="px-4 py-3">Company</th>
-                  <th className="px-4 py-3">Website</th>
-                  <th className="px-4 py-3">Summary</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Saved</th>
-                  <th className="px-4 py-3">Researcher</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {history.map(entry => {
-                  const companySlug = entry.companies?.slug ?? null
-                  const formattedDate = entry.created_at
-                    ? new Date(entry.created_at).toLocaleString()
-                    : "Unknown"
-                  const createdBy = entry.created_by_name || entry.created_by_email || "Unknown"
-                  const identifier = companySlug || entry.company_id
+        <div className="space-y-4">
+          {history.map((entry) => {
+            const formattedDate = entry.created_at
+              ? new Date(entry.created_at).toLocaleString()
+              : "Unknown";
+            const createdBy = entry.created_by_name || entry.created_by_email || "Unknown";
 
-                  return (
-                    <tr key={entry.id} className="text-gray-900">
-                      <td className="px-4 py-3 align-top">
-                        <div className="flex flex-col gap-1">
-                          <span className="font-medium text-gray-900">{entry.company_name}</span>
-                          {companySlug && (
-                            <Link
-                              href={`/admin/companies/edit/${companySlug}`}
-                              className="text-xs text-blue-600 hover:text-blue-700"
-                            >
-                              Edit company →
-                            </Link>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 align-top">
-                        {entry.website_url ? (
-                          <a
-                            href={entry.website_url.startsWith("http") ? entry.website_url : `https://${entry.website_url}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-blue-600 hover:text-blue-700 break-all"
-                          >
-                            {entry.website_url}
-                          </a>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 align-top text-gray-700">
-                        {entry.research_summary ? (
-                          <span className="line-clamp-3">{entry.research_summary}</span>
-                        ) : (
-                          <span className="text-gray-400">No summary</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-500 whitespace-nowrap">
-                        {formattedDate}
-                      </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-500">
-                        {createdBy}
-                      </td>
-                      <td className="px-4 py-3 align-top text-right">
-                        <div className="flex flex-col items-end gap-2">
-                          <Link
-                            href={`/admin/companies/research/history/${identifier}`}
-                            className="text-sm text-blue-600 hover:text-blue-700"
-                          >
-                            View history
-                          </Link>
-                          <span className="text-[11px] text-gray-400">ID {entry.id.slice(0, 8)}…</span>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+            return (
+              <div key={entry.id} className="glass-card p-5 space-y-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Snapshot saved</p>
+                    <p className="font-medium text-gray-900">{formattedDate}</p>
+                  </div>
+                  <div className="text-right text-xs text-gray-500">
+                    <p>By {createdBy}</p>
+                    {entry.data_confidence && (
+                      <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-blue-700 mt-1">
+                        Confidence: {entry.data_confidence}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {entry.research_summary && (
+                  <p className="text-sm text-gray-800">{entry.research_summary}</p>
+                )}
+
+                {entry.research_notes && (
+                  <div className="text-xs text-gray-600">
+                    <span className="font-semibold text-gray-800">Notes: </span>
+                    {entry.research_notes}
+                  </div>
+                )}
+
+                <details className="group rounded-md border border-dashed border-gray-200 bg-gray-50/60 p-4">
+                  <summary className="cursor-pointer text-sm font-medium text-gray-800">
+                    View full research snapshot
+                  </summary>
+                  <pre className="mt-3 max-h-96 overflow-auto rounded bg-white p-3 text-xs leading-relaxed text-gray-800">
+                    {JSON.stringify(entry.research_snapshot, null, 2)}
+                  </pre>
+                </details>
+
+                {entry.enrichment_snapshot && (
+                  <details className="group rounded-md border border-dashed border-gray-200 bg-gray-50/60 p-4">
+                    <summary className="cursor-pointer text-sm font-medium text-gray-800">
+                      View enrichment data
+                    </summary>
+                    <pre className="mt-3 max-h-96 overflow-auto rounded bg-white p-3 text-xs leading-relaxed text-gray-800">
+                      {JSON.stringify(entry.enrichment_snapshot, null, 2)}
+                    </pre>
+                  </details>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
-  )
+  );
 }

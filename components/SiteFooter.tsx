@@ -31,9 +31,8 @@ export default function SiteFooter() {
               Discover verified contract manufacturers, compare capabilities, and connect with new partners.
             </p>
             <p className="text-xs text-slate-500">
-              Subscribe to our updates feed to keep Search Console and subscribers aware of the latest profile changes.
-            </p>
-          </div>
+              Subscribe to our RSS feed to stay updated on the latest manufacturer profiles and industry news.
+            </p>          </div>
 
           <div className="space-y-4">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Resources</h3>
