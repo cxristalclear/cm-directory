@@ -2,22 +2,40 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 
+type CompanyResearchHistoryPageProps = {
+  params: Promise<{ identifier: string }>;
+};
+
 export const revalidate = 0;
 
-export default async function CompanyResearchHistoryPage({
-  params,
-}: {
-  params: { identifier: string };
-}) {
+export default async function CompanyResearchHistoryPage({ params }: CompanyResearchHistoryPageProps) {
   const supabase = await createClient();
-  const { identifier } = params;
+  const { identifier } = await params;
 
-  // One round-trip: try slug or id in a single query
-  const { data: company, error } = await supabase
+  // Try slug first, then fall back to id lookup to avoid SQL injection from template interpolation
+  let company = null;
+  let error = null;
+
+  const { data: bySlug, error: slugError } = await supabase
     .from("companies")
     .select("id, company_name, slug, website_url")
-    .or(`slug.eq.${identifier},id.eq.${identifier}`)
+    .eq("slug", identifier)
     .maybeSingle();
+
+  if (bySlug) {
+    company = bySlug;
+  } else if (!slugError || slugError.code === "PGRST116") {
+    const { data: byId, error: idError } = await supabase
+      .from("companies")
+      .select("id, company_name, slug, website_url")
+      .eq("id", identifier)
+      .maybeSingle();
+
+    company = byId;
+    error = idError;
+  } else {
+    error = slugError;
+  }
 
   if (error) {
     console.error("Error fetching company:", error);
