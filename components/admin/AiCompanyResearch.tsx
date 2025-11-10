@@ -114,11 +114,11 @@ function countUniqueBatchEntries(input: string): number {
   for (const entry of parseBatchEntries(input)) {
     const normalizedName = entry.name.trim()
     if (!normalizedName) continue
-    seen.add(normalizedName.toLowerCase())
+    const key = `${normalizedName.toLowerCase()}|${entry.website || ''}`
+    seen.add(key)
   }
   return seen.size
 }
-
 function createTempCompanyId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID()
@@ -584,8 +584,7 @@ export default function AiCompanyResearch({
                 value={batchInput}
                 onChange={(e) => setBatchInput(e.target.value)}
                 rows={8}
-                placeholder="Acme Corp | https://acme.com&#10;TechCo, techco.com&#10;Manufacturing Inc"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                placeholder="Acme Corp | https://acme.com\nTechCo, techco.com\nManufacturing Inc"                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                 disabled={loading || isSavingAll}
               />
             </div>

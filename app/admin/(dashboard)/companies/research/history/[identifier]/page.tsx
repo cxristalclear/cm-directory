@@ -1,49 +1,59 @@
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import { createClient } from "@/lib/supabase-server"
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase-server";
 
-export const revalidate = 0
+export const revalidate = 0;
 
 export default async function CompanyResearchHistoryPage({
   params,
 }: {
-  params: Promise<{ identifier: string }>
+  params: { identifier: string };
 }) {
-  const supabase = await createClient()
-  const { identifier } = await params
+  const supabase = await createClient();
+  const { identifier } = params;
 
-  // Try slug first
-  let { data: company, error } = await supabase
+  // Try slug first, then fall back to id lookup to avoid SQL injection from template interpolation
+  let company = null;
+  let error = null;
+
+  const { data: bySlug, error: slugError } = await supabase
     .from("companies")
     .select("id, company_name, slug, website_url")
     .eq("slug", identifier)
-    .maybeSingle()
+    .maybeSingle();
 
-  if (error) {
-    console.error("Error fetching company by slug:", error)
-  }
-
-  if (!company) {
-    const fallback = await supabase
+  if (bySlug) {
+    company = bySlug;
+  } else if (!slugError || slugError.code === "PGRST116") {
+    const { data: byId, error: idError } = await supabase
       .from("companies")
       .select("id, company_name, slug, website_url")
       .eq("id", identifier)
-      .maybeSingle()
-    company = fallback.data
+      .maybeSingle();
+
+    company = byId;
+    error = idError;
+  } else {
+    error = slugError;
   }
 
+  if (error) {
+    console.error("Error fetching company:", error);
+  }
   if (!company) {
-    notFound()
+    notFound();
   }
 
   const { data: history, error: historyError } = await supabase
     .from("company_research_history")
-    .select("id, research_summary, research_notes, research_snapshot, enrichment_snapshot, created_at, created_by_name, created_by_email, data_confidence")
+    .select(
+      "id, research_summary, research_notes, research_snapshot, enrichment_snapshot, created_at, created_by_name, created_by_email, data_confidence"
+    )
     .eq("company_id", company.id)
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (historyError) {
-    console.error("Failed to load company research history:", historyError)
+    console.error("Failed to load company research history:", historyError);
     return (
       <div className="space-y-6">
         <div className="glass-card p-6">
@@ -56,7 +66,7 @@ export default async function CompanyResearchHistoryPage({
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -90,17 +100,17 @@ export default async function CompanyResearchHistoryPage({
         </div>
       </div>
 
-      {(!history || history.length === 0) ? (
+      {!history?.length ? (
         <div className="glass-card p-6 text-sm text-gray-600">
           No research history exists for this company.
         </div>
       ) : (
         <div className="space-y-4">
-          {history.map(entry => {
+          {history.map((entry) => {
             const formattedDate = entry.created_at
               ? new Date(entry.created_at).toLocaleString()
-              : "Unknown"
-            const createdBy = entry.created_by_name || entry.created_by_email || "Unknown"
+              : "Unknown";
+            const createdBy = entry.created_by_name || entry.created_by_email || "Unknown";
 
             return (
               <div key={entry.id} className="glass-card p-5 space-y-4">
@@ -150,10 +160,10 @@ export default async function CompanyResearchHistoryPage({
                   </details>
                 )}
               </div>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }

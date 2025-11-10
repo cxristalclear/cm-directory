@@ -106,16 +106,21 @@ export default async function ChecklistPage({ params }: ChecklistPageProps) {
                 <button
                   type="button"
                   className="btn btn--outline-primary"
+                  onClick={() => {
+                    // Implement PDF download logic
+                  }}
                 >
                   Download PDF
                 </button>
                 <button
                   type="button"
                   className="btn btn--outline"
+                  onClick={() => {
+                    window.print()
+                  }}
                 >
                   Print checklist
-                </button>
-              </div>
+                </button>              </div>
             </div>
           </section>
 
