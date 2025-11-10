@@ -2,15 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 
+type CompanyResearchHistoryPageProps = {
+  params: Promise<{ identifier: string }>;
+};
+
 export const revalidate = 0;
 
-export default async function CompanyResearchHistoryPage({
-  params,
-}: {
-  params: { identifier: string };
-}) {
+export default async function CompanyResearchHistoryPage({ params }: CompanyResearchHistoryPageProps) {
   const supabase = await createClient();
-  const { identifier } = params;
+  const { identifier } = await params;
 
   // Try slug first, then fall back to id lookup to avoid SQL injection from template interpolation
   let company = null;
