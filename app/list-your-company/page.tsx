@@ -171,28 +171,6 @@ export default function ListYourCompanyPage() {
     }
   ]
 
-  const freeFeatures = [
-    'Company profile with logo',
-    'Description and capabilities list',
-    'Facility locations on map',
-    'Certifications display',
-    'Industry specializations',
-    'Direct contact button',
-    'Website link',
-    'Unlimited updates'
-  ]
-
-  const featuredFeatures = [
-    'Everything in Free, plus:',
-    'Top placement in search results',
-    'Highlighted badge and larger card',
-    'Homepage spotlight section',
-    'Enhanced profile with images',
-    'Priority in filtered results',
-    'Analytics dashboard',
-    'Priority support and updates'
-  ]
-
   const steps = [
     {
       number: '1',
@@ -296,7 +274,6 @@ export default function ListYourCompanyPage() {
                   <h2 className="text-3xl font-bold text-slate-900 mb-3">Submit Your Listing</h2>
                   <p className="text-lg text-slate-600">Fill out the form below and we&apos;ll get you live within 1-2 business days</p>
                 </div>
-                
                 {/* Embedded Jotform */}
                 <div>
                   <JotformEmbed />

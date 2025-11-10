@@ -9,6 +9,7 @@
 
 // Load environment variables from .env.local
 import * as dotenv from 'dotenv'
+import path from 'path'
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
@@ -31,7 +32,8 @@ async function testZoomInfo() {
   const testCompany = {
     action: 'enrich_company',
     company_name: 'Flex Ltd',
-    website: 'https://flex.com'
+    company_website: 'https://flex.com',
+    website: 'https://flex.com',
   }
 
   console.log('📤 Sending request:')

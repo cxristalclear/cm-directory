@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import type { CompanyFormData } from '@/types/admin'
 import CompanyPreview from './CompanyPreview'
-import { parseBatchInput } from '@/lib/ai/batchInput'
+import { normalizeWebsiteUrl } from '@/lib/admin/utils'
 
 type Mode = 'single' | 'batch'
 
 interface ResearchedCompany {
+  id: string
   data: CompanyFormData
   enrichmentInfo: string
+  enrichmentPayload?: unknown
 }
 
 interface BatchSaveProgress {
@@ -17,11 +19,11 @@ interface BatchSaveProgress {
   total: number
   failed: number
   currentCompanyName: string
-  errors: Array<{ index: number; company: string; reason: string }>
+  errors: Array<{ companyId: string; company: string; reason: string }>
 }
 
 interface AiCompanyResearchProps {
-  onSaveCompany: (data: CompanyFormData, isDraft: boolean) => Promise<void>
+  onSaveCompany: (data: CompanyFormData, isDraft: boolean, enrichmentPayload?: unknown) => Promise<void>
   onAllCompaniesSaved?: () => void
 }
 
@@ -30,6 +32,98 @@ interface ResearchResultResponse {
   data?: CompanyFormData
   error?: string
   enrichmentData?: string
+  enrichmentRaw?: unknown
+}
+
+const WEBSITE_PATTERN = /^[a-z0-9][a-z0-9.-]+\.[a-z]{2,}$/i
+
+function looksLikeWebsite(value?: string): boolean {
+  if (!value) return false
+  const trimmed = value.trim().toLowerCase()
+  return trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('www.') ||
+    WEBSITE_PATTERN.test(trimmed)
+}
+
+function splitNameAndWebsite(input: string): { name: string; website?: string } {
+  const trimmed = input.trim()
+  let name = trimmed
+  let websiteCandidate: string | undefined
+
+  const pipeIndex = trimmed.indexOf('|')
+  if (pipeIndex !== -1) {
+    const candidate = trimmed.slice(pipeIndex + 1).trim()
+    if (looksLikeWebsite(candidate)) {
+      websiteCandidate = candidate
+      name = trimmed.slice(0, pipeIndex).trim()
+    }
+  } else {
+    const commaIndex = trimmed.indexOf(',')
+    if (commaIndex !== -1) {
+      const candidate = trimmed.slice(commaIndex + 1).trim()
+      if (looksLikeWebsite(candidate)) {
+        websiteCandidate = candidate
+        name = trimmed.slice(0, commaIndex).trim()
+      }
+    }
+  }
+
+  if (!websiteCandidate) {
+    const websiteRegex = /((?:https?:\/\/)?(?:www\.)?[a-z0-9][a-z0-9.-]+\.[a-z]{2,}(?:\/\S*)?)/i
+    const match = trimmed.match(websiteRegex)
+    if (match) {
+      const candidate = match[0]
+      if (looksLikeWebsite(candidate)) {
+        websiteCandidate = candidate
+        if (typeof match.index === 'number') {
+          const before = trimmed.slice(0, match.index).trim()
+          const after = trimmed.slice(match.index + candidate.length).trim()
+          name = before || after || trimmed.replace(candidate, '').trim()
+        }
+      }
+    }
+  }
+
+  const normalizedWebsite = websiteCandidate
+    ? normalizeWebsiteUrl(websiteCandidate) || undefined
+    : undefined
+
+  return {
+    name,
+    website: normalizedWebsite,
+  }
+}
+
+function parseBatchEntries(input: string): Array<{ name: string; website?: string }> {
+  return input
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const { name: parsedName, website: inlineWebsite } = splitNameAndWebsite(line)
+      return {
+        name: parsedName,
+        website: inlineWebsite,
+      }
+    })
+}
+
+function countUniqueBatchEntries(input: string): number {
+  const seen = new Set<string>()
+  for (const entry of parseBatchEntries(input)) {
+    const normalizedName = entry.name.trim()
+    if (!normalizedName) continue
+    const key = `${normalizedName.toLowerCase()}|${entry.website || ''}`
+    seen.add(key)
+  }
+  return seen.size
+}
+function createTempCompanyId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID()
+  }
+  return `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
 /**
@@ -84,13 +178,16 @@ export default function AiCompanyResearch({
   })
 
   const handleSingleResearch = async () => {
-    const normalizedName = companyName.trim()
+    const { name: extractedName, website: inlineWebsite } = splitNameAndWebsite(companyName)
+    const normalizedName = extractedName.trim()
     if (!normalizedName) {
       setError('Please enter a company name')
       return
     }
 
-    const normalizedWebsite = website.trim() ? website.trim() : undefined
+    const normalizedWebsite = website.trim()
+      ? normalizeWebsiteUrl(website) || undefined
+      : inlineWebsite
 
     setLoading(true)
     setError(null)
@@ -101,8 +198,10 @@ export default function AiCompanyResearch({
 
       if (result.success && result.data) {
         setResearchedCompanies([{
+          id: createTempCompanyId(),
           data: result.data,
-          enrichmentInfo: result.enrichmentData || 'No enrichment data available'
+          enrichmentInfo: result.enrichmentData || 'No enrichment data available',
+          enrichmentPayload: result.enrichmentRaw,
         }])
         setCurrentPreviewIndex(0)
       } else {
@@ -121,38 +220,55 @@ export default function AiCompanyResearch({
       return
     }
 
-    const companies = parseBatchInput(batchInput)
-    if (companies.length === 0) {
+    const parsedCompanies = parseBatchEntries(batchInput)
+    const uniqueCompanies: Array<{ name: string; website?: string }> = []
+    const duplicateNames: string[] = []
+    const seenNames = new Set<string>()
+
+    for (const entry of parsedCompanies) {
+      const normalizedName = entry.name.trim()
+      if (!normalizedName) continue
+
+      const key = normalizedName.toLowerCase()
+      if (seenNames.has(key)) {
+        duplicateNames.push(normalizedName)
+        continue
+      }
+
+      seenNames.add(key)
+      uniqueCompanies.push({
+        name: normalizedName,
+        website: entry.website,
+      })
+    }
+
+    if (uniqueCompanies.length === 0) {
       setError('No valid companies found in input')
       return
+    }
+
+    const messageParts: string[] = []
+    if (duplicateNames.length > 0) {
+      messageParts.push(`Skipped duplicates: ${duplicateNames.join(', ')}`)
     }
 
     setLoading(true)
     setError(null)
     setResearchedCompanies([])
-    setBatchProgress({ current: 0, total: companies.length, company: '' })
+    setBatchProgress({ current: 0, total: uniqueCompanies.length, company: '' })
 
     try {
       const successful: ResearchedCompany[] = []
       const errors: Array<{ index: number; company: string; reason: string }> = []
 
-      for (let i = 0; i < companies.length; i++) {
-        const raw = companies[i]
-        const normalizedName = raw.name.trim()
-        const normalizedWebsite = raw.website?.trim() ? raw.website.trim() : undefined
-
-        if (!normalizedName) {
-          errors.push({
-            index: i,
-            company: raw.name,
-            reason: 'Company name is required',
-          })
-          continue
-        }
+      for (let i = 0; i < uniqueCompanies.length; i++) {
+        const raw = uniqueCompanies[i]
+        const normalizedName = raw.name
+        const normalizedWebsite = raw.website
 
         setBatchProgress({
           current: i + 1,
-          total: companies.length,
+          total: uniqueCompanies.length,
           company: normalizedName,
         })
 
@@ -161,8 +277,10 @@ export default function AiCompanyResearch({
 
           if (result.success && result.data) {
             successful.push({
+              id: createTempCompanyId(),
               data: result.data,
               enrichmentInfo: result.enrichmentData || 'No enrichment data available',
+              enrichmentPayload: result.enrichmentRaw,
             })
           } else {
             errors.push({
@@ -182,18 +300,21 @@ export default function AiCompanyResearch({
       }
 
       if (successful.length === 0) {
-        setError(errors[0]?.reason || 'No companies were successfully researched')
+        messageParts.push(errors[0]?.reason || 'No companies were successfully researched')
+        setError(messageParts.join(' '))
       } else {
         setResearchedCompanies(successful)
         setCurrentPreviewIndex(0)
 
-        if (successful.length < companies.length) {
+        if (successful.length < uniqueCompanies.length) {
           const firstFailure = errors[0]?.reason
           const message = firstFailure
-            ? `Successfully researched ${successful.length} of ${companies.length} companies. Example failure: ${firstFailure}`
-            : `Successfully researched ${successful.length} of ${companies.length} companies`
-          setError(message)
+            ? `Successfully researched ${successful.length} of ${uniqueCompanies.length} companies. Example failure: ${firstFailure}`
+            : `Successfully researched ${successful.length} of ${uniqueCompanies.length} companies`
+          messageParts.push(message)
         }
+
+        setError(messageParts.length > 0 ? messageParts.join(' ') : null)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
@@ -208,9 +329,9 @@ export default function AiCompanyResearch({
     if (!currentCompany) return
 
     try {
-      await onSaveCompany(currentCompany.data, isDraft)
+      await onSaveCompany(currentCompany.data, isDraft, currentCompany.enrichmentPayload)
       
-      const updated = researchedCompanies.filter((_, i) => i !== currentPreviewIndex)
+      const updated = researchedCompanies.filter(company => company.id !== currentCompany.id)
       setResearchedCompanies(updated)
       
       if (updated.length > 0) {
@@ -242,9 +363,10 @@ export default function AiCompanyResearch({
       errors: [],
     })
 
-    const errors: Array<{ index: number; company: string; reason: string }> = []
+    const errors: Array<{ companyId: string; company: string; reason: string }> = []
     let successCount = 0
     let failCount = 0
+    const savedCompanyIds = new Set<string>()
 
     for (let i = 0; i < researchedCompanies.length; i++) {
       const company = researchedCompanies[i]
@@ -255,8 +377,9 @@ export default function AiCompanyResearch({
           currentCompanyName: company.data.company_name,
         }))
 
-        await onSaveCompany(company.data, false)
+        await onSaveCompany(company.data, false, company.enrichmentPayload)
         successCount++
+        savedCompanyIds.add(company.id)
         
         setBatchSaveProgress(prev => ({
           ...prev,
@@ -266,7 +389,7 @@ export default function AiCompanyResearch({
         failCount++
         const reason = err instanceof Error ? err.message : 'Unknown error'
         errors.push({
-          index: i,
+          companyId: company.id,
           company: company.data.company_name,
           reason,
         })
@@ -275,12 +398,18 @@ export default function AiCompanyResearch({
           ...prev,
           current: prev.current + 1,
           failed: prev.failed + 1,
-          errors: [...prev.errors, { index: i, company: company.data.company_name, reason }],
+          errors: [...prev.errors, { companyId: company.id, company: company.data.company_name, reason }],
         }))
       }
     }
 
     setIsSavingAll(false)
+
+    if (savedCompanyIds.size > 0) {
+      const remaining = researchedCompanies.filter(company => !savedCompanyIds.has(company.id))
+      setResearchedCompanies(remaining)
+      setCurrentPreviewIndex(remaining.length > 0 ? Math.min(currentPreviewIndex, remaining.length - 1) : 0)
+    }
 
     // Show result
     if (failCount === 0) {
@@ -310,11 +439,12 @@ export default function AiCompanyResearch({
     if (batchSaveProgress.errors.length === 0) return
 
     setIsSavingAll(true)
-    const newErrors: Array<{ index: number; company: string; reason: string }> = []
+    const newErrors: Array<{ companyId: string; company: string; reason: string }> = []
     let failCount = 0
+    const retriedSuccessIds = new Set<string>()
 
     for (const errorItem of batchSaveProgress.errors) {
-      const company = researchedCompanies[errorItem.index]
+      const company = researchedCompanies.find(c => c.id === errorItem.companyId)
       if (!company) continue
 
       try {
@@ -323,12 +453,13 @@ export default function AiCompanyResearch({
           currentCompanyName: company.data.company_name,
         }))
 
-        await onSaveCompany(company.data, false)
+        await onSaveCompany(company.data, false, company.enrichmentPayload)
+        retriedSuccessIds.add(company.id)
       } catch (err) {
         failCount++
         const reason = err instanceof Error ? err.message : 'Unknown error'
         newErrors.push({
-          index: errorItem.index,
+          companyId: company.id,
           company: company.data.company_name,
           reason,
         })
@@ -336,6 +467,12 @@ export default function AiCompanyResearch({
     }
 
     setIsSavingAll(false)
+
+    if (retriedSuccessIds.size > 0) {
+      const remaining = researchedCompanies.filter(company => !retriedSuccessIds.has(company.id))
+      setResearchedCompanies(remaining)
+      setCurrentPreviewIndex(remaining.length > 0 ? Math.min(currentPreviewIndex, remaining.length - 1) : 0)
+    }
 
     if (failCount === 0) {
       // All succeeded now
@@ -440,15 +577,14 @@ export default function AiCompanyResearch({
           <div className="space-y-4">
             <div>
               <label htmlFor="batchInput" className="block text-sm font-medium text-gray-700 mb-1">
-                Paste multiple companies (one per line, format: Name, Website)
+                Paste multiple companies (one per line, optionally add website with &quot;|&quot; or &quot;,&quot;)
               </label>
               <textarea
                 id="batchInput"
                 value={batchInput}
                 onChange={(e) => setBatchInput(e.target.value)}
                 rows={8}
-                placeholder="Acme Corp, https://acme.com&#10;TechCo, https://techco.com&#10;Manufacturing Inc, https://mfg.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                placeholder="Acme Corp | https://acme.com\nTechCo, techco.com\nManufacturing Inc"                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                 disabled={loading || isSavingAll}
               />
             </div>
@@ -462,7 +598,7 @@ export default function AiCompanyResearch({
               <span>🔍</span>
               {loading
                 ? `Researching... (${batchProgress.current}/${batchProgress.total})`
-                : `Research All (${parseBatchInput(batchInput).length} companies)`}
+                : `Research All (${countUniqueBatchEntries(batchInput)} companies)`}
             </button>
 
             {loading && batchProgress.company && (

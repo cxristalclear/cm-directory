@@ -367,6 +367,62 @@ export type Database = {
           },
         ]
       }
+      company_research_history: {
+        Row: {
+          company_id: string
+          company_name: string
+          created_at: string
+          created_by_email: string
+          created_by_name: string
+          data_confidence: string | null
+          enrichment_snapshot: Json | null
+          id: string
+          research_notes: string | null
+          research_snapshot: Json
+          research_summary: string | null
+          source: string | null
+          website_url: string | null
+        }
+        Insert: {
+          company_id: string
+          company_name: string
+          created_at?: string
+          created_by_email: string
+          created_by_name: string
+          data_confidence?: string | null
+          enrichment_snapshot?: Json | null
+          id?: string
+          research_notes?: string | null
+          research_snapshot: Json
+          research_summary?: string | null
+          source?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          company_id?: string
+          company_name?: string
+          created_at?: string
+          created_by_email?: string
+          created_by_name?: string
+          data_confidence?: string | null
+          enrichment_snapshot?: Json | null
+          id?: string
+          research_notes?: string | null
+          research_snapshot?: Json
+          research_summary?: string | null
+          source?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_research_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           accepts_cold_outreach: boolean | null

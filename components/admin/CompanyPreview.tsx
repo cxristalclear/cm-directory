@@ -20,9 +20,9 @@ interface CompanyPreviewProps {
     total: number
     failed: number
     currentCompanyName: string
-    errors: Array<{ index: number; company: string; reason: string }>
+    errors: Array<{ companyId: string; company: string; reason: string }>
   }
-  batchSaveErrors?: Array<{ index: number; company: string; reason: string }>
+  batchSaveErrors?: Array<{ companyId: string; company: string; reason: string }>
   onRetryFailed?: () => Promise<void>
 }
 

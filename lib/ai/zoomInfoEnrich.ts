@@ -1,4 +1,5 @@
 import 'server-only'
+import { normalizeWebsiteUrl } from '@/lib/admin/utils'
 
 /**
  * ZoomInfo Enrichment via Make.com Webhook
@@ -8,6 +9,7 @@ import 'server-only'
 export interface ZoomInfoEnrichmentRequest {
   action: string
   company_name: string
+  company_website?: string
   website?: string
   location?: {
     city?: string
@@ -103,8 +105,11 @@ export async function enrichCompanyData(
       company_name: companyName,
     }
 
-    if (website) {
-      requestBody.website = website
+    const normalizedWebsite = website?.trim() || ''
+    if (normalizedWebsite) {
+      const formattedWebsite = normalizeWebsiteUrl(normalizedWebsite) || normalizedWebsite
+      requestBody.company_website = formattedWebsite
+      requestBody.website = formattedWebsite
     }
 
     console.log('Sending to webhook:', JSON.stringify(requestBody, null, 2))
@@ -127,7 +132,19 @@ export async function enrichCompanyData(
       }
     }
 
-    const responseData = await response.json()
+    const rawText = await response.text()
+    let responseData: unknown = null
+    try {
+      responseData = rawText ? JSON.parse(rawText) : null
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (parseError) {
+      console.warn('ZoomInfo webhook returned non-JSON payload:', rawText)
+      return {
+        success: false,
+        error: 'ZoomInfo webhook returned non-JSON response',
+      }
+    }
+
     console.log('ZoomInfo raw response:', JSON.stringify(responseData, null, 2))
 
     let normalizedResponse: ZoomInfoEnrichmentResponse

@@ -1,4 +1,4 @@
-import { researchCompany } from '@/lib/ai/researchCompany'
+import { researchCompany, snapshotMatchesRequest } from '@/lib/ai/researchCompany'
 import { callOpenAI } from '@/lib/ai/openaiClient'
 import { enrichCompanyData, formatEnrichmentData } from '@/lib/ai/zoomInfoEnrich'
 
@@ -156,5 +156,36 @@ describe('researchCompany data normalization', () => {
       city: 'Denver',
       state: 'CO',
     })
+  })
+})
+
+describe('snapshotMatchesRequest', () => {
+  it('prioritizes website matches even if names differ', () => {
+    expect(
+      snapshotMatchesRequest({
+        requestedName: 'Acme Manufacturing',
+        requestedWebsite: 'https://acme.com',
+        snapshotName: 'Acme Manufacturing LLC',
+        snapshotWebsite: 'https://acme.com',
+      })
+    ).toBe(true)
+  })
+
+  it('treats trimmed, case-insensitive names as exact matches', () => {
+    expect(
+      snapshotMatchesRequest({
+        requestedName: '  Acme   Manufacturing  ',
+        snapshotName: 'acme manufacturing',
+      })
+    ).toBe(true)
+  })
+
+  it('rejects partial name overlaps when website is unavailable', () => {
+    expect(
+      snapshotMatchesRequest({
+        requestedName: 'Acme Manufacturing',
+        snapshotName: 'Acme Manufacturing Solutions',
+      })
+    ).toBe(false)
   })
 })
