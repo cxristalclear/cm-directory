@@ -1,0 +1,191 @@
+<svg width="1400" height="1200" viewBox="0 0 1400 1200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Colors / Theme -->
+    <style>
+      .node { fill:#ffffff; stroke:#CBD5E1; stroke-width:2; rx:14; }
+      .group { fill:#F1F5F9; stroke:#CBD5E1; stroke-width:2; rx:16; }
+      .title { font: 700 18px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; fill:#0F172A; }
+      .label { font: 400 14px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; fill:#334155; }
+      .pill  { fill:#EFF6FF; stroke:#93C5FD; stroke-width:1.5; rx:10; }
+      .pillText { font: 600 12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; fill:#1D4ED8; }
+      .header { font: 600 20px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; fill:#1E293B; }
+      .subtle { font: 12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; fill:#64748B; }
+    </style>
+
+    <!-- Arrow marker -->
+    <marker id="arrow" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M2,2 L12,7 L2,12 Z" fill="#64748B"/>
+    </marker>
+
+    <!-- Connector shortcut -->
+    <g id="dot">
+      <circle cx="0" cy="0" r="3" fill="#94A3B8"/>
+    </g>
+  </defs>
+
+  <!-- Header -->
+  <text x="700" y="40" text-anchor="middle" class="header">CM Directory – Site Flow (Pages & Connections)</text>
+  <text x="700" y="62" text-anchor="middle" class="subtle">Blue = key nav routes · Light groups = related sections · Arrows = primary user paths</text>
+
+  <!-- ENTRY POINTS -->
+  <rect x="610" y="80" width="180" height="60" class="node"/>
+  <text x="700" y="105" text-anchor="middle" class="title">Entry Points</text>
+  <text x="700" y="125" text-anchor="middle" class="label">Search · External Links</text>
+
+  <!-- HOME -->
+  <rect x="610" y="170" width="180" height="70" class="node"/>
+  <text x="700" y="200" text-anchor="middle" class="title">HOME (/)</text>
+  <text x="700" y="220" text-anchor="middle" class="label">Hero · CTAs · Featured</text>
+
+  <!-- Connect Entry -> Home -->
+  <line x1="700" y1="140" x2="700" y2="170" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- TOP-LEVEL NAV PILLS under HOME -->
+  <rect x="420" y="250" width="160" height="28" class="pill"/>
+  <text x="500" y="268" text-anchor="middle" class="pillText">/search</text>
+
+  <rect x="610" y="250" width="200" height="28" class="pill"/>
+  <text x="710" y="268" text-anchor="middle" class="pillText">/add-your-company</text>
+
+  <rect x="850" y="250" width="160" height="28" class="pill"/>
+  <text x="930" y="268" text-anchor="middle" class="pillText">/about</text>
+
+  <rect x="220" y="250" width="160" height="28" class="pill"/>
+  <text x="300" y="268" text-anchor="middle" class="pillText">/resources</text>
+
+  <rect x="1030" y="250" width="160" height="28" class="pill"/>
+  <text x="1110" y="268" text-anchor="middle" class="pillText">/contact</text>
+
+  <!-- Lines from HOME to nav pills -->
+  <line x1="700" y1="240" x2="500" y2="250" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="700" y1="240" x2="710" y2="250" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="700" y1="240" x2="930" y2="250" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="700" y1="240" x2="300" y2="250" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="700" y1="240" x2="1110" y2="250" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- SEARCH GROUP -->
+  <rect x="120" y="310" width="360" height="310" class="group"/>
+  <text x="300" y="335" text-anchor="middle" class="title">Find a Manufacturer (/search)</text>
+  <text x="300" y="355" text-anchor="middle" class="subtle">Map (top) → Results (below) · Filters · Sort</text>
+
+  <!-- Search Node -->
+  <rect x="180" y="370" width="240" height="66" class="node"/>
+  <text x="300" y="400" text-anchor="middle" class="title">/search</text>
+  <text x="300" y="420" text-anchor="middle" class="label">Query Params · Canonical</text>
+
+  <!-- Company Profile -->
+  <rect x="180" y="452" width="240" height="66" class="node"/>
+  <text x="300" y="482" text-anchor="middle" class="title">/companies/[slug]</text>
+  <text x="300" y="502" text-anchor="middle" class="label">Overview · Certs · Contact</text>
+
+  <!-- Related / Back to search -->
+  <rect x="180" y="534" width="240" height="66" class="node"/>
+  <text x="300" y="564" text-anchor="middle" class="title">Related Companies</text>
+  <text x="300" y="584" text-anchor="middle" class="label">Links ↔ Search</text>
+
+  <!-- Connect search flows -->
+  <line x1="300" y1="436" x2="300" y2="452" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="300" y1="518" x2="300" y2="534" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="300" y1="600" x2="300" y2="640" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <use href="#dot" x="300" y="640"/>
+  <text x="300" y="660" text-anchor="middle" class="subtle">Back to /search</text>
+
+  <!-- LIST YOUR COMPANY GROUP -->
+  <rect x="520" y="310" width="360" height="310" class="group"/>
+  <text x="700" y="335" text-anchor="middle" class="title">List Your Company (/add-your-company)</text>
+
+  <rect x="580" y="370" width="240" height="66" class="node"/>
+  <text x="700" y="400" text-anchor="middle" class="title">/add-your-company</text>
+  <text x="700" y="420" text-anchor="middle" class="label">Benefits · Free vs Featured</text>
+
+  <rect x="580" y="452" width="240" height="66" class="node"/>
+  <text x="700" y="482" text-anchor="middle" class="title">Submit → Confirmation</text>
+  <text x="700" y="502" text-anchor="middle" class="label">Thank You (optional)</text>
+
+  <rect x="580" y="534" width="240" height="66" class="node"/>
+  <text x="700" y="564" text-anchor="middle" class="title">FAQ</text>
+  <text x="700" y="584" text-anchor="middle" class="label">Schema Enabled</text>
+
+  <!-- ABOUT + CONTACT GROUP -->
+  <rect x="920" y="310" width="360" height="310" class="group"/>
+  <text x="1100" y="335" text-anchor="middle" class="title">About / Contact</text>
+
+  <rect x="980" y="370" width="240" height="66" class="node"/>
+  <text x="1100" y="400" text-anchor="middle" class="title">/about</text>
+  <text x="1100" y="420" text-anchor="middle" class="label">Mission · How it works · FAQ</text>
+
+  <rect x="980" y="452" width="240" height="66" class="node"/>
+  <text x="1100" y="482" text-anchor="middle" class="title">/contact</text>
+  <text x="1100" y="502" text-anchor="middle" class="label">Form → Confirmation</text>
+
+  <rect x="980" y="534" width="240" height="66" class="node"/>
+  <text x="1100" y="564" text-anchor="middle" class="title">Legal</text>
+  <text x="1100" y="584" text-anchor="middle" class="label">/privacy · /terms</text>
+
+  <!-- RESOURCES GROUP -->
+  <rect x="120" y="660" width="520" height="320" class="group"/>
+  <text x="380" y="685" text-anchor="middle" class="title">Resources Hub</text>
+
+  <rect x="160" y="710" width="240" height="66" class="node"/>
+  <text x="280" y="740" text-anchor="middle" class="title">/resources</text>
+  <text x="280" y="760" text-anchor="middle" class="label">Hub & SEO Landers</text>
+
+  <rect x="420" y="710" width="200" height="66" class="node"/>
+  <text x="520" y="740" text-anchor="middle" class="title">/resources/guides</text>
+  <text x="520" y="760" text-anchor="middle" class="label">Articles</text>
+
+  <rect x="420" y="792" width="200" height="66" class="node"/>
+  <text x="520" y="822" text-anchor="middle" class="title">/resources/guides/[slug]</text>
+  <text x="520" y="842" text-anchor="middle" class="label">Article Page</text>
+
+  <rect x="160" y="792" width="240" height="66" class="node"/>
+  <text x="280" y="822" text-anchor="middle" class="title">/resources/checklists</text>
+  <text x="280" y="842" text-anchor="middle" class="label">Checklists</text>
+
+  <rect x="160" y="874" width="240" height="66" class="node"/>
+  <text x="280" y="904" text-anchor="middle" class="title">/resources/checklists/[slug]</text>
+  <text x="280" y="924" text-anchor="middle" class="label">Checklist Page</text>
+
+  <!-- Connect resources hub -->
+  <line x1="380" y1="698" x2="280" y2="710" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="380" y1="698" x2="520" y2="710" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="520" y1="776" x2="520" y2="792" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="280" y1="858" x2="280" y2="874" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- AUTH / DASHBOARD (PHASE 2) -->
+  <rect x="700" y="660" width="580" height="320" class="group"/>
+  <text x="990" y="685" text-anchor="middle" class="title">Accounts & Dashboard (Phase 2)</text>
+
+  <rect x="740" y="710" width="200" height="60" class="node"/>
+  <text x="840" y="740" text-anchor="middle" class="title">/login · /register</text>
+
+  <rect x="960" y="710" width="280" height="60" class="node"/>
+  <text x="1100" y="740" text-anchor="middle" class="title">/dashboard (Overview)</text>
+
+  <rect x="740" y="792" width="200" height="60" class="node"/>
+  <text x="840" y="822" text-anchor="middle" class="title">/dashboard/profile</text>
+
+  <rect x="960" y="792" width="280" height="60" class="node"/>
+  <text x="1100" y="822" text-anchor="middle" class="title">/dashboard/listing</text>
+
+  <rect x="740" y="874" width="200" height="60" class="node"/>
+  <text x="840" y="904" text-anchor="middle" class="title">/dashboard/leads</text>
+
+  <rect x="960" y="874" width="280" height="60" class="node"/>
+  <text x="1100" y="904" text-anchor="middle" class="title">/dashboard/billing</text>
+
+  <!-- Footer note -->
+  <text x="700" y="1140" text-anchor="middle" class="subtle">
+    Canonical/robots: /search with multi-filters = canonical to /search; /company/:slug → 301 → /companies/:slug
+  </text>
+
+  <!-- Example cross-links -->
+  <line x1="860" y1="403" x2="980" y2="403" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="920" y="392" text-anchor="middle" class="subtle">From About → Contact</text>
+
+  <line x1="860" y1="485" x2="980" y2="485" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="920" y="474" text-anchor="middle" class="subtle">Listing → Contact</text>
+
+  <line x1="400" y1="403" x2="520" y2="403" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="460" y="392" text-anchor="middle" class="subtle">Home → Search</text>
+</svg>
