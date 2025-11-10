@@ -158,8 +158,7 @@
 
 #### Task 2.4: Wire List Your Company Buttons (30 min)
 **File:** `app/list-your-company/page.tsx`  
-**Status:** ✅ Deleted Buttons alltogether
-
+**Status:** ✅ Deleted Buttons altogether
 - [x] Find "Submit Free Listing" button
 - [x] Link to /contact page
 - [x] Find "Contact Sales" button  

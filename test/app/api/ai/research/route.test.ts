@@ -51,6 +51,7 @@ describe('POST /api/ai/research', () => {
       success: true,
       data: companyData,
       enrichmentData: 'enrichment',
+      enrichmentRaw: { raw: 'data' },
     })
 
     const response = await POST(
@@ -70,6 +71,7 @@ describe('POST /api/ai/research', () => {
       success: true,
       data: companyData,
       enrichmentData: 'enrichment',
+      enrichmentRaw: { raw: 'data' },
     })
   })
 
@@ -77,6 +79,7 @@ describe('POST /api/ai/research', () => {
     mockedResearchCompany.mockResolvedValue({
       success: false,
       error: 'ZoomInfo down',
+      enrichmentRaw: null,
     })
 
     const response = await POST(

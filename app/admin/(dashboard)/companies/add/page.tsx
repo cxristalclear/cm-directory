@@ -91,7 +91,7 @@ export default function AddCompanyPage() {
           state_province: f.state_province,
           zip_code: f.zip_code,
           postal_code: f.postal_code,
-          country: f.country || 'US',
+          country: f.country || null,
           is_primary: f.is_primary || false,
           latitude: typeof f.latitude === 'number' ? f.latitude : null,
           longitude: typeof f.longitude === 'number' ? f.longitude : null,
