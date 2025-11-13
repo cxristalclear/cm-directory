@@ -3,12 +3,13 @@ import type { Point } from 'geojson'
 import type { FacilityFormData } from '@/types/admin'
 export type FetchImplementation = typeof fetch
 import { getStateProvince, getPostalCode } from './addressCompat'
+import { formatCountryLabel, normalizeCountryCode } from '@/utils/locationFilters'
 
 export type NullableString = string | null | undefined
 
 export type FacilityAddressFields = Pick<
   FacilityFormData,
-  'street_address' | 'city' | 'state' | 'zip_code' | 'country'
+  'street_address' | 'city' | 'state' | 'state_province' | 'state_code' | 'zip_code' | 'postal_code' | 'country' | 'country_code'
 >
 
 export type FacilityAddressLike = {
@@ -74,7 +75,10 @@ export function buildFacilityAddress(facility: FacilityAddressLike): string {
   addPart(facility.city)
   addPart(getStateProvince(facility))  // ✅ Uses compatibility layer
   addPart(getPostalCode(facility))     // ✅ Uses compatibility layer
-  addPart(facility.country)
+  const countryDisplay =
+    facility.country ||
+    (facility.country_code ? formatCountryLabel(normalizeCountryCode(facility.country_code) || facility.country_code) : undefined)
+  addPart(countryDisplay)
 
   return parts.join(', ')
 }

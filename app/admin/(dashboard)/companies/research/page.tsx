@@ -165,11 +165,11 @@ const facilitiesSerializer = createSerializer<FacilityInsert>([
   'facility_type',
   'street_address',
   'city',
-  'state',
   'state_province',
-  'zip_code',
+  'state_code',
   'postal_code',
   'country',
+  'country_code',
   'is_primary',
   'latitude',
   'longitude',
@@ -455,7 +455,7 @@ export default function AiResearchPage() {
 
           if ((latitude == null || longitude == null) && hasMinimumAddressData(facility) && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
             try {
-              console.log(`📍 Geocoding: ${facility.city}, ${facility.state || facility.state_province}`)
+              console.log(`📍 Geocoding: ${facility.city}, ${facility.state_province || facility.state}`)
               const coordinates = await geocodeFacilityToPoint(facility)
               latitude = coordinates.latitude
               longitude = coordinates.longitude
@@ -474,11 +474,11 @@ export default function AiResearchPage() {
             facility_type: facility.facility_type,
             street_address: facility.street_address || null,
             city: facility.city || null,
-            state: facility.state || null,
-            state_province: facility.state_province || null,
-            zip_code: facility.zip_code || null,
-            postal_code: facility.postal_code || null,
+            state_province: facility.state_province || facility.state || null,
+            state_code: facility.state_code || null,
+            postal_code: facility.postal_code || facility.zip_code || null,
             country: facility.country && facility.country.trim() ? facility.country : null,
+            country_code: facility.country_code || null,
             is_primary: facility.is_primary || false,
             latitude: latitude ?? null,
             longitude: longitude ?? null,

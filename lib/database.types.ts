@@ -491,11 +491,62 @@ export type Database = {
           },
         ]
       }
+      countries: {
+        Row: {
+          id: string
+          iso2: string
+          iso3: string | null
+          name: string
+          name_normalized: string | null
+        }
+        Insert: {
+          id?: string
+          iso2: string
+          iso3?: string | null
+          name: string
+          name_normalized?: string | null
+        }
+        Update: {
+          id?: string
+          iso2?: string
+          iso3?: string | null
+          name?: string
+          name_normalized?: string | null
+        }
+        Relationships: []
+      }
+      country_aliases: {
+        Row: {
+          alias: string
+          alias_normalized: string | null
+          iso2: string
+        }
+        Insert: {
+          alias: string
+          alias_normalized?: string | null
+          iso2: string
+        }
+        Update: {
+          alias?: string
+          alias_normalized?: string | null
+          iso2?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "country_aliases_iso2_fkey"
+            columns: ["iso2"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["iso2"]
+          },
+        ]
+      }
       facilities: {
         Row: {
           city: string | null
           company_id: string | null
           country: string | null
+          country_code: string | null
           created_at: string | null
           employees_at_location: number | null
           facility_name: string | null
@@ -509,6 +560,7 @@ export type Database = {
           longitude: number | null
           postal_code: string | null
           state: string | null
+          state_code: string | null
           state_province: string | null
           street_address: string | null
           updated_at: string | null
@@ -518,6 +570,7 @@ export type Database = {
           city?: string | null
           company_id?: string | null
           country?: string | null
+          country_code?: string | null
           created_at?: string | null
           employees_at_location?: number | null
           facility_name?: string | null
@@ -531,6 +584,7 @@ export type Database = {
           longitude?: number | null
           postal_code?: string | null
           state?: string | null
+          state_code?: string | null
           state_province?: string | null
           street_address?: string | null
           updated_at?: string | null
@@ -540,6 +594,7 @@ export type Database = {
           city?: string | null
           company_id?: string | null
           country?: string | null
+          country_code?: string | null
           created_at?: string | null
           employees_at_location?: number | null
           facility_name?: string | null
@@ -553,6 +608,7 @@ export type Database = {
           longitude?: number | null
           postal_code?: string | null
           state?: string | null
+          state_code?: string | null
           state_province?: string | null
           street_address?: string | null
           updated_at?: string | null
@@ -724,6 +780,38 @@ export type Database = {
           srtext?: string | null
         }
         Relationships: []
+      }
+      states: {
+        Row: {
+          code: string
+          country_iso2: string
+          id: string
+          name: string
+          name_normalized: string | null
+        }
+        Insert: {
+          code: string
+          country_iso2: string
+          id?: string
+          name: string
+          name_normalized?: string | null
+        }
+        Update: {
+          code?: string
+          country_iso2?: string
+          id?: string
+          name?: string
+          name_normalized?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "states_country_fk"
+            columns: ["country_iso2"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["iso2"]
+          },
+        ]
       }
       stg_company_import: {
         Row: {
@@ -1260,6 +1348,7 @@ export type Database = {
         }[]
       }
       normalize_company_name: { Args: { name: string }; Returns: string }
+      normalize_location_text: { Args: { input: string }; Returns: string }
       populate_geometry_columns:
         | { Args: { use_typmod?: boolean }; Returns: string }
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }

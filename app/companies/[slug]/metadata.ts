@@ -1,6 +1,26 @@
 import { Metadata } from 'next'
 import { supabase } from '@/lib/supabase'
 import { getCanonicalUrl, siteConfig } from '@/lib/config'
+import type { HomepageFacility } from '@/types/homepage'
+
+type FacilityLocationFields = Pick<
+  HomepageFacility,
+  'city' | 'state' | 'state_province' | 'state_code' | 'country' | 'country_code'
+>
+
+export function buildLocationString(facility?: FacilityLocationFields | null): string {
+  if (!facility) return ''
+
+  const region = facility.state_province || facility.state || facility.state_code
+  const parts = [facility.city, region, facility.country || facility.country_code].filter(
+    (value) => {
+      if (!value) return false
+      return value.trim().length > 0
+    }
+  )
+
+  return parts.join(', ')
+}
 
 export async function generateMetadata({ 
   params 
@@ -16,7 +36,7 @@ export async function generateMetadata({
       company_name,
       description,
       logo_url,
-      facilities (city, state),
+      facilities (city, state, state_province, state_code, country, country_code),
       capabilities (capability_type),
       certifications (certification_type)
     `)
@@ -35,7 +55,14 @@ export async function generateMetadata({
     company_name: string
     description: string | null
     logo_url: string | null
-    facilities: Array<{ city: string | null; state: string | null }> | null
+    facilities: Array<{
+      city: string | null
+      state: string | null
+      state_province: string | null
+      state_code: string | null
+      country: string | null
+      country_code: string | null
+    }> | null
     capabilities: Array<{ capability_type: string }> | null
     certifications: Array<{ certification_type: string }> | null
   }
@@ -43,9 +70,8 @@ export async function generateMetadata({
   const typedCompany = company as unknown as CompanyMetadata
   
   // Build location string
-  const location = typedCompany.facilities?.[0] 
-    ? `${typedCompany.facilities[0].city}, ${typedCompany.facilities[0].state}` 
-    : ''
+  const primaryFacility = typedCompany.facilities?.[0]
+  const location = buildLocationString(primaryFacility)
   
   // Get top capabilities
   const topCapabilities = typedCompany.capabilities

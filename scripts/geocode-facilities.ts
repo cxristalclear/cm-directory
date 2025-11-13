@@ -68,8 +68,12 @@ interface Facility {
   street_address?: string
   city?: string
   state?: string
+  state_province?: string
+  state_code?: string
   zip_code?: string
+  postal_code?: string
   country?: string
+  country_code?: string
   latitude?: number | null
   longitude?: number | null
 }
@@ -130,8 +134,12 @@ async function processFacilities() {
         street_address,
         city,
         state,
+        state_province,
+        state_code,
         zip_code,
+        postal_code,
         country,
+        country_code,
         latitude,
         longitude
       )

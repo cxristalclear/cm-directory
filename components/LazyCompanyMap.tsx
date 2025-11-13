@@ -3,13 +3,13 @@
 import { lazy, Suspense } from 'react'
 import { MapErrorBoundary } from './MapErrorBoundary'
 import { MapPin } from 'lucide-react'
-import type { HomepageCompany } from '@/types/homepage'
+import type { HomepageCompanyWithLocations } from '@/types/homepage'
 
 // Lazy load the map component
 const CompanyMap = lazy(() => import('./CompanyMap'))
 
 interface LazyCompanyMapProps {
-  allCompanies: HomepageCompany[]
+  allCompanies: HomepageCompanyWithLocations[]
 }
 
 // Loading placeholder component

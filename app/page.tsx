@@ -14,7 +14,7 @@ import { siteConfig, featureFlags } from "@/lib/config"
 import AddCompanyCallout from "@/components/AddCompanyCallout"
 import VenkelAd from "@/components/VenkelAd"
 import type { PageProps } from "@/types/nxt"
-import type { HomepageCompany } from "@/types/homepage"
+import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import Navbar from "@/components/navbar"
 
 export const revalidate = 300
@@ -34,7 +34,10 @@ const COMPANY_FIELDS = `
     company_id,
     city,
     state,
+    state_code,
+    state_province,
     country,
+    country_code,
     latitude,
     longitude,
     facility_type,
@@ -84,7 +87,7 @@ export const metadata = {
 }
 
 // ---------- Data Fetch ----------
-async function getData(): Promise<HomepageCompany[]> {
+async function getData(): Promise<HomepageCompanyWithLocations[]> {
   try {
     const { data, error } = await supabase
       .from("companies")
@@ -92,7 +95,7 @@ async function getData(): Promise<HomepageCompany[]> {
       .eq("is_active", true)
       .order("updated_at", { ascending: false })
       .limit(MAX_COMPANIES)
-      .returns<HomepageCompany[]>()
+      .returns<HomepageCompanyWithLocations[]>()
 
     if (error) {
       console.error("Error fetching companies:", error)

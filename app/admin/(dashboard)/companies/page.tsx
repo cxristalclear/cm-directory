@@ -96,7 +96,7 @@ export default async function AllCompaniesPage({
     facilities: company.facilities 
       ? company.facilities.map((facility) => ({
           city: facility.city ?? undefined,
-          state: facility.state ?? undefined,
+          state: facility.state_province ?? facility.state ?? undefined,
         }))
       : undefined,
   }))

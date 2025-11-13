@@ -1,6 +1,6 @@
 import { filterCompanies, filterFacilitiesByLocation } from '@/utils/filtering'
 import type { FilterState } from '@/types/company'
-import type { HomepageCompany, HomepageFacility } from '@/types/homepage'
+import type { HomepageCompanyWithLocations, HomepageFacility } from '@/types/homepage'
 
 const baseFilters: FilterState = {
   countries: [],
@@ -9,12 +9,22 @@ const baseFilters: FilterState = {
   productionVolume: null,
 }
 
-const facilityWithCountry = (country: string, state?: string): HomepageFacility =>
-  ({
+const facilityWithCountry = (
+  country: string,
+  stateOrExtras?: string | Partial<HomepageFacility>,
+  extras?: Partial<HomepageFacility>,
+): HomepageFacility => {
+  const state = typeof stateOrExtras === 'string' ? stateOrExtras : undefined
+  const extraProps =
+    (typeof stateOrExtras === 'string' ? extras : stateOrExtras) ?? {}
+
+  return {
     id: `facility-${country}-${state ?? 'none'}`,
     country,
     state: state ?? null,
-  } as unknown as HomepageFacility)
+    ...extraProps,
+  } as unknown as HomepageFacility
+}
 
 const facilityWithoutCountry = (): HomepageFacility =>
   ({
@@ -26,13 +36,13 @@ const facilityWithoutCountry = (): HomepageFacility =>
 const buildCompany = (
   slug: string,
   facilities: HomepageFacility[],
-): HomepageCompany =>
+): HomepageCompanyWithLocations =>
   ({
     id: slug,
     slug,
     company_name: slug,
     facilities,
-  } as unknown as HomepageCompany)
+  } as unknown as HomepageCompanyWithLocations)
 
 describe('filtering utilities', () => {
   it('excludes facilities without a country when filtering companies by country', () => {
@@ -58,5 +68,17 @@ describe('filtering utilities', () => {
 
     expect(result).toHaveLength(1)
     expect(result[0]?.country).toBe('US')
+  })
+
+  it('matches international state/province filters after normalization', () => {
+    const filters: FilterState = { ...baseFilters, states: ['hsinchu'] }
+    const companies = [
+      buildCompany('intl', [
+        facilityWithCountry('TW', { state_province: 'Hsinchu' }),
+      ]),
+    ]
+
+    const result = filterCompanies(companies, filters)
+    expect(result.map((company) => company.slug)).toEqual(['intl'])
   })
 })

@@ -8,6 +8,26 @@ export type HomepageIndustry = Database["public"]["Tables"]["industries"]["Row"]
 
 export type HomepageCompany = CompanyType
 
-export type HomepageFacilityWithCompany = HomepageFacility & {
-  company: HomepageCompany
+export type HomepageFacilityLocation = Pick<
+  HomepageFacility,
+  | "id"
+  | "company_id"
+  | "city"
+  | "state"
+  | "state_code"
+  | "state_province"
+  | "country"
+  | "country_code"
+  | "latitude"
+  | "longitude"
+  | "facility_type"
+  | "is_primary"
+>
+
+export type HomepageCompanyWithLocations = Omit<HomepageCompany, "facilities"> & {
+  facilities?: HomepageFacilityLocation[] | null
+}
+
+export type HomepageFacilityWithCompany = HomepageFacilityLocation & {
+  company: HomepageCompanyWithLocations
 }
