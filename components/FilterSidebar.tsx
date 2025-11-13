@@ -3,16 +3,23 @@
 import { useState, useMemo } from 'react'
 import { useFilters } from '../contexts/FilterContext'
 import { ChevronDown, X, Filter, MapPin, Globe, Settings, Layers } from 'lucide-react'
-import type { HomepageCompany } from '@/types/company'
+import type { HomepageCompanyWithLocations } from '@/types/homepage'
 import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
-import { getStateName } from '../utils/stateMapping'
-import { getCountryName } from '@/utils/countryMapping'
+import {
+  formatCountryLabel,
+  formatStateLabelFromKey,
+  getFacilityCountryCode,
+  getFacilityStateKey,
+  getFacilityStateLabel,
+  normalizeCountryCode,
+  normalizeStateFilterValue,
+} from "@/utils/locationFilters"
 
 
 type FilterSection = 'countries' | 'states' | 'capabilities' | 'volume'
 
 interface FilterSidebarProps {
-  allCompanies: HomepageCompany[]
+  allCompanies: HomepageCompanyWithLocations[]
 }
 
 // Capability display names
@@ -40,7 +47,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
   const dynamicCounts = useMemo(() => {
     const counts = {
       countries: new Map<string, number>(),
-      states: new Map<string, number>(),
+      states: new Map<string, { count: number; label: string }>(),
       capabilities: new Map<CapabilitySlug, number>(),
       productionVolume: new Map<ProductionVolume, number>()
     }
@@ -49,14 +56,16 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       // Pre-calculate matching for each filter type (exclude itself)
       const matchesCountries = filters.countries.length === 0 ||
         company.facilities?.some(f => {
-          if (!f.country) return false
-          return filters.countries.includes(f.country)
+          const code = getFacilityCountryCode(f)
+          if (!code) return false
+          return filters.countries.includes(code)
         })
 
       const matchesStates = filters.states.length === 0 ||
-        company.facilities?.some(f =>
-          typeof f.state === 'string' && filters.states.includes(f.state)
-        )
+        company.facilities?.some(f => {
+          const key = getFacilityStateKey(f)
+          return Boolean(key && filters.states.includes(key))
+        })
 
       const matchesCapabilities = filters.capabilities.length === 0 || 
         (company.capabilities?.[0] && filters.capabilities.some(selected => {
@@ -85,19 +94,26 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       // Count COUNTRIES (exclude countries filter)
       if (matchesStates && matchesCapabilities && matchesVolume) {
         company.facilities?.forEach(facility => {
-          if (!facility.country) return
-          const country = facility.country
-          counts.countries.set(country, (counts.countries.get(country) || 0) + 1)
+          const countryCode = getFacilityCountryCode(facility)
+          if (!countryCode) return
+          counts.countries.set(countryCode, (counts.countries.get(countryCode) || 0) + 1)
         })
       }
 
       // Count STATES (exclude states filter)
       if (matchesCountries && matchesCapabilities && matchesVolume) {
         company.facilities?.forEach(facility => {
-          if (!facility.country) return
-          if (filters.countries.length === 0 || filters.countries.includes(facility.country)) {
-            if (facility.state) {
-              counts.states.set(facility.state, (counts.states.get(facility.state) || 0) + 1)
+          const countryCode = getFacilityCountryCode(facility)
+          if (!countryCode) return
+          if (filters.countries.length === 0 || filters.countries.includes(countryCode)) {
+            const key = getFacilityStateKey(facility)
+            if (!key) return
+            const label = getFacilityStateLabel(facility) || formatStateLabelFromKey(key)
+            const existing = counts.states.get(key)
+            if (existing) {
+              existing.count += 1
+            } else {
+              counts.states.set(key, { count: 1, label })
             }
           }
         })
@@ -154,16 +170,20 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
   }
 
   const handleCountryToggle = (countryCode: string) => {
-    const newCountries = filters.countries.includes(countryCode)
-      ? filters.countries.filter(c => c !== countryCode)
-      : [...filters.countries, countryCode]
+    const normalized = normalizeCountryCode(countryCode)
+    if (!normalized) return
+    const newCountries = filters.countries.includes(normalized)
+      ? filters.countries.filter(c => c !== normalized)
+      : [...filters.countries, normalized]
     updateFilter('countries', newCountries)
   }
 
   const handleStateToggle = (state: string) => {
-    const newStates = filters.states.includes(state)
-      ? filters.states.filter(s => s !== state)
-      : [...filters.states, state]
+    const normalized = normalizeStateFilterValue(state)
+    if (!normalized) return
+    const newStates = filters.states.includes(normalized)
+      ? filters.states.filter(s => s !== normalized)
+      : [...filters.states, normalized]
     updateFilter('states', newStates)
   }
 
@@ -245,7 +265,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                   onClick={() => handleCountryToggle(country)}
                   className="btn btn--pill btn--pill-primary"
                 >
-                  {getCountryName(country)}
+                  {formatCountryLabel(country)}
                   <X className="w-3 h-3" />
                 </button>
               ))}
@@ -255,7 +275,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                   onClick={() => handleStateToggle(state)}
                   className="btn btn--pill btn--pill-primary"
                 >
-                  {getStateName(state)}
+                  {formatStateLabelFromKey(state)}
                   <X className="w-3 h-3" />
                 </button>
               ))}
@@ -289,7 +309,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
               onClick={() => toggleSection('countries')}
               className="btn-accordion"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 m-2">
                 <Globe className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium text-gray-900">Country</span>
                 {filters.countries.length > 0 && (
@@ -297,20 +317,20 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                     {filters.countries.length}
                   </span>
                 )}
-              </div>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
                 expandedSections.includes('countries') ? 'rotate-180' : ''
               }`} />
+              </div>
             </button>
 
             {expandedSections.includes('countries') && (
               <div className="p-2 space-y-0.5 max-h-48 overflow-y-auto">
                 {Array.from(dynamicCounts.countries.entries())
-                  .sort(([a], [b]) => getCountryName(a).localeCompare(getCountryName(b)))
+                  .sort(([a], [b]) => formatCountryLabel(a).localeCompare(formatCountryLabel(b)))
                   .map(([country, count]) => {
                     const isSelected = filters.countries.includes(country)
                     const isDisabled = count === 0 && !isSelected
-                    
+                   
                     return (
                       <label 
                         key={country} 
@@ -327,7 +347,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                             className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-1 focus:ring-blue-500"
                           />
                           <span className="text-sm text-gray-700 truncate">
-                            {getCountryName(country)}
+                            {formatCountryLabel(country)}
                           </span>
                         </div>
                         <span className={`text-xs px-1.5 py-0.5 rounded ${
@@ -348,7 +368,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
               onClick={() => toggleSection('states')}
               className="btn-accordion"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 m-2">
                 <MapPin className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium text-gray-900">State</span>
                 {filters.states.length > 0 && (
@@ -356,19 +376,21 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                     {filters.states.length}
                   </span>
                 )}
-              </div>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
                 expandedSections.includes('states') ? 'rotate-180' : ''
               }`} />
+              </div>
             </button>
 
             {expandedSections.includes('states') && (
               <div className="p-2 space-y-0.5 max-h-64 overflow-y-auto">
                 {Array.from(dynamicCounts.states.entries())
-                  .sort(([a], [b]) => getStateName(a).localeCompare(getStateName(b)))
-                  .map(([state, count]) => {
+                  .sort(([, a], [, b]) => a.label.localeCompare(b.label))
+                  .map(([state, data]) => {
                     const isSelected = filters.states.includes(state)
+                    const count = data.count
                     const isDisabled = count === 0 && !isSelected
+                    const label = data.label || formatStateLabelFromKey(state)
                     
                     return (
                       <label 
@@ -386,7 +408,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                             className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-1 focus:ring-blue-500"
                           />
                           <span className="text-sm text-gray-700 truncate">
-                            {getStateName(state)}
+                            {label}
                           </span>
                         </div>
                         <span className={`text-xs px-1.5 py-0.5 rounded ${
@@ -407,7 +429,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
               onClick={() => toggleSection('capabilities')}
               className="btn-accordion"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 m-2">
                 <Settings className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium text-gray-900">Capabilities</span>
                 {filters.capabilities.length > 0 && (
@@ -415,10 +437,10 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                     {filters.capabilities.length}
                   </span>
                 )}
-              </div>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
                 expandedSections.includes('capabilities') ? 'rotate-180' : ''
               }`} />
+              </div>
             </button>
 
             {expandedSections.includes('capabilities') && (
@@ -464,16 +486,16 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
               onClick={() => toggleSection('volume')}
               className="btn-accordion"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 m-2">
                 <Layers className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium text-gray-900">Volume</span>
                 {filters.productionVolume && (
                   <span className="text-xs text-blue-600 font-medium">1</span>
                 )}
-              </div>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
                 expandedSections.includes('volume') ? 'rotate-180' : ''
               }`} />
+              </div>             
             </button>
 
             {expandedSections.includes('volume') && (

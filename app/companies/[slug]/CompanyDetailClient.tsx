@@ -6,6 +6,8 @@ import type { Company } from '@/types/company'
 import CompanyHeader from '@/components/CompanyHeader'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import ClaimEditSection from '@/components/ClaimEditSection'
+import { getStateProvince, getPostalCode } from '@/lib/admin/addressCompat'
+import { formatCountryLabel, getFacilityCountryCode } from '@/utils/locationFilters'
 
 
 interface CompanyDetailClientProps {
@@ -13,12 +15,27 @@ interface CompanyDetailClientProps {
   showBackButton?: boolean
 }
 
+type CompanyFacility = NonNullable<Company['facilities']>[number]
+
 export default function CompanyDetailClient({ company }: CompanyDetailClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'capabilities' | 'certifications' | 'technical'>('overview')
 
   // Safely access properties with optional chaining
   const capabilities = company?.capabilities?.[0]
   const companyName = company?.company_name
+  const formatFacilityLocation = (facility?: CompanyFacility | null) => {
+    if (!facility) return null
+    const facilityForAddress = {
+      ...facility,
+      is_primary: facility.is_primary ?? undefined,
+    } as Parameters<typeof getStateProvince>[0]
+    const region = getStateProvince(facilityForAddress) || facility.state_code || null
+    const postal = getPostalCode(facilityForAddress)
+    const countryCode = getFacilityCountryCode(facility)
+    const countryLabel = countryCode ? formatCountryLabel(countryCode) : facility.country || null
+    const parts = [facility.city, region, postal, countryLabel].filter(Boolean)
+    return parts.join(', ')
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,12 +64,16 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
                     Verified Manufacturer
                   </span>
                 </div>
-                {company.facilities?.[0] && (
+                {(() => {
+                  const primaryFacility = company.facilities?.[0] ?? null
+                  if (!primaryFacility) return null
+                  return (
                     <span className="flex items-center text-gray-600 text-sm">
                       <MapPin className="w-3.5 h-3.5 mr-1" />
-                      {company.facilities[0].city}, {company.facilities[0].state}
+                      {formatFacilityLocation(primaryFacility)}
                     </span>
-                  )}
+                  )
+                })()}
               </div>
             </div>
           </div>
@@ -240,12 +261,14 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
                               <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Primary</span>
                             )}
                           </h3>
-                          <p className="text-gray-600 text-sm">
-                            {facility.street_address}
-                          </p>
-                          <p className="text-gray-600 text-sm">
-                            {facility.city}, {facility.state} {facility.zip_code}
-                          </p>
+                              {facility.street_address && (
+                                <p className="text-gray-600 text-sm">
+                                  {facility.street_address}
+                                </p>
+                              )}
+                              <p className="text-gray-600 text-sm">
+                                {formatFacilityLocation(facility)}
+                              </p>
                         </div>
                       ))}
                     </div>

@@ -216,13 +216,14 @@ export function createPopupFromFacility(
       slug?: string | null
     }
     city?: string | null
+    state_province?: string | null
     state?: string | null
   },
   options?: mapboxgl.PopupOptions
 ): mapboxgl.Popup {
   const popupData: PopupContent = {
     title: facility.company?.company_name || 'Unknown Company',
-    subtitle: `${facility.city || 'Unknown City'}, ${facility.state || 'Unknown State'}`,
+    subtitle: `${facility.city || 'Unknown City'}, ${facility.state_province || facility.state || 'Unknown State'}`,
   }
   
   // Only add link if slug exists

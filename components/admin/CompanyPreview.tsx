@@ -288,7 +288,7 @@ export default function CompanyPreview({
                 <div key={idx} className="bg-white p-3 rounded border border-green-100">
                   <div className="font-medium text-sm">{facility.facility_type}</div>
                   <div className="text-xs text-gray-600 mt-1">
-                    {[facility.city, facility.state, facility.country].filter(Boolean).join(', ')}
+                    {[facility.city, facility.state_province || facility.state, facility.country].filter(Boolean).join(', ')}
                   </div>
                 </div>
               ))}

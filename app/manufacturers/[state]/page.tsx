@@ -35,16 +35,16 @@ const formatCityList = (cities: string[]): string | null => {
 export async function generateStaticParams() {
   const { data: facilities } = await supabase
     .from("facilities")
-    .select("state")
-    .not("state", "is", null)
+    .select("state_code")
+    .not("state_code", "is", null)
 
-  type FacilityState = { state: string }
+  type FacilityState = { state_code: string | null }
   const typedFacilities = (facilities || []) as FacilityState[]
 
   const uniqueSlugs = new Set<string>()
 
   typedFacilities
-    .map((facility) => facility.state)
+    .map((facility) => facility.state_code)
     .filter((state): state is string => typeof state === "string" && state.length > 0)
     .forEach((state) => {
       const slug = stateSlugFromAbbreviation(state)
@@ -75,7 +75,7 @@ export async function generateMetadata({
   const { count } = await supabase
     .from("facilities")
     .select("*", { count: "exact", head: true })
-    .eq("state", stateMetadata.abbreviation)
+    .eq("state_code", stateMetadata.abbreviation)
 
   const companyCount = count ?? 0
   const countLabel = companyCount > 0 ? `${companyCount}+ ` : ""
@@ -135,14 +135,21 @@ export default async function StateManufacturersPage({
       *,
       facilities!inner (
         country,
+        country_code,
         state,
-        city
+        state_code,
+        state_province,
+        city,
+        latitude,
+        longitude,
+        facility_type,
+        is_primary
       ),
       capabilities (*),
       certifications (certification_type),
       industries (industry_name)
     `)
-    .eq("facilities.state", stateMetadata.abbreviation)
+    .eq("facilities.state_code", stateMetadata.abbreviation)
     .eq("is_active", true)
 
   const companies: Company[] = (data ?? []) as Company[]

@@ -8,7 +8,7 @@ import { FilterProvider } from "@/contexts/FilterContext"
 import { Breadcrumbs } from "@/components/Breadcrumbs"
 import { getCanonicalUrl, siteConfig, featureFlags } from "@/lib/config"
 import { parseFiltersFromSearchParams, type CapabilitySlug, type FilterUrlState } from "@/lib/filters/url"
-import type { HomepageCompany } from "@/types/homepage"
+import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import FilterDebugger from "@/components/FilterDebugger"
 import Header from "@/components/Header"
@@ -39,7 +39,10 @@ const COMPANY_FIELDS = `
     company_id,
     city,
     state,
+    state_code,
+    state_province,
     country,
+    country_code,
     latitude,
     longitude,
     facility_type,
@@ -104,7 +107,7 @@ const AdPlaceholder = ({ width, height, label, className = "" }: { width: string
 )
 
 // ---------- Data Fetch ----------
-async function getData(): Promise<HomepageCompany[]> {
+async function getData(): Promise<HomepageCompanyWithLocations[]> {
   try {
     const { data, error } = await supabase
       .from("companies")
@@ -112,7 +115,7 @@ async function getData(): Promise<HomepageCompany[]> {
       .eq("is_active", true)
       .order("updated_at", { ascending: false })
       .limit(MAX_COMPANIES)
-      .returns<HomepageCompany[]>()
+      .returns<HomepageCompanyWithLocations[]>()
 
     if (error) {
       console.error("Error fetching companies:", error)

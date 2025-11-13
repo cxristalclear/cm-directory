@@ -11,6 +11,15 @@ import type { CompanyFormData } from '@/types/admin'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/database.types'
 import { normalizeWebsiteUrl } from '@/lib/admin/utils'
+import {
+  normalizeCountryCode,
+  normalizeStateFilterValue,
+  formatStateLabelFromKey,
+  inferCountryCodeFromState,
+  inferCountryCodeFromStateKey,
+  formatCountryLabel,
+} from '@/utils/locationFilters'
+import { getCountryName } from '@/utils/countryMapping'
 
 // System prompt from custom_cm_search_instructions.txt
 const SYSTEM_PROMPT = `You are a structured data collection agent for electronics manufacturing companies. Your job is to return a **fully completed JSON array** of 1 company per request, based on the given schema.
@@ -53,8 +62,9 @@ Return a **single valid JSON array** with one object matching this exact structu
       "facility_type": "HQ | Manufacturing",
       "street_address": "string",
       "city": "string",
-      "state": "string",
-      "zip_code": "string",
+      "state_province": "string",
+      "state_code": "string",
+      "postal_code": "string",
       "country": "USA",
       "facility_size_sqft": null,
       "employees_at_location": 100,
@@ -342,7 +352,9 @@ Remember:
         street_address?: string
         city?: string
         state?: string
+        state_province?: string
         zip_code?: string
+        postal_code?: string
         country?: string
         facility_size_sqft?: number | null
         employees_at_location?: number | null
@@ -466,6 +478,45 @@ Remember:
       return null
     }
 
+    type ParsedFacility = NonNullable<ParsedCompanyData['facilities']>[number]
+
+    const mapFacility = (f: ParsedFacility): NonNullable<CompanyFormData['facilities']>[number] => {
+      const normalizedCountryCode = normalizeCountryCode(f.country)
+      const rawStateValue = f.state || f.state_province || null
+      const normalizedStateCode = normalizeStateFilterValue(rawStateValue)
+      let resolvedStateText = f.state || f.state_province || undefined
+      if (!resolvedStateText && normalizedStateCode) {
+        resolvedStateText = formatStateLabelFromKey(normalizedStateCode)
+      }
+      const inferredCountry =
+        inferCountryCodeFromStateKey(normalizedStateCode) ||
+        inferCountryCodeFromState(resolvedStateText)
+
+      const finalCountryCode =
+        inferredCountry && inferredCountry !== normalizedCountryCode
+          ? inferredCountry
+          : normalizedCountryCode || inferredCountry || undefined
+
+      const displayCountry =
+        f.country?.trim() ||
+        (finalCountryCode ? getCountryName(finalCountryCode) || formatCountryLabel(finalCountryCode) : undefined)
+
+      return {
+        facility_type: f.facility_type || 'Manufacturing',
+        street_address: f.street_address || undefined,
+        city: f.city || undefined,
+        state_province: resolvedStateText,
+        state_code: normalizedStateCode || undefined,
+        postal_code: f.postal_code || f.zip_code || undefined,
+        country: displayCountry,
+        country_code: finalCountryCode,
+        is_primary: f.is_primary || false,
+        latitude: parseCoordinate(f.latitude ?? null),
+        longitude: parseCoordinate(f.longitude ?? null),
+        location: f.location ?? undefined,
+      }
+    }
+
     // Step 5: Map to CompanyFormData structure
     const companyData: CompanyFormData = {
       company_name: parsedData.company_name || enrichedCompanyName || companyName,
@@ -478,19 +529,8 @@ Remember:
       key_differentiators: parsedData.key_differentiators || undefined,
 
       // Map facilities
-      facilities: Array.isArray(parsedData.facilities) 
-        ? parsedData.facilities.map((f) => ({
-            facility_type: f.facility_type || 'Manufacturing',
-            street_address: f.street_address || undefined,
-            city: f.city || undefined,
-            state: f.state || undefined,
-            zip_code: f.zip_code || undefined,
-            country: f.country && f.country.trim() ? f.country : undefined,
-            is_primary: f.is_primary || false,
-            latitude: parseCoordinate(f.latitude ?? null),
-            longitude: parseCoordinate(f.longitude ?? null),
-            location: f.location ?? undefined,
-          }))
+      facilities: Array.isArray(parsedData.facilities)
+        ? parsedData.facilities.map(mapFacility)
         : [],
 
       // Map capabilities

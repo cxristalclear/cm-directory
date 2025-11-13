@@ -13,7 +13,7 @@ import {
   type JsonLd,
 } from "@/lib/schema"
 import { supabase } from "@/lib/supabase"
-import type { HomepageCompany } from "@/types/company"
+import type { HomepageCompanyWithLocations } from "@/types/homepage"
 
 const HOMEPAGE_COMPANY_FIELDS = `
   id,
@@ -30,7 +30,10 @@ const HOMEPAGE_COMPANY_FIELDS = `
     company_id,
     city,
     state,
+    state_code,
+    state_province,
     country,
+    country_code,
     latitude,
     longitude,
     facility_type,
@@ -146,8 +149,8 @@ export default async function CapabilityPage({
     query = query.eq(`capabilities.${filter.column}`, filter.value)
   }
 
-  const { data: companies } = await query.returns<HomepageCompany[]>()
-  const typedCompanies: HomepageCompany[] = companies ?? []
+  const { data: companies } = await query.returns<HomepageCompanyWithLocations[]>()
+  const typedCompanies: HomepageCompanyWithLocations[] = companies ?? []
 
   const canonicalUrl = getCanonicalUrl(`/capabilities/${definition.slug}`)
   const breadcrumbBaseUrl = getCanonicalUrl("/capabilities")

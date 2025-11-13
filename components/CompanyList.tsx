@@ -5,11 +5,12 @@ import Link from "next/link"
 import { Award, Building2, ChevronRight, MapPin, Users } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
-import type { HomepageCompany } from "@/types/company"
+import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import { filterCompanies } from "@/utils/filtering"
+import { getFacilityLocationLabel } from "@/utils/locationFilters"
 
 interface CompanyListProps {
-  allCompanies: HomepageCompany[]
+  allCompanies: HomepageCompanyWithLocations[]
   limit?: number
 }
 
@@ -81,7 +82,7 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {visibleCompanies.map(company => {
           const facility = company.facilities?.[0]
-          const location = facility?.city && facility?.state ? `${facility.city}, ${facility.state}` : "Multiple"
+          const location = getFacilityLocationLabel(facility)
           const capabilityRecord = company.capabilities?.[0]
           const industries = company.industries ?? []
           const certifications = company.certifications ?? []

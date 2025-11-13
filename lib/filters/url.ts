@@ -1,6 +1,7 @@
 import { STATE_NAMES } from "@/utils/stateMapping"
+import { normalizeCountryCode, normalizeStateFilterValue } from "@/utils/locationFilters"
 
-const US_STATE_CODES = new Set(Object.keys(STATE_NAMES))
+export const US_STATE_CODES = new Set(Object.keys(STATE_NAMES))
 
 const CAPABILITIES = [
   "smt",
@@ -68,15 +69,6 @@ function sortAndDedupe<T extends string>(values: Iterable<T>): T[] {
   return result.sort((a, b) => a.localeCompare(b))
 }
 
-function normalizeState(value: string): string | null {
-  const trimmed = value.trim()
-  if (!trimmed) {
-    return null
-  }
-  const upper = trimmed.toUpperCase()
-  return US_STATE_CODES.has(upper) ? upper : null
-}
-
 function collectValues(params: URLSearchParams, keys: readonly string[]): string[] {
   const collected: string[] = []
   for (const key of keys) {
@@ -96,14 +88,20 @@ function collectValues(params: URLSearchParams, keys: readonly string[]): string
 export function parseFiltersFromSearchParams(searchParams: SearchParamInput): FilterUrlState {
   const params = toURLSearchParams(searchParams)
 
-  const countriesValues = collectValues(params, ["country", "countries"]).map((value) => value.trim().toUpperCase())
-  const stateValues = collectValues(params, ["state", "states"]).map((value) => normalizeState(value))
+  const countriesValues = collectValues(params, ["country", "countries"]).map((value) =>
+    normalizeCountryCode(value) || null,
+  )
+  const stateValues = collectValues(params, ["state", "states"]).map((value) =>
+    normalizeStateFilterValue(value),
+  )
   const capabilityValues = collectValues(params, ["capability", "capabilities"]).map((value) =>
     value.toLowerCase(),
   )
   const volumeValues = collectValues(params, ["volume"]).map((value) => value.toLowerCase())
 
-  const countries = sortAndDedupe(countriesValues.filter((value): value is string => value !== ""))
+  const countries = sortAndDedupe(
+    countriesValues.filter((value): value is string => typeof value === "string" && value.length > 0),
+  )
   const states = sortAndDedupe(stateValues.filter((value): value is string => value !== null))
   const capabilities = sortAndDedupe(
     capabilityValues.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
@@ -118,12 +116,12 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
 
   const normalizedCountries = sortAndDedupe(
     filters.countries
-      .map((country) => country.trim().toUpperCase())
-      .filter((value): value is string => value !== ""),
+      .map((country) => normalizeCountryCode(country))
+      .filter((value): value is string => typeof value === "string" && value.length > 0),
   )
   const normalizedStates = sortAndDedupe(
     filters.states
-      .map((state) => normalizeState(state))
+      .map((state) => normalizeStateFilterValue(state))
       .filter((value): value is string => value !== null),
   )
   const normalizedCapabilities = sortAndDedupe(
