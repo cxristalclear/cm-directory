@@ -32,6 +32,7 @@ type DatabaseCompany = {
   created_at: string
   updated_at: string
   facilities: Array<{
+    state_province: string | null
     city: string | null
     state: string | null
   }> | null
