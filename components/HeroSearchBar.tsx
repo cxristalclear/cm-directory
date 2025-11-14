@@ -1,8 +1,8 @@
 "use client"
 
-import { type FormEvent, useMemo, useState } from "react"
+import { type FormEvent, useMemo, useState, useEffect } from "react"
 import { Search } from "lucide-react"
-import { useDebounce } from "use-debounce"
+import { useDebouncedCallback } from "use-debounce"
 
 import { useFilters } from "@/contexts/FilterContext"
 import { Button } from "@/components/ui/button"
@@ -18,10 +18,28 @@ interface HeroSearchBarProps {
 export default function HeroSearchBar({ className, companies = [] }: HeroSearchBarProps) {
   const { filters, updateFilter } = useFilters()
   const [isFocused, setIsFocused] = useState(false)
-  const [debouncedQuery] = useDebounce(filters.searchQuery, 200)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const [inputValue, setInputValue] = useState(filters.searchQuery)
+
+  useEffect(() => {
+    setInputValue(filters.searchQuery)
+  }, [filters.searchQuery])
+
+  const debouncedUpdateFilter = useDebouncedCallback(
+    (value: string) => {
+      updateFilter("searchQuery", value)
+    },
+    200
+  )
+
+  useEffect(() => {
+    return () => {
+      debouncedUpdateFilter.flush()
+    }
+  }, [debouncedUpdateFilter])
 
   const suggestions = useMemo(() => {
-    const term = debouncedQuery.trim().toLowerCase()
+    const term = inputValue.trim().toLowerCase()
     if (!term) return []
 
     return companies
@@ -32,23 +50,75 @@ export default function HeroSearchBar({ className, companies = [] }: HeroSearchB
         return names.some((name) => name.toLowerCase().includes(term))
       })
       .slice(0, 6)
-  }, [companies, debouncedQuery])
+  }, [companies, filters.searchQuery])
 
   const handleChange = (nextValue: string) => {
-    updateFilter("searchQuery", nextValue.trim())
+    setInputValue(nextValue)
+    debouncedUpdateFilter(nextValue.trim())
   }
 
   const handleSuggestionSelect = (value: string) => {
     updateFilter("searchQuery", value.trim())
+    setInputValue(value.trim())
     setIsFocused(false)
+    setActiveIndex(-1)
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    updateFilter("searchQuery", filters.searchQuery.trim())
+    updateFilter("searchQuery", inputValue.trim())
   }
 
   const showSuggestions = isFocused && suggestions.length > 0
+
+  const [blurTimeoutId, setBlurTimeoutId] = useState<NodeJS.Timeout | null>(null)
+
+  const handleFocus = () => {
+    if (blurTimeoutId) {
+      clearTimeout(blurTimeoutId)
+      setBlurTimeoutId(null)
+    }
+    setIsFocused(true)
+  }
+
+  const handleBlur = () => {
+    const id = setTimeout(() => {
+      setIsFocused(false)
+      setActiveIndex(-1)
+    }, 150)
+    setBlurTimeoutId(id)
+  }
+
+  const suggestionListId = "hero-search-suggestions"
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions) return
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault()
+      setActiveIndex((prev) => {
+        const nextIndex = prev + 1
+        return nextIndex >= suggestions.length ? suggestions.length - 1 : nextIndex
+      })
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault()
+      setActiveIndex((prev) => {
+        const nextIndex = prev - 1
+        return nextIndex < 0 ? -1 : nextIndex
+      })
+    } else if (event.key === "Enter") {
+      if (activeIndex >= 0 && activeIndex < suggestions.length) {
+        event.preventDefault()
+        const selected = suggestions[activeIndex]
+        const displayName = selected.company_name || selected.dba_name || "Untitled Company"
+        handleSuggestionSelect(displayName)
+      }
+    } else if (event.key === "Escape") {
+      event.preventDefault()
+      setIsFocused(false)
+      setActiveIndex(-1)
+    }
+  }
 
   return (
     <form
@@ -68,24 +138,35 @@ export default function HeroSearchBar({ className, companies = [] }: HeroSearchB
           <Input
             id="hero-search-input"
             type="search"
-            value={filters.searchQuery}
+            value={inputValue}
             onChange={(event) => handleChange(event.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => {
-              setTimeout(() => setIsFocused(false), 150)
-            }}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
             placeholder="Search manufacturers by company name"
+            aria-expanded={showSuggestions}
+            aria-controls={showSuggestions ? suggestionListId : undefined}
+            aria-activedescendant={
+              activeIndex >= 0 && showSuggestions ? `${suggestionListId}-option-${activeIndex}` : undefined
+            }
             className="w-full border-white/40 bg-white/95 pl-11 text-base text-slate-900 placeholder:text-slate-500"
           />
           {showSuggestions && (
             <ul
               role="listbox"
+              id={suggestionListId}
               className="absolute left-0 right-0 top-full z-20 mt-2 rounded-2xl border border-white/60 bg-white/95 text-slate-900 shadow-2xl"
             >
-              {suggestions.map((company) => {
+              {suggestions.map((company, index) => {
                 const displayName = company.company_name || company.dba_name || "Untitled Company"
                 return (
-                  <li key={company.id} className="border-b border-slate-100 last:border-0">
+                  <li
+                    key={company.id}
+                    id={`${suggestionListId}-option-${index}`}
+                    role="option"
+                    aria-selected={activeIndex === index}
+                    className="border-b last:border-0"
+                  >
                     <button
                       type="button"
                       className="flex w-full flex-col items-start gap-1 px-4 py-3 text-left hover:bg-blue-50"
