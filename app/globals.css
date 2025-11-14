@@ -331,3 +331,21 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Mapbox popup reset for custom content */
+.mapboxgl-popup.cm-popup {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.mapboxgl-popup.cm-popup .mapboxgl-popup-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.mapboxgl-popup.cm-popup .mapboxgl-popup-tip {
+  display: none !important;
+}

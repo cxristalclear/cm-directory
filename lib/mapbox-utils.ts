@@ -4,6 +4,7 @@ import DOMPurify from 'dompurify'
 export interface PopupContent {
   title: string
   subtitle?: string
+  detailLabel?: string
   linkUrl?: string
   linkText?: string
   className?: string
@@ -13,6 +14,7 @@ export interface PopupContent {
 export interface PopupDataInput {
   title?: unknown
   subtitle?: unknown
+  detailLabel?: unknown
   linkUrl?: unknown
   linkText?: unknown
   className?: unknown
@@ -23,16 +25,31 @@ export interface PopupDataInput {
  * Prevents XSS attacks by using textContent for all dynamic values
  */
 export function createSecurePopup(content: PopupContent, options?: mapboxgl.PopupOptions): mapboxgl.Popup {
-  const popup = new mapboxgl.Popup(options || { offset: 25 })
+  const popupOptions: mapboxgl.PopupOptions = {
+    offset: 25,
+    ...(options || {}),
+  }
+
+  const popup = new mapboxgl.Popup(popupOptions)
+  popup.addClassName('cm-popup')
   
   // Create DOM elements safely
   const container = document.createElement('div')
-  container.className = content.className || 'p-2'
+  container.className =
+    content.className ||
+    'w-64 space-y-2 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur-sm'
+
+  if (content.detailLabel) {
+    const badgeElement = document.createElement('span')
+    badgeElement.className = 'inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600'
+    badgeElement.textContent = content.detailLabel
+    container.appendChild(badgeElement)
+  }
   
   // Title
   if (content.title) {
     const titleElement = document.createElement('h3')
-    titleElement.className = 'font-bold'
+    titleElement.className = 'text-base font-semibold text-slate-900'
     titleElement.textContent = content.title // Safe: uses textContent
     container.appendChild(titleElement)
   }
@@ -40,7 +57,7 @@ export function createSecurePopup(content: PopupContent, options?: mapboxgl.Popu
   // Subtitle
   if (content.subtitle) {
     const subtitleElement = document.createElement('p')
-    subtitleElement.className = 'text-sm'
+    subtitleElement.className = 'text-sm text-slate-600'
     subtitleElement.textContent = content.subtitle // Safe: uses textContent
     container.appendChild(subtitleElement)
   }
@@ -48,7 +65,8 @@ export function createSecurePopup(content: PopupContent, options?: mapboxgl.Popu
   // Link
   if (content.linkUrl && content.linkText) {
     const linkElement = document.createElement('a')
-    linkElement.className = 'text-blue-500 text-sm'
+    linkElement.className =
+      'inline-flex items-center gap-1 text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-full px-2 py-1'
     linkElement.textContent = content.linkText // Safe: uses textContent
     
     // Sanitize URL to prevent javascript: protocol attacks
@@ -56,6 +74,12 @@ export function createSecurePopup(content: PopupContent, options?: mapboxgl.Popu
     if (sanitizedUrl) {
       linkElement.href = sanitizedUrl
     }
+    
+    const arrowElement = document.createElement('span')
+    arrowElement.className = 'text-base'
+    arrowElement.setAttribute('aria-hidden', 'true')
+    arrowElement.textContent = '→'
+    linkElement.appendChild(arrowElement)
     
     container.appendChild(linkElement)
   }
@@ -176,6 +200,12 @@ export function validatePopupData(data: unknown): PopupContent | null {
       validated.subtitle = inputData.subtitle.substring(0, 200)
     }
   }
+
+  if (inputData.detailLabel !== undefined) {
+    if (isString(inputData.detailLabel)) {
+      validated.detailLabel = inputData.detailLabel.substring(0, 60)
+    }
+  }
   
   if (inputData.linkUrl !== undefined && inputData.linkText !== undefined) {
     if (isString(inputData.linkUrl) && isString(inputData.linkText)) {
@@ -218,19 +248,51 @@ export function createPopupFromFacility(
     city?: string | null
     state_province?: string | null
     state?: string | null
+    country?: string | null
+    facility_type?: string | null
   },
   options?: mapboxgl.PopupOptions
 ): mapboxgl.Popup {
   const popupData: PopupContent = {
     title: facility.company?.company_name || 'Unknown Company',
-    subtitle: `${facility.city || 'Unknown City'}, ${facility.state_province || facility.state || 'Unknown State'}`,
+    subtitle: formatLocationLabel(facility),
+    detailLabel: formatFacilityTypeLabel(facility.facility_type),
   }
   
   // Only add link if slug exists
   if (facility.company?.slug) {
     popupData.linkUrl = `/companies/${facility.company.slug}`
-    popupData.linkText = 'View Details →'
+    popupData.linkText = 'View Details'
   }
   
   return createSecurePopup(popupData, options)
+}
+
+function formatLocationLabel(facility: {
+  city?: string | null
+  state_province?: string | null
+  state?: string | null
+  country?: string | null
+}): string {
+  const segments = [facility.city, facility.state_province || facility.state, facility.country]
+    .map(segment => (segment || '').trim())
+    .filter(Boolean)
+
+  return segments.length > 0 ? segments.join(', ') : 'Location unavailable'
+}
+
+function formatFacilityTypeLabel(type?: string | null): string | undefined {
+  if (!type) {
+    return undefined
+  }
+
+  const normalized = type.replace(/[_-]+/g, ' ').trim()
+  if (!normalized) {
+    return undefined
+  }
+
+  return normalized
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }
