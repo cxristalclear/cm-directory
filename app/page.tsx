@@ -16,7 +16,6 @@ import VenkelAd from "@/components/VenkelAd"
 import type { PageProps } from "@/types/nxt"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import Navbar from "@/components/navbar"
-import HeroSearchBar from "@/components/HeroSearchBar"
 
 export const revalidate = 300
 
@@ -129,11 +128,6 @@ export default async function Home({
         <div className="min-h-screen bg-gray-50">
           <Navbar />
           <Header />
-          <section className="-mt-6 px-4">
-            <div className="mx-auto w-full max-w-4xl">
-              <HeroSearchBar companies={companies} />
-            </div>
-          </section>
           <main className="container mx-auto px-4 py-6">
             {/* Top Venkel Ad - Banner */}
             <VenkelAd size="banner" className="mb-6" />
@@ -161,16 +155,18 @@ export default async function Home({
 
                 {/* List */}
                 <div className="companies-directory">
-                  <Suspense fallback={
-                    <div className="bg-white rounded-xl shadow-sm p-8 animate-pulse">
-                      <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-                      <div className="space-y-4">
-                        {[1, 2, 3].map(i => (
-                          <div key={i} className="h-32 bg-gray-200 rounded"></div>
-                        ))}
+                  <Suspense
+                    fallback={
+                      <div className="bg-white rounded-xl shadow-sm p-8 animate-pulse">
+                        <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+                        <div className="space-y-4">
+                          {[1, 2, 3].map(i => (
+                            <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  }>
+                    }
+                  >
                     <CompanyList allCompanies={companies} />
                   </Suspense>
                 </div>

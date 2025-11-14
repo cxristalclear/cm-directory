@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import type { CompanyFormData } from '@/types/admin'
 import CompanyPreview from './CompanyPreview'
 import { normalizeWebsiteUrl } from '@/lib/admin/utils'
+import { DOCUMENT_ACCEPT_ATTRIBUTE, DOCUMENT_TYPE_HINT } from '@/lib/documents/constants'
 
-type Mode = 'single' | 'batch'
+type Mode = 'single' | 'batch' | 'upload'
 
 interface ResearchedCompany {
   id: string
@@ -33,6 +34,13 @@ interface ResearchResultResponse {
   error?: string
   enrichmentData?: string
   enrichmentRaw?: unknown
+}
+
+interface CompanySearchResult {
+  id: string
+  company_name: string | null
+  slug: string | null
+  website_url: string | null
 }
 
 const WEBSITE_PATTERN = /^[a-z0-9][a-z0-9.-]+\.[a-z]{2,}$/i
@@ -126,6 +134,36 @@ function createTempCompanyId(): string {
   return `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
+const SUPPORTED_UPLOAD_EXTENSIONS = ['md', 'markdown', 'txt', 'doc']
+
+function getFileExtension(fileName: string | undefined | null): string | null {
+  if (!fileName) return null
+  const parts = fileName.split('.')
+  if (parts.length < 2) return null
+  return parts.pop()?.toLowerCase() ?? null
+}
+
+function isSupportedUploadFile(file: File | null): boolean {
+  if (!file) return false
+  const extension = getFileExtension(file.name)
+  if (!extension) return false
+  return SUPPORTED_UPLOAD_EXTENSIONS.includes(extension)
+}
+
+function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return '0 B'
+  }
+  const units = ['B', 'KB', 'MB', 'GB']
+  let value = bytes
+  let unitIndex = 0
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex += 1
+  }
+  return `${value.toFixed(value < 10 && unitIndex > 0 ? 1 : 0)} ${units[unitIndex]}`
+}
+
 /**
  * Call the secure AI research API endpoint and return the normalized result.
  * Keeps API details in one place and ensures consumer components get a typed response.
@@ -153,6 +191,21 @@ async function requestResearch(companyName: string, website?: string): Promise<R
   return data
 }
 
+async function requestDocumentResearch(formData: FormData): Promise<ResearchResultResponse> {
+  const response = await fetch('/api/ai/research/upload', {
+    method: 'POST',
+    body: formData,
+  })
+
+  const data = (await response.json().catch(() => null)) as ResearchResultResponse | null
+
+  if (!data) {
+    throw new Error(`Unexpected response from AI document service (HTTP ${response.status})`)
+  }
+
+  return data
+}
+
 export default function AiCompanyResearch({ 
   onSaveCompany, 
   onAllCompaniesSaved 
@@ -161,6 +214,14 @@ export default function AiCompanyResearch({
   const [loading, setLoading] = useState(false)
   const [companyName, setCompanyName] = useState('')
   const [website, setWebsite] = useState('')
+  const [uploadCompanyName, setUploadCompanyName] = useState('')
+  const [uploadCompanySlug, setUploadCompanySlug] = useState('')
+  const [uploadCreateNew, setUploadCreateNew] = useState(true)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [companySearchResults, setCompanySearchResults] = useState<CompanySearchResult[]>([])
+  const [companySearchLoading, setCompanySearchLoading] = useState(false)
+  const [companySearchError, setCompanySearchError] = useState<string | null>(null)
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
   const [batchInput, setBatchInput] = useState('')
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, company: '' })
   const [researchedCompanies, setResearchedCompanies] = useState<ResearchedCompany[]>([])
@@ -176,6 +237,149 @@ export default function AiCompanyResearch({
     currentCompanyName: '',
     errors: [],
   })
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const selectedCompanyNameRef = useRef<string>('')
+  const searchAbortControllerRef = useRef<AbortController | null>(null)
+  const searchDebounceRef = useRef<number | null>(null)
+  const [isDraggingFile, setIsDraggingFile] = useState(false)
+
+  const resetUploadFileInput = () => {
+    setUploadFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleFileSelection = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null
+    setUploadFile(file)
+    if (file && !isSupportedUploadFile(file)) {
+      setError(`Unsupported file type. Upload ${DOCUMENT_TYPE_HINT}.`)
+    }
+  }
+
+  useEffect(() => {
+    const query = uploadCompanyName.trim()
+
+    if (searchDebounceRef.current) {
+      window.clearTimeout(searchDebounceRef.current)
+      searchDebounceRef.current = null
+    }
+
+    if (searchAbortControllerRef.current) {
+      searchAbortControllerRef.current.abort()
+    }
+
+    if (query.length < 2) {
+      setCompanySearchResults([])
+      setCompanySearchLoading(false)
+      setCompanySearchError(null)
+      return
+    }
+
+    const controller = new AbortController()
+    searchAbortControllerRef.current = controller
+    setCompanySearchError(null)
+
+    searchDebounceRef.current = window.setTimeout(async () => {
+      try {
+        setCompanySearchLoading(true)
+        const response = await fetch(`/api/admin/companies/search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        })
+        if (!response.ok) {
+          throw new Error('Failed to search companies')
+        }
+        const data = (await response.json()) as { companies?: CompanySearchResult[] }
+        setCompanySearchResults(data.companies ?? [])
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Company search failed', err)
+          setCompanySearchError('Unable to search companies')
+        }
+      } finally {
+        setCompanySearchLoading(false)
+      }
+    }, 250) as unknown as number
+
+    return () => {
+      if (searchDebounceRef.current) {
+        window.clearTimeout(searchDebounceRef.current)
+        searchDebounceRef.current = null
+      }
+      controller.abort()
+    }
+  }, [uploadCompanyName])
+
+  useEffect(() => {
+    if (!selectedCompanyId) {
+      return
+    }
+    if (uploadCompanyName.trim() !== selectedCompanyNameRef.current.trim()) {
+      clearCompanySelection({ clearSlug: true })
+    }
+  }, [uploadCompanyName, selectedCompanyId])
+
+  useEffect(() => {
+    if (uploadCreateNew) {
+      clearCompanySelection({ clearSlug: true })
+    }
+  }, [uploadCreateNew])
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    if (!isDraggingFile) {
+      setIsDraggingFile(true)
+    }
+  }
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    if (isDraggingFile) {
+      setIsDraggingFile(false)
+    }
+  }
+
+  const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDraggingFile(false)
+    const file = event.dataTransfer.files?.[0] ?? null
+    if (file) {
+      if (isSupportedUploadFile(file)) {
+        setUploadFile(file)
+      } else {
+        setError(`Unsupported file type. Upload ${DOCUMENT_TYPE_HINT}.`)
+      }
+    }
+  }
+
+  const synchronizeSlugWithSelection = (result?: CompanySearchResult | null) => {
+    if (result?.slug) {
+      setUploadCompanySlug(result.slug)
+    } else {
+      setUploadCompanySlug('')
+    }
+  }
+
+  const clearCompanySelection = (options?: { clearSlug?: boolean }) => {
+    setSelectedCompanyId(null)
+    selectedCompanyNameRef.current = ''
+    const shouldClearSlug = options?.clearSlug ?? uploadCreateNew
+    if (shouldClearSlug) {
+      setUploadCompanySlug('')
+    }
+  }
+
+  const handleCompanySelect = (result: CompanySearchResult) => {
+    const safeName = result.company_name || ''
+    setUploadCompanyName(safeName)
+    synchronizeSlugWithSelection(result)
+    setUploadCreateNew(false)
+    setSelectedCompanyId(result.id)
+    selectedCompanyNameRef.current = safeName
+    setCompanySearchResults([])
+    setCompanySearchError(null)
+  }
 
   const handleSingleResearch = async () => {
     const { name: extractedName, website: inlineWebsite } = splitNameAndWebsite(companyName)
@@ -321,6 +525,61 @@ export default function AiCompanyResearch({
     } finally {
       setLoading(false)
       setBatchProgress({ current: 0, total: 0, company: '' })
+    }
+  }
+
+  const handleUploadResearch = async () => {
+    const normalizedName = uploadCompanyName.trim()
+    if (!normalizedName) {
+      setError('Please enter the company name (or slug) for this document.')
+      return
+    }
+
+    if (!uploadFile) {
+      setError('Select a document to upload.')
+      return
+    }
+
+    if (!isSupportedUploadFile(uploadFile)) {
+      setError(`Unsupported file type. Upload ${DOCUMENT_TYPE_HINT}.`)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    setResearchedCompanies([])
+
+    try {
+      const formData = new FormData()
+      formData.append('file', uploadFile)
+      formData.append('fileName', uploadFile.name)
+      formData.append('companyName', normalizedName)
+      formData.append('createNew', String(uploadCreateNew))
+      if (uploadCompanySlug.trim()) {
+        formData.append('companySlug', uploadCompanySlug.trim())
+      }
+
+      const result = await requestDocumentResearch(formData)
+
+      if (result.success && result.data) {
+        setResearchedCompanies([
+          {
+            id: createTempCompanyId(),
+            data: result.data,
+            enrichmentInfo:
+              result.enrichmentData || `Uploaded document: ${uploadFile.name}`,
+            enrichmentPayload: result.enrichmentRaw,
+          },
+        ])
+        setCurrentPreviewIndex(0)
+        resetUploadFileInput()
+      } else {
+        setError(result.error || 'Failed to process uploaded document')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to process uploaded document')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -491,6 +750,11 @@ export default function AiCompanyResearch({
   }
 
   const currentCompany = researchedCompanies[currentPreviewIndex]
+  const trimmedUploadName = uploadCompanyName.trim()
+  const shouldShowSearchDropdown =
+    trimmedUploadName.length >= 2 &&
+    !selectedCompanyId &&
+    (companySearchLoading || companySearchResults.length > 0 || !!companySearchError)
 
   return (
     <div className="space-y-6">
@@ -502,7 +766,7 @@ export default function AiCompanyResearch({
           </h2>
         </div>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex flex-wrap gap-4 mb-6">
           <button
             type="button"
             onClick={() => setMode('single')}
@@ -526,6 +790,18 @@ export default function AiCompanyResearch({
             disabled={loading || isSavingAll}
           >
             Batch Mode
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('upload')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              mode === 'upload'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            disabled={loading || isSavingAll}
+          >
+            Upload Doc
           </button>
         </div>
 
@@ -569,6 +845,153 @@ export default function AiCompanyResearch({
             >
               <span>🔍</span>
               {loading ? 'Researching...' : 'Research Company'}
+            </button>
+          </div>
+        )}
+
+        {mode === 'upload' && (
+          <div className="space-y-5">
+            <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <input
+                id="uploadCreateNew"
+                type="checkbox"
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={uploadCreateNew}
+                onChange={(e) => setUploadCreateNew(e.target.checked)}
+                disabled={loading || isSavingAll}
+              />
+              <label htmlFor="uploadCreateNew" className="text-sm text-gray-700">
+                <span className="font-medium">Create a new company record</span>
+                <span className="block text-xs text-gray-500">
+                  Uncheck this if you are updating an existing company from the document upload.
+                </span>
+              </label>
+            </div>
+
+            <div className="relative">
+              <label htmlFor="uploadCompanyName" className="block text-sm font-medium text-gray-700 mb-1">
+                Company Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="uploadCompanyName"
+                value={uploadCompanyName}
+                onChange={(e) => setUploadCompanyName(e.target.value)}
+                placeholder="e.g., Kodiak Assembly Solutions"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={loading || isSavingAll}
+                autoComplete="off"
+              />
+              {selectedCompanyId && !uploadCreateNew && (
+                <p className="mt-1 text-xs text-green-700">
+                  Linked to existing company. Slug will be included automatically.
+                </p>
+              )}
+              {shouldShowSearchDropdown && (
+                <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-xl">
+                  {companySearchLoading && (
+                    <div className="px-4 py-3 text-sm text-gray-500">Searching companies…</div>
+                  )}
+                  {!companySearchLoading && companySearchResults.length === 0 && (
+                    <div className="px-4 py-3 text-sm text-gray-500">No companies found.</div>
+                  )}
+                  {companySearchResults.map((result) => (
+                    <button
+                      type="button"
+                      key={result.id}
+                      className="flex w-full flex-col items-start gap-1 px-4 py-3 text-left hover:bg-blue-50"
+                      onClick={() => handleCompanySelect(result)}
+                    >
+                      <span className="text-sm font-medium text-gray-900">
+                        {result.company_name ?? 'Unnamed company'}
+                      </span>
+                      <span className="text-xs text-gray-500 flex flex-wrap gap-2">
+                        {result.slug && <span>slug: {result.slug}</span>}
+                        {result.website_url && <span>{result.website_url}</span>}
+                      </span>
+                    </button>
+                  ))}
+                  {companySearchError && (
+                    <div className="px-4 py-3 text-sm text-red-600 border-t border-gray-100">
+                      {companySearchError}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {!uploadCreateNew && (
+              <div>
+                <label htmlFor="uploadCompanySlug" className="block text-sm font-medium text-gray-700 mb-1">
+                  Existing Slug
+                </label>
+                <input
+                  type="text"
+                  id="uploadCompanySlug"
+                  value={uploadCompanySlug}
+                  onChange={(e) => setUploadCompanySlug(e.target.value)}
+                  placeholder="kodiak-assembly"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading || isSavingAll}
+                />
+                <p className="mt-1 text-xs text-gray-500">Auto-filled when you pick a company from the list.</p>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Upload Company Document <span className="text-red-500">*</span>
+              </label>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleFileDrop}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    fileInputRef.current?.click()
+                  }
+                }}
+                className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${
+                  isDraggingFile
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-300 bg-white hover:border-blue-400'
+                } ${loading || isSavingAll ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+              >
+                <p className="text-sm font-medium text-gray-900">Drop your Markdown or Word document here</p>
+                <p className="mt-2 text-xs text-gray-500">Supported: {DOCUMENT_TYPE_HINT}</p>
+                {uploadFile && (
+                  <div className="mt-4 text-sm text-gray-700">
+                    <p className="font-medium">{uploadFile.name}</p>
+                    <p className="text-xs text-gray-500">{formatFileSize(uploadFile.size)}</p>
+                  </div>
+                )}
+                {!uploadFile && (
+                  <p className="mt-4 text-xs text-gray-500">Click to browse your files</p>
+                )}
+              </div>
+              <input
+                type="file"
+                id="uploadFile"
+                accept={DOCUMENT_ACCEPT_ATTRIBUTE}
+                ref={fileInputRef}
+                onChange={handleFileSelection}
+                className="sr-only"
+                disabled={loading || isSavingAll}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleUploadResearch}
+              disabled={loading || isSavingAll || !uploadFile || !trimmedUploadName}
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <span>📄</span>
+              {loading ? 'Processing document...' : 'Process Uploaded Document'}
             </button>
           </div>
         )}

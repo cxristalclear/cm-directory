@@ -361,11 +361,11 @@ export default function CompanyPreview({
         )}
     </div>
 
-      {/* Enrichment Info */}
+      {/* Source Notes */}
       {enrichmentInfo && (
         <details className="mb-6">
           <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
-            View ZoomInfo Enrichment Data
+            View Source Data
           </summary>
           <div className="mt-2 p-3 bg-gray-50 rounded-lg">
             <pre className="text-xs text-gray-600 whitespace-pre-wrap">{enrichmentInfo}</pre>

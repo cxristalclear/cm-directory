@@ -7,6 +7,7 @@ describe('filter URL helpers', () => {
       states: ['TX', 'CA'],
       capabilities: ['prototyping', 'smt'],
       productionVolume: 'high',
+      searchQuery: '',
     })
 
     expect(params.toString()).toBe(
@@ -20,6 +21,7 @@ describe('filter URL helpers', () => {
       states: ['CA', 'TX'],
       capabilities: ['prototyping', 'smt'],
       productionVolume: 'high',
+      searchQuery: '',
     })
   })
 
@@ -36,7 +38,8 @@ describe('filter URL helpers', () => {
       countries: [],
       states: [], 
       capabilities: [], 
-      productionVolume: null 
+      productionVolume: null,
+      searchQuery: '',
     })
   })
 
@@ -46,6 +49,7 @@ describe('filter URL helpers', () => {
       states: ['TX', 'CA'],
       capabilities: ['smt', 'prototyping'],
       productionVolume: 'medium',
+      searchQuery: '',
     })
 
     expect(params.toString()).toBe(
@@ -59,6 +63,7 @@ describe('filter URL helpers', () => {
       state: ['ca', 'ny'],
       capability: ['SMT', 'through_hole'],
       volume: 'LOW',
+      q: '',
     })
 
     expect(parsed).toEqual({
@@ -66,6 +71,7 @@ describe('filter URL helpers', () => {
       states: ['CA', 'NY'],
       capabilities: ['smt', 'through_hole'],
       productionVolume: 'low',
+      searchQuery: '',
     })
   })
 
@@ -75,6 +81,7 @@ describe('filter URL helpers', () => {
       states: [],
       capabilities: [],
       productionVolume: null,
+      searchQuery: '',
     })
 
     expect(params.toString()).toBe('countries=CA&countries=MX&countries=US')
@@ -89,6 +96,7 @@ describe('filter URL helpers', () => {
       states: [],
       capabilities: [],
       productionVolume: null,
+      searchQuery: '',
     })
 
     expect(params.toString()).toBe('')
@@ -104,6 +112,7 @@ describe('filter URL helpers', () => {
       states: ['TX'],
       capabilities: [],
       productionVolume: null,
+      searchQuery: '',
     })
   })
 

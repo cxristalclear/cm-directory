@@ -39,15 +39,17 @@ describe('sitemap metadata serialization', () => {
       }
 
       if (table === 'facilities') {
+        const or = jest.fn().mockResolvedValue({
+          data: [
+            { state: 'CA', updated_at: '2024-03-29T08:15:00Z' },
+            { state: 'CA', updated_at: '2024-03-30T08:15:00Z' },
+            { state: 'TX', updated_at: null },
+          ],
+        })
+
         return {
           select: jest.fn().mockReturnValue({
-            not: jest.fn().mockResolvedValue({
-              data: [
-                { state: 'CA', updated_at: '2024-03-29T08:15:00Z' },
-                { state: 'CA', updated_at: '2024-03-30T08:15:00Z' },
-                { state: 'TX', updated_at: null },
-              ],
-            }),
+            or,
           }),
         }
       }
@@ -113,4 +115,3 @@ describe('sitemap metadata serialization', () => {
     }
   })
 })
-

@@ -104,7 +104,11 @@ export function parseFiltersFromSearchParams(searchParams: SearchParamInput): Fi
   const countries = sortAndDedupe(
     countriesValues.filter((value): value is string => typeof value === "string" && value.length > 0),
   )
-  const states = sortAndDedupe(stateValues.filter((value): value is string => value !== null))
+  const states = sortAndDedupe(
+    stateValues
+      .map((value) => (typeof value === "string" ? value.toUpperCase() : null))
+      .filter((value): value is string => Boolean(value) && US_STATE_CODES.has(value)),
+  )
   const capabilities = sortAndDedupe(
     capabilityValues.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
   )
@@ -141,7 +145,7 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
     params.append("volume", filters.productionVolume)
   }
 
-  const trimmedQuery = filters.searchQuery.trim()
+  const trimmedQuery = (typeof filters.searchQuery === "string" ? filters.searchQuery : "").trim()
   if (trimmedQuery.length > 0) {
     params.append("q", trimmedQuery)
   }

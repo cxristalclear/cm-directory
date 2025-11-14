@@ -1,6 +1,6 @@
 "use client"
 
-import { type FormEvent, useMemo, useState, useEffect } from "react"
+import { type FormEvent, useMemo, useState, useEffect, useId } from "react"
 import { Search } from "lucide-react"
 import { useDebouncedCallback } from "use-debounce"
 
@@ -10,12 +10,19 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/components/utils"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 
+type HeroSearchVariant = "hero" | "inline"
+
 interface HeroSearchBarProps {
   className?: string
   companies?: HomepageCompanyWithLocations[]
+  variant?: HeroSearchVariant
 }
 
-export default function HeroSearchBar({ className, companies = [] }: HeroSearchBarProps) {
+export default function HeroSearchBar({
+  className,
+  companies = [],
+  variant = "hero",
+}: HeroSearchBarProps) {
   const { filters, updateFilter } = useFilters()
   const [isFocused, setIsFocused] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -52,7 +59,7 @@ export default function HeroSearchBar({ className, companies = [] }: HeroSearchB
         return names.some((name) => name.toLowerCase().includes(term))
       })
       .slice(0, 6)
-  }, [companies, filters.searchQuery])
+  }, [companies, inputValue])
 
   const handleChange = (nextValue: string) => {
     setInputValue(nextValue)
@@ -73,15 +80,15 @@ export default function HeroSearchBar({ className, companies = [] }: HeroSearchB
 
   const showSuggestions = isFocused && suggestions.length > 0
 
-const [blurTimeoutId, setBlurTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const [blurTimeoutId, setBlurTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null)
 
-useEffect(() => {
-  return () => {
-    if (blurTimeoutId) {
-      clearTimeout(blurTimeoutId)
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutId) {
+        clearTimeout(blurTimeoutId)
+      }
     }
-  }
-}, [blurTimeoutId])
+  }, [blurTimeoutId])
   const handleFocus = () => {
     if (blurTimeoutId) {
       clearTimeout(blurTimeoutId)
@@ -98,7 +105,8 @@ useEffect(() => {
     setBlurTimeoutId(id)
   }
 
-  const suggestionListId = "hero-search-suggestions"
+  const generatedId = useId()
+  const suggestionListId = `${generatedId}-hero-search-suggestions`
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (!showSuggestions) return
@@ -129,11 +137,29 @@ useEffect(() => {
     }
   }
 
+  const formClasses =
+    variant === "inline"
+      ? "flex flex-col gap-2 rounded-xl border border-slate-200 bg-white/90 p-3 text-slate-900 shadow-sm md:flex-row md:items-center"
+      : "flex w-full flex-col gap-3 rounded-3xl border border-white/20 bg-white/10 p-3 text-white shadow-lg backdrop-blur md:flex-row md:items-center"
+
+  const inputClasses =
+    variant === "inline"
+      ? "w-full border-slate-200 bg-transparent pl-10 text-sm text-slate-900 placeholder:text-slate-500"
+      : "w-full border-white/40 bg-white/95 pl-11 text-base text-slate-900 placeholder:text-slate-500"
+
+  const buttonClasses =
+    variant === "inline"
+      ? "w-full rounded-xl md:w-auto"
+      : "w-full rounded-2xl bg-white text-blue-600 hover:bg-white md:w-auto"
+
+  const iconColor =
+    variant === "inline" ? "text-slate-400" : "text-blue-600/80"
+
   return (
     <form
       onSubmit={handleSubmit}
       className={cn(
-        "flex w-full flex-col gap-3 rounded-3xl border border-white/20 bg-white/10 p-3 text-white shadow-lg backdrop-blur md:flex-row md:items-center",
+        formClasses,
         className,
       )}
       aria-label="Search manufacturers by name"
@@ -143,7 +169,7 @@ useEffect(() => {
           Search manufacturers by company name
         </label>
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
+          <Search className={cn("pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2", iconColor)} />
           <Input
             id="hero-search-input"
             type="search"
@@ -158,7 +184,7 @@ useEffect(() => {
             aria-activedescendant={
               activeIndex >= 0 && showSuggestions ? `${suggestionListId}-option-${activeIndex}` : undefined
             }
-            className="w-full border-white/40 bg-white/95 pl-11 text-base text-slate-900 placeholder:text-slate-500"
+            className={inputClasses}
           />
           {showSuggestions && (
             <ul
@@ -194,11 +220,7 @@ useEffect(() => {
           )}
         </div>
       </div>
-      <Button
-        type="submit"
-        size="lg"
-        className="w-full rounded-2xl bg-white text-blue-600 hover:bg-white md:w-auto"
-      >
+      <Button type="submit" size={variant === "inline" ? "sm" : "lg"} className={buttonClasses}>
         Search
       </Button>
     </form>

@@ -1,4 +1,8 @@
-import { researchCompany, snapshotMatchesRequest } from '@/lib/ai/researchCompany'
+import {
+  researchCompany,
+  researchCompanyFromDocument,
+  snapshotMatchesRequest,
+} from '@/lib/ai/researchCompany'
 import { callOpenAI } from '@/lib/ai/openaiClient'
 import { enrichCompanyData, formatEnrichmentData } from '@/lib/ai/zoomInfoEnrich'
 
@@ -82,9 +86,9 @@ describe('researchCompany data normalization', () => {
       facility_type: 'HQ',
       street_address: '123 Main St',
       city: 'Austin',
-      state: 'TX',
-      zip_code: '78701',
-      country: 'US',
+      state_province: 'TX',
+      postal_code: '78701',
+      country: 'United States',
       is_primary: true,
       latitude: 30.25,
       longitude: -97.75,
@@ -154,8 +158,62 @@ describe('researchCompany data normalization', () => {
     expect(data?.facilities?.[0]).toMatchObject({
       street_address: '1 Innovation Way',
       city: 'Denver',
-      state: 'CO',
+      state_province: 'CO',
     })
+  })
+})
+
+describe('researchCompanyFromDocument', () => {
+  let logSpy: jest.SpyInstance
+
+  beforeEach(() => {
+    jest.resetAllMocks()
+    logSpy = jest.spyOn(console, 'log').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    logSpy.mockRestore()
+  })
+
+  it('converts document text into structured data', async () => {
+    mockedCallOpenAI.mockResolvedValueOnce(
+      JSON.stringify({
+        company_name: 'Document Driven Co.',
+        facilities: [
+          {
+            facility_type: 'HQ',
+            city: 'Austin',
+            state: 'TX',
+            country: 'USA',
+          },
+        ],
+        capabilities: {
+          pcb_assembly_smt: true,
+        },
+      })
+    )
+
+    const result = await researchCompanyFromDocument({
+      documentText: 'Document Driven Co. operates an HQ in Austin, TX.',
+      fileName: 'profile.md',
+      companyNameHint: 'Document Driven Co.',
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.data?.company_name).toBe('Document Driven Co.')
+    expect(result.data?.facilities?.[0].city).toBe('Austin')
+    expect(result.enrichmentData).toContain('Source Document')
+  })
+
+  it('fails fast when the document is empty', async () => {
+    const result = await researchCompanyFromDocument({
+      documentText: '   ',
+      fileName: 'empty.md',
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toMatch(/did not contain/)
+    expect(mockedCallOpenAI).not.toHaveBeenCalled()
   })
 })
 

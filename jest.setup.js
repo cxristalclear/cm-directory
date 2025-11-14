@@ -1,15 +1,31 @@
 require('@testing-library/jest-dom')
 
-// Mock mapboxgl
-jest.mock('mapbox-gl', () => ({
-  Popup: jest.fn(() => ({
-    setDOMContent: jest.fn().mockReturnThis(),
-  }))
-}))
-
-// Mock DOMPurify
-jest.mock('dompurify', () => ({
-  default: {
-    sanitize: jest.fn((html) => html)
+jest.mock('mapbox-gl', () => {
+  class Popup {
+    addClassName() {
+      return this
+    }
+    setDOMContent() {
+      return this
+    }
+    setLngLat() {
+      return this
+    }
+    addTo() {
+      return this
+    }
   }
-}))
+
+  return {
+    Popup: jest.fn(() => new Popup()),
+  }
+})
+
+jest.mock('dompurify', () => {
+  const sanitize = jest.fn((html) => html)
+  return {
+    __esModule: true,
+    default: { sanitize },
+    sanitize,
+  }
+})
