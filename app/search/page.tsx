@@ -220,9 +220,9 @@ export default async function SearchPage({
           <div className="relative z-10 py-8 md:py-12">
             <div className="container mx-auto px-4 text-center">
               <div className="mx-auto max-w-4xl">
-                <h2 className="mb-3 text-3xl font-bold leading-tight text-white md:text-5xl">
+                <h1 className="mb-3 text-3xl font-bold leading-tight text-white md:text-5xl">
                   Find Your Next Manufacturing Partner
-                </h2>
+                </h1>
                 <p className="mb-6 text-lg leading-relaxed text-blue-100 md:text-xl">
                   Connect with verified contract manufacturers. Use interactive filters to discover contract manufacturers aligned with your technical, compliance, and capacity requirements.
                 </p>
@@ -234,8 +234,7 @@ export default async function SearchPage({
             <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
           </div>
         </div>
-      </header>      
-        <main className="container mx-auto -mt-12 px-4 pb-16">
+      </header>        <main className="container mx-auto -mt-12 px-4 pb-16">
           <div className="rounded-2xl border border-white/40 bg-white/80 p-4 shadow-lg backdrop-blur">
             <Breadcrumbs
               items={[
