@@ -1,5 +1,6 @@
-import React, { act } from "react"
+import React from "react"
 import { createRoot } from "react-dom/client"
+import { act } from "react-dom/test-utils"
 import { computeAccessibleName } from "dom-accessibility-api"
 
 import CompanyHeader from "@/components/CompanyHeader"

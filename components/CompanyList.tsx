@@ -8,6 +8,7 @@ import { useFilters } from "@/contexts/FilterContext"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import { filterCompanies } from "@/utils/filtering"
 import { getFacilityLocationLabel } from "@/utils/locationFilters"
+import HeroSearchBar from "@/components/HeroSearchBar"
 
 interface CompanyListProps {
   allCompanies: HomepageCompanyWithLocations[]
@@ -73,9 +74,16 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
   return (
     <div className="space-y-6">
       {/* Header with Results Count */}
-      <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
-        <h2 className="text-2xl font-bold text-gray-900">Companies Directory</h2>
-        <span className="text-sm font-medium text-gray-600">{summary}</span>
+      <div className="rounded-xl bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Companies Directory</h2>
+            <span className="text-sm font-medium text-gray-600">{summary}</span>
+          </div>
+          <div className="w-full max-w-md">
+            <HeroSearchBar companies={allCompanies} variant="inline" />
+          </div>
+        </div>
       </div>
 
       {/* Company Grid */}

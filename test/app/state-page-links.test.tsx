@@ -33,6 +33,11 @@ jest.mock("@/components/Header", () => ({
   default: () => <header data-testid="header" />,
 }))
 
+jest.mock("@/components/DirectorySummary", () => ({
+  __esModule: true,
+  default: () => <div data-testid="directory-summary" />,
+}))
+
 jest.mock("@/components/FilterDebugger", () => ({
   __esModule: true,
   default: () => <div data-testid="filter-debugger" />,
