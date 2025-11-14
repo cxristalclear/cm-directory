@@ -17,6 +17,7 @@ export type FilterState = {
   states: string[]
   capabilities: CapabilitySlug[]
   productionVolume: ProductionVolume | null
+  searchQuery: string
 }
 
 export type FilterContextType = {

@@ -92,6 +92,16 @@ export default function ActiveFiltersBar() {
     )
   }
 
+  if (filters.searchQuery.trim()) {
+    chips.push(
+      <Chip
+        key="searchQuery"
+        label={`Name: ${filters.searchQuery.trim()}`}
+        onRemove={() => updateFilter("searchQuery", "")}
+      />,
+    )
+  }
+
   // Then capability chips
   for (const capability of filters.capabilities) {
     chips.push(

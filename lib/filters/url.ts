@@ -33,6 +33,7 @@ export type FilterUrlState = {
   states: string[]
   capabilities: CapabilitySlug[]
   productionVolume: ProductionVolume | null
+  searchQuery: string
 }
 
 function toURLSearchParams(input: SearchParamInput): URLSearchParams {
@@ -98,6 +99,7 @@ export function parseFiltersFromSearchParams(searchParams: SearchParamInput): Fi
     value.toLowerCase(),
   )
   const volumeValues = collectValues(params, ["volume"]).map((value) => value.toLowerCase())
+  const queryValues = collectValues(params, ["q", "query", "search"])
 
   const countries = sortAndDedupe(
     countriesValues.filter((value): value is string => typeof value === "string" && value.length > 0),
@@ -108,7 +110,9 @@ export function parseFiltersFromSearchParams(searchParams: SearchParamInput): Fi
   )
   const productionVolume = volumeValues.find((value): value is ProductionVolume => isProductionVolume(value)) ?? null
 
-  return { countries, states, capabilities, productionVolume }
+  const searchQuery = queryValues[0]?.trim() ?? ""
+
+  return { countries, states, capabilities, productionVolume, searchQuery }
 }
 
 export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSearchParams {
@@ -135,6 +139,11 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
 
   if (filters.productionVolume && isProductionVolume(filters.productionVolume)) {
     params.append("volume", filters.productionVolume)
+  }
+
+  const trimmedQuery = filters.searchQuery.trim()
+  if (trimmedQuery.length > 0) {
+    params.append("q", trimmedQuery)
   }
 
   return params

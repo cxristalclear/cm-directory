@@ -16,6 +16,7 @@ import VenkelAd from "@/components/VenkelAd"
 import type { PageProps } from "@/types/nxt"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import Navbar from "@/components/navbar"
+import HeroSearchBar from "@/components/HeroSearchBar"
 
 export const revalidate = 300
 
@@ -128,6 +129,11 @@ export default async function Home({
         <div className="min-h-screen bg-gray-50">
           <Navbar />
           <Header />
+          <section className="-mt-6 px-4">
+            <div className="mx-auto w-full max-w-4xl">
+              <HeroSearchBar companies={companies} />
+            </div>
+          </section>
           <main className="container mx-auto px-4 py-6">
             {/* Top Venkel Ad - Banner */}
             <VenkelAd size="banner" className="mb-6" />

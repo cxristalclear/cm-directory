@@ -75,9 +75,16 @@ export function buildFacilityAddress(facility: FacilityAddressLike): string {
   addPart(facility.city)
   addPart(getStateProvince(facility))  // ✅ Uses compatibility layer
   addPart(getPostalCode(facility))     // ✅ Uses compatibility layer
-  const countryDisplay =
-    facility.country ||
-    (facility.country_code ? formatCountryLabel(normalizeCountryCode(facility.country_code) || facility.country_code) : undefined)
+  const normalizedCountry = facility.country_code
+    ? normalizeCountryCode(facility.country_code)
+    : facility.country
+      ? normalizeCountryCode(facility.country)
+      : null
+  const isoCountry =
+    normalizedCountry && /^[A-Z]{2}$/.test(normalizedCountry) ? normalizedCountry : null
+  const countryDisplay = isoCountry
+    ? formatCountryLabel(isoCountry)
+    : facility.country || undefined
   addPart(countryDisplay)
 
   return parts.join(', ')

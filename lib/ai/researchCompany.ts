@@ -356,6 +356,8 @@ Remember:
         zip_code?: string
         postal_code?: string
         country?: string
+        country_code?: string
+        state_code?: string
         facility_size_sqft?: number | null
         employees_at_location?: number | null
         key_capabilities?: string
@@ -469,7 +471,6 @@ Remember:
       if (typeof value === 'number' && Number.isFinite(value)) {
         return value
       }
-
       if (typeof value === 'string') {
         const parsed = Number.parseFloat(value)
         return Number.isFinite(parsed) ? parsed : null
@@ -481,21 +482,30 @@ Remember:
     type ParsedFacility = NonNullable<ParsedCompanyData['facilities']>[number]
 
     const mapFacility = (f: ParsedFacility): NonNullable<CompanyFormData['facilities']>[number] => {
-      const normalizedCountryCode = normalizeCountryCode(f.country)
+      const rawCountryInput = f.country_code || f.country || null
+      const normalizedCountryCandidate = rawCountryInput
+        ? normalizeCountryCode(rawCountryInput)
+        : null
+      const isoCountryCode =
+        normalizedCountryCandidate && /^[A-Z]{2}$/.test(normalizedCountryCandidate)
+          ? normalizedCountryCandidate
+          : null
+      const hasDeclaredCountry = Boolean(rawCountryInput && rawCountryInput.trim?.())
+
       const rawStateValue = f.state || f.state_province || null
       const normalizedStateCode = normalizeStateFilterValue(rawStateValue)
       let resolvedStateText = f.state || f.state_province || undefined
       if (!resolvedStateText && normalizedStateCode) {
         resolvedStateText = formatStateLabelFromKey(normalizedStateCode)
       }
-      const inferredCountry =
-        inferCountryCodeFromStateKey(normalizedStateCode) ||
-        inferCountryCodeFromState(resolvedStateText)
 
-      const finalCountryCode =
-        inferredCountry && inferredCountry !== normalizedCountryCode
-          ? inferredCountry
-          : normalizedCountryCode || inferredCountry || undefined
+      const inferredCountry =
+        !hasDeclaredCountry
+          ? inferCountryCodeFromStateKey(normalizedStateCode) ||
+            inferCountryCodeFromState(resolvedStateText)
+          : null
+
+      const finalCountryCode = isoCountryCode || inferredCountry || undefined
 
       const displayCountry =
         f.country?.trim() ||

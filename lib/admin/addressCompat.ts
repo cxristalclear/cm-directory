@@ -50,7 +50,9 @@ export function prepareFacilityForDB<T extends FacilityAddress>(facility: T): T 
   const stateCode = normalizeStateFilterValue(facility.state_code || rawStateValue)
   const stateValue = rawStateValue || (stateCode ? formatStateLabelFromKey(stateCode) : null)
   const postalValue = getPostalCode(facility)
-  const countryCode = normalizeCountryCode(facility.country_code || facility.country)
+  const normalizedCountry = normalizeCountryCode(facility.country_code || facility.country)
+  const countryCode =
+    normalizedCountry && /^[A-Z]{2}$/.test(normalizedCountry) ? normalizedCountry : null
   const displayCountry =
     facility.country?.trim() ||
     (countryCode ? getCountryName(countryCode) || countryCode : null)

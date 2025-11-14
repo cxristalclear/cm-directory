@@ -36,10 +36,12 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
     if (!formData.facilities) return []
 
     return formData.facilities.map((facility) => {
-      const selectedCountryCode =
-        facility.country_code ||
-        (facility.country ? normalizeCountryCode(facility.country) : null) ||
-        ''
+            const rawCountryCode =
+              facility.country_code ||
+              (facility.country ? normalizeCountryCode(facility.country) : null) ||
+              ''
+            const selectedCountryCode =
+              rawCountryCode && /^[A-Z]{2}$/.test(rawCountryCode) ? rawCountryCode : ''
       if (!selectedCountryCode) {
         return []
       }
@@ -90,10 +92,15 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
 
   const handleCountryInput = (index: number, value: string) => {
     const trimmed = value.trim()
-    const normalized = trimmed && trimmed.length <= 3 ? normalizeCountryCode(trimmed) : null
+    const normalizedCandidate =
+      trimmed && trimmed.length <= 3 ? normalizeCountryCode(trimmed) : null
+    const isoCode =
+      normalizedCandidate && /^[A-Z]{2}$/.test(normalizedCandidate)
+        ? normalizedCandidate
+        : null
     patchFacility(index, {
       country: value || null,
-      country_code: normalized,
+      country_code: isoCode,
     })
   }
 
