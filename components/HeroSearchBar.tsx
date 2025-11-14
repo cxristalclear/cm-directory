@@ -22,8 +22,10 @@ export default function HeroSearchBar({ className, companies = [] }: HeroSearchB
   const [inputValue, setInputValue] = useState(filters.searchQuery)
 
   useEffect(() => {
-    setInputValue(filters.searchQuery)
-  }, [filters.searchQuery])
+    if (!isFocused) {
+      setInputValue(filters.searchQuery)
+    }
+  }, [filters.searchQuery, isFocused])
 
   const debouncedUpdateFilter = useDebouncedCallback(
     (value: string) => {
@@ -50,7 +52,7 @@ export default function HeroSearchBar({ className, companies = [] }: HeroSearchB
         return names.some((name) => name.toLowerCase().includes(term))
       })
       .slice(0, 6)
-  }, [companies, inputValue])
+  }, [companies, filters.searchQuery])
 
   const handleChange = (nextValue: string) => {
     setInputValue(nextValue)
@@ -71,8 +73,15 @@ export default function HeroSearchBar({ className, companies = [] }: HeroSearchB
 
   const showSuggestions = isFocused && suggestions.length > 0
 
-  const [blurTimeoutId, setBlurTimeoutId] = useState<NodeJS.Timeout | null>(null)
+const [blurTimeoutId, setBlurTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null)
 
+useEffect(() => {
+  return () => {
+    if (blurTimeoutId) {
+      clearTimeout(blurTimeoutId)
+    }
+  }
+}, [blurTimeoutId])
   const handleFocus = () => {
     if (blurTimeoutId) {
       clearTimeout(blurTimeoutId)

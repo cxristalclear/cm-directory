@@ -16,8 +16,7 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
+  --destructive-foreground: oklch(0.985 0 0);  --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
@@ -133,15 +132,15 @@
 
 /* Glass morphism effect */
 .glass-effect {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(var(--background), 0.95);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border);
 }
 
 /* Custom scrollbar */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f5f9;
+  scrollbar-color: var(--border) var(--background);
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -149,17 +148,17 @@
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--background);
   border-radius: 3px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--border);
   border-radius: 3px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--muted-foreground);
 }
 
 /* Line clamp utilities with standard property */
@@ -197,7 +196,7 @@
 
 /* Loading states */
 .loading-shimmer {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--muted) 25%, var(--border) 50%, var(--muted) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -206,7 +205,7 @@
 /* stylelint-disable-next-line at-rule-no-unknown */
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn--sm {
@@ -226,63 +225,63 @@
   }
 
   .btn--primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700;
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
   }
 
   .btn--secondary {
-    @apply bg-white/20 text-white backdrop-blur-sm hover:bg-white/30;
+    @apply bg-secondary text-secondary-foreground backdrop-blur-sm hover:bg-secondary/80;
   }
 
   .btn--outline {
-    @apply border border-gray-300 bg-white text-gray-700 hover:bg-gray-50;
+    @apply border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground;
   }
 
   .btn--outline-primary {
-    @apply border border-blue-200 bg-white text-blue-700 hover:border-blue-300 hover:bg-blue-50;
+    @apply border border-primary/40 bg-background text-primary hover:border-primary hover:bg-primary/5;
   }
 
   .btn--ghost {
-    @apply text-blue-700 hover:bg-blue-50 hover:text-blue-800;
+    @apply text-primary hover:bg-primary/10 hover:text-primary;
   }
 
   .btn--destructive {
-    @apply bg-red-600 text-white hover:bg-red-700;
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
   }
 
   .btn--muted {
-    @apply bg-slate-100 text-slate-700 hover:bg-slate-200;
+    @apply bg-muted text-muted-foreground hover:bg-muted/80;
   }
 
   .btn--subtle {
-    @apply bg-transparent text-gray-600 hover:bg-gray-100;
+    @apply bg-transparent text-muted-foreground hover:bg-muted/40;
   }
 
   .btn--link {
-    @apply bg-transparent px-0 py-0 text-blue-600 underline-offset-4 hover:underline;
+    @apply bg-transparent px-0 py-0 text-primary underline-offset-4 hover:text-primary/80 hover:underline;
   }
 
   .btn--pill {
-    @apply inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 transition-colors;
+    @apply inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary transition-colors;
   }
 
   .btn--pill-primary {
-    @apply rounded-full bg-blue-50 hover:bg-blue-100;
+    @apply rounded-full bg-primary/10 text-primary hover:bg-primary/20;
   }
 
   .btn-accordion {
-    @apply flex w-full items-center justify-between rounded-md bg-gray-50 px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+    @apply flex w-full items-center justify-between rounded-md bg-muted px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
 
   .btn-close {
-    @apply inline-flex items-center justify-center rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+    @apply inline-flex items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
 
   .btn-fab {
-    @apply inline-flex items-center justify-center rounded-full p-4 shadow-xl transition-shadow hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+    @apply inline-flex items-center justify-center rounded-full p-4 shadow-xl transition-shadow hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
 
   .btn-chip-remove {
-    @apply inline-flex items-center justify-center rounded-full p-1 text-neutral-500 transition-colors hover:bg-neutral-200/60 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+    @apply inline-flex items-center justify-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
 
   .btn-map-style {
@@ -290,15 +289,15 @@
   }
 
   .btn-map-style--active {
-    @apply bg-blue-600 text-white;
+    @apply bg-primary text-primary-foreground;
   }
 
   .btn-map-style--inactive {
-    @apply bg-gray-100 text-gray-600 hover:bg-gray-200;
+    @apply bg-muted text-muted-foreground hover:bg-muted/80;
   }
 
   .btn-map-reset {
-    @apply rounded-lg border border-gray-200/50 bg-white/90 p-2 text-gray-600 shadow-sm backdrop-blur-sm transition-colors duration-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+    @apply rounded-lg border border-border/60 bg-card/90 p-2 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors duration-200 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
 
   .btn-tab {
@@ -306,11 +305,11 @@
   }
 
   .btn-tab--active {
-    @apply border-blue-600 text-blue-600;
+    @apply border-primary text-primary;
   }
 
   .btn-tab--inactive {
-    @apply text-gray-500 hover:text-gray-700;
+    @apply text-muted-foreground hover:text-foreground;
   }
 }
 
@@ -333,19 +332,19 @@
 }
 
 /* Mapbox popup reset for custom content */
-.mapboxgl-popup.cm-popup {
-  background: transparent !important;
-  box-shadow: none !important;
+.mapboxgl-map .mapboxgl-popup.cm-popup {
+  background: transparent;
+  box-shadow: none;
 }
 
-.mapboxgl-popup.cm-popup .mapboxgl-popup-content {
-  background: transparent !important;
-  box-shadow: none !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
+.mapboxgl-map .mapboxgl-popup.cm-popup .mapboxgl-popup-content {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 
-.mapboxgl-popup.cm-popup .mapboxgl-popup-tip {
-  display: none !important;
+.mapboxgl-map .mapboxgl-popup.cm-popup .mapboxgl-popup-tip {
+  display: none;
 }
