@@ -472,6 +472,17 @@ const toBoolean = (value: unknown): boolean => {
   return Boolean(value)
 }
 
+const toNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+  return undefined
+}
+
 const normalizeCapabilities = (
   value: ParsedCompanyData['capabilities']
 ): NonNullable<CompanyFormData['capabilities']> => {
@@ -554,14 +565,14 @@ function normalizeCompanyPayload(parsedData: ParsedCompanyData, options: Normali
           smallest_component_size: parsedData.technical_specs.smallest_component_size || undefined,
           finest_pitch_capability: parsedData.technical_specs.finest_pitch_capability || undefined,
           max_pcb_size_inches: parsedData.technical_specs.max_pcb_size_inches || undefined,
-          max_pcb_layers: parsedData.technical_specs.max_pcb_layers || undefined,
-          lead_free_soldering: parsedData.technical_specs.lead_free_soldering || false,
-          conformal_coating: parsedData.technical_specs.conformal_coating || false,
-          potting_encapsulation: parsedData.technical_specs.potting_encapsulation || false,
-          x_ray_inspection: parsedData.technical_specs.x_ray_inspection || false,
-          aoi_inspection: parsedData.technical_specs.aoi_inspection || false,
-          flying_probe_testing: parsedData.technical_specs.flying_probe_testing || false,
-          burn_in_testing: parsedData.technical_specs.burn_in_testing || false,
+          max_pcb_layers: toNumber(parsedData.technical_specs.max_pcb_layers),
+          lead_free_soldering: toBoolean(parsedData.technical_specs.lead_free_soldering),
+          conformal_coating: toBoolean(parsedData.technical_specs.conformal_coating),
+          potting_encapsulation: toBoolean(parsedData.technical_specs.potting_encapsulation),
+          x_ray_inspection: toBoolean(parsedData.technical_specs.x_ray_inspection),
+          aoi_inspection: toBoolean(parsedData.technical_specs.aoi_inspection),
+          flying_probe_testing: toBoolean(parsedData.technical_specs.flying_probe_testing),
+          burn_in_testing: toBoolean(parsedData.technical_specs.burn_in_testing),
           clean_room_class: parsedData.technical_specs.clean_room_class || undefined,
         }
       : {},
@@ -571,15 +582,19 @@ function normalizeCompanyPayload(parsedData: ParsedCompanyData, options: Normali
           prototype_lead_time: parsedData.business_info.prototype_lead_time || undefined,
           production_lead_time: parsedData.business_info.production_lead_time || undefined,
           payment_terms: parsedData.business_info.payment_terms || undefined,
-          rush_order_capability:
-            parsedData.business_info.rush_orders || parsedData.business_info.rush_order_capability || false,
-          twenty_four_seven_production:
-            parsedData.business_info.twentyfour_seven ||
-              parsedData.business_info.twenty_four_seven_production || false,
+          rush_order_capability: toBoolean(
+            parsedData.business_info.rush_orders ?? parsedData.business_info.rush_order_capability
+          ),
+          twenty_four_seven_production: toBoolean(
+            parsedData.business_info.twentyfour_seven ??
+              parsedData.business_info.twenty_four_seven_production
+          ),
           engineering_support_hours: parsedData.business_info.engineering_support_hours || undefined,
           sales_territory: parsedData.business_info.sales_territory || undefined,
-          notable_customers: parsedData.notable_customers || undefined,
-          awards_recognition: parsedData.awards || undefined,
+          notable_customers:
+            parsedData.business_info.notable_customers ?? parsedData.notable_customers || undefined,
+          awards_recognition:
+            parsedData.business_info.awards ?? parsedData.awards || undefined,
         }
       : {},
   }
