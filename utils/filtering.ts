@@ -15,6 +15,16 @@ export function filterCompanies(
   filters: FilterState,
 ): HomepageCompanyWithLocations[] {
   let filtered = [...companies]
+  const searchTerm = filters.searchQuery.trim().toLowerCase()
+
+  if (searchTerm) {
+    filtered = filtered.filter((company) => {
+      const candidates = [company.company_name, company.dba_name].filter(
+        (value): value is string => typeof value === "string" && value.length > 0,
+      )
+      return candidates.some((value) => value.toLowerCase().includes(searchTerm))
+    })
+  }
 
   // Countries filter
   if (filters.countries.length > 0) {

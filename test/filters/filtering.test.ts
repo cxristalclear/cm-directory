@@ -7,6 +7,7 @@ const baseFilters: FilterState = {
   states: [],
   capabilities: [],
   productionVolume: null,
+  searchQuery: "",
 }
 
 const facilityWithCountry = (
@@ -36,12 +37,14 @@ const facilityWithoutCountry = (): HomepageFacility =>
 const buildCompany = (
   slug: string,
   facilities: HomepageFacility[],
+  overrides: Partial<HomepageCompanyWithLocations> = {},
 ): HomepageCompanyWithLocations =>
   ({
     id: slug,
     slug,
     company_name: slug,
     facilities,
+    ...overrides,
   } as unknown as HomepageCompanyWithLocations)
 
 describe('filtering utilities', () => {
@@ -80,5 +83,17 @@ describe('filtering utilities', () => {
 
     const result = filterCompanies(companies, filters)
     expect(result.map((company) => company.slug)).toEqual(['intl'])
+  })
+
+  it('filters companies by search query across company and DBA names', () => {
+    const filters: FilterState = { ...baseFilters, searchQuery: 'alpha' }
+    const companies = [
+      buildCompany('alpha', [], { company_name: 'Alpha Manufacturing Group' }),
+      buildCompany('beta', [], { company_name: 'Beta Labs', dba_name: 'Alpha Solutions' }),
+      buildCompany('gamma', [], { company_name: 'Gamma Corp' }),
+    ]
+
+    const result = filterCompanies(companies, filters)
+    expect(result.map((company) => company.slug)).toEqual(['alpha', 'beta'])
   })
 })

@@ -11,7 +11,6 @@ import { parseFiltersFromSearchParams, type CapabilitySlug, type FilterUrlState 
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import FilterDebugger from "@/components/FilterDebugger"
-import Header from "@/components/Header"
 import { FilterErrorBoundary } from "@/components/FilterErrorBoundary"
 import { MapErrorBoundary } from "@/components/MapErrorBoundary"
 import { supabase } from "@/lib/supabase"
@@ -184,6 +183,10 @@ function buildActiveFilterLabels(filterState: FilterUrlState): string[] {
     labels.push(volumeLabel)
   }
 
+  if (filterState.searchQuery.trim()) {
+    labels.push(`Name: ${filterState.searchQuery.trim()}`)
+  }
+
   return labels
 }
 
@@ -200,6 +203,7 @@ export default async function SearchPage({
     states: filterState.states,
     capabilities: filterState.capabilities,
     productionVolume: filterState.productionVolume,
+    searchQuery: filterState.searchQuery,
   }
 
   const companies = await getData()
@@ -211,9 +215,26 @@ export default async function SearchPage({
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <Header />
-
-
+      <header className="relative overflow-hidden">
+        <div className="gradient-bg">
+          <div className="relative z-10 py-8 md:py-12">
+            <div className="container mx-auto px-4 text-center">
+              <div className="mx-auto max-w-4xl">
+                <h2 className="mb-3 text-3xl font-bold leading-tight text-white md:text-5xl">
+                  Find Your Next Manufacturing Partner
+                </h2>
+                <p className="mb-6 text-lg leading-relaxed text-blue-100 md:text-xl">
+                  Connect with verified contract manufacturers. Use interactive filters to discover contract manufacturers aligned with your technical, compliance, and capacity requirements.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
+            <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
+          </div>
+        </div>
+      </header>      
         <main className="container mx-auto -mt-12 px-4 pb-16">
           <div className="rounded-2xl border border-white/40 bg-white/80 p-4 shadow-lg backdrop-blur">
             <Breadcrumbs
@@ -223,8 +244,6 @@ export default async function SearchPage({
               ]}
             />
           </div>
-
-
           <section className="mt-8 space-y-6">
 
             {/* Top Content Ad - Native/Sponsored */}
