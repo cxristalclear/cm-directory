@@ -50,7 +50,7 @@ export default function HeroSearchBar({ className, companies = [] }: HeroSearchB
         return names.some((name) => name.toLowerCase().includes(term))
       })
       .slice(0, 6)
-  }, [companies, filters.searchQuery])
+  }, [companies, inputValue])
 
   const handleChange = (nextValue: string) => {
     setInputValue(nextValue)

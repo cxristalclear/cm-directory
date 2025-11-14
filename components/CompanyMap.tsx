@@ -29,6 +29,8 @@ type FacilityFeatureProperties = {
   company_slug: string
   city: string
   state: string
+  state_province: string
+  country: string
   facility_type: string
 }
 
@@ -111,6 +113,8 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
           company_slug: facility.company.slug!, // The '!' tells TypeScript we're sure it's not null here
           city: facility.city || '',
           state: getFacilityStateLabel(facility) || '',
+          state_province: facility.state_province || facility.state || '',
+          country: facility.country || '',
           facility_type: facility.facility_type || 'Manufacturing'
         }
       }))
@@ -249,7 +253,10 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
           slug: props.company_slug
         },
         city: props.city,
-        state: props.state
+        state: props.state,
+        state_province: props.state_province,
+        country: props.country,
+        facility_type: props.facility_type,
       })
 
       popup.setLngLat(coordinates).addTo(map.current)
