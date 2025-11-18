@@ -2,7 +2,7 @@ import type { Point } from 'geojson'
 
 import type { FacilityFormData } from '@/types/admin'
 export type FetchImplementation = typeof fetch
-import { getStateProvince, getPostalCode } from './addressCompat'
+import { getStateProvince, getPostalCode, hasMinimumAddressData } from './addressCompat'
 import { formatCountryLabel, normalizeCountryCode } from '@/utils/locationFilters'
 
 export type NullableString = string | null | undefined
@@ -195,3 +195,39 @@ export async function geocodeFacilityToPoint(
     pointWkt: formatPointAsWkt(result.latitude, result.longitude),
   }
 }
+
+export async function geocodeFacilityFormData<T extends FacilityFormData>(
+  facility: T,
+  options: GeocodeFacilityOptions = {},
+): Promise<T> {
+  if (!hasMinimumAddressData(facility)) {
+    return facility
+  }
+
+  const hasCoords =
+    typeof facility.latitude === 'number' &&
+    Number.isFinite(facility.latitude) &&
+    typeof facility.longitude === 'number' &&
+    Number.isFinite(facility.longitude)
+
+  if (hasCoords) {
+    return facility
+  }
+
+  try {
+    const result = await geocodeFacility(facility, options)
+    return {
+      ...facility,
+      latitude: result.latitude,
+      longitude: result.longitude,
+    } as T
+  } catch (error) {
+    console.warn('Geocoding failed for facility:', error)
+    return facility
+  }
+}
+
+/**
+ * Geocode a facility and update its coordinates in the database
+ * Can be called from anywhere: AI research, admin panel, bulk scripts
+ */

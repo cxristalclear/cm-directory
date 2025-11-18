@@ -246,7 +246,7 @@ interface ParsedCompanyData {
     facility_size_sqft?: number | null
     employees_at_location?: number | null
     key_capabilities?: string
-    is_primary?: boolean
+    is_primary?: boolean | string | null
     latitude?: number | string | null
     longitude?: number | string | null
     location?: unknown
@@ -314,6 +314,8 @@ interface ParsedCompanyData {
     twenty_four_seven_production?: boolean
     engineering_support_hours?: string
     sales_territory?: string
+    notable_customers?: string
+    awards?: string
   }
   key_differentiators?: string
   notable_customers?: string
@@ -592,9 +594,9 @@ function normalizeCompanyPayload(parsedData: ParsedCompanyData, options: Normali
           engineering_support_hours: parsedData.business_info.engineering_support_hours || undefined,
           sales_territory: parsedData.business_info.sales_territory || undefined,
           notable_customers:
-            parsedData.business_info.notable_customers ?? parsedData.notable_customers || undefined,
+            parsedData.business_info.notable_customers ?? parsedData.notable_customers ?? undefined,
           awards_recognition:
-            parsedData.business_info.awards ?? parsedData.awards || undefined,
+            parsedData.business_info.awards ?? parsedData.awards ?? undefined,
         }
       : {},
   }

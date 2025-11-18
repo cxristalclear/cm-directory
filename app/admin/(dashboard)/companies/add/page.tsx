@@ -9,6 +9,7 @@ import type { Database } from '@/lib/database.types'
 import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData, normalizeWebsiteUrl } from '@/lib/admin/utils'
 import { toast } from 'sonner'
 import { prepareFacilityForDB } from '@/lib/admin/addressCompat'
+import { geocodeFacilityFormData } from '@/lib/admin/geocoding'
 
 type CompanyInsert = Database['public']['Tables']['companies']['Insert']
 type FacilityInsert = Database['public']['Tables']['facilities']['Insert']
@@ -81,23 +82,27 @@ export default function AddCompanyPage() {
 
       // Insert facilities
       if (normalizedFormData.facilities && normalizedFormData.facilities.length > 0) {
-        const facilitiesInsert: FacilityInsert[] = normalizedFormData.facilities.map((f) => 
+        const facilitiesWithCoords = await Promise.all(
+          normalizedFormData.facilities.map(async (facility) => geocodeFacilityFormData(facility))
+        )
+
+        const facilitiesInsert: FacilityInsert[] = facilitiesWithCoords.map((f) =>
           prepareFacilityForDB({
-          company_id: company.id,
-          facility_type: f.facility_type,
-          street_address: f.street_address || null,
-          city: f.city || null,
-          state_province: f.state_province || f.state || null,
-          state_code: f.state_code || null,
-          postal_code: f.postal_code || f.zip_code || null,
-          country: f.country || null,
-          country_code: f.country_code || null,
-          is_primary: f.is_primary || false,
-          latitude: typeof f.latitude === 'number' ? f.latitude : null,
-          longitude: typeof f.longitude === 'number' ? f.longitude : null,
-          location: f.location ?? null,
-        })
-      )
+            company_id: company.id,
+            facility_type: f.facility_type,
+            street_address: f.street_address || null,
+            city: f.city || null,
+            state_province: f.state_province || f.state || null,
+            state_code: f.state_code || null,
+            postal_code: f.postal_code || f.zip_code || null,
+            country: f.country || null,
+            country_code: f.country_code || null,
+            is_primary: f.is_primary || false,
+            latitude: typeof f.latitude === 'number' ? f.latitude : null,
+            longitude: typeof f.longitude === 'number' ? f.longitude : null,
+            location: f.location ?? null,
+          })
+        )
 
         const { error: facilitiesError } = await supabase
           .from('facilities')
