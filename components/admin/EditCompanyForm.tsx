@@ -10,6 +10,7 @@ import type { Database } from '@/lib/database.types'
 import { getFieldChanges, logCompanyChanges, validateCompanyData, ensureUniqueSlug, generateSlug, normalizeWebsiteUrl } from '@/lib/admin/utils'
 import { toast } from 'sonner'
 import { prepareFacilityForDB } from '@/lib/admin/addressCompat'
+import { geocodeFacilityFormData } from '@/lib/admin/geocoding'
 import { formatCountryLabel, normalizeCountryCode, normalizeStateFilterValue } from '@/utils/locationFilters'
 
 
@@ -212,7 +213,11 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
       }
 
       if (formData.facilities && formData.facilities.length > 0) {
-        const facilitiesData: FacilityInsert[] = formData.facilities.map(f => 
+        const facilitiesWithCoords = await Promise.all(
+          formData.facilities.map(async (facility) => geocodeFacilityFormData(facility))
+        )
+
+        const facilitiesData: FacilityInsert[] = facilitiesWithCoords.map(f => 
           prepareFacilityForDB({
             company_id: company.id,
             facility_type: f.facility_type,
