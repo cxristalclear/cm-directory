@@ -214,7 +214,14 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
 
       if (formData.facilities && formData.facilities.length > 0) {
         const facilitiesWithCoords = await Promise.all(
-          formData.facilities.map(async (facility) => geocodeFacilityFormData(facility))
+          formData.facilities.map(async (facility) => {
+            try {
+              return await geocodeFacilityFormData(facility)
+            } catch (error) {
+              console.warn('Geocoding failed for facility, using existing coordinates:', error)
+              return facility
+            }
+          })
         )
 
         const facilitiesData: FacilityInsert[] = facilitiesWithCoords.map(f => 

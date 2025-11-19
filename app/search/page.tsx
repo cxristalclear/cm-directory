@@ -183,10 +183,9 @@ function buildActiveFilterLabels(filterState: FilterUrlState): string[] {
     labels.push(volumeLabel)
   }
 
-  if (filterState.searchQuery.trim()) {
+  if (filterState.searchQuery?.trim()) {
     labels.push(`Name: ${filterState.searchQuery.trim()}`)
   }
-
   return labels
 }
 

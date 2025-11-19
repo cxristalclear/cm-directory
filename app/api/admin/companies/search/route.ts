@@ -13,6 +13,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ companies: [], error: 'Unauthorized' }, { status: 401 })
     }
 
+    const userMetadata = user.user_metadata as Record<string, unknown> | null
+    const appMetadata = user.app_metadata as Record<string, unknown> | null
+    const metadataRole =
+      typeof userMetadata?.role === 'string'
+        ? userMetadata.role
+        : typeof appMetadata?.role === 'string'
+        ? appMetadata.role
+        : undefined
+    const role = metadataRole ?? user.role
+
+    if (role !== 'admin') {
+      return NextResponse.json({ companies: [], error: 'Forbidden' }, { status: 403 })
+    }
+
     const query = new URL(request.url).searchParams.get('q')?.trim()
     if (!query || query.length < 2) {
       return NextResponse.json({ companies: [] })

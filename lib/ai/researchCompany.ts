@@ -342,6 +342,9 @@ function parseAiCompanyPayload(aiResponse: string): ParsedCompanyData {
   const cleanedResponse = sanitizeAiResponse(aiResponse)
   const parsed: unknown = JSON.parse(cleanedResponse)
   if (Array.isArray(parsed)) {
+    if (parsed.length === 0) {
+      throw new Error('AI returned an empty array')
+    }
     return parsed[0] as ParsedCompanyData
   }
   return parsed as ParsedCompanyData

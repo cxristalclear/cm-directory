@@ -24,8 +24,11 @@ export async function geocodeAndUpdateFacility(
     .eq('id', facilityId)
     .single()
 
-  if (fetchError || !facility) {
-    throw new Error('Facility not found')
+  if (fetchError) {
+    throw new Error(`Failed to fetch facility: ${fetchError.message}`)
+  }
+  if (!facility) {
+    throw new Error(`Facility not found with id: ${facilityId}`)
   }
 
   const geocodeResult = await geocodeFacility(facility as FacilityAddressLike, options)

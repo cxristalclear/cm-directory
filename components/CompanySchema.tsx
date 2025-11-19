@@ -87,10 +87,18 @@ export const buildCompanyJsonLd = (
         const postal = primaryFacility.postal_code || primaryFacility.zip_code || undefined
         const countryLabel =
           primaryFacility.country ||
-          (primaryFacility.country_code
-            ? formatCountryLabel(primaryFacility.country_code)
-            : undefined) ||
-          'US'
+          (primaryFacility.country_code ? formatCountryLabel(primaryFacility.country_code) : undefined)
+
+        const hasAddressFields =
+          Boolean(primaryFacility.street_address) ||
+          Boolean(primaryFacility.city) ||
+          Boolean(region) ||
+          Boolean(postal) ||
+          Boolean(countryLabel)
+
+        if (!hasAddressFields) {
+          return undefined
+        }
 
         return {
           '@type': 'PostalAddress',
@@ -98,7 +106,7 @@ export const buildCompanyJsonLd = (
           ...(primaryFacility.city && { addressLocality: primaryFacility.city }),
           ...(region && { addressRegion: region }),
           ...(postal && { postalCode: postal }),
-          addressCountry: countryLabel,
+          ...(countryLabel && { addressCountry: countryLabel }),
         }
       })()
     : undefined

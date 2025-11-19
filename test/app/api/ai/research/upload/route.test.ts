@@ -23,6 +23,8 @@ jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(),
 }))
 
+type CreateClientReturn = ReturnType<typeof createClient>
+
 const mockedResearchCompanyFromDocument = researchCompanyFromDocument as jest.MockedFunction<
   typeof researchCompanyFromDocument
 >
@@ -66,12 +68,12 @@ class PolyfilledFile {
       this.data.byteOffset,
       this.data.byteOffset + this.data.byteLength
     )
-    return arrayBuffer
+    return arrayBuffer as ArrayBuffer
   }
 }
 
 if (typeof global.File === 'undefined' || typeof File.prototype.arrayBuffer !== 'function') {
-  ;(global as typeof globalThis & { File: typeof PolyfilledFile }).File = PolyfilledFile
+  ;(globalThis as unknown as { File?: typeof PolyfilledFile }).File = PolyfilledFile
 }
 
 const buildSupabaseClient = () => {
@@ -103,7 +105,7 @@ const buildRequest = (entries: FormEntries): NextRequest =>
 describe('POST /api/ai/research/upload', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    mockedCreateClient.mockResolvedValue(buildSupabaseClient() as any)
+    mockedCreateClient.mockResolvedValue(buildSupabaseClient() as unknown as CreateClientReturn)
   })
 
   it('returns 401 when the user is not authenticated', async () => {
@@ -112,7 +114,7 @@ describe('POST /api/ai/research/upload', () => {
       data: { user: null },
       error: new Error('Missing session'),
     })
-    mockedCreateClient.mockResolvedValueOnce(supabase as any)
+    mockedCreateClient.mockResolvedValueOnce(supabase as unknown as CreateClientReturn)
 
     const response = await POST(buildRequest({}))
     expect(response.status).toBe(401)
@@ -123,7 +125,7 @@ describe('POST /api/ai/research/upload', () => {
   })
 
   it('rejects when no file is provided', async () => {
-    const response = await POST(buildRequest(new FormData()))
+    const response = await POST(buildRequest({}))
 
     expect(response.status).toBe(400)
     await expect(response.json()).resolves.toEqual({

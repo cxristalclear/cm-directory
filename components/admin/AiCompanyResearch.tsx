@@ -134,7 +134,7 @@ function createTempCompanyId(): string {
   return `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-const SUPPORTED_UPLOAD_EXTENSIONS = ['md', 'markdown', 'txt', 'doc']
+const SUPPORTED_UPLOAD_EXTENSIONS = ['md', 'markdown', 'txt', 'doc', 'docx']
 
 function getFileExtension(fileName: string | undefined | null): string | null {
   if (!fileName) return null
@@ -252,9 +252,14 @@ export default function AiCompanyResearch({
 
   const handleFileSelection = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null
-    setUploadFile(file)
     if (file && !isSupportedUploadFile(file)) {
       setError(`Unsupported file type. Upload ${DOCUMENT_TYPE_HINT}.`)
+      setUploadFile(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    } else {
+      setUploadFile(file)
     }
   }
 
