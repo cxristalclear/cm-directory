@@ -81,7 +81,7 @@ export function buildFacilityAddress(facility: FacilityAddressLike): string {
       ? normalizeCountryCode(facility.country)
       : null
   const isoCountry =
-    normalizedCountry && /^[A-Z]{2}$/.test(normalizedCountry) ? normalizedCountry : null
+  normalizedCountry && /^[a-z]{2}$/.test(normalizedCountry) ? normalizedCountry : null
   const countryDisplay = isoCountry
     ? formatCountryLabel(isoCountry)
     : facility.country || undefined
@@ -228,6 +228,6 @@ export async function geocodeFacilityFormData<T extends FacilityFormData>(
 }
 
 /**
- * Geocode a facility and update its coordinates in the database
- * Can be called from anywhere: AI research, admin panel, bulk scripts
+ * Geocode a facility and return it with updated latitude/longitude coordinates.
+ * Returns the original facility unchanged if geocoding fails or coordinates already exist.
  */

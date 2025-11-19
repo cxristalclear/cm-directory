@@ -38,7 +38,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (!stateValue) {
       continue
     }
-
+    
+    // Prioritize state_code (newer field) with fallback to state during migration
     const stateMetadata = getStateMetadataByAbbreviation(stateValue)
     if (!stateMetadata) {
       continue

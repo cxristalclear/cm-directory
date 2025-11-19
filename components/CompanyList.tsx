@@ -7,7 +7,7 @@ import { Award, Building2, ChevronRight, MapPin, Users } from "lucide-react"
 import { useFilters } from "@/contexts/FilterContext"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import { filterCompanies } from "@/utils/filtering"
-import { getFacilityLocationLabel } from "@/utils/locationFilters"
+import { getFacilityLocationLabel, getFacilityCountryCode, normalizeStateFilterValue } from "@/utils/locationFilters"
 import HeroSearchBar from "@/components/HeroSearchBar"
 
 interface CompanyListProps {
@@ -91,6 +91,13 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
         {visibleCompanies.map(company => {
           const facility = company.facilities?.[0]
           const location = getFacilityLocationLabel(facility)
+          const normalizedRegionCode = facility
+            ? normalizeStateFilterValue(facility.state_code) ??
+              normalizeStateFilterValue(facility.state_province) ??
+              normalizeStateFilterValue(facility.state)
+            : null
+          const normalizedCountryCode = facility ? getFacilityCountryCode(facility) : null
+          const locationCodes = [normalizedRegionCode, normalizedCountryCode].filter(Boolean).join(" • ")
           const capabilityRecord = company.capabilities?.[0]
           const industries = company.industries ?? []
           const certifications = company.certifications ?? []
@@ -135,10 +142,13 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
                     <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-100">
                       <MapPin className="h-3 w-3 text-blue-600" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-500">Location</p>
-                      <p className="truncate text-sm font-semibold text-gray-900">{location}</p>
-                    </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-gray-500">Location</p>
+                        <p className="truncate text-sm font-semibold text-gray-900">{location}</p>
+                        {locationCodes && (
+                          <p className="truncate text-xs font-semibold text-gray-500">{locationCodes}</p>
+                        )}
+                      </div>
                   </div>
                   <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-md bg-purple-100">

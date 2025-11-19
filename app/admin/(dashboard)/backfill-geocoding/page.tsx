@@ -66,7 +66,7 @@ export default function BackfillGeocodingPage() {
 
       for (const facility of facilities) {
         const companyName = facility.companies?.company_name || 'Unknown Company'
-        const location = `${facility.city}, ${facility.state_province || facility.state || ''}`.replace(/,\s*$/, '')
+        const location = `${facility.city || 'Unknown'}, ${facility.state_province || facility.state || ''}`.replace(/,\s*$/, '')
 
         try {
           // Geocode

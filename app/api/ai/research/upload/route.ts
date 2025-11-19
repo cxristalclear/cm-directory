@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`Document upload requested by user: ${user.email}`)
+    console.log(`Document upload requested by user: ${user.id}`)
 
     const formData = await request.formData().catch(() => null)
     if (!formData) {
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer()
     let documentText: string
     try {
-      documentText = extractTextFromDocument(Buffer.from(arrayBuffer), fileName)
+      documentText = await extractTextFromDocument(Buffer.from(arrayBuffer), fileName)
     } catch (error) {
       console.error('Failed to extract document text:', error)
       return NextResponse.json(

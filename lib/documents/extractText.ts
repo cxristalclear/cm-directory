@@ -1,3 +1,7 @@
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import WordExtractor from 'word-extractor'
 import { TextDecoder } from 'util'
 import { DOCUMENT_EXTENSIONS, DOCUMENT_TYPE_HINT } from './constants'
 
@@ -33,7 +37,33 @@ function cleanupWhitespace(input: string): string {
     .trim()
 }
 
-function decodeDocBuffer(buffer: Buffer): string {
+async function decodeDocBuffer(buffer: Buffer): Promise<string> {
+  let tempDir: string | null = null
+  try {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cm-doc-'))
+    const tempFile = path.join(tempDir, 'upload.doc')
+    await fs.writeFile(tempFile, buffer)
+
+    const extractor = new WordExtractor()
+    const document = await extractor.extract(tempFile)
+    const bodyText = typeof document?.getBody === 'function' ? document.getBody() : ''
+    const cleaned = cleanupWhitespace(bodyText ?? '')
+
+    if (cleaned) {
+      return cleaned
+    }
+  } catch (error) {
+    console.warn('WordExtractor failed to parse .doc file, falling back to legacy decoding:', error)
+  } finally {
+    if (tempDir) {
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => undefined)
+    }
+  }
+
+  return decodeDocBufferLegacy(buffer)
+}
+
+function decodeDocBufferLegacy(buffer: Buffer): string {
   const decoder = new TextDecoder('utf-16le', { fatal: false })
   let utf16Text = ''
   try {
@@ -56,15 +86,15 @@ export function isSupportedDocument(fileName: string): boolean {
   return extension !== null && SUPPORTED_EXTENSIONS.has(extension)
 }
 
-export function extractTextFromDocument(buffer: Buffer, fileName: string): string {
+export async function extractTextFromDocument(buffer: Buffer, fileName: string): Promise<string> {
   const extension = getExtension(fileName)
 
   if (!extension || !SUPPORTED_EXTENSIONS.has(extension)) {
-    throw new Error('Unsupported file type. Upload .md, .txt, or .doc files.')
+    throw new Error(`Unsupported file type. Supported extensions: ${DOCUMENT_EXTENSIONS.join(', ')}`)
   }
 
   if (extension === 'doc') {
-    const extracted = decodeDocBuffer(buffer)
+    const extracted = await decodeDocBuffer(buffer)
     if (!extracted) {
       throw new Error('Unable to extract text from the uploaded .doc file.')
     }
@@ -72,7 +102,8 @@ export function extractTextFromDocument(buffer: Buffer, fileName: string): strin
   }
 
   const text = buffer.toString('utf8')
-  return stripBom(text)
+  const stripped = stripBom(text)
+  return cleanupWhitespace(stripped)
 }
 
 export { DOCUMENT_TYPE_HINT as SUPPORTED_DOCUMENT_HINT }
