@@ -54,26 +54,26 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
 
     type CompanyFacility = NonNullable<HomepageCompanyWithLocations["facilities"]>[number]
 
-    allCompanies.forEach(company => {
-      const facilityMatchesLocation = (facility: CompanyFacility) => {
-        const countryCode = getFacilityCountryCode(facility)
-        const stateKey = getFacilityStateKey(facility)
+    const facilityMatchesLocation = (facility: CompanyFacility) => {
+      const countryCode = getFacilityCountryCode(facility)
+      const stateKey = getFacilityStateKey(facility)
 
-        if (filters.countries.length > 0) {
-          if (!countryCode || !filters.countries.includes(countryCode)) {
-            return false
-          }
+      if (filters.countries.length > 0) {
+        if (!countryCode || !filters.countries.includes(countryCode)) {
+          return false
         }
-
-        if (filters.states.length > 0) {
-          if (!stateKey || !filters.states.includes(stateKey)) {
-            return false
-          }
-        }
-
-        return true
       }
 
+      if (filters.states.length > 0) {
+        if (!stateKey || !filters.states.includes(stateKey)) {
+          return false
+        }
+      }
+
+      return true
+    }
+
+    allCompanies.forEach(company => {
       // Pre-calculate matching for each filter type (exclude itself)
       const matchesCapabilities = filters.capabilities.length === 0 || 
         (company.capabilities?.[0] && filters.capabilities.some(selected => {
@@ -184,6 +184,14 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
         counts.states.set(state, { count: 0, label: formatStateLabelFromKey(state) })
       }
     })
+    filters.capabilities.forEach(capability => {
+      if (!counts.capabilities.has(capability)) {
+        counts.capabilities.set(capability, 0)
+      }
+    })
+    if (filters.productionVolume && !counts.productionVolume.has(filters.productionVolume)) {
+      counts.productionVolume.set(filters.productionVolume, 0)
+    }
 
     return counts
   }, [allCompanies, filters.countries, filters.states, filters.capabilities, filters.productionVolume])

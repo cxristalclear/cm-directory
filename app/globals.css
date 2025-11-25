@@ -25,6 +25,10 @@
   --chart-3: #143361;
   --chart-4: #7fb4ff;
   --chart-5: #4c5c77;
+  --blue-800: #1e40af;
+  --blue-400: #3b82f6;
+  --navy-900: #020c5c;
+  --gradient-hero: linear-gradient(135deg, var(--blue-800) 0%, var(--blue-400) 50%, var(--navy-900) 100%);
   --radius: 12px;
   --sidebar: #f7fafc;
   --sidebar-foreground: #0d1a2b;
@@ -43,6 +47,8 @@
   --space-8: 32px;
   --space-10: 40px;
   --shadow-soft: 0 18px 40px -28px rgba(13, 26, 43, 0.35);
+  --page-gradient-start: var(--background);
+  --page-gradient-end: var(--secondary);
 }
 
 .dark {
@@ -70,6 +76,10 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+  --blue-800: oklch(0.439 0.095 259.886);
+  --blue-400: oklch(0.613 0.145 253.523);
+  --navy-900: oklch(0.265 0.107 260.086);
+  --gradient-hero: linear-gradient(135deg, var(--blue-800) 0%, var(--blue-400) 50%, var(--navy-900) 100%);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -78,6 +88,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+  --page-gradient-start: var(--background);
+  --page-gradient-end: color-mix(in srgb, var(--background) 75%, var(--primary) 25%);
 }
 
 /* @theme directive for Tailwind v4 - disable CSS linting for this */
@@ -139,7 +151,11 @@
 /* Layout and rhythm */
 .page-shell {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f6f8fb 0%, #f1f5fb 100%);
+  background: linear-gradient(
+    180deg,
+    var(--page-gradient-start, var(--background)) 0%,
+    var(--page-gradient-end, var(--secondary)) 100%
+  );
   color: var(--foreground);
 }
 
@@ -217,7 +233,7 @@
 
 /* Gradient backgrounds */
 .gradient-bg {
-  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #020c5c 100%);
+  background: var(--gradient-hero);
   position: relative;
 }
 
@@ -295,16 +311,41 @@
 /* Button styles */
 /* stylelint-disable-next-line at-rule-no-unknown */
 @layer components {
+  /* Button composition: base handles layout/focus/disabled; variants only add deltas. */
+  .btn-base {
+    @apply inline-flex items-center gap-2 font-medium transition-colors ring-offset-[var(--background)];
+  }
+
+  .btn-focus {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  .btn-disabled {
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-size-md {
+    @apply rounded-md px-4 py-2 text-sm;
+  }
+
+  .btn-size-sm {
+    @apply rounded-md px-3 py-1.5 text-xs;
+  }
+
+  .btn-size-lg {
+    @apply rounded-md px-6 py-3 text-base;
+  }
+
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ring-offset-[var(--background)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply btn-base btn-focus btn-disabled btn-size-md justify-center;
   }
 
   .btn--sm {
-    @apply gap-1.5 px-3 py-1.5 text-xs;
+    @apply btn-size-sm;
   }
 
   .btn--lg {
-    @apply px-6 py-3 text-base;
+    @apply btn-size-lg;
   }
 
   .btn--block {
@@ -352,7 +393,7 @@
   }
 
   .btn--pill {
-    @apply inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary transition-colors;
+    @apply btn-base btn-size-sm rounded-full px-2 py-1 text-xs text-primary;
   }
 
   .btn--pill-primary {
@@ -360,23 +401,23 @@
   }
 
   .btn-accordion {
-    @apply flex w-full items-center justify-between rounded-md bg-muted px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply btn-base btn-focus flex w-full justify-between rounded-md bg-muted px-3 py-2 text-sm hover:bg-muted/80;
   }
 
   .btn-close {
-    @apply inline-flex items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply btn-base btn-focus justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground;
   }
 
   .btn-fab {
-    @apply inline-flex items-center justify-center rounded-full p-4 shadow-xl transition-shadow hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply btn-base btn-focus justify-center rounded-full p-4 shadow-xl hover:shadow-2xl;
   }
 
   .btn-chip-remove {
-    @apply inline-flex items-center justify-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply btn-base btn-focus justify-center rounded-full p-1 text-muted-foreground hover:bg-muted/70 hover:text-foreground;
   }
 
   .btn-map-style {
-    @apply rounded px-3 py-1.5 text-xs font-medium transition-colors duration-200;
+    @apply btn-base rounded px-3 py-1.5 text-xs duration-200;
   }
 
   .btn-map-style--active {
@@ -388,11 +429,11 @@
   }
 
   .btn-map-reset {
-    @apply rounded-lg border border-border/60 bg-card/90 p-2 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors duration-200 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply btn-base btn-focus rounded-lg border border-border/60 bg-card/90 p-2 text-muted-foreground shadow-sm backdrop-blur-sm duration-200 hover:bg-card;
   }
 
   .btn-tab {
-    @apply whitespace-nowrap border-b-2 border-transparent px-2 py-4 text-sm font-medium transition-colors;
+    @apply btn-base whitespace-nowrap border-b-2 border-transparent px-2 py-4 text-sm;
   }
 
   .btn-tab--active {

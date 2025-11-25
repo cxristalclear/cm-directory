@@ -72,7 +72,10 @@ async function getCompanies(): Promise<HomepageCompanyWithLocations[]> {
   // Filter out facilities with a null company_id to match the strict Company type
   const cleanedData: HomepageCompanyWithLocations[] = data.map(company => ({
     ...company,
-    facilities: company.facilities?.filter(f => f.company_id) ?? null,
+    facilities: (() => {
+      const filtered = company.facilities?.filter(f => f.company_id)
+      return filtered && filtered.length > 0 ? filtered : null
+    })(),  
   }))
 
   return cleanedData
