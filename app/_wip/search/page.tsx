@@ -74,13 +74,13 @@ export const metadata: Metadata = {
   description:
     "Search and filter verified electronics contract manufacturers by capabilities, certifications, location, and production needs.",
   alternates: {
-    canonical: siteConfig.url,
+    canonical: pageUrl,
   },
   openGraph: {
     title: "Find a Manufacturer | Contract Manufacturer Directory",
     description:
       "Discover electronics manufacturers with the right mix of certifications, capabilities, and capacity.",
-    url: siteConfig.url,
+    url: pageUrl,
     siteName: siteConfig.name,
     type: "website",
   },
@@ -94,7 +94,6 @@ export const metadata: Metadata = {
     follow: true,
   },
 }
-
 const AdPlaceholder = ({ width, height, label, className = "" }: { width: string; height: string; label: string; className?: string }) => (
   <div className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${className}`} style={{ width, height }}>
     <div className="text-center text-gray-500">
