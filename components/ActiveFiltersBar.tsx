@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import { X } from "lucide-react"
 import { useFilters } from "@/contexts/FilterContext"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
+import { formatCountryLabel, formatStateLabelFromKey } from "@/utils/locationFilters"
 
 type ChipProps = {
   label: string
@@ -29,23 +30,6 @@ function Chip({ label, onRemove }: ChipProps) {
       )}
     </span>
   )
-}
-
-// Country display names
-const COUNTRY_LABELS: Record<string, string> = {
-  'US': 'United States',
-  'CA': 'Canada',
-  'MX': 'Mexico',
-  'CN': 'China',
-  'TW': 'Taiwan',
-  'VN': 'Vietnam',
-  'MY': 'Malaysia',
-  'TH': 'Thailand',
-  'IN': 'India',
-  'DE': 'Germany',
-  'PL': 'Poland',
-  'HU': 'Hungary',
-  'CZ': 'Czech Republic',
 }
 
 const CAPABILITY_LABELS: Record<CapabilitySlug, string> = {
@@ -91,7 +75,7 @@ export default function ActiveFiltersBar() {
     chips.push(
       <Chip 
         key={`country:${country}`} 
-        label={COUNTRY_LABELS[country] || country} 
+        label={formatCountryLabel(country)} 
         onRemove={() => removeCountry(country)} 
       />
     )
@@ -99,7 +83,23 @@ export default function ActiveFiltersBar() {
 
   // Then state chips
   for (const state of filters.states) {
-    chips.push(<Chip key={`state:${state}`} label={state} onRemove={() => removeState(state)} />)
+    chips.push(
+      <Chip
+        key={`state:${state}`}
+        label={formatStateLabelFromKey(state)}
+        onRemove={() => removeState(state)}
+      />
+    )
+  }
+
+  if (filters.searchQuery.trim()) {
+    chips.push(
+      <Chip
+        key="searchQuery"
+        label={`Name: ${filters.searchQuery.trim()}`}
+        onRemove={() => updateFilter("searchQuery", "")}
+      />,
+    )
   }
 
   // Then capability chips

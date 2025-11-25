@@ -28,11 +28,19 @@ export interface FacilityFormData {
   facility_type: string
   street_address?: string | null
   city?: string | null
+  /**
+   * @deprecated Legacy field retained for read-only fallbacks.
+   */
   state?: string | null
-  zip_code?: string | null
+  state_code?: string | null
   state_province?: string | null
   postal_code?: string | null
+  /**
+   * @deprecated Legacy field retained for read-only fallbacks.
+   */
+  zip_code?: string | null
   country?: string | null
+  country_code?: string | null
   is_primary?: boolean
   latitude?: number | null
   longitude?: number | null

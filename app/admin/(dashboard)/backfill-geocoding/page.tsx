@@ -39,8 +39,12 @@ export default function BackfillGeocodingPage() {
           street_address, 
           city, 
           state, 
+          state_province,
+          state_code,
           zip_code, 
+          postal_code,
           country,
+          country_code,
           companies (
             company_name
           )
@@ -62,16 +66,18 @@ export default function BackfillGeocodingPage() {
 
       for (const facility of facilities) {
         const companyName = facility.companies?.company_name || 'Unknown Company'
-        const location = `${facility.city}, ${facility.state}`
+        const location = `${facility.city || 'Unknown'}, ${facility.state_province || facility.state || ''}`.replace(/,\s*$/, '')
 
         try {
           // Geocode
           const geocodeResult = await geocodeFacilityToPoint({
             street_address: facility.street_address,
             city: facility.city,
-            state: facility.state,
-            zip_code: facility.zip_code,
+            state_province: facility.state_province || facility.state,
+            state_code: facility.state_code,
+            postal_code: facility.postal_code || facility.zip_code,
             country: facility.country,
+            country_code: facility.country_code,
           })
 
           // Update facility

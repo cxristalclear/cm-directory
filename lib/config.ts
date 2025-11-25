@@ -9,6 +9,13 @@ const supabaseEnvVars = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 } as const
 
+let supabaseWarningLogged = false
+
+const defaultSupabaseConfig = {
+  url: 'https://demo.supabase.co',
+  anonKey: 'demo-key',
+} as const
+
 const metadataEnvVars = {
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_TWITTER_URL: process.env.NEXT_PUBLIC_TWITTER_URL,
@@ -16,25 +23,31 @@ const metadataEnvVars = {
   NEXT_PUBLIC_GITHUB_URL: process.env.NEXT_PUBLIC_GITHUB_URL,
 } as const
 
+let metadataWarningLogged = false
+
 // Check for missing required environment variables
 const missingSupabaseEnvVars = Object.entries(supabaseEnvVars)
   .filter(([, value]) => !value)
   .map(([key]) => key)
 
-if (missingSupabaseEnvVars.length > 0 && process.env.NODE_ENV !== 'test') {
-  throw new Error(
-    `Missing required environment variables:\n${missingSupabaseEnvVars.join('\n')}\n\nPlease check your .env.local file.`
+if (missingSupabaseEnvVars.length > 0 && process.env.NODE_ENV !== 'test' && !supabaseWarningLogged) {
+  console.warn(
+    `Missing required environment variables:\n${missingSupabaseEnvVars.join(
+      '\n'
+    )}\n\nUsing demo Supabase credentials for local builds. Set real values in your .env.local before deploying.`
   )
+  supabaseWarningLogged = true
 }
 
 const missingMetadataEnvVars = Object.entries(metadataEnvVars)
   .filter(([, value]) => !value)
   .map(([key]) => key)
 
-if (missingMetadataEnvVars.length > 0 && process.env.NODE_ENV !== 'test') {
+if (missingMetadataEnvVars.length > 0 && process.env.NODE_ENV !== 'test' && !metadataWarningLogged) {
   console.warn(
     `Missing optional environment variables:\n${missingMetadataEnvVars.join('\n')}\n\nFalling back to documented production defaults. Set these values in your environment for accurate site metadata.`
   )
+  metadataWarningLogged = true
 }
 
 // Flag obviously placeholder values so they can't silently reach production
@@ -95,8 +108,8 @@ export const siteConfig = {
 
 // Supabase configuration
 export const supabaseConfig = {
-  url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  url: process.env.NEXT_PUBLIC_SUPABASE_URL || defaultSupabaseConfig.url,
+  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || defaultSupabaseConfig.anonKey,
 } as const
 
 // Mapbox configuration

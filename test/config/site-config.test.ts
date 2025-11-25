@@ -47,7 +47,7 @@ describe('site configuration', () => {
     setEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co')
     setEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'anon-key')
 
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const warningSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
 
     const { siteConfig } = loadConfig()
 
@@ -58,23 +58,29 @@ describe('site configuration', () => {
       github: 'https://github.com/cm-directory/app',
     })
 
-    expect(warnSpy).toHaveBeenCalledWith(
+    expect(warningSpy).toHaveBeenCalledWith(
       expect.stringContaining('Missing optional environment variables:')
     )
 
-    warnSpy.mockRestore()
+    warningSpy.mockRestore()
   })
 
-  it('throws when required Supabase env vars are missing', () => {
+  it('warns and uses demo Supabase defaults when Supabase env vars are missing', () => {
     setEnv('NODE_ENV', 'production')
     deleteEnv('NEXT_PUBLIC_SUPABASE_URL')
     deleteEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const warningSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
 
-    expect(() => loadConfig()).toThrow('Missing required environment variables:')
+    const { supabaseConfig } = loadConfig()
 
-    warnSpy.mockRestore()
+    expect(supabaseConfig.url).toBe('https://demo.supabase.co')
+    expect(supabaseConfig.anonKey).toBe('demo-key')
+    expect(warningSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Missing required environment variables:')
+    )
+
+    warningSpy.mockRestore()
   })
 
   it('throws when placeholder handles are provided in production', () => {

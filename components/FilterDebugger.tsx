@@ -2,12 +2,12 @@
 'use client'
 
 import { useFilters } from '../contexts/FilterContext'
-import type { HomepageCompany } from '@/types/homepage'
+import type { HomepageCompanyWithLocations } from '@/types/homepage'
 import { useMemo } from 'react'
 import { filterCompanies, getLocationFilteredFacilities } from '../utils/filtering'
 
 interface FilterDebuggerProps {
-  allCompanies: HomepageCompany[]
+  allCompanies: HomepageCompanyWithLocations[]
 }
 
 export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
@@ -107,6 +107,7 @@ export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
           {filters.states.length > 0 && <div>• States: {filters.states.join(', ')}</div>}
           {filters.capabilities.length > 0 && <div>• Capabilities: {filters.capabilities.join(', ')}</div>}
           {filters.productionVolume && <div>• Volume: {filters.productionVolume}</div>}
+          {filters.searchQuery?.trim() && <div>• Search: {filters.searchQuery.trim()}</div>}
         </div>
       </div>
     </div>

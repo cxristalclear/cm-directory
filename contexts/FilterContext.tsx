@@ -15,6 +15,7 @@ interface FilterProviderProps {
     states: string[]
     capabilities: CapabilitySlug[]
     productionVolume: ProductionVolume | null
+    searchQuery: string
   }
 }
 
@@ -29,6 +30,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
     states: initialFilters?.states || [],
     capabilities: initialFilters?.capabilities || [],
     productionVolume: initialFilters?.productionVolume || null,
+    searchQuery: initialFilters?.searchQuery || "",
   })
 
   const [filteredCount, setFilteredCount] = useState(0)
@@ -42,6 +44,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
       states: params.get("states")?.split(",").filter(Boolean) || [],
       capabilities: (params.get("capabilities")?.split(",").filter(Boolean) || []) as CapabilitySlug[],
       productionVolume: (params.get("volume") || null) as ProductionVolume | null,
+      searchQuery: params.get("q")?.trim() || "",
     }
 
     setFilters((prevFilters) => {
@@ -58,6 +61,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
       if (newFilters.states.length) params.set("states", newFilters.states.join(","))
       if (newFilters.capabilities.length) params.set("capabilities", newFilters.capabilities.join(","))
       if (newFilters.productionVolume) params.set("volume", newFilters.productionVolume)
+      if (newFilters.searchQuery.trim()) params.set("q", newFilters.searchQuery.trim())
 
       const newUrl = `${pathname}${params.toString() ? "?" + params.toString() : ""}`
       
@@ -71,7 +75,6 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
     [router, pathname]
   )
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const debouncedUpdateURL = useDebouncedCallback(updateURLParams, 300)
 
   const updateFilter = useCallback(
@@ -81,13 +84,17 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
         
         // Defer URL update to after render
         setTimeout(() => {
-          updateURLParams(newFilters)
+          if (key === 'searchQuery') {
+            debouncedUpdateURL(newFilters)
+          } else {
+            updateURLParams(newFilters)
+          }
         }, 0)
         
         return newFilters
       })
     },
-    [updateURLParams]
+    [updateURLParams, debouncedUpdateURL]
   )
 
   const clearFilters = useCallback(() => {
@@ -96,6 +103,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
       states: [],
       capabilities: [],
       productionVolume: null,
+      searchQuery: "",
     }
     
     setFilters(defaultFilters)

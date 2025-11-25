@@ -1,4 +1,5 @@
 import { resolveCompanyCanonicalUrl } from '@/lib/canonical'
+import { formatCountryLabel } from '@/utils/locationFilters'
 import type { CompanySocialLink, CompanyWithRelations } from '@/types/company'
 
 type CompanySchemaProps = {
@@ -81,14 +82,33 @@ export const buildCompanyJsonLd = (
     company.facilities?.find((facility) => facility?.is_primary) ?? company.facilities?.[0]
 
   const address = primaryFacility
-    ? {
-        '@type': 'PostalAddress',
-        ...(primaryFacility.street_address && { streetAddress: primaryFacility.street_address }),
-        ...(primaryFacility.city && { addressLocality: primaryFacility.city }),
-        ...(primaryFacility.state && { addressRegion: primaryFacility.state }),
-        ...(primaryFacility.zip_code && { postalCode: primaryFacility.zip_code }),
-        addressCountry: primaryFacility.country || 'US',
-      }
+    ? (() => {
+        const region = primaryFacility.state_province || primaryFacility.state || undefined
+        const postal = primaryFacility.postal_code || primaryFacility.zip_code || undefined
+        const countryLabel =
+          primaryFacility.country ||
+          (primaryFacility.country_code ? formatCountryLabel(primaryFacility.country_code) : undefined)
+
+        const hasAddressFields =
+          Boolean(primaryFacility.street_address) ||
+          Boolean(primaryFacility.city) ||
+          Boolean(region) ||
+          Boolean(postal) ||
+          Boolean(countryLabel)
+
+        if (!hasAddressFields) {
+          return undefined
+        }
+
+        return {
+          '@type': 'PostalAddress',
+          ...(primaryFacility.street_address && { streetAddress: primaryFacility.street_address }),
+          ...(primaryFacility.city && { addressLocality: primaryFacility.city }),
+          ...(region && { addressRegion: region }),
+          ...(postal && { postalCode: postal }),
+          ...(countryLabel && { addressCountry: countryLabel }),
+        }
+      })()
     : undefined
 
   const primaryContact =

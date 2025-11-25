@@ -8,10 +8,9 @@ import { FilterProvider } from "@/contexts/FilterContext"
 import { Breadcrumbs } from "@/components/Breadcrumbs"
 import { getCanonicalUrl, siteConfig, featureFlags } from "@/lib/config"
 import { parseFiltersFromSearchParams, type CapabilitySlug, type FilterUrlState } from "@/lib/filters/url"
-import type { HomepageCompany } from "@/types/homepage"
+import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import FilterDebugger from "@/components/FilterDebugger"
-import Header from "@/components/Header"
 import { FilterErrorBoundary } from "@/components/FilterErrorBoundary"
 import { MapErrorBoundary } from "@/components/MapErrorBoundary"
 import { supabase } from "@/lib/supabase"
@@ -39,7 +38,10 @@ const COMPANY_FIELDS = `
     company_id,
     city,
     state,
+    state_code,
+    state_province,
     country,
+    country_code,
     latitude,
     longitude,
     facility_type,
@@ -104,7 +106,7 @@ const AdPlaceholder = ({ width, height, label, className = "" }: { width: string
 )
 
 // ---------- Data Fetch ----------
-async function getData(): Promise<HomepageCompany[]> {
+async function getData(): Promise<HomepageCompanyWithLocations[]> {
   try {
     const { data, error } = await supabase
       .from("companies")
@@ -112,7 +114,7 @@ async function getData(): Promise<HomepageCompany[]> {
       .eq("is_active", true)
       .order("updated_at", { ascending: false })
       .limit(MAX_COMPANIES)
-      .returns<HomepageCompany[]>()
+      .returns<HomepageCompanyWithLocations[]>()
 
     if (error) {
       console.error("Error fetching companies:", error)
@@ -181,6 +183,9 @@ function buildActiveFilterLabels(filterState: FilterUrlState): string[] {
     labels.push(volumeLabel)
   }
 
+  if (filterState.searchQuery?.trim()) {
+    labels.push(`Name: ${filterState.searchQuery.trim()}`)
+  }
   return labels
 }
 
@@ -197,6 +202,7 @@ export default async function SearchPage({
     states: filterState.states,
     capabilities: filterState.capabilities,
     productionVolume: filterState.productionVolume,
+    searchQuery: filterState.searchQuery,
   }
 
   const companies = await getData()
@@ -208,10 +214,26 @@ export default async function SearchPage({
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <Header />
-
-
-        <main className="container mx-auto -mt-12 px-4 pb-16">
+      <header className="relative overflow-hidden">
+        <div className="gradient-bg">
+          <div className="relative z-10 py-8 md:py-12">
+            <div className="container mx-auto px-4 text-center">
+              <div className="mx-auto max-w-4xl">
+                <h1 className="mb-3 text-3xl font-bold leading-tight text-white md:text-5xl">
+                  Find Your Next Manufacturing Partner
+                </h1>
+                <p className="mb-6 text-lg leading-relaxed text-blue-100 md:text-xl">
+                  Connect with verified contract manufacturers. Use interactive filters to discover contract manufacturers aligned with your technical, compliance, and capacity requirements.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
+            <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
+          </div>
+        </div>
+      </header>        <main className="container mx-auto -mt-12 px-4 pb-16">
           <div className="rounded-2xl border border-white/40 bg-white/80 p-4 shadow-lg backdrop-blur">
             <Breadcrumbs
               items={[
@@ -220,8 +242,6 @@ export default async function SearchPage({
               ]}
             />
           </div>
-
-
           <section className="mt-8 space-y-6">
 
             {/* Top Content Ad - Native/Sponsored */}

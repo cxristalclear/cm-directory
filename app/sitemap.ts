@@ -18,11 +18,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: facilities } = await supabase
     .from('facilities')
-    .select('state, updated_at')
-    .not('state', 'is', null)
+    .select('state_code, state, updated_at')
+    .or('state_code.not.is.null,state.not.is.null')
 
   type CompanyRow = { slug: string | null; updated_at: string | null }
-  type FacilityRow = { state: string | null; updated_at: string | null }
+  type FacilityRow = { state_code: string | null; state: string | null; updated_at: string | null }
   type ValidCompany = { slug: string; updated_at: string | null }
 
   const typedCompanies = (companies ?? []) as CompanyRow[]
@@ -34,11 +34,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const latestFacilityTimestamp = new Map<string, number>()
 
   for (const facility of typedFacilities) {
-    if (!facility.state) {
+    const stateValue = facility.state_code || facility.state
+    if (!stateValue) {
       continue
     }
-
-    const stateMetadata = getStateMetadataByAbbreviation(facility.state)
+    
+    // Prioritize state_code (newer field) with fallback to state during migration
+    const stateMetadata = getStateMetadataByAbbreviation(stateValue)
     if (!stateMetadata) {
       continue
     }

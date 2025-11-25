@@ -32,6 +32,7 @@ type DatabaseCompany = {
   created_at: string
   updated_at: string
   facilities: Array<{
+    state_province: string | null
     city: string | null
     state: string | null
   }> | null
@@ -52,7 +53,7 @@ export default async function AllCompaniesPage({
   // Build query
   let query = supabase
     .from('companies')
-    .select('id, company_name, slug, is_active, is_verified, created_at, updated_at, facilities(city, state)', {
+    .select('id, company_name, slug, is_active, is_verified, created_at, updated_at, facilities(city, state, state_province)', {
       count: 'exact',
     })
 
@@ -96,7 +97,7 @@ export default async function AllCompaniesPage({
     facilities: company.facilities 
       ? company.facilities.map((facility) => ({
           city: facility.city ?? undefined,
-          state: facility.state ?? undefined,
+          state: facility.state_province ?? facility.state ?? undefined,
         }))
       : undefined,
   }))

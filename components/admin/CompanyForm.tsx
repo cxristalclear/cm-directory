@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, Plus } from 'lucide-react'
 import type { CompanyFormData, FacilityFormData, IndustryFormData, CertificationFormData } from '@/types/admin'
+import { useCanonicalLocations } from '@/hooks/useCanonicalLocations'
+import { formatCountryLabel, formatStateLabelFromKey, normalizeCountryCode, normalizeStateFilterValue } from '@/utils/locationFilters'
 
 interface CompanyFormProps {
   initialData?: CompanyFormData
@@ -27,6 +29,28 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
     }
   )
 
+  const { countries, states, loading: locationsLoading, error: locationsError } = useCanonicalLocations()
+
+  const facilityStateOptions = useMemo(() => {
+    const availableStates = states || []
+    if (!formData.facilities) return []
+
+    return formData.facilities.map((facility) => {
+            const rawCountryCode =
+              facility.country_code ||
+              (facility.country ? normalizeCountryCode(facility.country) : null) ||
+              ''
+            const selectedCountryCode =
+              rawCountryCode && /^[A-Z]{2}$/.test(rawCountryCode) ? rawCountryCode : ''
+      if (!selectedCountryCode) {
+        return []
+      }
+      return availableStates.filter(
+        (state) => state.country_iso2 === selectedCountryCode,
+      )
+    })
+  }, [formData.facilities, states])
+
   const updateField = <K extends keyof CompanyFormData>(field: K, value: CompanyFormData[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
@@ -41,8 +65,67 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
     })
   }
 
+  const patchFacility = (index: number, patch: Partial<FacilityFormData>) => {
+    updateFacilities((facilities) =>
+      facilities.map((facility, i) => (i === index ? { ...facility, ...patch } : facility)),
+    )
+  }
+
   const handleSubmit = (isDraft: boolean) => {
     onSubmit(formData, isDraft)
+  }
+
+  const handleCountryChange = (index: number, iso2: string) => {
+    const normalized = normalizeCountryCode(iso2) || null
+    const displayName =
+      normalized && normalized.length === 2
+        ? countries.find((option) => option.iso2 === normalized)?.name || formatCountryLabel(normalized)
+        : null
+
+    patchFacility(index, {
+      country: displayName,
+      country_code: normalized,
+      state_code: null,
+      state_province: null,
+    })
+  }
+
+  const handleCountryInput = (index: number, value: string) => {
+    const trimmed = value.trim()
+    const normalizedCandidate =
+      trimmed && trimmed.length <= 3 ? normalizeCountryCode(trimmed) : null
+    const isoCode =
+      normalizedCandidate && /^[A-Z]{2}$/.test(normalizedCandidate)
+        ? normalizedCandidate
+        : null
+    patchFacility(index, {
+      country: value || null,
+      country_code: isoCode,
+    })
+  }
+
+  const handleStateSelect = (index: number, stateCode: string, stateName?: string | null) => {
+    if (!stateCode) {
+      patchFacility(index, {
+        state_code: null,
+        state_province: null,
+      })
+      return
+    }
+
+    const derivedName = stateName || formatStateLabelFromKey(stateCode)
+    patchFacility(index, {
+      state_code: stateCode,
+      state_province: derivedName || stateCode,
+    })
+  }
+
+  const handleCustomStateChange = (index: number, value: string) => {
+    const normalizedCode = value ? normalizeStateFilterValue(value) : null
+    patchFacility(index, {
+      state_province: value || null,
+      state_code: normalizedCode || null,
+    })
   }
 
   // Facility management
@@ -51,7 +134,11 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
       ...facilities,
       {
         facility_type: 'Manufacturing',
-        country: 'US',
+        country: formatCountryLabel('US'),
+        country_code: 'US',
+        state_code: null,
+        state_province: null,
+        postal_code: null,
         is_primary: facilities.length === 0,
         latitude: null,
         longitude: null,
@@ -276,7 +363,17 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
         </div>
 
         <div className="space-y-6">
-          {formData.facilities?.map((facility, index) => (
+          {locationsError && (
+            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {locationsError}. You can still enter countries and regions manually.
+            </div>
+          )}
+          {formData.facilities?.map((facility, index) => {
+            const selectedCountryCode = normalizeCountryCode(facility.country_code || facility.country) || ''
+            const stateOptions = facilityStateOptions[index] || []
+            const showCountrySelect = countries.length > 0 && !locationsError
+
+            return (
             <div key={index} className="glass-card p-4 relative">
               <button
                 type="button"
@@ -333,30 +430,69 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700">Country</label>
+                  {showCountrySelect ? (
+                    <select
+                      value={selectedCountryCode}
+                      onChange={(e) => handleCountryChange(index, e.target.value)}
+                      className="mt-1 block w-full admin-select"
+                      disabled={locationsLoading}
+                    >
+                      <option value="">{locationsLoading ? 'Loading countries...' : 'Select country'}</option>
+                      {countries.map((country) => (
+                        <option key={country.iso2} value={country.iso2}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={facility.country || ''}
+                      onChange={(e) => handleCountryInput(index, e.target.value)}
+                      className="mt-1 block w-full admin-input"
+                      placeholder="United States"
+                    />
+                  )}
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700">State/Province</label>
-                  <input
-                    type="text"
-                    maxLength={50}
-                    placeholder="CA, TX, Ontario, Bayern, etc."
-                    value={facility.state || facility.state_province || ''}
-                    onChange={(e) => {
-                      const value = e.target.value.length <= 2 
-                        ? e.target.value.toUpperCase() 
-                        : e.target.value
-                      updateFacility(index, 'state', value)
-                      updateFacility(index, 'state_province', value)
-                    }}
-                    className="mt-1 block w-full admin-input"
-                  />
+                  {stateOptions.length > 0 ? (
+                    <select
+                      value={facility.state_code || ''}
+                      onChange={(e) => {
+                        const option = stateOptions.find((state) => state.code === e.target.value)
+                        handleStateSelect(index, e.target.value, option?.name)
+                      }}
+                      className="mt-1 block w-full admin-select"
+                      disabled={locationsLoading}
+                    >
+                      <option value="">Select state/province</option>
+                      {stateOptions.map((state) => (
+                        <option key={state.code} value={state.code}>
+                          {state.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      maxLength={50}
+                      placeholder="CA, TX, Ontario, Bayern, etc."
+                      value={facility.state_province || ''}
+                      onChange={(e) => handleCustomStateChange(index, e.target.value)}
+                      className="mt-1 block w-full admin-input"
+                    />
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">ZIP/Postal Code</label>
                   <input
                     type="text"
-                    value={facility.zip_code || facility.postal_code || ''}
+                    value={facility.postal_code || facility.zip_code || ''}
                     onChange={(e) => {
-                      updateFacility(index, 'zip_code', e.target.value)
                       updateFacility(index, 'postal_code', e.target.value)
                     }}
                     className="mt-1 block w-full admin-input"
@@ -364,7 +500,7 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
                 </div>
               </div>
             </div>
-          ))}
+          )})}
 
           {(!formData.facilities || formData.facilities.length === 0) && (
             <p className="text-center text-gray-500 py-4">No facilities added yet</p>

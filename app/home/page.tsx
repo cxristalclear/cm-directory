@@ -4,22 +4,19 @@ import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import FilterDebugger from "@/components/FilterDebugger"
-import Header from "@/components/Header"
 import { FilterErrorBoundary } from "@/components/FilterErrorBoundary"
 import { MapErrorBoundary } from "@/components/MapErrorBoundary"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
-import { siteConfig, featureFlags, getCanonicalUrl } from "@/lib/config"
+import { siteConfig, featureFlags } from "@/lib/config"
 import AddCompanyCallout from "@/components/AddCompanyCallout"
 import type { PageProps } from "@/types/nxt"
-import type { HomepageCompany } from "@/types/homepage"
+import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import Navbar from "@/components/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/dist/client/link"
-
-const pageUrl = getCanonicalUrl("/home")
 
 export const revalidate = 300
 
@@ -38,7 +35,10 @@ const COMPANY_FIELDS = `
     company_id,
     city,
     state,
+    state_code,
+    state_province,
     country,
+    country_code,
     latitude,
     longitude,
     facility_type,
@@ -123,7 +123,7 @@ const AdPlaceholder = ({ width, height, label, className = "" }: { width: string
 )
 
 // JSON-LD Schema Generator
-function generateJSONLD(companies: HomepageCompany[]) {
+function generateJSONLD() {
   const schemas = [
     // WebSite Schema
     {
@@ -211,7 +211,7 @@ function generateJSONLD(companies: HomepageCompany[]) {
 }
 
 // ---------- Data Fetch ----------
-async function getData(): Promise<HomepageCompany[]> {
+async function getData(): Promise<HomepageCompanyWithLocations[]> {
   try {
     const { data, error } = await supabase
       .from("companies")
@@ -219,7 +219,7 @@ async function getData(): Promise<HomepageCompany[]> {
       .eq("is_active", true)
       .order("updated_at", { ascending: false })
       .limit(MAX_COMPANIES)
-      .returns<HomepageCompany[]>()
+      .returns<HomepageCompanyWithLocations[]>()
 
     if (error) {
       console.error("Error fetching companies:", error)
@@ -257,7 +257,7 @@ export default async function Home({
 
   return (
     <>
-      {generateJSONLD(companies)}
+      {generateJSONLD()}
       
       <Suspense fallback={<div className="p-4">Loading…</div>}>
         <SpeedInsights />
