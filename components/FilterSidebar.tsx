@@ -52,21 +52,29 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       productionVolume: new Map<ProductionVolume, number>()
     }
 
+    type CompanyFacility = NonNullable<HomepageCompanyWithLocations["facilities"]>[number]
+
     allCompanies.forEach(company => {
+      const facilityMatchesLocation = (facility: CompanyFacility) => {
+        const countryCode = getFacilityCountryCode(facility)
+        const stateKey = getFacilityStateKey(facility)
+
+        if (filters.countries.length > 0) {
+          if (!countryCode || !filters.countries.includes(countryCode)) {
+            return false
+          }
+        }
+
+        if (filters.states.length > 0) {
+          if (!stateKey || !filters.states.includes(stateKey)) {
+            return false
+          }
+        }
+
+        return true
+      }
+
       // Pre-calculate matching for each filter type (exclude itself)
-      const matchesCountries = filters.countries.length === 0 ||
-        company.facilities?.some(f => {
-          const code = getFacilityCountryCode(f)
-          if (!code) return false
-          return filters.countries.includes(code)
-        })
-
-      const matchesStates = filters.states.length === 0 ||
-        company.facilities?.some(f => {
-          const key = getFacilityStateKey(f)
-          return Boolean(key && filters.states.includes(key))
-        })
-
       const matchesCapabilities = filters.capabilities.length === 0 || 
         (company.capabilities?.[0] && filters.capabilities.some(selected => {
           const cap = company.capabilities![0]
@@ -91,38 +99,48 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
           }
         })())
 
-      // Count COUNTRIES (exclude countries filter)
-      if (matchesStates && matchesCapabilities && matchesVolume) {
-        company.facilities?.forEach(facility => {
-          const countryCode = getFacilityCountryCode(facility)
-          if (!countryCode) return
-          counts.countries.set(countryCode, (counts.countries.get(countryCode) || 0) + 1)
-        })
-      }
+      const matchesLocation = company.facilities?.some(facilityMatchesLocation) ?? false
 
-      // Count STATES (exclude states filter)
-      if (matchesCountries && matchesCapabilities && matchesVolume) {
-        company.facilities?.forEach(facility => {
-          const countryCode = getFacilityCountryCode(facility)
-          if (!countryCode) return
-          if (filters.countries.length === 0 || filters.countries.includes(countryCode)) {
-            const key = getFacilityStateKey(facility)
-            if (!key) return
-            const label = getFacilityStateLabel(facility) || formatStateLabelFromKey(key)
-            const existing = counts.states.get(key)
-            if (existing) {
-              existing.count += 1
-            } else {
-              counts.states.set(key, { count: 1, label })
-            }
-          }
-        })
-      }
+      if (!matchesCapabilities || !matchesVolume || !matchesLocation) return
+
+      // Count COUNTRIES (respect state filter per facility)
+      company.facilities?.forEach(facility => {
+        const countryCode = getFacilityCountryCode(facility)
+        if (!countryCode) return
+
+        if (filters.states.length > 0) {
+          const stateKey = getFacilityStateKey(facility)
+          if (!stateKey || !filters.states.includes(stateKey)) return
+        }
+
+        counts.countries.set(countryCode, (counts.countries.get(countryCode) || 0) + 1)
+      })
+
+      // Count STATES (respect country filter per facility)
+      company.facilities?.forEach(facility => {
+        const countryCode = getFacilityCountryCode(facility)
+        if (filters.countries.length > 0) {
+          if (!countryCode || !filters.countries.includes(countryCode)) return
+        }
+
+        const key = getFacilityStateKey(facility)
+        if (!key) return
+
+        const label = getFacilityStateLabel(facility) || formatStateLabelFromKey(key)
+        const existing = counts.states.get(key)
+        if (existing) {
+          existing.count += 1
+        } else {
+          counts.states.set(key, { count: 1, label })
+        }
+      })
 
       // Count CAPABILITIES (exclude capabilities filter)
-      if (matchesCountries && matchesStates && matchesVolume) {
-        if (company.capabilities?.[0]) {
-          const cap = company.capabilities[0]
+      if (company.capabilities?.[0]) {
+        const cap = company.capabilities[0]
+
+        // Count CAPABILITIES (exclude capabilities filter, respect location + volume)
+        if (matchesVolume) {
           if (cap.pcb_assembly_smt) {
             counts.capabilities.set('smt', (counts.capabilities.get('smt') || 0) + 1)
           }
@@ -139,12 +157,9 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
             counts.capabilities.set('prototyping', (counts.capabilities.get('prototyping') || 0) + 1)
           }
         }
-      }
 
-      // Count VOLUME (exclude volume filter)
-      if (matchesCountries && matchesStates && matchesCapabilities) {
-        if (company.capabilities?.[0]) {
-          const cap = company.capabilities[0]
+        // Count VOLUME (exclude volume filter, respect location + capabilities)
+        if (matchesCapabilities) {
           if (cap.low_volume_production) {
             counts.productionVolume.set('low', (counts.productionVolume.get('low') || 0) + 1)
           }
@@ -155,6 +170,18 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
             counts.productionVolume.set('high', (counts.productionVolume.get('high') || 0) + 1)
           }
         }
+      }
+    })
+
+    // Ensure currently selected filters are always displayed, even if count is zero
+    filters.countries.forEach(code => {
+      if (!counts.countries.has(code)) {
+        counts.countries.set(code, 0)
+      }
+    })
+    filters.states.forEach(state => {
+      if (!counts.states.has(state)) {
+        counts.states.set(state, { count: 0, label: formatStateLabelFromKey(state) })
       }
     })
 
