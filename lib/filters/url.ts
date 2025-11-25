@@ -107,7 +107,7 @@ export function parseFiltersFromSearchParams(searchParams: SearchParamInput): Fi
   const states = sortAndDedupe(
     stateValues
       .map((value) => (typeof value === "string" ? value.toUpperCase() : null))
-      .filter((value): value is string => Boolean(value) && US_STATE_CODES.has(value)),
+      .filter((value): value is string => typeof value === "string" && US_STATE_CODES.has(value)),
   )
   const capabilities = sortAndDedupe(
     capabilityValues.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
