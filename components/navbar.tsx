@@ -16,7 +16,7 @@ export default function Navbar() {
                 <Building2 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="font-sans text-xl font-bold text-white">CM Directory</h1>
+                <h1 className="font-sans text-xl font-bold text-white">PCBA Finder</h1>
                 <p className="text-xs text-blue-100">Manufacturing Network</p>
               </div>
             </Link>

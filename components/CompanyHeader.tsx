@@ -6,7 +6,7 @@ import { Building2 } from 'lucide-react'
 
 
 export default function CompanyHeader() {
-  const ADD_COMPANY_PATH = "/list-your-company"
+  const ADD_COMPANY_PATH = "/add-your-company"
 
   return (
     <header className="relative overflow-hidden">
