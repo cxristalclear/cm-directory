@@ -1,16 +1,20 @@
 /**
  * Address Compatibility Layer
- * Handles both old (state, zip_code) and new (state_province, postal_code) columns
+ * Handles both legacy (state, zip_code) and canonical (state_province, postal_code) columns
  */
+import { formatStateLabelFromKey, normalizeCountryCode, normalizeStateFilterValue } from "@/utils/locationFilters"
+import { getCountryName } from "@/utils/countryMapping"
 
 type FacilityAddress = {
   street_address?: string | null
   city?: string | null
   state?: string | null
   state_province?: string | null
+  state_code?: string | null
   zip_code?: string | null
   postal_code?: string | null
   country?: string | null
+  country_code?: string | null
   facility_type?: string
   is_primary?: boolean
   latitude?: number | null
@@ -24,7 +28,10 @@ type FacilityAddress = {
  * Get state/province from either column
  */
 export function getStateProvince(facility: FacilityAddress): string | null {
-  return facility.state_province || facility.state || null
+  if (facility.state_province) return facility.state_province
+  if (facility.state) return facility.state
+  if (facility.state_code) return formatStateLabelFromKey(facility.state_code)
+  return null
 }
 
 /**
@@ -35,21 +42,29 @@ export function getPostalCode(facility: FacilityAddress): string | null {
 }
 
 /**
- * Prepare facility data for database insert/update
- * Writes to BOTH old and new columns for compatibility
+ * Prepare facility data for database insert/update.
+ * Populates canonical columns while leaving legacy columns untouched.
  */
 export function prepareFacilityForDB<T extends FacilityAddress>(facility: T): T {
-  const stateValue = getStateProvince(facility)
+  const rawStateValue = getStateProvince(facility)
+  const stateCode = normalizeStateFilterValue(facility.state_code || rawStateValue)
+  const stateValue = rawStateValue || (stateCode ? formatStateLabelFromKey(stateCode) : null)
   const postalValue = getPostalCode(facility)
+  const normalizedCountry = normalizeCountryCode(facility.country_code || facility.country)
+  const countryCode =
+    normalizedCountry && /^[A-Z]{2}$/.test(normalizedCountry) ? normalizedCountry : null
+  const displayCountry =
+    facility.country?.trim() ||
+    (countryCode ? getCountryName(countryCode) || countryCode : null)
   
   return {
     ...facility,
     // New columns (preferred)
     state_province: stateValue,
     postal_code: postalValue,
-    // Old columns (backwards compatibility)
-    state: stateValue,
-    zip_code: postalValue,
+    state_code: stateCode,
+    country_code: countryCode,
+    country: displayCountry,
   }
 }
 

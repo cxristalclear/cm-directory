@@ -9,6 +9,7 @@ import type { Database } from '@/lib/database.types'
 import { generateSlug, ensureUniqueSlug, logCompanyChanges, validateCompanyData, normalizeWebsiteUrl } from '@/lib/admin/utils'
 import { toast } from 'sonner'
 import { prepareFacilityForDB } from '@/lib/admin/addressCompat'
+import { geocodeFacilityFormData } from '@/lib/admin/geocoding'
 
 type CompanyInsert = Database['public']['Tables']['companies']['Insert']
 type FacilityInsert = Database['public']['Tables']['facilities']['Insert']
@@ -81,23 +82,48 @@ export default function AddCompanyPage() {
 
       // Insert facilities
       if (normalizedFormData.facilities && normalizedFormData.facilities.length > 0) {
-        const facilitiesInsert: FacilityInsert[] = normalizedFormData.facilities.map((f) => 
-          prepareFacilityForDB({
-          company_id: company.id,
-          facility_type: f.facility_type,
-          street_address: f.street_address || null,
-          city: f.city || null,
-          state: f.state,
-          state_province: f.state_province,
-          zip_code: f.zip_code,
-          postal_code: f.postal_code,
-          country: f.country || null,
-          is_primary: f.is_primary || false,
-          latitude: typeof f.latitude === 'number' ? f.latitude : null,
-          longitude: typeof f.longitude === 'number' ? f.longitude : null,
-          location: f.location ?? null,
+        const geocodeResults = await Promise.allSettled(
+          normalizedFormData.facilities.map((facility) => geocodeFacilityFormData(facility))
+        )
+
+        const failedGeocodes: string[] = []
+
+        const facilitiesInsert: FacilityInsert[] = normalizedFormData.facilities.map((originalFacility, index) => {
+          const geocodeResult = geocodeResults[index]
+          const facility = geocodeResult.status === 'fulfilled' ? geocodeResult.value : originalFacility
+
+          if (geocodeResult.status === 'rejected') {
+            const facilityLabel =
+              originalFacility.street_address ||
+              originalFacility.city ||
+              `Facility #${index + 1}`
+            const reason =
+              geocodeResult.reason instanceof Error ? geocodeResult.reason.message : String(geocodeResult.reason)
+            const errorMessage = `Geocoding failed for ${facilityLabel}: ${reason}`
+            failedGeocodes.push(errorMessage)
+            console.error(errorMessage)
+          }
+
+          return prepareFacilityForDB({
+            company_id: company.id,
+            facility_type: facility.facility_type,
+            street_address: facility.street_address || null,
+            city: facility.city || null,
+            state_province: facility.state_province || facility.state || null,
+            state_code: facility.state_code || null,
+            postal_code: facility.postal_code || facility.zip_code || null,
+            country: facility.country || null,
+            country_code: facility.country_code || null,
+            is_primary: facility.is_primary || false,
+            latitude: typeof facility.latitude === 'number' ? facility.latitude : null,
+            longitude: typeof facility.longitude === 'number' ? facility.longitude : null,
+            location: facility.location ?? null,
+          })
         })
-      )
+
+        if (failedGeocodes.length > 0) {
+          toast.error('Some facilities could not be geocoded; they were saved without verified coordinates.')
+        }
 
         const { error: facilitiesError } = await supabase
           .from('facilities')

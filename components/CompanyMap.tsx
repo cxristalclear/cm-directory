@@ -6,16 +6,17 @@ import "mapbox-gl/dist/mapbox-gl.css"
 import { useFilters } from "../contexts/FilterContext"
 import { MapPin, RotateCcw } from "lucide-react"
 import type { FeatureCollection, Point } from "geojson"
-import type { HomepageCompany, HomepageFacilityWithCompany } from "@/types/homepage"
+import type { HomepageCompanyWithLocations, HomepageFacilityWithCompany } from "@/types/homepage"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 import { filterCompanies, getLocationFilteredFacilities } from "../utils/filtering"
 import { getFallbackBounds } from "../utils/locationBounds"
 import { useDebounce } from "../hooks/useDebounce"
+import { getFacilityStateLabel } from "@/utils/locationFilters"
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
 interface CompanyMapProps {
-  allCompanies: HomepageCompany[]
+  allCompanies: HomepageCompanyWithLocations[]
 }
 
 type FacilityWithCoordinates = HomepageFacilityWithCompany & {
@@ -28,6 +29,8 @@ type FacilityFeatureProperties = {
   company_slug: string
   city: string
   state: string
+  state_province: string
+  country: string
   facility_type: string
 }
 
@@ -81,17 +84,18 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
   // Function to add clustering layers
   const addClusteringLayers = useCallback((facilitiesToAdd?: FacilityWithCoordinates[]) => {
-    if (!map.current) return
+    const mapInstance = map.current
+    if (!mapInstance || !mapInstance.isStyleLoaded?.()) return
 
     const facilities = facilitiesToAdd || currentFacilitiesRef.current
 
-    // Remove existing layers and source if they exist
-    if (map.current.getLayer('clusters')) map.current.removeLayer('clusters')
-    if (map.current.getLayer('cluster-count')) map.current.removeLayer('cluster-count')
-    if (map.current.getLayer('unclustered-point')) map.current.removeLayer('unclustered-point')
-    if (map.current.getSource('facilities')) map.current.removeSource('facilities')
-
-    if (facilities.length === 0) return
+    if (facilities.length === 0) {
+      const existingSource = mapInstance.getSource('facilities') as mapboxgl.GeoJSONSource | undefined
+      if (existingSource) {
+        existingSource.setData({ type: 'FeatureCollection', features: [] })
+      }
+      return
+    }
 
     // Create GeoJSON from facilities
     const geojson: FeatureCollection<Point, FacilityFeatureProperties> = {
@@ -108,23 +112,30 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
           company_name: facility.company.company_name,
           company_slug: facility.company.slug!, // The '!' tells TypeScript we're sure it's not null here
           city: facility.city || '',
-          state: facility.state || '',
+          state: getFacilityStateLabel(facility) || '',
+          state_province: facility.state_province || facility.state || '',
+          country: facility.country || '',
           facility_type: facility.facility_type || 'Manufacturing'
         }
       }))
   }
 
-    // Add source with clustering
-    map.current.addSource('facilities', {
+    const existingSource = mapInstance.getSource('facilities') as mapboxgl.GeoJSONSource | undefined
+
+    if (existingSource) {
+      existingSource.setData(geojson)
+      return
+    }
+
+    mapInstance.addSource('facilities', {
       type: 'geojson',
       data: geojson,
       cluster: true,
       clusterMaxZoom: 14,
-      clusterRadius: 50
+      clusterRadius: 50,
     })
 
-    // Add cluster circles
-    map.current.addLayer({
+    mapInstance.addLayer({
       id: 'clusters',
       type: 'circle',
       source: 'facilities',
@@ -133,28 +144,27 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         'circle-color': [
           'step',
           ['get', 'point_count'],
-          '#3B82F6', // blue-500
+          '#3B82F6',
           10,
-          '#1D4ED8', // blue-700
+          '#1D4ED8',
           30,
-          '#1E40AF'  // blue-800
+          '#1E40AF',
         ],
         'circle-radius': [
           'step',
           ['get', 'point_count'],
-          20, // small clusters
+          20,
           10,
-          25, // medium clusters
+          25,
           30,
-          30  // large clusters
+          30,
         ],
         'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff'
-      }
+        'circle-stroke-color': '#ffffff',
+      },
     })
 
-    // Add cluster count text
-    map.current.addLayer({
+    mapInstance.addLayer({
       id: 'cluster-count',
       type: 'symbol',
       source: 'facilities',
@@ -162,15 +172,14 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       layout: {
         'text-field': '{point_count_abbreviated}',
         'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-        'text-size': 12
+        'text-size': 12,
       },
       paint: {
-        'text-color': '#ffffff'
-      }
+        'text-color': '#ffffff',
+      },
     })
 
-    // Add unclustered points
-    map.current.addLayer({
+    mapInstance.addLayer({
       id: 'unclustered-point',
       type: 'circle',
       source: 'facilities',
@@ -179,8 +188,8 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         'circle-color': '#3B82F6',
         'circle-radius': 8,
         'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff'
-      }
+        'circle-stroke-color': '#ffffff',
+      },
     })
   }, [])
 
@@ -244,7 +253,10 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
           slug: props.company_slug
         },
         city: props.city,
-        state: props.state
+        state: props.state,
+        state_province: props.state_province,
+        country: props.country,
+        facility_type: props.facility_type,
       })
 
       popup.setLngLat(coordinates).addTo(map.current)

@@ -79,8 +79,12 @@ describe('CompanySchema', () => {
           street_address: '123 Market Street',
           city: 'San Jose',
           state: 'CA',
+          state_province: 'California',
+          state_code: 'CA',
+          postal_code: '94088',
           zip_code: '94088',
-          country: 'US',
+          country: 'United States',
+          country_code: 'US',
           latitude: null,
           longitude: null,
           location: null,
@@ -91,6 +95,8 @@ describe('CompanySchema', () => {
           is_primary: true,
           created_at: null,
           updated_at: null,
+          state: null,
+          zip_code: null
         },
       ],
       capabilities: [

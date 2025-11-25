@@ -10,6 +10,8 @@ import type { Database } from '@/lib/database.types'
 import { getFieldChanges, logCompanyChanges, validateCompanyData, ensureUniqueSlug, generateSlug, normalizeWebsiteUrl } from '@/lib/admin/utils'
 import { toast } from 'sonner'
 import { prepareFacilityForDB } from '@/lib/admin/addressCompat'
+import { geocodeFacilityFormData } from '@/lib/admin/geocoding'
+import { formatCountryLabel, normalizeCountryCode, normalizeStateFilterValue } from '@/utils/locationFilters'
 
 
 type CompanyUpdate = Database['public']['Tables']['companies']['Update']
@@ -42,19 +44,27 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
     employee_count_range: company.employee_count_range || undefined,
     annual_revenue_range: company.annual_revenue_range || undefined,
     key_differentiators: company.key_differentiators || undefined,
-    facilities: company.facilities?.map(f => ({
-      id: f.id,
-      facility_type: f.facility_type,
-      street_address: f.street_address || undefined,
-      city: f.city || undefined,
-      state: f.state || undefined,
-      zip_code: f.zip_code || undefined,
-      country: f.country || undefined,
-      is_primary: f.is_primary || false,
-      latitude: typeof f.latitude === 'number' ? f.latitude : null,
-      longitude: typeof f.longitude === 'number' ? f.longitude : null,
-      location: f.location ?? null,
-    })) || [],
+    facilities: company.facilities?.map(f => {
+      const countryCode = normalizeCountryCode(f.country_code || f.country) || undefined
+      const stateText = f.state_province || f.state || undefined
+      const stateCode = normalizeStateFilterValue(f.state_code || stateText) || undefined
+      const displayCountry = f.country?.trim() || (countryCode ? formatCountryLabel(countryCode) : undefined)
+      return {
+        id: f.id,
+        facility_type: f.facility_type,
+        street_address: f.street_address || undefined,
+        city: f.city || undefined,
+        state_province: stateText,
+        state_code: stateCode,
+        postal_code: f.postal_code || f.zip_code || undefined,
+        country: displayCountry,
+        country_code: countryCode,
+        is_primary: f.is_primary || false,
+        latitude: typeof f.latitude === 'number' ? f.latitude : null,
+        longitude: typeof f.longitude === 'number' ? f.longitude : null,
+        location: f.location ?? null,
+      }
+    }) || [],
     capabilities: company.capabilities?.[0] ? {
       pcb_assembly_smt: company.capabilities[0].pcb_assembly_smt || undefined,
       pcb_assembly_through_hole: company.capabilities[0].pcb_assembly_through_hole || undefined,
@@ -203,17 +213,28 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
       }
 
       if (formData.facilities && formData.facilities.length > 0) {
-        const facilitiesData: FacilityInsert[] = formData.facilities.map(f => 
+        const facilitiesWithCoords = await Promise.all(
+          formData.facilities.map(async (facility) => {
+            try {
+              return await geocodeFacilityFormData(facility)
+            } catch (error) {
+              console.warn('Geocoding failed for facility, using existing coordinates:', error)
+              return facility
+            }
+          })
+        )
+
+        const facilitiesData: FacilityInsert[] = facilitiesWithCoords.map(f => 
           prepareFacilityForDB({
             company_id: company.id,
             facility_type: f.facility_type,
             street_address: f.street_address || null,
             city: f.city || null,
-            state: f.state,
-            state_province: f.state_province,
-            zip_code: f.zip_code,
-            postal_code: f.postal_code,
-            country: f.country || null,
+            state_province: f.state_province || f.state || null,
+            state_code: f.state_code || null,
+            postal_code: f.postal_code || f.zip_code || null,
+            country: f.country?.trim() || (f.country_code ? formatCountryLabel(f.country_code) : null),
+            country_code: f.country_code || null,
             is_primary: f.is_primary || false,
             latitude: typeof f.latitude === 'number' ? f.latitude : null,
             longitude: typeof f.longitude === 'number' ? f.longitude : null,

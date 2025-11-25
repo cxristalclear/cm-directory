@@ -19,7 +19,7 @@ export async function generateMetadata({
     .select(`
       company_name,
       description,
-      facilities (city, state),
+      facilities (city, state, state_province, state_code, country, country_code),
       capabilities (*),
       certifications (certification_type)
     `)
@@ -37,7 +37,14 @@ export async function generateMetadata({
   type CompanyMetadata = {
     company_name: string
     description: string | null
-    facilities: Array<{ city: string | null; state: string | null }> | null
+    facilities: Array<{
+      city: string | null
+      state: string | null
+      state_province: string | null
+      state_code: string | null
+      country: string | null
+      country_code: string | null
+    }> | null
     capabilities: Array<{
       pcb_assembly_smt: boolean | null
       cable_harness_assembly: boolean | null
@@ -48,9 +55,20 @@ export async function generateMetadata({
   
   const typedCompany = company as unknown as CompanyMetadata
   
-  const location = typedCompany.facilities?.[0] 
-    ? `${typedCompany.facilities[0].city}, ${typedCompany.facilities[0].state}` 
-    : ''
+  const primaryFacility = typedCompany.facilities?.[0]
+  const region = primaryFacility
+    ? primaryFacility.state_province || primaryFacility.state
+    : null
+  const location = primaryFacility
+    ? [
+        primaryFacility.city,
+        region,
+        primaryFacility.country,
+      ]
+        .filter(part => Boolean(part && part.trim()))
+        .join(", ")
+    : ""
+  // TODO: upstream facility data should include full state/country names consistently to avoid empty segments
   
   // Get key capabilities for description
   const capabilities = []

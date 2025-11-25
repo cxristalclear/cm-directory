@@ -7,7 +7,7 @@ import LazyCompanyMap from "@/components/LazyCompanyMap"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { CapabilitySlug, parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
-import type { HomepageCompany } from "@/types/company"
+import type { HomepageCompanyWithLocations } from "@/types/homepage"
 
 export const metadata = {
   title: "PCB Assembly Manufacturers | CM Directory",
@@ -29,7 +29,10 @@ const HOMEPAGE_COMPANY_FIELDS = `
     company_id,
     city,
     state,
+    state_code,
+    state_province,
     country,
+    country_code,
     latitude,
     longitude,
     facility_type,
@@ -55,19 +58,19 @@ const HOMEPAGE_COMPANY_FIELDS = `
   )
 `
 
-async function getCompanies(): Promise<HomepageCompany[]> {
+async function getCompanies(): Promise<HomepageCompanyWithLocations[]> {
   const { data } = await supabase
     .from("companies")
     .select(HOMEPAGE_COMPANY_FIELDS)
     .eq("is_active", true)
-    .returns<HomepageCompany[]>()
+    .returns<HomepageCompanyWithLocations[]>()
 
   if (!data) {
     return []
   }
 
   // Filter out facilities with a null company_id to match the strict Company type
-  const cleanedData: HomepageCompany[] = data.map(company => ({
+  const cleanedData: HomepageCompanyWithLocations[] = data.map(company => ({
     ...company,
     facilities: company.facilities?.filter(f => f.company_id) ?? null,
   }))
@@ -89,6 +92,7 @@ export default async function PcbAssemblyManufacturers({
       ? urlFilters.capabilities 
       : ['smt', 'through_hole'] as CapabilitySlug[],
     productionVolume: urlFilters.productionVolume,
+    searchQuery: urlFilters.searchQuery,
   }
 
   return (

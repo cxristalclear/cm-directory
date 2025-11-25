@@ -2,13 +2,14 @@ import type { Point } from 'geojson'
 
 import type { FacilityFormData } from '@/types/admin'
 export type FetchImplementation = typeof fetch
-import { getStateProvince, getPostalCode } from './addressCompat'
+import { getStateProvince, getPostalCode, hasMinimumAddressData } from './addressCompat'
+import { formatCountryLabel, normalizeCountryCode } from '@/utils/locationFilters'
 
 export type NullableString = string | null | undefined
 
 export type FacilityAddressFields = Pick<
   FacilityFormData,
-  'street_address' | 'city' | 'state' | 'zip_code' | 'country'
+  'street_address' | 'city' | 'state' | 'state_province' | 'state_code' | 'zip_code' | 'postal_code' | 'country' | 'country_code'
 >
 
 export type FacilityAddressLike = {
@@ -74,7 +75,17 @@ export function buildFacilityAddress(facility: FacilityAddressLike): string {
   addPart(facility.city)
   addPart(getStateProvince(facility))  // ✅ Uses compatibility layer
   addPart(getPostalCode(facility))     // ✅ Uses compatibility layer
-  addPart(facility.country)
+  const normalizedCountry = facility.country_code
+    ? normalizeCountryCode(facility.country_code)
+    : facility.country
+      ? normalizeCountryCode(facility.country)
+      : null
+  const isoCountry =
+  normalizedCountry && /^[a-z]{2}$/.test(normalizedCountry) ? normalizedCountry : null
+  const countryDisplay = isoCountry
+    ? formatCountryLabel(isoCountry)
+    : facility.country || undefined
+  addPart(countryDisplay)
 
   return parts.join(', ')
 }
@@ -184,3 +195,39 @@ export async function geocodeFacilityToPoint(
     pointWkt: formatPointAsWkt(result.latitude, result.longitude),
   }
 }
+
+export async function geocodeFacilityFormData<T extends FacilityFormData>(
+  facility: T,
+  options: GeocodeFacilityOptions = {},
+): Promise<T> {
+  if (!hasMinimumAddressData(facility)) {
+    return facility
+  }
+
+  const hasCoords =
+    typeof facility.latitude === 'number' &&
+    Number.isFinite(facility.latitude) &&
+    typeof facility.longitude === 'number' &&
+    Number.isFinite(facility.longitude)
+
+  if (hasCoords) {
+    return facility
+  }
+
+  try {
+    const result = await geocodeFacility(facility, options)
+    return {
+      ...facility,
+      latitude: result.latitude,
+      longitude: result.longitude,
+    } as T
+  } catch (error) {
+    console.warn('Geocoding failed for facility:', error)
+    return facility
+  }
+}
+
+/**
+ * Geocode a facility and return it with updated latitude/longitude coordinates.
+ * Returns the original facility unchanged if geocoding fails or coordinates already exist.
+ */

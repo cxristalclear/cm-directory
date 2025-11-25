@@ -1,22 +1,38 @@
 import type { FilterState } from "../types/company"
-import type { HomepageCompany, HomepageFacility } from "@/types/homepage"
+import type {
+  HomepageCompanyWithLocations,
+  HomepageFacility,
+  HomepageFacilityLocation,
+} from "@/types/homepage"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
+import { getFacilityCountryCode, getFacilityStateKey } from "./locationFilters"
 
 /**
  * Filter companies based on all filter criteria
  */
 export function filterCompanies(
-  companies: HomepageCompany[],
+  companies: HomepageCompanyWithLocations[],
   filters: FilterState,
-): HomepageCompany[] {
+): HomepageCompanyWithLocations[] {
   let filtered = [...companies]
+  const searchTerm = filters.searchQuery.trim().toLowerCase()
+
+  if (searchTerm) {
+    filtered = filtered.filter((company) => {
+      const candidates = [company.company_name, company.dba_name].filter(
+        (value): value is string => typeof value === "string" && value.length > 0,
+      )
+      return candidates.some((value) => value.toLowerCase().includes(searchTerm))
+    })
+  }
 
   // Countries filter
   if (filters.countries.length > 0) {
     filtered = filtered.filter((company) =>
       company.facilities?.some((f) => {
-        if (!f.country) return false
-        return filters.countries.includes(f.country)
+        const countryCode = getFacilityCountryCode(f, { allowStateInference: false })
+        if (!countryCode) return false
+        return filters.countries.includes(countryCode)
       })
     )
   }
@@ -24,9 +40,11 @@ export function filterCompanies(
   // States filter
   if (filters.states.length > 0) {
     filtered = filtered.filter((company) =>
-      company.facilities?.some((f) =>
-        typeof f.state === 'string' && filters.states.includes(f.state)
-      )
+      company.facilities?.some((f) => {
+        const stateKey = getFacilityStateKey(f)
+        if (!stateKey) return false
+        return filters.states.includes(stateKey)
+      })
     )
   }
 
@@ -81,25 +99,30 @@ export function filterCompanies(
  * Filter facilities based on location filters only
  * This ensures only facilities matching the selected locations are displayed
  */
+type FacilityForFiltering = HomepageFacility | HomepageFacilityLocation
+
 export function filterFacilitiesByLocation(
-  facilities: HomepageFacility[],
+  facilities: FacilityForFiltering[],
   filters: FilterState
-): HomepageFacility[] {
+): FacilityForFiltering[] {
   let filtered = [...facilities]
 
   // Apply country filter to facilities
   if (filters.countries.length > 0) {
     filtered = filtered.filter((facility) => {
-      if (!facility.country) return false
-      return filters.countries.includes(facility.country)
+      const countryCode = getFacilityCountryCode(facility, { allowStateInference: false })
+      if (!countryCode) return false
+      return filters.countries.includes(countryCode)
     })
   }
 
   // Apply state filter to facilities
   if (filters.states.length > 0) {
-    filtered = filtered.filter((facility) =>
-      facility.state && filters.states.includes(facility.state)
-    )
+    filtered = filtered.filter((facility) => {
+      const stateKey = getFacilityStateKey(facility)
+      if (!stateKey) return false
+      return filters.states.includes(stateKey)
+    })
   }
 
   return filtered
@@ -110,10 +133,13 @@ export function filterFacilitiesByLocation(
  * Use this when you need to display only facilities that match location filters
  * This is the KEY function that solves the "showing all locations" problem
  */
-export function getLocationFilteredFacilities<T extends HomepageFacility>(
-  companies: HomepageCompany[],
+export function getLocationFilteredFacilities<T extends FacilityForFiltering>(
+  companies: HomepageCompanyWithLocations[],
   filters: FilterState,
-  facilitiesMapper: (company: HomepageCompany, facility: HomepageFacility) => T
+  facilitiesMapper: (
+    company: HomepageCompanyWithLocations,
+    facility: FacilityForFiltering
+  ) => T
 ): T[] {
   // First filter companies by all criteria (countries, states, capabilities, volume)
   const filteredCompanies = filterCompanies(companies, filters)
