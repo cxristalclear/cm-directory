@@ -1,21 +1,21 @@
 import { Suspense } from "react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import LazyCompanyMap from "@/components/LazyCompanyMap"
+import AddCompanyCallout from "@/components/AddCompanyCallout"
 import CompanyList from "@/components/CompanyList"
-import FilterSidebar from "@/components/FilterSidebar"
 import FilterDebugger from "@/components/FilterDebugger"
+import FilterSidebar from "@/components/FilterSidebar"
 import Header from "@/components/Header"
+import LazyCompanyMap from "@/components/LazyCompanyMap"
+import VenkelAd from "@/components/VenkelAd"
 import { FilterErrorBoundary } from "@/components/FilterErrorBoundary"
+import Navbar from "@/components/navbar"
 import { MapErrorBoundary } from "@/components/MapErrorBoundary"
 import { FilterProvider } from "@/contexts/FilterContext"
+import { featureFlags, siteConfig } from "@/lib/config"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
-import { siteConfig, featureFlags } from "@/lib/config"
-import AddCompanyCallout from "@/components/AddCompanyCallout"
-import VenkelAd from "@/components/VenkelAd"
-import type { PageProps } from "@/types/nxt"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
-import Navbar from "@/components/navbar"
+import type { PageProps } from "@/types/nxt"
 
 export const revalidate = 300
 
@@ -66,12 +66,12 @@ const COMPANY_FIELDS = `
 const MAX_COMPANIES = 500
 
 export const metadata = {
-  title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
+  title: "CM Directory - Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
   description:
     "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities (SMT, Through-Hole, Box Build), certifications (ISO 13485, AS9100), industries, and state.",
   alternates: { canonical: siteConfig.url },
   openGraph: {
-    title: "CM Directory — Electronics Contract Manufacturers",
+    title: "CM Directory - Electronics Contract Manufacturers",
     description:
       "Find and compare PCB assembly partners by capability, certification, and location.",
     url: siteConfig.url,
@@ -80,7 +80,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary",
-    title: "CM Directory — Electronics Contract Manufacturers",
+    title: "CM Directory - Electronics Contract Manufacturers",
     description:
       "Filter verified manufacturers by capability, certification, and location.",
   },
@@ -118,50 +118,44 @@ export default async function Home({
 
   const initialFilters = parseFiltersFromSearchParams(resolvedSearchParams)
 
-  // Fetch DB rows (nullable), then normalize to strict app types once here.
   const companies = await getData()
 
   return (
-    <Suspense fallback={<div className="p-4">Loading…</div>}>
+    <Suspense fallback={<div className="p-4">Loading...</div>}>
       <SpeedInsights />
       <FilterProvider initialFilters={initialFilters}>
-        <div className="min-h-screen bg-gray-50">
+        <div className="page-shell">
           <Navbar />
           <Header />
-          <main className="container mx-auto px-4 py-6">
-            {/* Top Venkel Ad - Banner */}
-            <VenkelAd size="banner" className="mb-6" />
+          <main className="page-container section section--tight space-y-6">
+            <VenkelAd size="banner" className="card-compact" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Filter Sidebar */}
-              <div className="lg:col-span-3 space-y-4">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+              <div className="space-y-4 lg:col-span-3">
                 <FilterErrorBoundary>
-                  <Suspense fallback={<div className="bg-white rounded-xl shadow-lg p-6 animate-pulse">Loading filters...</div>}>
+                  <Suspense fallback={<div className="card-compact animate-pulse p-6">Loading filters...</div>}>
                     <FilterSidebar allCompanies={companies} />
                     {featureFlags.showDebug && <FilterDebugger allCompanies={companies} />}
                   </Suspense>
                 </FilterErrorBoundary>
 
-                {/* Sidebar Venkel Ad */}
-                <VenkelAd size="sidebar" />
+                <VenkelAd size="sidebar" className="card-compact" />
                 <AddCompanyCallout className="mt-12" />
               </div>
 
-              <div className="lg:col-span-9 space-y-4">
-                {/* Map with Error Boundary */}
+              <div className="space-y-4 lg:col-span-9">
                 <MapErrorBoundary>
                   <LazyCompanyMap allCompanies={companies} />
                 </MapErrorBoundary>
 
-                {/* List */}
-                <div className="companies-directory">
+                <div className="companies-directory space-y-4">
                   <Suspense
                     fallback={
-                      <div className="bg-white rounded-xl shadow-sm p-8 animate-pulse">
-                        <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-                        <div className="space-y-4">
+                      <div className="card-compact animate-pulse p-8">
+                        <div className="mb-6 h-8 w-1/4 rounded bg-muted" />
+                        <div className="space-y-3">
                           {[1, 2, 3].map(i => (
-                            <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                            <div key={i} className="h-32 rounded-md bg-muted" />
                           ))}
                         </div>
                       </div>
@@ -170,9 +164,8 @@ export default async function Home({
                     <CompanyList allCompanies={companies} />
                   </Suspense>
                 </div>
-                
-                {/* Bottom Venkel Ad - Banner */}
-                <VenkelAd size="banner" />
+
+                <VenkelAd size="banner" className="card-compact" />
               </div>
             </div>
           </main>

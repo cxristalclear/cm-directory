@@ -1,5 +1,5 @@
 import type { HomepageFacility, HomepageFacilityLocation } from "@/types/homepage"
-import { getCountryName } from "@/utils/countryMapping"
+import { COUNTRIES, getCountryName } from "@/utils/countryMapping"
 import { STATE_NAMES, getStateName } from "@/utils/stateMapping"
 
 type FacilityLocationLike = HomepageFacility | HomepageFacilityLocation
@@ -38,6 +38,17 @@ const COUNTRY_CODE_ALIASES: Record<string, string> = {
   "PEOPLE'S REPUBLIC OF CHINA": "CN",
   NAMIBIA: "NA",
 }
+
+const COUNTRY_NAME_TO_CODE: Record<string, string> = Object.entries(COUNTRIES).reduce(
+  (map, [code, name]) => {
+    const upperName = name.toUpperCase()
+    const collapsedName = upperName.replace(/[.\s]/g, "")
+    map[upperName] = code
+    map[collapsedName] = code
+    return map
+  },
+  {} as Record<string, string>,
+)
 
 const ISO3_TO_ISO2: Record<string, string> = {
   USA: "US",
@@ -178,6 +189,9 @@ export const normalizeCountryCode = (value?: string | null): string | null => {
 
   if (COUNTRY_CODE_ALIASES[upper]) return COUNTRY_CODE_ALIASES[upper]
   if (COUNTRY_CODE_ALIASES[collapsed]) return COUNTRY_CODE_ALIASES[collapsed]
+
+  if (COUNTRY_NAME_TO_CODE[upper]) return COUNTRY_NAME_TO_CODE[upper]
+  if (COUNTRY_NAME_TO_CODE[collapsed]) return COUNTRY_NAME_TO_CODE[collapsed]
 
   if (upper.length === 2) return upper
   return upper
