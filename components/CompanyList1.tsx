@@ -99,7 +99,6 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
           const normalizedCountryCode = facility ? getFacilityCountryCode(facility) : null
           const locationCodes = [normalizedRegionCode, normalizedCountryCode].filter(Boolean).join(", ")
           const capabilityRecord = company.capabilities?.[0]
-          const industries = company.industries ?? []
           const certifications = company.certifications ?? []
 
           return (
@@ -193,8 +192,7 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
             onClick={() => setPagesLoaded(prev => Math.min(prev + 1, totalPages))}
             className="btn btn--primary btn--lg rounded-full shadow-sm text-sm px-8"
           >
-            Load more manufacturers
-          </button>
+            Load more companies          </button>
         </div>
       )}
     </div>

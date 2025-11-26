@@ -161,9 +161,9 @@
 
 .page-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1600px; /* Widen the container */
   margin: 0 auto;
-  padding: 0 var(--space-5);
+  padding: 0 var(--space-6); /* Slightly more padding */
 }
 
 .section {

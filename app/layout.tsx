@@ -74,7 +74,7 @@ export default function RootLayout({
   const rootStructuredData = [organizationJsonLd, webSiteJsonLd]
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="h-full">
       <head>
         {rootStructuredData.map((schema) => (
           <script
@@ -89,9 +89,11 @@ export default function RootLayout({
           href={`${siteConfig.url}/feed.xml`}
         />
       </head>
-      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
-        {children}
-        <SiteFooter />
+      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased min-h-screen flex flex-col bg-white text-slate-900`}>
+        <div className="flex min-h-screen flex-col">
+          <div className="flex-1">{children}</div>
+          <SiteFooter />
+        </div>
         <SpeedInsights />
         <Toaster position="top-right" />
       </body>
