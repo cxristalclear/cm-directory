@@ -109,6 +109,7 @@ export default function AddYourCompanyPage() {
       text: string
       url: string
     }>
+    url: string
     publisher: {
       "@type": "Organization"
       name: string

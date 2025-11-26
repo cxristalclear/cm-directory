@@ -125,18 +125,20 @@ export default function ListYourCompanyPage() {
           </div>
         </section>
 
-        <main className="page-container section space-y-14">
+        <main className="page-container section space-y-12">
           <section className="space-y-6">
             <h2 className="heading-lg">How it works</h2>
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3">
               {steps.map(step => (
-                <div key={step.number} className="card text-center">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <div key={step.number} className="card">
+                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
                     {step.number}
                   </div>
-                  <h3 className="heading-md">{step.title}</h3>
-                  <p className="body text-muted-foreground">{step.description}</p>
-                  <span className="chip chip--muted mt-3">{step.time}</span>
+                  <h3 className="heading-md text-center">{step.title}</h3>
+                  <p className="body text-muted-foreground text-center">{step.description}</p>
+                  <div className="mt-3 flex justify-center">
+                    <span className="chip chip--muted">{step.time}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -152,9 +154,9 @@ export default function ListYourCompanyPage() {
             <JotformEmbed />
           </section>
 
-          <section className="space-y-6">
+          <section className="space-y-4">
             <h2 className="heading-lg">Why list on CM Directory?</h2>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               {benefits.map(benefit => (
                 <div key={benefit.title} className="card-compact flex gap-3">
                   <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary">
@@ -169,7 +171,7 @@ export default function ListYourCompanyPage() {
             </div>
           </section>
 
-          <section className="space-y-4">
+          <section className="card space-y-4">
             <h2 className="heading-lg">Frequently asked questions</h2>
             <div className="space-y-3">
               {faqs.map(faq => (

@@ -64,11 +64,11 @@ export default function AboutPage() {
       </section>
 
       <main className="page-container section space-y-12">
-        <div className="grid gap-6 lg:grid-cols-12">
+        <section className="grid gap-6 lg:grid-cols-12">
           <div className="space-y-6 lg:col-span-8">
             <Card>
               <SectionHeader title="Who it’s for" />
-              <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+              <ul className="mt-4 grid gap-4 md:grid-cols-3">
                 {personas.map(persona => (
                   <li key={persona.title} className="card-compact bg-muted/40">
                     <div className="flex items-center gap-2">
@@ -79,35 +79,6 @@ export default function AboutPage() {
                   </li>
                 ))}
               </ul>
-            </Card>
-
-            <Card>
-              <SectionHeader title="How it works" />
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {steps.map(step => (
-                  <div key={step.title} className="card-compact bg-muted/40">
-                    <div className="flex items-center gap-2">
-                      <step.icon className="h-4 w-4 text-primary" />
-                      <h3 className="heading-md">{step.title}</h3>
-                    </div>
-                    <p className="body text-muted-foreground">{step.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card>
-              <SectionHeader title="Quality you can trust" />
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="card-compact bg-muted/40">
-                  <h4 className="heading-md">Data accuracy</h4>
-                  <p className="body text-muted-foreground">95%+ accuracy target on certifications and contact info.</p>
-                </div>
-                <div className="card-compact bg-muted/40">
-                  <h4 className="heading-md">Coverage depth</h4>
-                  <p className="body text-muted-foreground">80%+ completion across core fields and rolling 90-day verification.</p>
-                </div>
-              </div>
             </Card>
           </div>
 
@@ -137,7 +108,36 @@ export default function AboutPage() {
               </Link>
             </AsideCard>
           </div>
-        </div>
+        </section>
+
+        <section className="space-y-6">
+          <SectionHeader title="How it works" />
+          <div className="grid gap-4 md:grid-cols-3">
+            {steps.map(step => (
+              <div key={step.title} className="card">
+                <div className="flex items-center gap-2">
+                  <step.icon className="h-5 w-5 text-primary" />
+                  <h3 className="heading-md">{step.title}</h3>
+                </div>
+                <p className="body text-muted-foreground">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <SectionHeader title="Quality you can trust" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="card-compact bg-muted/40">
+              <h4 className="heading-md">Data accuracy</h4>
+              <p className="body text-muted-foreground">95%+ accuracy target on certifications and contact info.</p>
+            </div>
+            <div className="card-compact bg-muted/40">
+              <h4 className="heading-md">Coverage depth</h4>
+              <p className="body text-muted-foreground">80%+ completion across core fields and rolling 90-day verification.</p>
+            </div>
+          </div>
+        </section>
 
         <footer className="section--tight">
           <div className="card-compact text-center text-sm text-muted-foreground">
