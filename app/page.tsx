@@ -66,9 +66,9 @@ const COMPANY_FIELDS = `
 const MAX_COMPANIES = 500
 
 export const metadata = {
-  title: "CM Directory - Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
+  title: "CM Directory - Find Electronics Contract Manufacturers",
   description:
-    "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities (SMT, Through-Hole, Box Build), certifications (ISO 13485, AS9100), industries, and state.",
+    "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities, certifications, industries, and location.",
   alternates: { canonical: siteConfig.url },
   openGraph: {
     title: "CM Directory - Electronics Contract Manufacturers",
@@ -86,7 +86,6 @@ export const metadata = {
   },
 }
 
-// ---------- Data Fetch ----------
 async function getData(): Promise<HomepageCompanyWithLocations[]> {
   try {
     const { data, error } = await supabase
@@ -115,9 +114,7 @@ export default async function Home({
   searchParams,
 }: PageProps<Record<string, string | string[]>, HomeSearchParams>) {
   const resolvedSearchParams: HomeSearchParams = (await searchParams) ?? {}
-
   const initialFilters = parseFiltersFromSearchParams(resolvedSearchParams)
-
   const companies = await getData()
 
   return (
@@ -127,11 +124,13 @@ export default async function Home({
         <div className="page-shell">
           <Navbar />
           <Header />
-          <main className="page-container section section--tight space-y-6">
-            <VenkelAd size="banner" className="card-compact" />
+          
+          <main className="page-container section section--tight space-y-4">
+            {/* Top Ad Removed to bring content higher */}
 
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-              <div className="space-y-4 lg:col-span-3">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 items-start">
+              {/* Left Sidebar - Sticky */}
+              <div className="lg:col-span-3 space-y-3 sticky top-4 z-10">
                 <FilterErrorBoundary>
                   <Suspense fallback={<div className="card-compact animate-pulse p-6">Loading filters...</div>}>
                     <FilterSidebar allCompanies={companies} />
@@ -140,22 +139,27 @@ export default async function Home({
                 </FilterErrorBoundary>
 
                 <VenkelAd size="sidebar" className="card-compact" />
-                <AddCompanyCallout className="mt-12" />
+                
+                <AddCompanyCallout className="mt-4" />
               </div>
 
-              <div className="space-y-4 lg:col-span-9">
+              {/* Main Content Area */}
+              <div className="lg:col-span-9 space-y-4">
                 <MapErrorBoundary>
                   <LazyCompanyMap allCompanies={companies} />
                 </MapErrorBoundary>
 
-                <div className="companies-directory space-y-4">
+                {/* Re-inserted Ad: Placed between Map and List for visual break */}
+                <VenkelAd size="banner" className="card-compact shadow-sm border border-gray-100" />
+
+                <div className="companies-directory space-y-3">
                   <Suspense
                     fallback={
                       <div className="card-compact animate-pulse p-8">
-                        <div className="mb-6 h-8 w-1/4 rounded bg-muted" />
+                        <div className="mb-4 h-6 w-1/4 rounded bg-muted" />
                         <div className="space-y-3">
                           {[1, 2, 3].map(i => (
-                            <div key={i} className="h-32 rounded-md bg-muted" />
+                            <div key={i} className="h-24 rounded-md bg-muted" />
                           ))}
                         </div>
                       </div>
@@ -164,8 +168,6 @@ export default async function Home({
                     <CompanyList allCompanies={companies} />
                   </Suspense>
                 </div>
-
-                <VenkelAd size="banner" className="card-compact" />
               </div>
             </div>
           </main>

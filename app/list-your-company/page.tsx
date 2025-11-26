@@ -98,111 +98,129 @@ export default function ListYourCompanyPage() {
       <div className="page-shell">
         <Navbar />
 
-        <section className="section--flush">
-          <div className="gradient-bg text-white">
-            <div className="page-container py-16 text-center md:py-20">
-              <div className="mx-auto flex max-w-5xl flex-col items-center gap-4">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-100">
-                  <Building2 className="h-5 w-5 text-white" />
-                  For Manufacturers
-                </div>
-                <h1 className="heading-xl text-white md:text-5xl">Get found by qualified buyers</h1>
-                <p className="body-lg max-w-3xl text-blue-100">
-                  List your contract manufacturing company for free and connect with OEMs, startups, and engineers
-                  searching for reliable partners.
-                </p>
-                <div className="flex flex-col items-center gap-3 sm:flex-row">
-                  <Link href="#submit" className="btn btn--primary btn--lg bg-white text-primary hover:bg-white/90">
-                    Submit Free Listing
-                    <ArrowRight className="h-5 w-5" />
-                  </Link>
-                  <Link href="/contact" className="btn btn--outline btn--lg border-white/40 text-white hover:text-primary">
-                    Have Questions?
-                  </Link>
-                </div>
-              </div>
+        <main className="page-container section space-y-24">
+          {/* Hero Section - Centered Light Theme */}
+          <section className="text-center max-w-4xl mx-auto pt-12 space-y-8">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm mx-auto">
+              <Building2 className="h-3.5 w-3.5 text-primary" />
+              <span>For Manufacturers</span>
             </div>
-          </div>
-        </section>
+            <h1 className="heading-xl text-foreground">
+              Get found by <span className="text-primary">qualified buyers</span>.
+            </h1>
+            <p className="body-lg text-muted-foreground max-w-2xl mx-auto">
+              List your contract manufacturing company for free and connect with OEMs, startups, and engineers searching for reliable partners.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link href="#submit" className="btn btn--primary btn--lg shadow-md shadow-primary/20">
+                Submit Free Listing
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link href="/contact" className="btn btn--outline btn--lg bg-card">
+                Have Questions?
+              </Link>
+            </div>
+          </section>
 
-        <main className="page-container section space-y-12">
-          <section className="space-y-6">
-            <h2 className="heading-lg">How it works</h2>
-            <div className="grid gap-4 md:grid-cols-3">
-              {steps.map(step => (
-                <div key={step.number} className="card">
-                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          {/* How it works */}
+          <section>
+            <div className="text-center max-w-2xl mx-auto mb-16">
+              <h2 className="heading-lg mb-4">How it works</h2>
+              <p className="body text-muted-foreground">Three simple steps to publish your profile.</p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-8">
+              {steps.map((step) => (
+                <div key={step.number} className="relative bg-card p-6 rounded-xl border border-border shadow-sm">
+                  <div className="absolute -top-5 left-6 h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm ring-4 ring-background">
                     {step.number}
                   </div>
-                  <h3 className="heading-md text-center">{step.title}</h3>
-                  <p className="body text-muted-foreground text-center">{step.description}</p>
-                  <div className="mt-3 flex justify-center">
-                    <span className="chip chip--muted">{step.time}</span>
+                  <div className="mt-6 space-y-3">
+                    <h3 className="heading-md">{step.title}</h3>
+                    <p className="body-sm text-muted-foreground">{step.description}</p>
+                    <div className="pt-2">
+                      <span className="chip chip--muted">{step.time}</span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </section>
 
-          <section id="submit" className="card space-y-6">
-            <div className="space-y-2 text-center">
-              <h2 className="heading-lg">Submit your listing</h2>
-              <p className="body-lg text-muted-foreground">
-                Fill out the form and we&apos;ll review and publish within 1–2 business days.
-              </p>
-            </div>
-            <JotformEmbed />
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="heading-lg">Why list on CM Directory?</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {benefits.map(benefit => (
-                <div key={benefit.title} className="card-compact flex gap-3">
-                  <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary">
-                    <benefit.icon className="h-5 w-5" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="heading-md">{benefit.title}</h3>
-                    <p className="body text-muted-foreground">{benefit.description}</p>
-                  </div>
+          {/* Form Section */}
+          <section id="submit" className="max-w-3xl mx-auto">
+            <div className="card p-1 bg-card border-border/60 shadow-xl">
+              <div className="p-6 md:p-8 space-y-6">
+                <div className="text-center space-y-2 mb-8">
+                  <h2 className="heading-lg">Submit your listing</h2>
+                  <p className="body text-muted-foreground">
+                    Fill out the form and we&apos;ll review and publish within 1–2 business days.
+                  </p>
                 </div>
-              ))}
+                <JotformEmbed />
+              </div>
             </div>
           </section>
 
-          <section className="card space-y-4">
-            <h2 className="heading-lg">Frequently asked questions</h2>
-            <div className="space-y-3">
-              {faqs.map(faq => (
-                <details key={faq.q} className="card-compact group">
-                  <summary className="flex cursor-pointer items-center justify-between gap-3 text-left">
-                    <span className="heading-md">{faq.q}</span>
-                    <span className="text-lg text-muted-foreground transition group-open:rotate-180">▾</span>
-                  </summary>
-                  <p className="body text-muted-foreground pt-2">{faq.a}</p>
-                </details>
-              ))}
+          {/* Benefits & FAQ Split */}
+          <section className="grid md:grid-cols-2 gap-12 items-start">
+            <div>
+              <h2 className="heading-lg mb-6">Why list on CM Directory?</h2>
+              <div className="space-y-6">
+                {benefits.map((benefit) => (
+                  <div key={benefit.title} className="flex gap-4">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <benefit.icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-1">{benefit.title}</h3>
+                      <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* FAQ Accordion */}
+            <div className="bg-muted/30 rounded-2xl p-6 md:p-8">
+              <h3 className="heading-md mb-6">Frequently Asked Questions</h3>
+              <div className="space-y-3">
+                {faqs.map((faq) => (
+                  <details key={faq.q} className="group bg-card rounded-lg border border-border open:shadow-sm transition-all">
+                    <summary className="flex cursor-pointer items-center justify-between p-4 font-medium text-foreground">
+                      {faq.q}
+                      <span className="text-muted-foreground transition-transform group-open:rotate-180">▾</span>
+                    </summary>
+                    <div className="px-4 pb-4 text-sm text-muted-foreground border-t border-transparent group-open:border-border/50 pt-0 group-open:pt-3">
+                      {faq.a}
+                    </div>
+                  </details>
+                ))}
+              </div>
             </div>
           </section>
 
-          <section className="card bg-primary text-primary-foreground text-center">
-            <div className="space-y-4">
-              <h2 className="heading-lg text-primary-foreground">Ready to get found?</h2>
-              <p className="body-lg text-primary-foreground/80">
+          {/* CTA Footer */}
+          <section className="card bg-primary text-primary-foreground p-8 md:p-12 text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+            
+            <div className="relative z-10 space-y-6 max-w-2xl mx-auto">
+              <h2 className="heading-lg text-white">Ready to get found?</h2>
+              <p className="body-lg text-primary-foreground/90">
                 Join manufacturers connecting with qualified buyers every day.
               </p>
-              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link href="#submit" className="btn btn--primary btn--lg bg-white text-primary hover:bg-white/90">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link href="#submit" className="btn btn--lg bg-white text-primary hover:bg-white/90 border-none w-full sm:w-auto">
                   Submit Free Listing
-                  <ArrowRight className="h-5 w-5" />
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link href="/contact" className="btn btn--outline btn--lg border-primary-foreground/30 text-primary-foreground">
+                <Link href="/contact" className="btn btn--lg btn--outline border-white/30 text-white hover:bg-white/10 w-full sm:w-auto">
                   Contact Sales
                 </Link>
               </div>
             </div>
           </section>
+
         </main>
       </div>
     </Suspense>
