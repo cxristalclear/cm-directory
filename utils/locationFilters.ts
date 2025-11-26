@@ -10,14 +10,13 @@ const STATE_COUNTRY_MAP: Record<string, string> = Object.fromEntries(
   Object.keys(STATE_NAMES).map((code) => [code, "US"]),
 )
 
+// Non-standard aliases and special cases; official country names should rely on COUNTRY_NAME_TO_CODE.
 const COUNTRY_CODE_ALIASES: Record<string, string> = {
   USA: "US",
-  "UNITED STATES": "US",
   "UNITED STATES OF AMERICA": "US",
   "U.S.": "US",
   "U.S.A.": "US",
   UK: "GB",
-  "UNITED KINGDOM": "GB",
   "GREAT BRITAIN": "GB",
   ENGLAND: "GB",
   SCOTLAND: "GB",
@@ -25,9 +24,7 @@ const COUNTRY_CODE_ALIASES: Record<string, string> = {
   "NORTHERN IRELAND": "GB",
   "REPUBLIC OF IRELAND": "IE",
   IRELAND: "IE",
-  TAIWAN: "TW",
   "REPUBLIC OF CHINA": "TW",
-  "SOUTH KOREA": "KR",
   KOREA: "KR",
   "NORTH KOREA": "KP",
   HONGKONG: "HK",
