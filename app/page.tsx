@@ -140,7 +140,7 @@ export default async function Home({
 
                 <VenkelAd size="sidebar" className="card-compact" />
                 
-                <AddCompanyCallout className="mt-4" />
+                <AddCompanyCallout />
               </div>
 
               {/* Main Content Area */}

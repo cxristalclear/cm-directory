@@ -165,7 +165,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       container: mapContainer.current,
       style: mapStyle,
       center: [-98.5795, 39.8283],
-      zoom: 5,
+      zoom: 4, // Increased zoom for better default US view
       pitch: 0,
       bearing: 0,
       attributionControl: false
@@ -235,7 +235,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   }, [addClusteringLayers, mapStyle])
 
   const resetView = useCallback(() => {
-    map.current?.flyTo({ center: [-98.5795, 39.8283], zoom: 3.5, pitch: 0, bearing: 0, duration: 1500 })
+    map.current?.flyTo({ center: [-98.5795, 39.8283], zoom: 4, pitch: 0, bearing: 0, duration: 1500 })
   }, [])
 
   useEffect(() => {
@@ -287,7 +287,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   }
 
   return (
-    <div className="relative h-[600px] w-full rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden shadow-sm group isolate">
+    <div className="relative h-[500px] w-full rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden shadow-sm group isolate">
       {/* Floating Status Pill - Glass Effect */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 animate-in fade-in slide-in-from-top-4 duration-500">
         <div className="bg-white/80 backdrop-blur-md border border-white/20 shadow-lg px-5 py-2.5 rounded-full flex items-center gap-4 hover:bg-white/90 transition-all ring-1 ring-black/5">
