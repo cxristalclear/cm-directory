@@ -2,20 +2,22 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Building2, ChevronRight, MapPin, Users, Grid, List } from "lucide-react"
+import { Building2, ChevronRight, MapPin, Users, Grid, List, Sparkles } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
+import ActiveFiltersBar from "@/components/ActiveFiltersBar"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
+import { EmployeeCountRanges } from "@/types/company"
 import { filterCompanies } from "@/utils/filtering"
 import { getFacilityLocationLabel, getFacilityCountryCode, normalizeStateFilterValue } from "@/utils/locationFilters"
-import HeroSearchBar from "@/components/HeroSearchBar"
+import HeroSearchBar from "@/components/SearchBar"
 
 interface CompanyListProps {
   allCompanies: HomepageCompanyWithLocations[]
   limit?: number
 }
 
-const DEFAULT_LIMIT = 12 
+const DEFAULT_LIMIT = 12
 
 function createSummary(totalCount: number, visibleCount: number): string {
   if (totalCount === 0) return "No results"
@@ -26,7 +28,8 @@ function createSummary(totalCount: number, visibleCount: number): string {
 export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: CompanyListProps) {
   const { filters, setFilteredCount } = useFilters()
   const [pagesLoaded, setPagesLoaded] = useState(1)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list")
+  const [sortBy, setSortBy] = useState<"relevance" | "employees" | "name">("relevance")
 
   const filteredCompanies = useMemo(() => {
     return filterCompanies(allCompanies, filters)
@@ -37,6 +40,27 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
 
   const totalPages = Math.max(1, Math.ceil(filteredCompanies.length / limit))
   const visibleCompanies = useMemo(() => filteredCompanies.slice(0, pagesLoaded * limit), [filteredCompanies, pagesLoaded, limit])
+  const sortedCompanies = useMemo(() => {
+    if (sortBy === "relevance") return visibleCompanies
+
+    const employeeRangeOrder = EmployeeCountRanges
+    const getEmployeeRangeWeight = (range?: string | null) => {
+      if (!range) return Number.POSITIVE_INFINITY
+      const index = employeeRangeOrder.indexOf(range as typeof EmployeeCountRanges[number])
+      return index === -1 ? Number.POSITIVE_INFINITY : index
+    }
+
+    return [...visibleCompanies].sort((companyA, companyB) => {
+      if (sortBy === "employees") {
+        const weightA = getEmployeeRangeWeight(companyA.employee_count_range)
+        const weightB = getEmployeeRangeWeight(companyB.employee_count_range)
+        if (weightA === weightB) return companyA.company_name.localeCompare(companyB.company_name)
+        return weightA - weightB
+      }
+
+      return companyA.company_name.localeCompare(companyB.company_name)
+    })
+  }, [sortBy, visibleCompanies])
   const summary = createSummary(filteredCompanies.length, visibleCompanies.length)
   const canLoadMore = pagesLoaded < totalPages
 
@@ -54,13 +78,23 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
 
   return (
     <div className="space-y-4">
+      {/* Search + Filters */}
+      <div className="flex justify-center">
+        <div className="w-full">
+          <HeroSearchBar companies={allCompanies} variant="inline" />
+        </div>
+      </div>
+
       {/* List Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div>
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-bold text-gray-900 tracking-tight">Results</h2>
-            <p className="text-xs text-gray-500">{summary}</p>
+            <ActiveFiltersBar variant="inline" />
           </div>
+          <p className="text-xs text-gray-500">{summary}</p>
+        </div>
+        <div className="flex items-center gap-3">
           <div className="flex items-center bg-gray-100/80 p-0.5 rounded-md border border-gray-200/50 backdrop-blur-sm">
             <button
               onClick={() => setViewMode('list')}
@@ -77,15 +111,31 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
               <Grid className="w-3.5 h-3.5" />
             </button>
           </div>
-        </div>
-        <div className="w-full max-w-md">
-          <HeroSearchBar companies={allCompanies} variant="inline" />
+
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="sort-by" className="text-xs font-semibold text-gray-600">Sort by:</label>
+            <div className="relative">
+              <select
+                id="sort-by"
+                value={sortBy}
+                onChange={event => setSortBy(event.target.value as "relevance" | "employees" | "name")}
+                className="appearance-none rounded-md border border-gray-200 bg-white py-2 pl-3 pr-8 text-xs font-semibold text-gray-700 shadow-sm transition-colors focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="relevance">Relevance</option>
+                <option value="employees">Employees</option>
+                <option value="name">Name</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400">
+                <ChevronDown className="w-3.5 h-3.5" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* List/Grid View */}
-      <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-1 sm:grid-cols-2 gap-4'}>
-        {visibleCompanies.map(company => {
+      <div className={viewMode === "list" ? "flex flex-col gap-3" : "grid grid-cols-1 sm:grid-cols-2 gap-4"}>
+        {sortedCompanies.map(company => {
           const facility = company.facilities?.[0]
           const location = getFacilityLocationLabel(facility)
           const normalizedRegionCode = facility
@@ -93,99 +143,128 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
             : null
           const normalizedCountryCode = facility ? getFacilityCountryCode(facility) : null
           const locationCodes = [normalizedRegionCode, normalizedCountryCode].filter(Boolean).join(", ")
+          const locationLabel = location || "Location unavailable"
           const capabilityRecord = company.capabilities?.[0]
           const certifications = company.certifications ?? []
+          const employeeCountLabel = company.employee_count_range ?? "Employees N/A"
+
+          const capabilityHighlights: string[] = []
+          if (capabilityRecord?.pcb_assembly_smt) capabilityHighlights.push("SMT Assembly")
+          if (capabilityRecord?.box_build_assembly) capabilityHighlights.push("Box Build")
+          if (capabilityRecord?.cable_harness_assembly) capabilityHighlights.push("Cable & Harness")
+          if (capabilityRecord?.prototyping) capabilityHighlights.push("Prototyping")
+          if (capabilityRecord?.turnkey_services) capabilityHighlights.push("Turnkey Services")
+          if (capabilityRecord?.supply_chain_management) capabilityHighlights.push("Supply Chain")
+          if (capabilityRecord?.pcb_assembly_through_hole) capabilityHighlights.push("Through-Hole")
+          if (capabilityRecord?.pcb_assembly_fine_pitch) capabilityHighlights.push("Fine Pitch")
+          if (capabilityRecord?.pcb_assembly_mixed) capabilityHighlights.push("Mixed Tech")
+          if (capabilityRecord?.testing_functional) capabilityHighlights.push("Functional Test")
+          if (capabilityRecord?.testing_ict) capabilityHighlights.push("ICT Testing")
+          if (capabilityRecord?.testing_rf_wireless) capabilityHighlights.push("RF/Wireless Test")
+          if (capabilityRecord?.testing_environmental) capabilityHighlights.push("Environmental Test")
+          if (capabilityRecord?.lead_free_soldering) capabilityHighlights.push("Lead-Free Solder")
+          if (capabilityRecord?.design_services) capabilityHighlights.push("Design Support")
+          if (capabilityRecord?.low_volume_production) capabilityHighlights.push("Low Volume")
+          if (capabilityRecord?.medium_volume_production) capabilityHighlights.push("Mid Volume")
+          if (capabilityRecord?.high_volume_production) capabilityHighlights.push("High Volume")
+          if (capabilityRecord?.consigned_services) capabilityHighlights.push("Consigned Build")
+
+          const certificationHighlights = certifications
+            .map(cert => cert?.certification_type)
+            .filter((cert): cert is string => Boolean(cert && cert.trim()))
+
+          const combinedHighlights = Array.from(new Set([...capabilityHighlights, ...certificationHighlights]))
+          const visibleHighlights = combinedHighlights.slice(0, 3)
+          const hiddenHighlightCount = Math.max(combinedHighlights.length - visibleHighlights.length, 0)
 
           return (
             <Link
               key={company.id}
               href={`/companies/${company.slug}`}
               prefetch
-              className={`group relative block rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-blue-300 hover:shadow-lg hover:-translate-y-0.5 ${viewMode === 'list' ? 'p-4' : 'p-4 h-full flex flex-col'}`}
+              className={`group relative block rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-blue-300 hover:shadow-lg hover:-translate-y-0.5 ${
+                viewMode === "list" ? "p-2" : "p-4 h-full flex flex-col"
+              }`}
             >
               {/* Hover Gradient Overlay */}
               <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-50/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
 
-              <div className={`relative z-10 flex ${viewMode === 'list' ? 'flex-col md:flex-row gap-4 items-start' : 'flex-col gap-3 items-start h-full'}`}>
-                
+              <div className={`relative z-10 flex ${viewMode === "list" ? "flex-col md:flex-row gap-5 items-start" : "flex-col gap-4 items-start h-full"}`}>
                 {/* Compact Logo Placeholder */}
-                <div className="flex-shrink-0">
-                  <div className={`flex items-center justify-center rounded-lg bg-white border border-gray-100 shadow-sm text-gray-300 group-hover:text-blue-600 group-hover:border-blue-100 group-hover:scale-105 transition-all duration-300 ${viewMode === 'list' ? 'h-12 w-12' : 'h-10 w-10'}`}>
-                    <Building2 className={`${viewMode === 'list' ? 'h-6 w-6' : 'h-5 w-5'} transition-colors duration-300`} />
-                  </div>
-                </div>
+                
 
                 {/* Content */}
-                <div className="flex-1 min-w-0 w-full">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <h3 className={`font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-300 ${viewMode === 'list' ? 'text-base' : 'text-sm'}`}>
+                <div className="flex-1 min-w-0 w-full flex flex-col gap-3 pl-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <h3
+                        className={`font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300 ${viewMode === "list" ? "text-lg" : "text-base"}`}
+                      >
                         {company.company_name}
                       </h3>
-                      
-                      {/* Compact Active Badge */}
-                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50/80 border border-emerald-100/50 backdrop-blur-sm">
-                        <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
-                        <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider leading-none">Active</span>
+
+                      {company.dba_name && (
+                        <p className="text-[11px] font-medium text-gray-400 group-hover:text-gray-500 transition-colors">
+                          DBA: {company.dba_name}
+                        </p>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-700 ring-1 ring-gray-200 group-hover:bg-white group-hover:ring-gray-300 transition-colors">
+                          <MapPin className="h-3.5 w-3.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                          <span className="truncate max-w-[160px] sm:max-w-[220px]">{locationLabel}</span>
+                          {locationCodes && <span className="text-gray-400 hidden sm:inline">({locationCodes})</span>}
+                        </div>
+
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-700 ring-1 ring-gray-200 group-hover:bg-white group-hover:ring-gray-300 transition-colors">
+                          <Users className="h-3.5 w-3.5 text-gray-400 group-hover:text-purple-500 transition-colors" />
+                          <span>{employeeCountLabel}</span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Compact Active Badge */}
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50/80 border border-emerald-100/50 backdrop-blur-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider leading-none">Active</span>
+                    </div>
                   </div>
-                  
-                  {company.dba_name && (
-                    <p className="text-[10px] font-medium text-gray-400 mb-1 group-hover:text-gray-500 transition-colors">DBA: {company.dba_name}</p>
-                  )}
 
                   {company.description && (
-                    <p className={`mb-3 text-xs text-gray-500 leading-relaxed ${viewMode === 'list' ? 'line-clamp-1 max-w-3xl' : 'line-clamp-2'}`}>
+                    <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
                       {company.description}
                     </p>
                   )}
 
-                  {/* Compact Data Pills */}
-                  <div className={`flex flex-wrap items-center gap-2 mb-3 ${viewMode === 'grid' ? 'mt-auto' : ''}`}>
-                    <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-50 text-[10px] font-medium text-gray-600 group-hover:bg-white group-hover:shadow-sm group-hover:ring-1 group-hover:ring-gray-200 transition-all duration-300">
-                      <MapPin className="h-3 w-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                      <span className="truncate max-w-[120px]">{location}</span>
-                      {locationCodes && <span className="text-gray-400 hidden sm:inline">({locationCodes})</span>}
-                    </div>
-
-                    <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-50 text-[10px] font-medium text-gray-600 group-hover:bg-white group-hover:shadow-sm group-hover:ring-1 group-hover:ring-gray-200 transition-all duration-300">
-                      <Users className="h-3 w-3 text-gray-400 group-hover:text-purple-500 transition-colors" />
-                      <span>{company.employee_count_range ?? "N/A"}</span>
-                    </div>
-                  </div>
-
-                  {/* Micro Badges */}
-                  <div className={`flex flex-wrap gap-1.5 ${viewMode === 'grid' ? 'pt-3 border-t border-gray-100 w-full' : ''}`}>
-                    {capabilityRecord?.pcb_assembly_smt && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-blue-50/80 text-[9px] font-bold text-blue-700 border border-blue-100 group-hover:bg-blue-50 transition-colors uppercase tracking-wide">
-                        SMT
+                  {combinedHighlights.length > 0 && (
+                    <div className={`flex flex-wrap items-center gap-1.5 ${viewMode === "grid" ? "mt-auto" : ""}`}>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                        <Sparkles className="h-3 w-3 text-amber-500" />
+                        Highlights
                       </span>
-                    )}
-                    {capabilityRecord?.box_build_assembly && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-50/80 text-[9px] font-bold text-slate-600 border border-slate-100 group-hover:bg-slate-50 transition-colors uppercase tracking-wide">
-                        Box Build
-                      </span>
-                    )}
-                    {certifications.slice(0, 3).map(cert => (
-                       <span key={cert.id} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-50/80 text-[9px] font-bold text-amber-700 border border-amber-100/50 group-hover:bg-amber-50 transition-colors uppercase tracking-wide">
-                         {cert.certification_type}
-                       </span>
-                    ))}
-                    {certifications.length > 3 && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium text-gray-400 bg-gray-50 border border-gray-100">
-                            +{certifications.length - 3}
+                      {visibleHighlights.map(highlight => (
+                        <span
+                          key={highlight}
+                          className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700"
+                        >
+                          {highlight}
                         </span>
-                    )}
-                  </div>
+                      ))}
+                      {hiddenHighlightCount > 0 && (
+                        <span className="text-[11px] font-semibold text-blue-700 hover:underline decoration-dashed underline-offset-2">
+                          +{hiddenHighlightCount} more
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Arrow Action */}
-                {viewMode === 'list' && (
+                {viewMode === "list" && (
                   <div className="hidden md:flex h-full items-center pl-2">
-                     <div className="p-1.5 rounded-full text-gray-300 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all transform group-hover:translate-x-1">
-                        <ChevronRight className="h-5 w-5" />
-                     </div>
+                    <div className="p-1.5 rounded-full text-gray-300 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all transform group-hover:translate-x-1">
+                      <ChevronRight className="h-5 w-5" />
+                    </div>
                   </div>
                 )}
               </div>

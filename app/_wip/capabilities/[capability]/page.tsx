@@ -138,6 +138,7 @@ export default async function CapabilityPage({
         ? urlFilters.capabilities
         : definition.defaultFilters,
     productionVolume: urlFilters.productionVolume,
+    employeeCountRanges: urlFilters.employeeCountRanges,
     searchQuery: urlFilters.searchQuery,
   }
 

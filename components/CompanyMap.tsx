@@ -16,6 +16,9 @@ import type { HomepageCompanyWithLocations, HomepageFacilityWithCompany } from "
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
+const DEFAULT_CENTER: [number, number] = [-98.5795, 39.8283]
+const DEFAULT_ZOOM = 2.5
+
 interface CompanyMapProps {
   allCompanies: HomepageCompanyWithLocations[]
 }
@@ -55,6 +58,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       filters.productionVolume !== null,
     [filters]
   )
+  const previousHasActiveFilters = useRef(hasActiveFilters)
 
   const filteredFacilities = useMemo(() => {
     const filteredCompanies = filterCompanies(allCompanies, debouncedFilters)
@@ -181,8 +185,8 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: mapStyle,
-      center: [-98.5795, 39.8283],
-      zoom: 2.5,
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
       pitch: 0,
       bearing: 0,
       attributionControl: false,
@@ -264,7 +268,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   }, [addClusteringLayers, mapStyle])
 
   const resetView = useCallback(() => {
-    map.current?.flyTo({ center: [-98.5795, 39.8283], zoom: 5, pitch: 0, bearing: 0, duration: 1500 })
+    map.current?.flyTo({ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM, pitch: 0, bearing: 0, duration: 1500 })
   }, [])
 
   useEffect(() => {
@@ -300,6 +304,14 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       }, 100)
     }
   }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers, debouncedFilters, resetView, hasActiveFilters])
+
+  useEffect(() => {
+    if (!map.current || !isStyleLoaded || isLoading) return
+    if (!hasActiveFilters && previousHasActiveFilters.current) {
+      resetView()
+    }
+    previousHasActiveFilters.current = hasActiveFilters
+  }, [hasActiveFilters, isStyleLoaded, isLoading, resetView])
 
   const handleStyleChange = (newStyle: string) => {
     if (map.current && newStyle !== mapStyle) {

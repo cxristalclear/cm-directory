@@ -95,6 +95,7 @@ export default async function PcbAssemblyManufacturers({
       ? urlFilters.capabilities 
       : ['smt', 'through_hole'] as CapabilitySlug[],
     productionVolume: urlFilters.productionVolume,
+    employeeCountRanges: urlFilters.employeeCountRanges,
     searchQuery: urlFilters.searchQuery,
   }
 
