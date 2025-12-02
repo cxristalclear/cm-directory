@@ -92,6 +92,13 @@ export function filterCompanies(
     })
   }
 
+  if (filters.employeeCountRanges.length > 0) {
+    filtered = filtered.filter((company) => {
+      if (!company.employee_count_range) return false
+      return filters.employeeCountRanges.includes(company.employee_count_range as FilterState["employeeCountRanges"][number])
+    })
+  }
+
   return filtered
 }
 

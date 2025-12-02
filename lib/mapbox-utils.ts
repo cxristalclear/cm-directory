@@ -37,11 +37,11 @@ export function createSecurePopup(content: PopupContent, options?: mapboxgl.Popu
   const container = document.createElement('div')
   container.className =
     content.className ||
-    'w-64 space-y-2 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur-sm'
+    'w-56 space-y-1.5 rounded-lg border border-slate-200 bg-white/95 px-3 py-2.5 shadow-lg backdrop-blur-sm'
 
   if (content.detailLabel) {
     const badgeElement = document.createElement('span')
-    badgeElement.className = 'inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600'
+    badgeElement.className = 'inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600'
     badgeElement.textContent = content.detailLabel
     container.appendChild(badgeElement)
   }
@@ -49,7 +49,7 @@ export function createSecurePopup(content: PopupContent, options?: mapboxgl.Popu
   // Title
   if (content.title) {
     const titleElement = document.createElement('h3')
-    titleElement.className = 'text-base font-semibold text-slate-900'
+    titleElement.className = 'text-sm font-semibold text-slate-900'
     titleElement.textContent = content.title // Safe: uses textContent
     container.appendChild(titleElement)
   }
@@ -57,7 +57,7 @@ export function createSecurePopup(content: PopupContent, options?: mapboxgl.Popu
   // Subtitle
   if (content.subtitle) {
     const subtitleElement = document.createElement('p')
-    subtitleElement.className = 'text-sm text-slate-600'
+    subtitleElement.className = 'text-xs text-slate-600'
     subtitleElement.textContent = content.subtitle // Safe: uses textContent
     container.appendChild(subtitleElement)
   }
@@ -66,7 +66,7 @@ export function createSecurePopup(content: PopupContent, options?: mapboxgl.Popu
   if (content.linkUrl && content.linkText) {
     const linkElement = document.createElement('a')
     linkElement.className =
-      'inline-flex items-center gap-1 text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-full px-2 py-1'
+      'inline-flex items-center gap-1 text-xs font-medium text-blue-600 transition-colors hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-full px-1.5 py-0.5'
     linkElement.textContent = content.linkText // Safe: uses textContent
     
     // Sanitize URL to prevent javascript: protocol attacks

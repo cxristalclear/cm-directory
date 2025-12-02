@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode, useTransition, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { useDebouncedCallback } from "use-debounce"
-import type { FilterState, FilterContextType } from "../types/company"
+import { EmployeeCountRanges, type FilterState, type FilterContextType } from "../types/company"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
@@ -15,6 +15,7 @@ interface FilterProviderProps {
     states: string[]
     capabilities: CapabilitySlug[]
     productionVolume: ProductionVolume | null
+    employeeCountRanges: FilterState["employeeCountRanges"]
     searchQuery: string
   }
 }
@@ -30,6 +31,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
     states: initialFilters?.states || [],
     capabilities: initialFilters?.capabilities || [],
     productionVolume: initialFilters?.productionVolume || null,
+    employeeCountRanges: initialFilters?.employeeCountRanges || [],
     searchQuery: initialFilters?.searchQuery || "",
   })
 
@@ -44,6 +46,11 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
       states: params.get("states")?.split(",").filter(Boolean) || [],
       capabilities: (params.get("capabilities")?.split(",").filter(Boolean) || []) as CapabilitySlug[],
       productionVolume: (params.get("volume") || null) as ProductionVolume | null,
+      employeeCountRanges:
+        (params.get("employees")?.split(",").filter(Boolean) || []).filter(
+          (range): range is FilterState["employeeCountRanges"][number] =>
+            (EmployeeCountRanges as readonly string[]).includes(range),
+        ),
       searchQuery: params.get("q")?.trim() || "",
     }
 
@@ -61,6 +68,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
       if (newFilters.states.length) params.set("states", newFilters.states.join(","))
       if (newFilters.capabilities.length) params.set("capabilities", newFilters.capabilities.join(","))
       if (newFilters.productionVolume) params.set("volume", newFilters.productionVolume)
+      if (newFilters.employeeCountRanges.length) params.set("employees", newFilters.employeeCountRanges.join(","))
       if (newFilters.searchQuery.trim()) params.set("q", newFilters.searchQuery.trim())
 
       const newUrl = `${pathname}${params.toString() ? "?" + params.toString() : ""}`
@@ -103,6 +111,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
       states: [],
       capabilities: [],
       productionVolume: null,
+      employeeCountRanges: [],
       searchQuery: "",
     }
     

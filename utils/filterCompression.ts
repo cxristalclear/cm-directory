@@ -6,6 +6,7 @@ const DEFAULT_FILTERS: FilterState = {
   states: [],
   capabilities: [],
   productionVolume: null,
+  employeeCountRanges: [],
   searchQuery: "",
 }
 
@@ -26,6 +27,7 @@ export const decompressFilters = (compressed: string): FilterState => {
       states: Array.isArray(parsed.states) ? parsed.states : [],
       capabilities: Array.isArray(parsed.capabilities) ? parsed.capabilities : [],
       productionVolume: parsed.productionVolume || null,
+      employeeCountRanges: Array.isArray(parsed.employeeCountRanges) ? parsed.employeeCountRanges : [],
       searchQuery: typeof parsed.searchQuery === "string" ? parsed.searchQuery : "",
     }
   } catch {

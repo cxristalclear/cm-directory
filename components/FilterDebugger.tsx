@@ -107,6 +107,7 @@ export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
           {filters.states.length > 0 && <div>• States: {filters.states.join(', ')}</div>}
           {filters.capabilities.length > 0 && <div>• Capabilities: {filters.capabilities.join(', ')}</div>}
           {filters.productionVolume && <div>• Volume: {filters.productionVolume}</div>}
+          {filters.employeeCountRanges.length > 0 && <div>• Employees: {filters.employeeCountRanges.join(', ')}</div>}
           {filters.searchQuery?.trim() && <div>• Search: {filters.searchQuery.trim()}</div>}
         </div>
       </div>
