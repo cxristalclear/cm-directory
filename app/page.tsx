@@ -128,11 +128,11 @@ export default async function Home({
           <main className="page-container section section--tight space-y-4">
             {/* Top Ad Removed to bring content higher */}
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 items-start">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 items-start">
               {/* Left Sidebar - Sticky */}
               <div className="lg:col-span-3 space-y-3 sticky top-4 z-10">
                 <FilterErrorBoundary>
-                  <Suspense fallback={<div className="card-compact animate-pulse p-6">Loading filters...</div>}>
+                  <Suspense fallback={<div className="card-compact animate-pulse p-4">Loading filters...</div>}>
                     <FilterSidebar allCompanies={companies} />
                     {featureFlags.showDebug && <FilterDebugger allCompanies={companies} />}
                   </Suspense>

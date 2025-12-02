@@ -1,17 +1,18 @@
 "use client"
 
-import { useEffect, useRef, useState, useMemo, useCallback } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
-import { useFilters } from "../contexts/FilterContext"
-import { MapPin, RotateCcw, Layers, Globe, Loader2, Plus, Minus, Building2 } from "lucide-react"
+import { Layers, Globe, Loader2, MapPin, Minus, Plus, RotateCcw, Building2 } from "lucide-react"
 import type { FeatureCollection, Point } from "geojson"
-import type { HomepageCompanyWithLocations, HomepageFacilityWithCompany } from "@/types/homepage"
+
+import { useFilters } from "../contexts/FilterContext"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
 import { filterCompanies, getLocationFilteredFacilities } from "../utils/filtering"
 import { getFallbackBounds } from "../utils/locationBounds"
 import { useDebounce } from "../hooks/useDebounce"
 import { getFacilityStateLabel } from "@/utils/locationFilters"
+import type { HomepageCompanyWithLocations, HomepageFacilityWithCompany } from "@/types/homepage"
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "pk.demo_token"
 
@@ -25,6 +26,7 @@ type FacilityWithCoordinates = HomepageFacilityWithCompany & {
 }
 
 type FacilityFeatureProperties = {
+  facility_id: string
   company_name: string
   company_slug: string
   city: string
@@ -45,6 +47,14 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const currentFacilitiesRef = useRef<FacilityWithCoordinates[]>([])
 
   const debouncedFilters = useDebounce(filters, 300)
+  const hasActiveFilters = useMemo(
+    () =>
+      filters.countries.length > 0 ||
+      filters.states.length > 0 ||
+      filters.capabilities.length > 0 ||
+      filters.productionVolume !== null,
+    [filters]
+  )
 
   const filteredFacilities = useMemo(() => {
     const filteredCompanies = filterCompanies(allCompanies, debouncedFilters)
@@ -56,9 +66,9 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       const { latitude, longitude, company } = facility
       return (
         Boolean(company) &&
-        typeof latitude === 'number' &&
+        typeof latitude === "number" &&
         Number.isFinite(latitude) &&
-        typeof longitude === 'number' &&
+        typeof longitude === "number" &&
         Number.isFinite(longitude)
       )
     })
@@ -80,82 +90,89 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     const facilities = facilitiesToAdd || currentFacilitiesRef.current
 
     if (facilities.length === 0) {
-      const existingSource = mapInstance.getSource('facilities') as mapboxgl.GeoJSONSource | undefined
-      if (existingSource) existingSource.setData({ type: 'FeatureCollection', features: [] })
+      const existingSource = mapInstance.getSource("facilities") as mapboxgl.GeoJSONSource | undefined
+      if (existingSource) existingSource.setData({ type: "FeatureCollection", features: [] })
       return
     }
 
     const geojson: FeatureCollection<Point, FacilityFeatureProperties> = {
-      type: 'FeatureCollection',
+      type: "FeatureCollection",
       features: facilities
-        .filter(facility => facility.company && facility.company.slug)
+        .filter((facility) => facility.company && facility.company.slug)
         .map((facility) => ({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [facility.longitude, facility.latitude] },
+          type: "Feature",
+          id: facility.id,
+          geometry: { type: "Point", coordinates: [facility.longitude, facility.latitude] },
           properties: {
+            facility_id: facility.id,
             company_name: facility.company.company_name,
             company_slug: facility.company.slug!,
-            city: facility.city || '',
-            state: getFacilityStateLabel(facility) || '',
-            state_province: facility.state_province || facility.state || '',
-            country: facility.country || '',
-            facility_type: facility.facility_type || 'Manufacturing'
-          }
-        }))
+            city: facility.city || "",
+            state: getFacilityStateLabel(facility) || "",
+            state_province: facility.state_province || facility.state || "",
+            country: facility.country || "",
+            facility_type: facility.facility_type || "Manufacturing",
+          },
+        })),
     }
 
-    const existingSource = mapInstance.getSource('facilities') as mapboxgl.GeoJSONSource | undefined
+    const existingSource = mapInstance.getSource("facilities") as mapboxgl.GeoJSONSource | undefined
     if (existingSource) {
       existingSource.setData(geojson)
-      return
+    } else {
+      mapInstance.addSource("facilities", {
+        type: "geojson",
+        data: geojson,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+      })
     }
 
-    mapInstance.addSource('facilities', {
-      type: 'geojson',
-      data: geojson,
-      cluster: true,
-      clusterMaxZoom: 14,
-      clusterRadius: 50,
-    })
+    if (!mapInstance.getLayer("clusters")) {
+      mapInstance.addLayer({
+        id: "clusters",
+        type: "circle",
+        source: "facilities",
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": ["step", ["get", "point_count"], "#2563EB", 10, "#1D4ED8", 30, "#1E40AF"],
+          "circle-radius": ["step", ["get", "point_count"], 20, 10, 25, 30, 30],
+          "circle-stroke-width": 3,
+          "circle-stroke-color": "#ffffff",
+        },
+      })
+    }
 
-    mapInstance.addLayer({
-      id: 'clusters',
-      type: 'circle',
-      source: 'facilities',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': ['step', ['get', 'point_count'], '#2563EB', 10, '#1D4ED8', 30, '#1E40AF'],
-        'circle-radius': ['step', ['get', 'point_count'], 20, 10, 25, 30, 30],
-        'circle-stroke-width': 3,
-        'circle-stroke-color': '#ffffff',
-      },
-    })
+    if (!mapInstance.getLayer("cluster-count")) {
+      mapInstance.addLayer({
+        id: "cluster-count",
+        type: "symbol",
+        source: "facilities",
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": "{point_count_abbreviated}",
+          "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+          "text-size": 12,
+        },
+        paint: { "text-color": "#ffffff" },
+      })
+    }
 
-    mapInstance.addLayer({
-      id: 'cluster-count',
-      type: 'symbol',
-      source: 'facilities',
-      filter: ['has', 'point_count'],
-      layout: {
-        'text-field': '{point_count_abbreviated}',
-        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-        'text-size': 12,
-      },
-      paint: { 'text-color': '#ffffff' },
-    })
-
-    mapInstance.addLayer({
-      id: 'unclustered-point',
-      type: 'circle',
-      source: 'facilities',
-      filter: ['!', ['has', 'point_count']],
-      paint: {
-        'circle-color': '#2563EB',
-        'circle-radius': 7,
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff',
-      },
-    })
+    if (!mapInstance.getLayer("unclustered-point")) {
+      mapInstance.addLayer({
+        id: "unclustered-point",
+        type: "circle",
+        source: "facilities",
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-color": "#2563EB",
+          "circle-radius": 7,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff",
+        },
+      })
+    }
   }, [])
 
   useEffect(() => {
@@ -165,22 +182,22 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       container: mapContainer.current,
       style: mapStyle,
       center: [-98.5795, 39.8283],
-      zoom: 4, // Increased zoom for better default US view
+      zoom: 2.5,
       pitch: 0,
       bearing: 0,
-      attributionControl: false
+      attributionControl: false,
     })
 
-    map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right')
+    map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-right")
 
     const handleClusterClick = (e: mapboxgl.MapLayerMouseEvent) => {
       if (!map.current) return
-      const features = map.current.queryRenderedFeatures(e.point, { layers: ['clusters'] })
+      const features = map.current.queryRenderedFeatures(e.point, { layers: ["clusters"] })
       if (!features[0]) return
       const clusterId = features[0].properties?.cluster_id
-      const source = map.current.getSource('facilities') as mapboxgl.GeoJSONSource
-      
-      if (source && 'getClusterExpansionZoom' in source) {
+      const source = map.current.getSource("facilities") as mapboxgl.GeoJSONSource
+
+      if (source && "getClusterExpansionZoom" in source) {
         source.getClusterExpansionZoom(clusterId, (err, zoom) => {
           if (err || !map.current) return
           const coordinates = (features[0].geometry as GeoJSON.Point).coordinates as [number, number]
@@ -206,22 +223,34 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         state_province: props.state_province,
         country: props.country,
         facility_type: props.facility_type,
-      }).setLngLat(coordinates).addTo(map.current!)
+      })
+        .setLngLat(coordinates)
+        .addTo(map.current!)
     }
 
-    map.current.on('click', 'clusters', handleClusterClick)
-    map.current.on('click', 'unclustered-point', handlePointClick)
-    map.current.on('mouseenter', 'clusters', () => map.current && (map.current.getCanvas().style.cursor = 'pointer'))
-    map.current.on('mouseleave', 'clusters', () => map.current && (map.current.getCanvas().style.cursor = ''))
-    map.current.on('mouseenter', 'unclustered-point', () => map.current && (map.current.getCanvas().style.cursor = 'pointer'))
-    map.current.on('mouseleave', 'unclustered-point', () => map.current && (map.current.getCanvas().style.cursor = ''))
+    const handlePointMouseEnter = (e: mapboxgl.MapLayerMouseEvent) => {
+      if (!map.current || !e.features?.[0]?.properties) return
+      map.current.getCanvas().style.cursor = "pointer"
+    }
 
-    map.current.on('load', () => {
+    const handlePointMouseLeave = () => {
+      if (!map.current) return
+      map.current.getCanvas().style.cursor = ""
+    }
+
+    map.current.on("click", "clusters", handleClusterClick)
+    map.current.on("click", "unclustered-point", handlePointClick)
+    map.current.on("mouseenter", "clusters", () => map.current && (map.current.getCanvas().style.cursor = "pointer"))
+    map.current.on("mouseleave", "clusters", () => map.current && (map.current.getCanvas().style.cursor = ""))
+    map.current.on("mouseenter", "unclustered-point", handlePointMouseEnter)
+    map.current.on("mouseleave", "unclustered-point", handlePointMouseLeave)
+
+    map.current.on("load", () => {
       setIsLoading(false)
       setIsStyleLoaded(true)
     })
 
-    map.current.on('style.load', () => {
+    map.current.on("style.load", () => {
       setIsStyleLoaded(true)
       if (currentFacilitiesRef.current.length > 0) {
         addClusteringLayers(currentFacilitiesRef.current)
@@ -235,7 +264,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   }, [addClusteringLayers, mapStyle])
 
   const resetView = useCallback(() => {
-    map.current?.flyTo({ center: [-98.5795, 39.8283], zoom: 4, pitch: 0, bearing: 0, duration: 1500 })
+    map.current?.flyTo({ center: [-98.5795, 39.8283], zoom: 5, pitch: 0, bearing: 0, duration: 1500 })
   }, [])
 
   useEffect(() => {
@@ -243,7 +272,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     addClusteringLayers(filteredFacilities.facilities)
 
     if (filteredFacilities.facilities.length === 0) {
-      const fallback = getFallbackBounds(filters)
+      const fallback = getFallbackBounds(debouncedFilters)
       if (!map.current) return
       if (fallback) {
         if (fallback.selectionCount > 1) {
@@ -257,13 +286,20 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       return
     }
 
-    const bounds = new mapboxgl.LngLatBounds()
-    filteredFacilities.facilities.forEach((f) => bounds.extend([f.longitude, f.latitude]))
-    
-    setTimeout(() => {
-      map.current?.fitBounds(bounds, { padding: { top: 100, bottom: 50, left: 50, right: 50 }, maxZoom: 10, duration: 1000 })
-    }, 100)
-  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers, filters, resetView])
+    if (hasActiveFilters) {
+      const bounds = new mapboxgl.LngLatBounds()
+      filteredFacilities.facilities.forEach((f) => bounds.extend([f.longitude, f.latitude]))
+
+      setTimeout(() => {
+        map.current?.fitBounds(bounds, {
+          padding: { top: 100, bottom: 50, left: 50, right: 50 },
+          maxZoom: 6,
+          minZoom: 2,
+          duration: 1000,
+        })
+      }, 100)
+    }
+  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers, debouncedFilters, resetView, hasActiveFilters])
 
   const handleStyleChange = (newStyle: string) => {
     if (map.current && newStyle !== mapStyle) {
@@ -276,7 +312,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
   if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN === "pk.demo_token") {
     return (
-      <div className="relative h-[500px] w-full rounded-2xl border border-gray-200 bg-gray-50 flex items-center justify-center text-center p-8">
+      <div className="relative h-[400px] w-full flex items-center justify-center text-center p-8">
         <div>
           <MapPin className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <h3 className="font-medium text-gray-900">Interactive Map</h3>
@@ -287,33 +323,31 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   }
 
   return (
-    <div className="relative h-[500px] w-full rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden shadow-sm group isolate">
-      {/* Floating Status Pill - Glass Effect */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 animate-in fade-in slide-in-from-top-4 duration-500">
-        <div className="bg-white/80 backdrop-blur-md border border-white/20 shadow-lg px-5 py-2.5 rounded-full flex items-center gap-4 hover:bg-white/90 transition-all ring-1 ring-black/5">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
+    <div className="relative h-[400px] w-full overflow-hidden group isolate">
+      <div className="absolute top-3 left-1/6 -translate-x-1/2 z-10 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="bg-white/80 backdrop-blur-md border border-white/20 shadow-lg px-4 py-1.5 rounded-full flex items-center gap-4 hover:bg-white/90 transition-all ring-1 ring-black/5">
+          <div className="flex items-center gap-2 text-xs font-medium text-gray-600">
             <div className="p-1 bg-blue-100 text-blue-600 rounded-full">
-              <MapPin className="w-3.5 h-3.5" />
+              <MapPin className="w-3 h-3" />
             </div>
             <span className="text-gray-900 font-bold tabular-nums">{filteredFacilities.facilities.length}</span> locations
           </div>
           <div className="w-px h-4 bg-gray-300/50" />
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
+          <div className="flex items-center gap-2 text-xs font-medium text-gray-600">
             <div className="p-1 bg-gray-100 text-gray-600 rounded-full">
-              <Building2 className="w-3.5 h-3.5" />
+              <Building2 className="w-3 h-3" />
             </div>
             <span className="text-gray-900 font-bold tabular-nums">{filteredFacilities.filteredCount}</span> companies
           </div>
         </div>
       </div>
 
-      {/* Controls Container */}
       <div className="absolute top-4 right-4 z-10 flex flex-col gap-3">
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col divide-y divide-gray-100">
-          <button onClick={() => map.current?.zoomIn()} className="p-2.5 hover:bg-gray-50 flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors active:bg-gray-100">
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden flex flex-col divide-y divide-gray-100">
+          <button onClick={() => map.current?.zoomIn()} className="p-2 hover:bg-gray-50 flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors active:bg-gray-100">
             <Plus className="w-4 h-4" />
           </button>
-          <button onClick={() => map.current?.zoomOut()} className="p-2.5 hover:bg-gray-50 flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors active:bg-gray-100">
+          <button onClick={() => map.current?.zoomOut()} className="p-2 hover:bg-gray-50 flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors active:bg-gray-100">
             <Minus className="w-4 h-4" />
           </button>
         </div>
@@ -322,26 +356,25 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         </button>
       </div>
 
-      {/* Bottom Left: Layers */}
       <div className="absolute bottom-6 left-6 z-10">
         <div className="relative" onMouseEnter={() => setShowStyleMenu(true)} onMouseLeave={() => setShowStyleMenu(false)}>
           <button className="bg-white p-3 rounded-xl shadow-lg border border-gray-200 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-all group">
             <Layers className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
-          
-          <div className={`absolute bottom-full left-0 mb-3 w-44 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden transition-all duration-200 origin-bottom-left ${showStyleMenu ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2 pointer-events-none'}`}>
+
+          <div className={`absolute bottom-full left-0 mb-3 w-44 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden transition-all duration-200 origin-bottom-left ${showStyleMenu ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-2 pointer-events-none"}`}>
             <div className="p-1.5 space-y-0.5">
               {[
-                { id: 'light-v11', label: 'Standard Map', icon: MapPin },
-                { id: 'outdoors-v12', label: 'Terrain View', icon: Globe },
-                { id: 'satellite-streets-v12', label: 'Satellite', icon: Layers }
+                { id: "light-v11", label: "Standard Map", icon: MapPin },
+                { id: "outdoors-v12", label: "Terrain View", icon: Globe },
+                { id: "satellite-streets-v12", label: "Satellite", icon: Layers },
               ].map((style) => (
                 <button
                   key={style.id}
                   onClick={() => handleStyleChange(`mapbox://styles/mapbox/${style.id}`)}
-                  className={`w-full text-left px-3 py-2.5 text-xs font-medium rounded-lg flex items-center gap-3 transition-colors ${mapStyle.includes(style.id) ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'text-gray-700 hover:bg-gray-50'}`}
+                  className={`w-full text-left px-3 py-2.5 text-xs font-medium rounded-lg flex items-center gap-3 transition-colors ${mapStyle.includes(style.id) ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200" : "text-gray-700 hover:bg-gray-50"}`}
                 >
-                  <style.icon className={`w-3.5 h-3.5 ${mapStyle.includes(style.id) ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <style.icon className={`w-3.5 h-3.5 ${mapStyle.includes(style.id) ? "text-blue-600" : "text-gray-400"}`} />
                   {style.label}
                 </button>
               ))}

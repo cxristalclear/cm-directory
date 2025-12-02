@@ -1,145 +1,148 @@
-"use client"
+'use client'
 
-import type { ReactNode } from "react"
-import { X } from "lucide-react"
-import { useFilters } from "@/contexts/FilterContext"
-import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
-import { formatCountryLabel, formatStateLabelFromKey } from "@/utils/locationFilters"
+import { X, Filter, Globe, MapPin, Settings, Layers } from 'lucide-react'
+import { useFilters } from '@/contexts/FilterContext'
+import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
+import { formatCountryLabel, formatStateLabelFromKey } from '@/utils/locationFilters'
 
-type ChipProps = {
-  label: string
-  onRemove?: () => void
+const CAPABILITY_NAMES: Record<CapabilitySlug, string> = {
+  'smt': 'SMT Assembly',
+  'through_hole': 'Through-Hole',
+  'cable_harness': 'Cable & Harness',
+  'box_build': 'Box Build',
+  'prototyping': 'Prototyping'
 }
 
-function Chip({ label, onRemove }: ChipProps) {
+const VOLUME_NAMES: Record<ProductionVolume, string> = {
+  'low': 'Low Volume',
+  'medium': 'Medium Volume',
+  'high': 'High Volume'
+}
+
+type FilterCategory = 'country' | 'state' | 'capability' | 'volume'
+
+interface FilterChipProps {
+  label: string
+  category: FilterCategory
+  onRemove: () => void
+}
+
+const categoryStyles: Record<FilterCategory, { bg: string; icon: React.ElementType }> = {
+  country: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100', icon: Globe },
+  state: { bg: 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100', icon: MapPin },
+  capability: { bg: 'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100', icon: Settings },
+  volume: { bg: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100', icon: Layers }
+}
+
+function FilterChip({ label, category, onRemove }: FilterChipProps) {
+  const { bg, icon: Icon } = categoryStyles[category]
+  
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-800">
-      {label}
-      {onRemove && (
-        <button
-          aria-label={`Remove ${label}`}
-          onClick={(event) => {
-            event.preventDefault()
-            event.stopPropagation()
-            onRemove()
-          }}
-          className="btn-chip-remove"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </span>
+    <button
+      onClick={onRemove}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 border rounded-full transition-all group flex-shrink-0 ${bg}`}
+    >
+      <Icon className="w-3 h-3" />
+      <span className="text-xs font-medium whitespace-nowrap">{label}</span>
+      <X className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity" />
+    </button>
   )
 }
 
-const CAPABILITY_LABELS: Record<CapabilitySlug, string> = {
-  smt: "SMT",
-  through_hole: "Through-Hole",
-  cable_harness: "Cable Harness",
-  box_build: "Box Build",
-  prototyping: "Prototyping",
-}
-
-const VOLUME_LABELS: Record<ProductionVolume, string> = {
-  low: "Low volume",
-  medium: "Medium volume",
-  high: "High volume",
-}
-
 export default function ActiveFiltersBar() {
-  const { filters, updateFilter, clearFilters } = useFilters()
-
-  const removeCountry = (country: string) => {
-    updateFilter("countries", filters.countries.filter((value) => value !== country))
+  const { filters, updateFilter, clearFilters, filteredCount } = useFilters()
+  
+  const activeCount = 
+    filters.countries.length + 
+    filters.states.length + 
+    filters.capabilities.length + 
+    (filters.productionVolume ? 1 : 0)
+  
+  // Don't render if no filters are active
+  if (activeCount === 0) return null
+  
+  const handleRemoveCountry = (code: string) => {
+    updateFilter('countries', filters.countries.filter(c => c !== code))
   }
-
-  const removeState = (state: string) => {
-    updateFilter("states", filters.states.filter((value) => value !== state))
+  
+  const handleRemoveState = (code: string) => {
+    updateFilter('states', filters.states.filter(s => s !== code))
   }
-
-  const removeCapability = (capability: CapabilitySlug) => {
-    updateFilter(
-      "capabilities",
-      filters.capabilities.filter((value) => value !== capability),
-    )
+  
+  const handleRemoveCapability = (cap: CapabilitySlug) => {
+    updateFilter('capabilities', filters.capabilities.filter(c => c !== cap))
   }
-
-  const clearVolume = () => {
-    updateFilter("productionVolume", null)
+  
+  const handleRemoveVolume = () => {
+    updateFilter('productionVolume', null)
   }
-
-  const chips: ReactNode[] = []
-
-  // Add country chips first
-  for (const country of filters.countries) {
-    chips.push(
-      <Chip 
-        key={`country:${country}`} 
-        label={formatCountryLabel(country)} 
-        onRemove={() => removeCountry(country)} 
-      />
-    )
-  }
-
-  // Then state chips
-  for (const state of filters.states) {
-    chips.push(
-      <Chip
-        key={`state:${state}`}
-        label={formatStateLabelFromKey(state)}
-        onRemove={() => removeState(state)}
-      />
-    )
-  }
-
-  if (filters.searchQuery.trim()) {
-    chips.push(
-      <Chip
-        key="searchQuery"
-        label={`Name: ${filters.searchQuery.trim()}`}
-        onRemove={() => updateFilter("searchQuery", "")}
-      />,
-    )
-  }
-
-  // Then capability chips
-  for (const capability of filters.capabilities) {
-    chips.push(
-      <Chip
-        key={`capability:${capability}`}
-        label={CAPABILITY_LABELS[capability]}
-        onRemove={() => removeCapability(capability)}
-      />,
-    )
-  }
-
-  // Finally volume chip
-  if (filters.productionVolume) {
-    chips.push(
-      <Chip
-        key="volume"
-        label={VOLUME_LABELS[filters.productionVolume]}
-        onRemove={clearVolume}
-      />,
-    )
-  }
-
-  const hasActiveFilters = chips.length > 0
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        {hasActiveFilters ? chips : <span className="text-sm text-neutral-500">No active filters</span>}
+    <div className="sticky top-16 z-30 bg-white/50 backdrop-blur-md border-b border-gray-200 shadow-sm animate-in slide-in-from-top-2 duration-300">
+      <div className="page-container py-2.5">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left: Filter count + chips */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {/* Filter badge */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1.5 p-1 m-1 bg-blue-50 rounded-sm border border-blue-100">
+                <Filter className="w-3 h-3 text-blue-600" />
+                <span className="text-sm font-semibold text-blue-700 tabular-nums">{activeCount}</span>
+              </div>
+              <span className="text-sm text-gray-500 hidden sm:inline">
+            <span className="font-medium text-gray-700">{filteredCount}</span> results
+              </span>
+            </div>
+            
+            {/* Divider */}
+            <div className="w-px h-6 bg-gray-200 hidden md:block" />
+            
+            {/* Filter chips - scrollable */}
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide min-w-0 py-1 -my-1 pr-4">
+              {filters.countries.map(code => (
+                <FilterChip 
+                  key={`country-${code}`}
+                  label={formatCountryLabel(code)}
+                  category="country"
+                  onRemove={() => handleRemoveCountry(code)}
+                />
+              ))}
+              {filters.states.map(code => (
+                <FilterChip 
+                  key={`state-${code}`}
+                  label={formatStateLabelFromKey(code)}
+                  category="state"
+                  onRemove={() => handleRemoveState(code)}
+                />
+              ))}
+              {filters.capabilities.map(cap => (
+                <FilterChip 
+                  key={`cap-${cap}`}
+                  label={CAPABILITY_NAMES[cap]}
+                  category="capability"
+                  onRemove={() => handleRemoveCapability(cap)}
+                />
+              ))}
+              {filters.productionVolume && (
+                <FilterChip 
+                  label={VOLUME_NAMES[filters.productionVolume]}
+                  category="volume"
+                  onRemove={handleRemoveVolume}
+                />
+              )}
+            </div>
+          </div>
+          
+          {/* Right: Clear all */}
+          <button 
+            onClick={clearFilters}
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4" />
+            <span className="hidden sm:inline">Clear all</span>
+          </button>
+        </div>
       </div>
-      {hasActiveFilters && (
-        <button
-          type="button"
-          onClick={clearFilters}
-          className="btn btn--link text-sm font-medium"
-        >
-          Clear all
-        </button>
-      )}
     </div>
   )
 }

@@ -78,7 +78,7 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
             </button>
           </div>
         </div>
-        <div className="w-full md:w-72">
+        <div className="w-full max-w-md">
           <HeroSearchBar companies={allCompanies} variant="inline" />
         </div>
       </div>
