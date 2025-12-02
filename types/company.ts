@@ -3,20 +3,23 @@ import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 import type { Database } from "@/lib/database.types"
 import type {
   BusinessInfo as DBBusinessInfo,
+  Company as DBCompany,
   Capabilities as DBCapabilities,
   Certification as DBCertification,
-  Company as DBCompany,
   Contact as DBContact,
   Facility as DBFacility,
   Industry as DBIndustry,
   TechnicalSpecs as DBTechnicalSpecs,
 } from "@/lib/supabase"
 
+export type EmployeeCountRange = NonNullable<Database["public"]["Tables"]["companies"]["Row"]["employee_count_range"]>
+
 export type FilterState = {
   countries: string[]
   states: string[]
   capabilities: CapabilitySlug[]
   productionVolume: ProductionVolume | null
+  employeeCountRanges: EmployeeCountRange[]
   searchQuery: string
 }
 

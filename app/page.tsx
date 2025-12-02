@@ -1,21 +1,24 @@
 import { Suspense } from "react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
-import FilterSidebar from "@/components/FilterSidebar"
-import FilterDebugger from "@/components/FilterDebugger"
 import Header from "@/components/Header"
-import { FilterErrorBoundary } from "@/components/FilterErrorBoundary"
+import LazyCompanyMap from "@/components/LazyCompanyMap"
 import { MapErrorBoundary } from "@/components/MapErrorBoundary"
+import Navbar from "@/components/navbar"
+import FilterBar from "@/components/FilterBar"
 import { FilterProvider } from "@/contexts/FilterContext"
+import { featureFlags, siteConfig } from "@/lib/config"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
-import { siteConfig, featureFlags } from "@/lib/config"
-import AddCompanyCallout from "@/components/AddCompanyCallout"
-import VenkelAd from "@/components/VenkelAd"
-import type { PageProps } from "@/types/nxt"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
-import Navbar from "@/components/navbar"
+import type { PageProps } from "@/types/nxt"
+import SearchBar from "@/components/SearchBar"
+import ActiveFiltersBar from "@/components/ActiveFiltersBar"
+import AddCompanyCallout from "@/components/AddCompanyCallout"
+import FilterErrorBoundary from "@/components/FilterErrorBoundary"
+import FilterSidebar from "@/components/FilterSidebar"
+import FilterDebugger from "@/components/FilterDebugger"
+import VenkelAd from "@/components/VenkelAd"
 
 export const revalidate = 300
 
@@ -66,12 +69,12 @@ const COMPANY_FIELDS = `
 const MAX_COMPANIES = 500
 
 export const metadata = {
-  title: "CM Directory — Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
+  title: "CM Directory - Find Electronics Contract Manufacturers",
   description:
-    "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities (SMT, Through-Hole, Box Build), certifications (ISO 13485, AS9100), industries, and state.",
+    "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities, certifications, industries, and location.",
   alternates: { canonical: siteConfig.url },
   openGraph: {
-    title: "CM Directory — Electronics Contract Manufacturers",
+    title: "CM Directory - Electronics Contract Manufacturers",
     description:
       "Find and compare PCB assembly partners by capability, certification, and location.",
     url: siteConfig.url,
@@ -80,13 +83,12 @@ export const metadata = {
   },
   twitter: {
     card: "summary",
-    title: "CM Directory — Electronics Contract Manufacturers",
+    title: "CM Directory - Electronics Contract Manufacturers",
     description:
       "Filter verified manufacturers by capability, certification, and location.",
   },
 }
 
-// ---------- Data Fetch ----------
 async function getData(): Promise<HomepageCompanyWithLocations[]> {
   try {
     const { data, error } = await supabase
@@ -115,66 +117,99 @@ export default async function Home({
   searchParams,
 }: PageProps<Record<string, string | string[]>, HomeSearchParams>) {
   const resolvedSearchParams: HomeSearchParams = (await searchParams) ?? {}
-
   const initialFilters = parseFiltersFromSearchParams(resolvedSearchParams)
-
-  // Fetch DB rows (nullable), then normalize to strict app types once here.
   const companies = await getData()
+  const useHorizontalFilterBar = false
 
   return (
-    <Suspense fallback={<div className="p-4">Loading…</div>}>
+    <Suspense fallback={<div className="p-4">Loading...</div>}>
       <SpeedInsights />
       <FilterProvider initialFilters={initialFilters}>
-        <div className="min-h-screen bg-gray-50">
+        <div className="page-shell">
           <Navbar />
           <Header />
-          <main className="container mx-auto px-4 py-6">
-            {/* Top Venkel Ad - Banner */}
-            <VenkelAd size="banner" className="mb-6" />
+          
+          <main className="page-container section section--tight space-y-4">
+            {/* Top Ad Removed to bring content higher */}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Filter Sidebar */}
-              <div className="lg:col-span-3 space-y-4">
-                <FilterErrorBoundary>
-                  <Suspense fallback={<div className="bg-white rounded-xl shadow-lg p-6 animate-pulse">Loading filters...</div>}>
-                    <FilterSidebar allCompanies={companies} />
-                    {featureFlags.showDebug && <FilterDebugger allCompanies={companies} />}
-                  </Suspense>
-                </FilterErrorBoundary>
+            {useHorizontalFilterBar ? (
+              <div className="space-y-3">
+                <SearchBar companies={companies} variant="inline" />
+                <FilterBar allCompanies={companies} />
+                <ActiveFiltersBar variant="inline" />
+                <div className="flex justify-center">
+                  <div className="w-full lg:w-full">
+                    <MapErrorBoundary>
+                      <LazyCompanyMap allCompanies={companies} />
+                    </MapErrorBoundary>
+                  </div>
+                </div>
 
-                {/* Sidebar Venkel Ad */}
-                <VenkelAd size="sidebar" />
-                <AddCompanyCallout className="mt-12" />
-              </div>
-
-              <div className="lg:col-span-9 space-y-4">
-                {/* Map with Error Boundary */}
-                <MapErrorBoundary>
-                  <LazyCompanyMap allCompanies={companies} />
-                </MapErrorBoundary>
-
-                {/* List */}
-                <div className="companies-directory">
+                <div className="companies-directory space-y-3">
                   <Suspense
                     fallback={
-                      <div className="bg-white rounded-xl shadow-sm p-8 animate-pulse">
-                        <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-                        <div className="space-y-4">
+                      <div className="card-compact animate-pulse p-8">
+                        <div className="mb-4 h-6 w-1/4 rounded bg-muted" />
+                        <div className="space-y-3">
                           {[1, 2, 3].map(i => (
-                            <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                            <div key={i} className="h-24 rounded-md bg-muted" />
                           ))}
                         </div>
                       </div>
                     }
                   >
-                    <CompanyList allCompanies={companies} />
+                    <CompanyList allCompanies={companies} showInlineSearch={false} />
                   </Suspense>
                 </div>
-                
-                {/* Bottom Venkel Ad - Banner */}
-                <VenkelAd size="banner" />
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-x-[15px] items-start">
+                {/* Sidebar - Sticky, centered within its column while still left of the map */}
+                <div className="lg:col-span-2 space-y-3 sticky top-4 z-10 lg:order-first lg:flex lg:flex-col lg:items-center lg:mx-auto">
+                  <FilterErrorBoundary>
+                    <Suspense fallback={<div className="card-compact animate-pulse p-4">Loading filters...</div>}>
+                      <FilterSidebar allCompanies={companies} />
+                      {featureFlags.showDebug && <FilterDebugger allCompanies={companies} />}
+                    </Suspense>
+                  </FilterErrorBoundary>
+
+                  <VenkelAd size="sidebar" className="card-compact w-full" />
+                  
+                  <AddCompanyCallout />
+                </div>
+
+                {/* Main Content Area */}
+                <div className="lg:col-span-10 space-y-4 lg:order-last">
+                  <SearchBar companies={companies} variant="inline" />
+                  <ActiveFiltersBar variant="inline" />
+
+                  <div className="flex justify-center">
+                    <div className="w-full lg:w-full">
+                      <MapErrorBoundary>
+                        <LazyCompanyMap allCompanies={companies} />
+                      </MapErrorBoundary>
+                    </div>
+                  </div>
+
+                  <div className="companies-directory space-y-3">
+                    <Suspense
+                      fallback={
+                        <div className="card-compact animate-pulse p-8">
+                          <div className="mb-4 h-6 w-1/4 rounded bg-muted" />
+                          <div className="space-y-3">
+                            {[1, 2, 3].map(i => (
+                              <div key={i} className="h-24 rounded-md bg-muted" />
+                            ))}
+                          </div>
+                        </div>
+                      }
+                    >
+                      <CompanyList allCompanies={companies} showInlineSearch={false} />
+                    </Suspense>
+                  </div>
+                </div>
+              </div>
+            )}
           </main>
         </div>
       </FilterProvider>

@@ -1,5 +1,5 @@
 import type { HomepageFacility, HomepageFacilityLocation } from "@/types/homepage"
-import { getCountryName } from "@/utils/countryMapping"
+import { COUNTRIES, getCountryName } from "@/utils/countryMapping"
 import { STATE_NAMES, getStateName } from "@/utils/stateMapping"
 
 type FacilityLocationLike = HomepageFacility | HomepageFacilityLocation
@@ -10,14 +10,13 @@ const STATE_COUNTRY_MAP: Record<string, string> = Object.fromEntries(
   Object.keys(STATE_NAMES).map((code) => [code, "US"]),
 )
 
+// Non-standard aliases and special cases; official country names should rely on COUNTRY_NAME_TO_CODE.
 const COUNTRY_CODE_ALIASES: Record<string, string> = {
   USA: "US",
-  "UNITED STATES": "US",
   "UNITED STATES OF AMERICA": "US",
   "U.S.": "US",
   "U.S.A.": "US",
   UK: "GB",
-  "UNITED KINGDOM": "GB",
   "GREAT BRITAIN": "GB",
   ENGLAND: "GB",
   SCOTLAND: "GB",
@@ -25,9 +24,7 @@ const COUNTRY_CODE_ALIASES: Record<string, string> = {
   "NORTHERN IRELAND": "GB",
   "REPUBLIC OF IRELAND": "IE",
   IRELAND: "IE",
-  TAIWAN: "TW",
   "REPUBLIC OF CHINA": "TW",
-  "SOUTH KOREA": "KR",
   KOREA: "KR",
   "NORTH KOREA": "KP",
   HONGKONG: "HK",
@@ -38,6 +35,17 @@ const COUNTRY_CODE_ALIASES: Record<string, string> = {
   "PEOPLE'S REPUBLIC OF CHINA": "CN",
   NAMIBIA: "NA",
 }
+
+const COUNTRY_NAME_TO_CODE: Record<string, string> = Object.entries(COUNTRIES).reduce(
+  (map, [code, name]) => {
+    const upperName = name.toUpperCase()
+    const collapsedName = upperName.replace(/[.\s]/g, "")
+    map[upperName] = code
+    map[collapsedName] = code
+    return map
+  },
+  {} as Record<string, string>,
+)
 
 const ISO3_TO_ISO2: Record<string, string> = {
   USA: "US",
@@ -178,6 +186,9 @@ export const normalizeCountryCode = (value?: string | null): string | null => {
 
   if (COUNTRY_CODE_ALIASES[upper]) return COUNTRY_CODE_ALIASES[upper]
   if (COUNTRY_CODE_ALIASES[collapsed]) return COUNTRY_CODE_ALIASES[collapsed]
+
+  if (COUNTRY_NAME_TO_CODE[upper]) return COUNTRY_NAME_TO_CODE[upper]
+  if (COUNTRY_NAME_TO_CODE[collapsed]) return COUNTRY_NAME_TO_CODE[collapsed]
 
   if (upper.length === 2) return upper
   return upper

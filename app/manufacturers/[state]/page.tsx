@@ -127,6 +127,7 @@ export default async function StateManufacturersPage({
         : [stateMetadata.abbreviation],
     capabilities: urlFilters.capabilities,
     productionVolume: urlFilters.productionVolume,
+    employeeCountRanges: urlFilters.employeeCountRanges,
     searchQuery: urlFilters.searchQuery,
   }
 
