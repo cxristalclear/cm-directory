@@ -156,7 +156,6 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
   )
   const normalizedEmployeeRanges = normalizeEmployeeRanges(filters.employeeCountRanges)
 
-  // FIXED: Changed parameter name from 'countries' to 'country' for clarity
   normalizedCountries.forEach((country) => params.append("countries", country))
   normalizedStates.forEach((state) => params.append("state", state))
   normalizedCapabilities.forEach((capability) => params.append("capability", capability))

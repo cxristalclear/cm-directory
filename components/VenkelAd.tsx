@@ -17,7 +17,7 @@ export default function VenkelAd({ size = 'banner', className = '' }: VenkelAdPr
     return (
       <div className={`bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm ${className}`}>
         <div className="px-2.5 py-1 bg-gray-50 border-b border-gray-200">
-          <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide">Sponsored</span>
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Sponsored</span>
         </div>
         <div className="p-3">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5">
@@ -68,7 +68,7 @@ export default function VenkelAd({ size = 'banner', className = '' }: VenkelAdPr
     return (
       <div className={`w-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm ${className}`}>
         <div className="px-2.5 py-1 bg-gray-50 border-b border-gray-200">
-          <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide">Sponsored</span>
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Sponsored</span>
         </div>
         <div className="p-3">
           <div className="text-center mb-2">
