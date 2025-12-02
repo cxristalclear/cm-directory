@@ -1,5 +1,6 @@
 import { STATE_NAMES } from "@/utils/stateMapping"
 import { normalizeCountryCode, normalizeStateFilterValue } from "@/utils/locationFilters"
+import { EmployeeCountRanges, type EmployeeCountRange } from "@/types/company"
 
 export const US_STATE_CODES = new Set(Object.keys(STATE_NAMES))
 
@@ -33,6 +34,7 @@ export type FilterUrlState = {
   states: string[]
   capabilities: CapabilitySlug[]
   productionVolume: ProductionVolume | null
+  employeeCountRanges: EmployeeCountRange[]
   searchQuery: string
 }
 
@@ -86,6 +88,21 @@ function collectValues(params: URLSearchParams, keys: readonly string[]): string
   return collected
 }
 
+function normalizeEmployeeRanges(values: string[]): EmployeeCountRange[] {
+  const seen = new Set<string>()
+  const normalized: EmployeeCountRange[] = []
+  values.forEach((value) => {
+    if (!value) return
+    const trimmed = value.trim()
+    if (!trimmed || seen.has(trimmed)) return
+    if ((EmployeeCountRanges as readonly string[]).includes(trimmed)) {
+      seen.add(trimmed)
+      normalized.push(trimmed as EmployeeCountRange)
+    }
+  })
+  return normalized
+}
+
 export function parseFiltersFromSearchParams(searchParams: SearchParamInput): FilterUrlState {
   const params = toURLSearchParams(searchParams)
 
@@ -99,6 +116,7 @@ export function parseFiltersFromSearchParams(searchParams: SearchParamInput): Fi
     value.toLowerCase(),
   )
   const volumeValues = collectValues(params, ["volume"]).map((value) => value.toLowerCase())
+  const employeeValues = collectValues(params, ["employees", "employee_range", "employee_ranges"])
   const queryValues = collectValues(params, ["q", "query", "search"])
 
   const countries = sortAndDedupe(
@@ -113,10 +131,11 @@ export function parseFiltersFromSearchParams(searchParams: SearchParamInput): Fi
     capabilityValues.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
   )
   const productionVolume = volumeValues.find((value): value is ProductionVolume => isProductionVolume(value)) ?? null
+  const employeeCountRanges = normalizeEmployeeRanges(employeeValues)
 
   const searchQuery = queryValues[0]?.trim() ?? ""
 
-  return { countries, states, capabilities, productionVolume, searchQuery }
+  return { countries, states, capabilities, productionVolume, employeeCountRanges, searchQuery }
 }
 
 export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSearchParams {
@@ -135,11 +154,13 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
   const normalizedCapabilities = sortAndDedupe(
     filters.capabilities.filter((value): value is CapabilitySlug => isCapabilitySlug(value)),
   )
+  const normalizedEmployeeRanges = normalizeEmployeeRanges(filters.employeeCountRanges)
 
   // FIXED: Changed parameter name from 'countries' to 'country' for clarity
   normalizedCountries.forEach((country) => params.append("countries", country))
   normalizedStates.forEach((state) => params.append("state", state))
   normalizedCapabilities.forEach((capability) => params.append("capability", capability))
+  normalizedEmployeeRanges.forEach((range) => params.append("employees", range))
 
   if (filters.productionVolume && isProductionVolume(filters.productionVolume)) {
     params.append("volume", filters.productionVolume)

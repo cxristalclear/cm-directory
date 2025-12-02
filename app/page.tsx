@@ -128,9 +128,9 @@ export default async function Home({
           <main className="page-container section section--tight space-y-4">
             {/* Top Ad Removed to bring content higher */}
 
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 items-start">
-              {/* Left Sidebar - Sticky */}
-              <div className="lg:col-span-3 space-y-3 sticky top-4 z-10">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-x-[15px] items-start">
+              {/* Sidebar - Sticky, centered within its column while still left of the map */}
+              <div className="lg:col-span-3 space-y-3 sticky top-4 z-10 lg:order-first lg:flex lg:flex-col lg:items-center lg:mx-auto">
                 <FilterErrorBoundary>
                   <Suspense fallback={<div className="card-compact animate-pulse p-4">Loading filters...</div>}>
                     <FilterSidebar allCompanies={companies} />
@@ -138,13 +138,13 @@ export default async function Home({
                   </Suspense>
                 </FilterErrorBoundary>
 
-                <VenkelAd size="sidebar" className="card-compact" />
+                <VenkelAd size="sidebar" className="card-compact w-full" />
                 
                 <AddCompanyCallout />
               </div>
 
               {/* Main Content Area */}
-              <div className="lg:col-span-9 space-y-4">
+              <div className="lg:col-span-9 space-y-4 lg:order-last">
                 <MapErrorBoundary>
                   <LazyCompanyMap allCompanies={companies} />
                 </MapErrorBoundary>

@@ -182,6 +182,12 @@ function buildActiveFilterLabels(filterState: FilterUrlState): string[] {
     labels.push(volumeLabel)
   }
 
+  if (filterState.employeeCountRanges.length > 0) {
+    filterState.employeeCountRanges.forEach(range => {
+      labels.push(`Employees: ${range}`)
+    })
+  }
+
   if (filterState.searchQuery?.trim()) {
     labels.push(`Name: ${filterState.searchQuery.trim()}`)
   }
@@ -201,6 +207,7 @@ export default async function SearchPage({
     states: filterState.states,
     capabilities: filterState.capabilities,
     productionVolume: filterState.productionVolume,
+    employeeCountRanges: filterState.employeeCountRanges,
     searchQuery: filterState.searchQuery,
   }
 

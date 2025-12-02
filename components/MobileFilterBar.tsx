@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Filter, ChevronUp, Globe, MapPin, Settings, Layers } from 'lucide-react'
+import { X, Filter, ChevronUp, Globe, MapPin, Settings, Layers, Users } from 'lucide-react'
 import { useFilters } from '@/contexts/FilterContext'
 import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
+import type { EmployeeCountRange } from '@/types/company'
 import { formatCountryLabel, formatStateLabelFromKey } from '@/utils/locationFilters'
 
 const CAPABILITY_NAMES: Record<CapabilitySlug, string> = {
@@ -20,13 +21,14 @@ const VOLUME_NAMES: Record<ProductionVolume, string> = {
   'high': 'High Volume'
 }
 
-type FilterCategory = 'country' | 'state' | 'capability' | 'volume'
+type FilterCategory = 'country' | 'state' | 'capability' | 'volume' | 'employees'
 
 const categoryStyles: Record<FilterCategory, { bg: string; icon: React.ElementType }> = {
   country: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: Globe },
   state: { bg: 'bg-sky-50 text-sky-700 border-sky-200', icon: MapPin },
   capability: { bg: 'bg-violet-50 text-violet-700 border-violet-200', icon: Settings },
-  volume: { bg: 'bg-amber-50 text-amber-700 border-amber-200', icon: Layers }
+  volume: { bg: 'bg-amber-50 text-amber-700 border-amber-200', icon: Layers },
+  employees: { bg: 'bg-teal-50 text-teal-700 border-teal-200', icon: Users }
 }
 
 interface MobileFilterChipProps {
@@ -58,7 +60,8 @@ export default function MobileFilterBar() {
     filters.countries.length + 
     filters.states.length + 
     filters.capabilities.length + 
-    (filters.productionVolume ? 1 : 0)
+    (filters.productionVolume ? 1 : 0) +
+    filters.employeeCountRanges.length
   
   // Don't render on desktop or if no filters
   if (activeCount === 0) return null
@@ -115,6 +118,14 @@ export default function MobileFilterBar() {
                 onRemove={() => updateFilter('productionVolume', null)}
               />
             )}
+            {filters.employeeCountRanges.map((range: EmployeeCountRange) => (
+              <MobileFilterChip
+                key={`mobile-emp-${range}`}
+                label={`${range} employees`}
+                category="employees"
+                onRemove={() => updateFilter('employeeCountRanges', filters.employeeCountRanges.filter(r => r !== range))}
+              />
+            ))}
           </div>
         </div>
       </div>

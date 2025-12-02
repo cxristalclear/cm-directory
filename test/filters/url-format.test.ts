@@ -7,11 +7,12 @@ describe('filter URL helpers', () => {
       states: ['TX', 'CA'],
       capabilities: ['prototyping', 'smt'],
       productionVolume: 'high',
+      employeeCountRanges: ['50-150'],
       searchQuery: '',
     })
 
     expect(params.toString()).toBe(
-      'countries=CA&countries=US&state=CA&state=TX&capability=prototyping&capability=smt&volume=high',
+      'countries=CA&countries=US&state=CA&state=TX&capability=prototyping&capability=smt&employees=50-150&volume=high',
     )
 
     const parsed = parseFiltersFromSearchParams(params)
@@ -21,6 +22,7 @@ describe('filter URL helpers', () => {
       states: ['CA', 'TX'],
       capabilities: ['prototyping', 'smt'],
       productionVolume: 'high',
+      employeeCountRanges: ['50-150'],
       searchQuery: '',
     })
   })
@@ -39,6 +41,7 @@ describe('filter URL helpers', () => {
       states: [], 
       capabilities: [], 
       productionVolume: null,
+      employeeCountRanges: [],
       searchQuery: '',
     })
   })
@@ -49,6 +52,7 @@ describe('filter URL helpers', () => {
       states: ['TX', 'CA'],
       capabilities: ['smt', 'prototyping'],
       productionVolume: 'medium',
+      employeeCountRanges: [],
       searchQuery: '',
     })
 
@@ -71,6 +75,7 @@ describe('filter URL helpers', () => {
       states: ['CA', 'NY'],
       capabilities: ['smt', 'through_hole'],
       productionVolume: 'low',
+      employeeCountRanges: [],
       searchQuery: '',
     })
   })
@@ -81,6 +86,7 @@ describe('filter URL helpers', () => {
       states: [],
       capabilities: [],
       productionVolume: null,
+      employeeCountRanges: [],
       searchQuery: '',
     })
 
@@ -96,6 +102,7 @@ describe('filter URL helpers', () => {
       states: [],
       capabilities: [],
       productionVolume: null,
+      employeeCountRanges: [],
       searchQuery: '',
     })
 
@@ -112,6 +119,7 @@ describe('filter URL helpers', () => {
       states: ['TX'],
       capabilities: [],
       productionVolume: null,
+      employeeCountRanges: [],
       searchQuery: '',
     })
   })
