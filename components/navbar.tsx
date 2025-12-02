@@ -59,11 +59,6 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-white/10 bg-white/5 px-4 py-6 space-y-4 absolute w-full shadow-xl backdrop-blur">
-          <input 
-            type="text"
-            placeholder="Search..."
-            className="w-full h-10 pl-4 pr-4 rounded-lg bg-white/10 border border-white/15 text-sm mb-4 placeholder:text-blue-100 text-white"
-          />
           <Link href="/about" className="block text-sm font-medium text-white/90 py-2 hover:text-white">
             About
           </Link>
