@@ -180,14 +180,16 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
 
   return (
     <>
-      {/* Mobile Toggle */}
+      {/* Mobile Toggle - Updated to not show when MobileFilterBar is present */}
+      {/* This can be removed entirely if using MobileFilterBar instead */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed left-4 bottom-4 z-40 lg:hidden flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl hover:bg-blue-700 transition-all active:scale-95"
+        className="fixed left-4 bottom-20 z-40 lg:hidden flex h-12 w-12 items-center justify-center rounded-full bg-white border border-gray-200 text-gray-700 shadow-xl hover:bg-gray-50 transition-all active:scale-95"
+        aria-label="Open filters"
       >
         <Filter className="w-5 h-5" />
         {activeCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
+          <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
             {activeCount}
           </span>
         )}
@@ -199,7 +201,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
         bg-white lg:bg-transparent
         transition-transform duration-300 ease-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        w-80 lg:w-full
+        w-[280px] lg:w-full
         overflow-y-auto lg:overflow-visible
         border-r lg:border-none border-gray-200 shadow-2xl lg:shadow-none
       `}>
@@ -209,38 +211,32 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
               <Filter className="w-4 h-4 text-blue-600" />
               Filters
+              {activeCount > 0 && (
+                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                  {activeCount}
+                </span>
+              )}
             </h2>
-            <button onClick={() => setIsOpen(false)} className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {activeCount > 0 && (
+                <button 
+                  onClick={clearFilters}
+                  className="text-xs text-red-600 hover:text-red-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Desktop Header (Active Filters) */}
-        {activeCount > 0 && (
-          <div className="hidden lg:block mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Active Filters</h3>
-              <button onClick={clearFilters} className="text-xs text-blue-600 hover:text-blue-700 hover:underline">
-                Clear all
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {filters.countries.map(c => (
-                <ActiveFilterBadge key={c} label={formatCountryLabel(c)} onRemove={() => handleCountryToggle(c)} />
-              ))}
-              {filters.states.map(s => (
-                <ActiveFilterBadge key={s} label={formatStateLabelFromKey(s)} onRemove={() => handleStateToggle(s)} />
-              ))}
-              {filters.capabilities.map(c => (
-                <ActiveFilterBadge key={c} label={CAPABILITY_NAMES[c]} onRemove={() => handleCapabilityToggle(c)} />
-              ))}
-              {filters.productionVolume && (
-                <ActiveFilterBadge label={VOLUME_NAMES[filters.productionVolume]} onRemove={() => updateFilter('productionVolume', null)} />
-              )}
-            </div>
-          </div>
-        )}
+        {/* REMOVED: Desktop "Active Filters" section - now shown in ActiveFiltersBar */}
 
         <div className="px-4 lg:px-0 space-y-3 pb-8 pt-4 lg:pt-0">
           <FilterGroup 
@@ -461,20 +457,6 @@ function RadioOption({ label, count, checked, onChange }: RadioOptionProps) {
         {count}
       </span>
     </label>
-  )
-}
-
-function ActiveFilterBadge({ label, onRemove }: { label: string, onRemove: () => void }) {
-  return (
-    <button 
-      onClick={onRemove} 
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-medium hover:bg-blue-100 hover:border-blue-200 transition-colors group"
-    >
-      {label}
-      <div className="bg-blue-200 rounded-full p-0.5 group-hover:bg-blue-300 transition-colors">
-        <X className="w-2.5 h-2.5" />
-      </div>
-    </button>
   )
 }
 

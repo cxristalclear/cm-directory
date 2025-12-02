@@ -18,14 +18,8 @@ interface CompanyListProps {
 const DEFAULT_LIMIT = 12 // Increased from 9 for better pagination
 
 function createSummary(totalCount: number, visibleCount: number): string {
-  if (totalCount === 0) {
-    return "No results"
-  }
-
-  if (visibleCount >= totalCount) {
-    return `${totalCount} results`
-  }
-
+  if (totalCount === 0) return "No results"
+  if (visibleCount >= totalCount) return `${totalCount} results`
   return `Showing ${visibleCount} of ${totalCount} results`
 }
 
