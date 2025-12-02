@@ -324,7 +324,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
   if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN === "pk.demo_token") {
     return (
-      <div className="relative h-[400px] w-full flex items-center justify-center text-center p-8">
+      <div className="relative h-[450px] w-full flex items-center justify-center text-center p-8">
         <div>
           <MapPin className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <h3 className="font-medium text-gray-900">Interactive Map</h3>
@@ -335,7 +335,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   }
 
   return (
-    <div className="relative h-[400px] w-full overflow-hidden group isolate">
+    <div className="relative h-[450px] w-full overflow-hidden group isolate">
       <div className="absolute top-3 left-1/6 -translate-x-1/2 z-10 animate-in fade-in slide-in-from-top-4 duration-500">
         <div className="bg-white/80 backdrop-blur-md border border-white/20 shadow-lg px-4 py-1.5 rounded-full flex items-center gap-4 hover:bg-white/90 transition-all ring-1 ring-black/5">
           <div className="flex items-center gap-2 text-xs font-medium text-gray-600">
@@ -371,7 +371,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       <div className="absolute bottom-6 left-6 z-10">
         <div className="relative" onMouseEnter={() => setShowStyleMenu(true)} onMouseLeave={() => setShowStyleMenu(false)}>
           <button className="bg-white p-3 rounded-xl shadow-lg border border-gray-200 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-all group">
-            <Layers className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <Layers className="w-3 h-3 group-hover:scale-110 transition-transform" />
           </button>
 
           <div className={`absolute bottom-full left-0 mb-3 w-44 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden transition-all duration-200 origin-bottom-left ${showStyleMenu ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-2 pointer-events-none"}`}>

@@ -95,7 +95,7 @@ const buildAbsoluteUrl = (base: string, path: string = ''): string => {
 
 // Site configuration
 export const siteConfig = {
-  name: process.env.NEXT_PUBLIC_SITE_NAME || 'PCBA Directory',
+  name: process.env.NEXT_PUBLIC_SITE_NAME || 'CM Directory',
   description: 'Find and connect with verified contract manufacturers worldwide',
   url: siteUrl,
   ogImage: buildAbsoluteUrl(siteUrl, OG_IMAGE_PATH),
