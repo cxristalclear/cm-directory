@@ -276,7 +276,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
         bg-white lg:bg-transparent
         transition-transform duration-300 ease-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        w-[250px]
+        w-[250px] lg:w-full lg:max-w-[220px]
         overflow-y-auto lg:overflow-visible
         border-r lg:border-none border-gray-200 shadow-2xl lg:shadow-none
       `}>

@@ -9,6 +9,7 @@ import LazyCompanyMap from "@/components/LazyCompanyMap"
 import VenkelAd from "@/components/VenkelAd"
 import { FilterErrorBoundary } from "@/components/FilterErrorBoundary"
 import Navbar from "@/components/navbar"
+import FilterBar from "@/components/FilterBar"
 import { MapErrorBoundary } from "@/components/MapErrorBoundary"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { featureFlags, siteConfig } from "@/lib/config"
@@ -16,6 +17,8 @@ import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import type { PageProps } from "@/types/nxt"
+import SearchBar from "@/components/SearchBar"
+import ActiveFiltersBar from "@/components/ActiveFiltersBar"
 
 export const revalidate = 300
 
@@ -116,6 +119,7 @@ export default async function Home({
   const resolvedSearchParams: HomeSearchParams = (await searchParams) ?? {}
   const initialFilters = parseFiltersFromSearchParams(resolvedSearchParams)
   const companies = await getData()
+  const useHorizontalFilterBar = false
 
   return (
     <Suspense fallback={<div className="p-4">Loading...</div>}>
@@ -128,29 +132,18 @@ export default async function Home({
           <main className="page-container section section--tight space-y-4">
             {/* Top Ad Removed to bring content higher */}
 
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-x-[15px] items-start">
-              {/* Sidebar - Sticky, centered within its column while still left of the map */}
-              <div className="lg:col-span-3 space-y-3 sticky top-4 z-10 lg:order-first lg:flex lg:flex-col lg:items-center lg:mx-auto">
-                <FilterErrorBoundary>
-                  <Suspense fallback={<div className="card-compact animate-pulse p-4">Loading filters...</div>}>
-                    <FilterSidebar allCompanies={companies} />
-                    {featureFlags.showDebug && <FilterDebugger allCompanies={companies} />}
-                  </Suspense>
-                </FilterErrorBoundary>
-
-                <VenkelAd size="sidebar" className="card-compact w-full" />
-                
-                <AddCompanyCallout />
-              </div>
-
-              {/* Main Content Area */}
-              <div className="lg:col-span-9 space-y-4 lg:order-last">
-                <MapErrorBoundary>
-                  <LazyCompanyMap allCompanies={companies} />
-                </MapErrorBoundary>
-
-                {/* Re-inserted Ad: Placed between Map and List for visual break */}
-                <VenkelAd size="banner" className="card-compact shadow-sm border border-gray-100" />
+            {useHorizontalFilterBar ? (
+              <div className="space-y-3">
+                <SearchBar companies={companies} variant="inline" />
+                <FilterBar allCompanies={companies} />
+                <ActiveFiltersBar variant="inline" />
+                <div className="flex justify-center">
+                  <div className="w-full lg:w-full">
+                    <MapErrorBoundary>
+                      <LazyCompanyMap allCompanies={companies} />
+                    </MapErrorBoundary>
+                  </div>
+                </div>
 
                 <div className="companies-directory space-y-3">
                   <Suspense
@@ -165,11 +158,58 @@ export default async function Home({
                       </div>
                     }
                   >
-                    <CompanyList allCompanies={companies} />
+                    <CompanyList allCompanies={companies} showInlineSearch={false} />
                   </Suspense>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-x-[15px] items-start">
+                {/* Sidebar - Sticky, centered within its column while still left of the map */}
+                <div className="lg:col-span-2 space-y-3 sticky top-4 z-10 lg:order-first lg:flex lg:flex-col lg:items-center lg:mx-auto">
+                  <FilterErrorBoundary>
+                    <Suspense fallback={<div className="card-compact animate-pulse p-4">Loading filters...</div>}>
+                      <FilterSidebar allCompanies={companies} />
+                      {featureFlags.showDebug && <FilterDebugger allCompanies={companies} />}
+                    </Suspense>
+                  </FilterErrorBoundary>
+
+                  <VenkelAd size="sidebar" className="card-compact w-full" />
+                  
+                  <AddCompanyCallout />
+                </div>
+
+                {/* Main Content Area */}
+                <div className="lg:col-span-10 space-y-4 lg:order-last">
+                  <SearchBar companies={companies} variant="inline" />
+                  <ActiveFiltersBar variant="inline" />
+
+                  <div className="flex justify-center">
+                    <div className="w-full lg:w-full">
+                      <MapErrorBoundary>
+                        <LazyCompanyMap allCompanies={companies} />
+                      </MapErrorBoundary>
+                    </div>
+                  </div>
+
+                  <div className="companies-directory space-y-3">
+                    <Suspense
+                      fallback={
+                        <div className="card-compact animate-pulse p-8">
+                          <div className="mb-4 h-6 w-1/4 rounded bg-muted" />
+                          <div className="space-y-3">
+                            {[1, 2, 3].map(i => (
+                              <div key={i} className="h-24 rounded-md bg-muted" />
+                            ))}
+                          </div>
+                        </div>
+                      }
+                    >
+                      <CompanyList allCompanies={companies} showInlineSearch={false} />
+                    </Suspense>
+                  </div>
+                </div>
+              </div>
+            )}
           </main>
         </div>
       </FilterProvider>
