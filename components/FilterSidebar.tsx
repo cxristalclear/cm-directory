@@ -178,6 +178,8 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
     return Array.from(dynamicCounts.countries.entries())
       .filter(([code]) => formatCountryLabel(code).toLowerCase().includes(countrySearch.toLowerCase()))
       .sort(([aCode, aCount], [bCode, bCount]) => {
+        if (aCode === "US" && bCode !== "US") return -1
+        if (bCode === "US" && aCode !== "US") return 1
         const aZero = aCount === 0
         const bZero = bCount === 0
         if (aZero !== bZero) return aZero ? 1 : -1
