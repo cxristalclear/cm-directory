@@ -95,8 +95,6 @@ describe('CompanySchema', () => {
           is_primary: true,
           created_at: null,
           updated_at: null,
-          state: null,
-          zip_code: null
         },
       ],
       capabilities: [

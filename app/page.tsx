@@ -179,7 +179,7 @@ export default async function Home({
                 </div>
 
                 {/* Main Content Area */}
-                <div className="lg:col-span-10 space-y-4 lg:order-last">
+                <div className="lg:col-span-10 space-y-6 lg:order-last">
                   <SearchBar companies={companies} variant="inline" />
                   <ActiveFiltersBar variant="inline" />
 
@@ -191,7 +191,7 @@ export default async function Home({
                     </div>
                   </div>
 
-                  <div className="companies-directory space-y-3">
+                  <div className="companies-directory space-y-3 mt-6">
                     <Suspense
                       fallback={
                         <div className="card-compact animate-pulse p-8">

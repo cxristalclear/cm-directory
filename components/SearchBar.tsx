@@ -13,17 +13,17 @@ import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 
 type HeroSearchVariant = "hero" | "inline"
 
-interface HeroSearchBarProps {
+interface SearchBarProps {
   className?: string
   companies?: HomepageCompanyWithLocations[]
   variant?: HeroSearchVariant
 }
 
 type QuickFilter =
-  | { label: string; type: "search"; value: string; helper?: string }
-  | { label: string; type: "capability"; value: CapabilitySlug; helper?: string }
-  | { label: string; type: "country"; value: string; helper?: string }
-  | { label: string; type: "productionVolume"; value: ProductionVolume; helper?: string }
+  | { label: string; type: "search"; value: string }
+  | { label: string; type: "capability"; value: CapabilitySlug }
+  | { label: string; type: "country"; value: string }
+  | { label: string; type: "productionVolume"; value: ProductionVolume }
 
 const HERO_PLACEHOLDER_PROMPTS = [
   'Try "Turnkey PCB Assembly in Texas"',
@@ -32,18 +32,18 @@ const HERO_PLACEHOLDER_PROMPTS = [
 ] as const
 
 const QUICK_FILTERS: QuickFilter[] = [
-  { label: "ISO 9001", type: "search", value: "ISO 9001 certified", helper: "Quality" },
-  { label: "PCB Assembly", type: "capability", value: "smt", helper: "SMT" },
+  { label: "ISO 9001", type: "search", value: "ISO 9001 certified" },
+  { label: "SMT", type: "capability", value: "smt"},
   { label: "Box Build", type: "capability", value: "box_build" },
   { label: "USA Only", type: "country", value: "US" },
-  { label: "Prototype Ready", type: "productionVolume", value: "low", helper: "Low volume" },
+  { label: "Prototype Ready", type: "productionVolume", value: "low" },
 ]
 
-export default function HeroSearchBar({
+export default function SearchBar({
   className,
   companies = [],
   variant = "hero",
-}: HeroSearchBarProps) {
+}: SearchBarProps) {
   const { filters, updateFilter } = useFilters()
   const [isFocused, setIsFocused] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -170,7 +170,7 @@ export default function HeroSearchBar({
 
   const formClasses =
     variant === "inline"
-      ? "flex w-full flex-col gap-2 rounded-lg border border-slate-200 bg-white p-1 text-slate-900 shadow-sm md:flex-row md:items-center md:gap-3"
+      ? "flex w-full flex-col gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-slate-900 shadow-sm ring-1 ring-gray-100 md:flex-row md:items-center md:gap-3"
       : "flex w-full flex-col gap-3 rounded-3xl border border-white/20 bg-white/10 p-3 text-white shadow-lg backdrop-blur md:flex-row md:items-center"
 
   const inputClasses =
@@ -244,7 +244,7 @@ export default function HeroSearchBar({
   }
 
   return (
-    <div className={cn("space-y-1", variant === "hero" ? "text-white" : "text-slate-900")}>
+    <div className={cn("space-y-6", variant === "hero" ? "text-white" : "text-slate-900")}>
       <form
         onSubmit={handleSubmit}
         className={cn(
@@ -318,7 +318,14 @@ export default function HeroSearchBar({
         "flex flex-wrap items-center gap-2",
         variant === "hero" ? "text-white/90" : "text-slate-600"
       )}>
-        <span className="text-[11px] font-semibold uppercase tracking-wide">Quick filters</span>
+        <span
+          className={cn(
+            "text-[11px] font-medium lowercase",
+            variant === "hero" ? "text-white/70" : "text-slate-500"
+          )}
+        >
+          Quick filters
+        </span>
         {QUICK_FILTERS.map((quickFilter) => {
           const active = isQuickFilterActive(quickFilter)
           return (
@@ -327,26 +334,18 @@ export default function HeroSearchBar({
               type="button"
               onClick={() => handleQuickFilterClick(quickFilter)}
               className={cn(
-                "group inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold leading-tight transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+                "group inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[11px] font-semibold leading-tight transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
                 variant === "hero"
                   ? active
-                    ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/30 focus-visible:ring-primary"
+                    ? "border-primary bg-primary text-primary-foreground  focus-visible:ring-primary"
                     : "border-white/40 bg-white/10 text-white hover:border-white/60 hover:bg-white/20 focus-visible:ring-white/60"
                   : active
-                    ? "border-primary bg-primary text-white shadow-sm focus-visible:ring-primary"
+                    ? "border-primary bg-primary text-white focus-visible:ring-primary"
                     : "border-slate-200 bg-white text-slate-700 hover:border-primary/30 hover:text-primary focus-visible:ring-primary/60"
               )}
               aria-pressed={active}
             >
               <span>{quickFilter.label}</span>
-              {quickFilter.helper && (
-                <span className={cn(
-                  "text-[10px] font-medium",
-                  variant === "hero" ? "text-white/80" : "text-slate-500"
-                )}>
-                  {quickFilter.helper}
-                </span>
-              )}
             </button>
           )
         })}
