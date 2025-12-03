@@ -67,7 +67,7 @@ export default function VenkelAd({ size = 'banner', className = '' }: VenkelAdPr
   if (size === 'sidebar') {
     return (
       <div className={`w-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm ${className}`}>
-        <div className="px-2.5 py-1 bg-gray-50 border-b border-gray-200">
+        <div className="px-1 py-1 bg-gray-50 border-b border-gray-200">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Sponsored</span>
         </div>
         <div className="p-3">
