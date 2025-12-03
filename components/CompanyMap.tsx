@@ -322,6 +322,9 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     }
   }
 
+  const facilityCount = filteredFacilities.facilities.length
+  const companyCount = filteredFacilities.filteredCount
+
   if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN === "pk.demo_token") {
     return (
       <div className="relative h-[450px] w-full flex items-center justify-center text-center p-8">
@@ -336,20 +339,23 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
   return (
     <div className="relative h-[450px] w-full overflow-hidden group isolate">
-      <div className="absolute top-3 left-1/6 -translate-x-1/2 z-10 animate-in fade-in slide-in-from-top-4 duration-500">
-        <div className="bg-white/80 backdrop-blur-md border border-white/20 shadow-lg px-4 py-1.5 rounded-full flex items-center gap-4 hover:bg-white/90 transition-all ring-1 ring-black/5">
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-600">
-            <div className="p-1 bg-blue-100 text-blue-600 rounded-full">
-              <MapPin className="w-3 h-3" />
+      <div className="absolute top-4 left-4 z-20 max-w-[80%] animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="flex items-center justify-between gap-4 ">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-1.5 shadow-sm">
+              <MapPin className="w-4 h-4 text-blue-600" />
+              <div className="flex items-baseline gap-1 leading-none">
+                <span className="text-sm font-semibold text-gray-900 tabular-nums">{facilityCount}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-blue-700">Locations</span>
+              </div>
             </div>
-            <span className="text-gray-900 font-bold tabular-nums">{filteredFacilities.facilities.length}</span> locations
-          </div>
-          <div className="w-px h-4 bg-gray-300/50" />
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-600">
-            <div className="p-1 bg-gray-100 text-gray-600 rounded-full">
-              <Building2 className="w-3 h-3" />
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-1.5 shadow-sm">
+              <Building2 className="w-4 h-4 text-emerald-600" />
+              <div className="flex items-baseline gap-1 leading-none">
+                <span className="text-sm font-semibold text-gray-900 tabular-nums">{companyCount}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700">Companies</span>
+              </div>
             </div>
-            <span className="text-gray-900 font-bold tabular-nums">{filteredFacilities.filteredCount}</span> companies
           </div>
         </div>
       </div>

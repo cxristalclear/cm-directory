@@ -311,206 +311,208 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
           </div>
         </div>
 
-        {/* REMOVED: Desktop "Active Filters" section - now shown in ActiveFiltersBar */}
+        <div className="px-3 lg:px-0 pb-6 pt-3 lg:pt-0 lg:sticky lg:top-4">
+          <div className="rounded-2xl border border-gray-200/80  bg-gradient-to-b from-blue-50/60 via-white to-white shadow-sm ring-1 ring-gray-100/70 backdrop-blur supports-[backdrop-filter]:bg-white/90">
+            <div className="px-2.5 py-3 lg:px-3 lg:py-4 space-y-5">
+              <FilterGroup 
+                title="Country" 
+                isOpen={expandedSections.includes('countries')} 
+                onToggle={() => toggleSection('countries')}
+                count={filters.countries.length}
+              >
+                <div className="mb-1.5 relative transition-opacity duration-200 opacity-90 group-hover/filter:opacity-100 group-focus-within/filter:opacity-100">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-300 group-hover/filter:text-gray-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search countries..." 
+                    value={countrySearch}
+                    onChange={(e) => setCountrySearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-transparent border-0 rounded-full text-gray-600 focus:ring-0 focus:outline-none placeholder:text-gray-400"
+                  />
+                </div>
+                <div className="space-y-1 pr-2">
+                  {visibleCountries.map(([code, count]) => (
+                    <CheckboxOption 
+                      key={code}
+                      label={formatCountryLabel(code)}
+                      count={count}
+                      checked={filters.countries.includes(code)}
+                      onChange={() => handleCountryToggle(code)}
+                    />
+                  ))}
+                  {filteredCountriesList.length === 0 && <EmptyState />}
+                  {!showAllCountries && filteredCountriesList.length > visibleCountries.length && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCountries(true)}
+                      className="text-[11px] font-medium text-blue-700/80 hover:text-blue-800 transition-colors"
+                    >
+                      Show {filteredCountriesList.length - visibleCountries.length} more
+                    </button>
+                  )}
+                  {showAllCountries && filteredCountriesList.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCountries(false)}
+                      className="text-[11px] font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Show fewer
+                    </button>
+                  )}
+                </div>
+              </FilterGroup>
 
-        <div className="px-3 lg:px-0 space-y-0 pb-6 pt-3 lg:pt-0 lg:sticky lg:top-4">
-          <FilterGroup 
-            title="Country" 
-            isOpen={expandedSections.includes('countries')} 
-            onToggle={() => toggleSection('countries')}
-            count={filters.countries.length}
-          >
-            <div className="mb-2 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search countries..." 
-                value={countrySearch}
-                onChange={(e) => setCountrySearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none placeholder:text-gray-400"
-              />
-            </div>
-            <div className="space-y-1 pr-2">
-              {visibleCountries.map(([code, count]) => (
-                <CheckboxOption 
-                  key={code}
-                  label={formatCountryLabel(code)}
-                  count={count}
-                  checked={filters.countries.includes(code)}
-                  onChange={() => handleCountryToggle(code)}
-                />
-              ))}
-              {filteredCountriesList.length === 0 && <EmptyState />}
-              {!showAllCountries && filteredCountriesList.length > visibleCountries.length && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllCountries(true)}
-                  className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 underline underline-offset-2"
-                >
-                  Show {filteredCountriesList.length - visibleCountries.length} more…
-                </button>
-              )}
-              {showAllCountries && filteredCountriesList.length > 3 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllCountries(false)}
-                  className="text-[11px] font-semibold text-gray-500 hover:text-gray-700 underline underline-offset-2"
-                >
-                  Show fewer
-                </button>
-              )}
-            </div>
-          </FilterGroup>
+              <FilterGroup 
+                title="State" 
+                isOpen={expandedSections.includes('states')} 
+                onToggle={() => toggleSection('states')}
+                count={filters.states.length}
+              >
+                <div className="mb-1.5 relative transition-opacity duration-200 opacity-90 group-hover/filter:opacity-100 group-focus-within/filter:opacity-100">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-300 group-hover/filter:text-gray-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search states..." 
+                    value={stateSearch}
+                    onChange={(e) => setStateSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-transparent border-0 rounded-full text-gray-600 focus:ring-0 focus:outline-none placeholder:text-gray-400"
+                  />
+                </div>
+                <div className="space-y-1 pr-2">
+                  {visibleStates.map(([code, data]) => (
+                    <CheckboxOption 
+                      key={code}
+                      label={data.label}
+                      count={data.count}
+                      checked={filters.states.includes(code)}
+                      onChange={() => handleStateToggle(code)}
+                    />
+                  ))}
+                  {filteredStatesList.length === 0 && <EmptyState />}
+                  {!showAllStates && filteredStatesList.length > visibleStates.length && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllStates(true)}
+                      className="text-[11px] font-medium text-blue-700/80 hover:text-blue-800 transition-colors"
+                    >
+                      Show {filteredStatesList.length - visibleStates.length} more
+                    </button>
+                  )}
+                  {showAllStates && filteredStatesList.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllStates(false)}
+                      className="text-[11px] font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Show fewer
+                    </button>
+                  )}
+                </div>
+              </FilterGroup>
 
-          <FilterGroup 
-            title="State" 
-            isOpen={expandedSections.includes('states')} 
-            onToggle={() => toggleSection('states')}
-            count={filters.states.length}
-          >
-            <div className="mb-2 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search states..." 
-                value={stateSearch}
-                onChange={(e) => setStateSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none placeholder:text-gray-400"
-              />
-            </div>
-            <div className="space-y-1 pr-2">
-              {visibleStates.map(([code, data]) => (
-                <CheckboxOption 
-                  key={code}
-                  label={data.label}
-                  count={data.count}
-                  checked={filters.states.includes(code)}
-                  onChange={() => handleStateToggle(code)}
-                />
-              ))}
-              {filteredStatesList.length === 0 && <EmptyState />}
-              {!showAllStates && filteredStatesList.length > visibleStates.length && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllStates(true)}
-                  className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 underline underline-offset-2"
-                >
-                  Show {filteredStatesList.length - visibleStates.length} more…
-                </button>
-              )}
-              {showAllStates && filteredStatesList.length > 3 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllStates(false)}
-                  className="text-[11px] font-semibold text-gray-500 hover:text-gray-700 underline underline-offset-2"
-                >
-                  Show fewer
-                </button>
-              )}
-            </div>
-          </FilterGroup>
+              <FilterGroup 
+                title="Capabilities" 
+                isOpen={expandedSections.includes('capabilities')} 
+                onToggle={() => toggleSection('capabilities')}
+                count={filters.capabilities.length}
+              >
+                <div className="space-y-1 pr-1">
+                  {visibleCapabilities.map(([cap, count]) => (
+                    <CheckboxOption 
+                      key={cap}
+                      label={CAPABILITY_NAMES[cap]}
+                      count={count}
+                      checked={filters.capabilities.includes(cap)}
+                      onChange={() => handleCapabilityToggle(cap)}
+                    />
+                  ))}
+                  {!showAllCapabilities && dynamicCounts.capabilities.size > visibleCapabilities.length && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCapabilities(true)}
+                      className="text-[11px] font-medium text-blue-700/80 hover:text-blue-800 transition-colors"
+                    >
+                      Show {dynamicCounts.capabilities.size - visibleCapabilities.length} more
+                    </button>
+                  )}
+                  {showAllCapabilities && dynamicCounts.capabilities.size > 5 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCapabilities(false)}
+                      className="text-[11px] font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Show fewer
+                    </button>
+                  )}
+                </div>
+              </FilterGroup>
 
-          <FilterGroup 
-            title="Capabilities" 
-            isOpen={expandedSections.includes('capabilities')} 
-            onToggle={() => toggleSection('capabilities')}
-            count={filters.capabilities.length}
-          >
-            <div className="space-y-1 pr-1">
-              {visibleCapabilities.map(([cap, count]) => (
-                <CheckboxOption 
-                  key={cap}
-                  label={CAPABILITY_NAMES[cap]}
-                  count={count}
-                  checked={filters.capabilities.includes(cap)}
-                  onChange={() => handleCapabilityToggle(cap)}
-                />
-              ))}
-              {!showAllCapabilities && dynamicCounts.capabilities.size > visibleCapabilities.length && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllCapabilities(true)}
-                  className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 underline underline-offset-2"
-                >
-                  Show {dynamicCounts.capabilities.size - visibleCapabilities.length} more…
-                </button>
-              )}
-              {showAllCapabilities && dynamicCounts.capabilities.size > 5 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllCapabilities(false)}
-                  className="text-[11px] font-semibold text-gray-500 hover:text-gray-700 underline underline-offset-2"
-                >
-                  Show fewer
-                </button>
-              )}
-            </div>
-          </FilterGroup>
+              <FilterGroup 
+                title="Volume" 
+                isOpen={expandedSections.includes('volume')} 
+                onToggle={() => toggleSection('volume')}
+                count={filters.productionVolume ? 1 : 0}
+              >
+                <div className="flex gap-1">
+                  {(['low', 'medium', 'high'] as ProductionVolume[]).map(vol => {
+                    const isActive = filters.productionVolume === vol
+                    return (
+                      <button
+                        key={vol}
+                        type="button"
+                        onClick={() => updateFilter('productionVolume', isActive ? null : vol)}
+                        className={`flex-1 px-2 py-1.5 text-xs font-semibold border rounded-md transition-colors ${
+                          isActive
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-700'
+                        }`}
+                        aria-pressed={isActive}
+                      >
+                        {VOLUME_NAMES[vol]}
+                      </button>
+                    )
+                  })}
+                </div>
+              </FilterGroup>
 
-          <FilterGroup 
-            title="Volume" 
-            isOpen={expandedSections.includes('volume')} 
-            onToggle={() => toggleSection('volume')}
-            count={filters.productionVolume ? 1 : 0}
-          >
-            <div className="flex gap-1">
-              {(['low', 'medium', 'high'] as ProductionVolume[]).map(vol => {
-                const isActive = filters.productionVolume === vol
-                return (
-                  <button
-                    key={vol}
-                    type="button"
-                    onClick={() => updateFilter('productionVolume', isActive ? null : vol)}
-                    className={`flex-1 px-2 py-1.5 text-xs font-semibold border rounded-md transition-colors ${
-                      isActive
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-700'
-                    }`}
-                    aria-pressed={isActive}
-                  >
-                    {VOLUME_NAMES[vol]}
-                  </button>
-                )
-              })}
+              <FilterGroup 
+                title="Employees" 
+                isOpen={expandedSections.includes('employees')} 
+                onToggle={() => toggleSection('employees')}
+                count={filters.employeeCountRanges.length}
+              >
+                <div className="space-y-1 pr-1">
+                  {visibleEmployees.map(({ range, count }) => (
+                    <CheckboxOption
+                      key={range}
+                      label={`${range} employees`}
+                      count={count}
+                      checked={filters.employeeCountRanges.includes(range)}
+                      onChange={() => handleEmployeeRangeToggle(range)}
+                    />
+                  ))}
+                  {!showAllEmployees && employeeCountRangeList.length > visibleEmployees.length && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllEmployees(true)}
+                      className="text-[11px] font-medium text-blue-700/80 hover:text-blue-800 transition-colors"
+                    >
+                      Show {employeeCountRangeList.length - visibleEmployees.length} more
+                    </button>
+                  )}
+                  {showAllEmployees && employeeCountRangeList.length > 5 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllEmployees(false)}
+                      className="text-[11px] font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Show fewer
+                    </button>
+                  )}
+                </div>
+              </FilterGroup>
             </div>
-          </FilterGroup>
-
-          <FilterGroup 
-            title="Employees" 
-            isOpen={expandedSections.includes('employees')} 
-            onToggle={() => toggleSection('employees')}
-            count={filters.employeeCountRanges.length}
-          >
-            <div className="space-y-1 pr-1">
-              {visibleEmployees.map(({ range, count }) => (
-                <CheckboxOption
-                  key={range}
-                  label={`${range} employees`}
-                  count={count}
-                  checked={filters.employeeCountRanges.includes(range)}
-                  onChange={() => handleEmployeeRangeToggle(range)}
-                />
-              ))}
-              {!showAllEmployees && employeeCountRangeList.length > visibleEmployees.length && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllEmployees(true)}
-                  className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 underline underline-offset-2"
-                >
-                  Show {employeeCountRangeList.length - visibleEmployees.length} more…
-                </button>
-              )}
-              {showAllEmployees && employeeCountRangeList.length > 5 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllEmployees(false)}
-                  className="text-[11px] font-semibold text-gray-500 hover:text-gray-700 underline underline-offset-2"
-                >
-                  Show fewer
-                </button>
-              )}
-            </div>
-          </FilterGroup>
+          </div>
         </div>
       </div>
       
@@ -530,26 +532,31 @@ interface FilterGroupProps {
 }
 
 function FilterGroup({ title, isOpen, onToggle, count, children }: FilterGroupProps) {
+  const collapsedStyles = isOpen
+    ? 'bg-white border border-gray-200/80'
+    : 'bg-white border border-transparent'
+
   return (
-    <div className="py-1 border-b border-gray-200/80 last:border-b-0">
+    <div className={`group/filter rounded-xl transition-colors duration-200 ${collapsedStyles}`}>
       <button 
         onClick={onToggle} 
-        className="w-full flex items-center justify-between py-1.5 select-none group text-xs font-semibold text-gray-700 hover:text-gray-900"
+        className="relative w-full flex items-center justify-between px-3 py-2.5 select-none group text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500 hover:text-gray-700"
+        aria-expanded={isOpen}
       >
-        <div className="flex items-center gap-2">
-          <span>{title}</span>
+        <div className="flex items-center gap-2 text-left">
+          <span className="truncate">{title}</span>
           {count > 0 && (
             <span className="ml-1 bg-blue-50 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
               {count}
             </span>
           )}
         </div>
-        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`absolute right-2 w-4 h-4 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       
       <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
         <div className="overflow-hidden">
-          <div className="pb-2 pt-1">
+          <div className="px-1.5 pb-3 pt-1">
             {children}
           </div>
         </div>
@@ -570,23 +577,24 @@ function CheckboxOption({ label, count, checked, onChange }: CheckboxOptionProps
   
   return (
     <label className={`
-      group flex items-center justify-between py-1.5 px-2 rounded-lg cursor-pointer transition-all
-      ${checked ? 'bg-blue-50/80 hover:bg-blue-50' : 'hover:bg-gray-50/80'}
-      ${disabled ? 'opacity-40 cursor-not-allowed' : ''}
+      group flex items-center justify-between gap-2 py-1 px-1.5 rounded-md transition-colors
+      ${checked ? 'bg-transparent' : 'hover:bg-gray-50'}
+      ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
     `}>
-      <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+      <div className="flex items-center gap-2 min-w-0 overflow-hidden">
         <div className={`
-          w-4 h-4 rounded flex-shrink-0 border flex items-center justify-center transition-all duration-200
-          ${checked ? 'bg-blue-600 border-blue-600 shadow-sm' : 'bg-white border-gray-300 group-hover:border-blue-400'}
+          relative flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-[3px] border transition-colors duration-200
+          ${checked ? 'border-blue-600 bg-blue-600 text-white shadow-[0_1px_4px_rgba(37,99,235,0.28)]' : 'border-gray-300 bg-white'}
+          ${disabled ? 'opacity-70' : 'group-hover:border-blue-300 group-hover:bg-blue-50/40'}
         `}>
-          <Check className={`w-3 h-3 text-white transition-transform duration-200 ${checked ? 'scale-100' : 'scale-0'}`} />
+          {checked && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
         </div>
-        <input type="checkbox" className="hidden" checked={checked} onChange={onChange} disabled={disabled} />
-        <span className={`text-xs truncate transition-colors ${checked ? 'text-blue-700 font-medium' : 'text-gray-500 group-hover:text-gray-900'}`}>
+        <input type="checkbox" className="sr-only" checked={checked} onChange={onChange} disabled={disabled} />
+        <span className={`text-sm truncate transition-colors ${checked ? 'text-blue-700 font-medium' : 'text-gray-600 group-hover:text-gray-800'}`}>
           {label}
         </span>
       </div>
-      <span className={`text-xs transition-colors ${checked ? 'text-blue-600 font-medium' : 'text-gray-300 group-hover:text-gray-500'}`}>
+      <span className={`text-[10px] tabular-nums transition-colors ${checked ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}`}>
         {count}
       </span>
     </label>

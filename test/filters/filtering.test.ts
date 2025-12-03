@@ -7,6 +7,7 @@ const baseFilters: FilterState = {
   states: [],
   capabilities: [],
   productionVolume: null,
+  employeeCountRanges: [],
   searchQuery: "",
 }
 

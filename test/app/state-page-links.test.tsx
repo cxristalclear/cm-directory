@@ -183,7 +183,10 @@ describe("state manufacturers page links", () => {
       hrefs.map(async (href) => {
         if (href === "/") {
           const { default: HomePage } = await import("@/app/page")
-          const homeElement = await HomePage({ searchParams: Promise.resolve({}) })
+          const homeElement = await HomePage({
+            params: Promise.resolve({}),
+            searchParams: Promise.resolve({}),
+          })
           renderToStaticMarkup(homeElement)
           return { href, status: 200 }
         }

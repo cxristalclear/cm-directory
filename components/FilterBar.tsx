@@ -430,7 +430,7 @@ function CheckboxRow({ label, count, checked, onChange, type = "checkbox" }: Che
       
       {/* Hidden input for accessibility */}
       <input
-        type="checkbox"
+        type={type}
         className="sr-only"
         checked={checked}
         onChange={onChange}
