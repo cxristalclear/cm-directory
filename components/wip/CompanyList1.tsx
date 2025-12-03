@@ -11,7 +11,6 @@ import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import { EmployeeCountRanges } from "@/types/company"
 import { filterCompanies } from "@/utils/filtering"
 import { getFacilityLocationLabel, getFacilityCountryCode, normalizeStateFilterValue } from "@/utils/locationFilters"
-import SearchBar from "@/components/SearchBar"
 
 interface CompanyListProps {
   allCompanies: HomepageCompanyWithLocations[]
@@ -27,7 +26,7 @@ function createSummary(totalCount: number, visibleCount: number): string {
   return `Showing ${visibleCount} of ${totalCount}`
 }
 
-export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT, showInlineSearch = true }: CompanyListProps) {
+export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: CompanyListProps) {
   const { filters, setFilteredCount } = useFilters()
   const [pagesLoaded, setPagesLoaded] = useState(1)
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
@@ -89,13 +88,6 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT, showI
 
   return (
     <div className="space-y-4">
-      {showInlineSearch && (
-        <div className="flex justify-center">
-          <div className="w-full">
-            <SearchBar companies={allCompanies} variant="inline" />
-          </div>
-        </div>
-      )}
 
       {/* List Header */}
       <div className="flex flex-col gap-2 pb-2 border-b border-gray-200">
