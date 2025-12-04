@@ -28,7 +28,7 @@ export async function generateMetadata({
   
   if (!company) {
     return {
-      title: 'Company Not Found | CM Directory',
+      title: 'Company Not Found | PCBA Finder',
       description: 'The requested manufacturer profile could not be found.',
     }
   }
@@ -84,7 +84,7 @@ export async function generateMetadata({
   const pageUrl = getCanonicalUrl(`/companies/${slug}`)
 
   return {
-    title: `${typedCompany.company_name} - Contract Manufacturer${location ? ` in ${location}` : ''} | CM Directory`,
+    title: `${typedCompany.company_name} - Contract Manufacturer${location ? ` in ${location}` : ''} | PCBA Finder`,
     description: typedCompany.description ||
       `${typedCompany.company_name} is a contract manufacturer${location ? ` located in ${location}` : ''}. ${
         capabilities.length > 0 ? `Capabilities include ${capabilities.join(', ')}.` : ''

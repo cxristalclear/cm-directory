@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CM Directory - Type Fix Script
+# PCBA Finder - Type Fix Script
 # This script fixes Next.js 15 TypeScript type issues
 
 set -e  # Exit on error
 
-echo "🔧 CM Directory Type Fix Script"
+echo "🔧 PCBA Finder Type Fix Script"
 echo "================================"
 echo ""
 

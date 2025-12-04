@@ -89,7 +89,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # Site Configuration
 NEXT_PUBLIC_SITE_URL=https://www.cm-directory.com
-NEXT_PUBLIC_SITE_NAME=CM Directory
+NEXT_PUBLIC_SITE_NAME=PCBA Finder
 
 # Social Profiles
 NEXT_PUBLIC_TWITTER_URL=https://twitter.com/cmdirectory

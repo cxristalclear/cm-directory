@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Privacy Policy | Contract Manufacturer Directory",
-    description: "Details on data collection, usage, and security practices for CM Directory.",
+    description: "Details on data collection, usage, and security practices for PCBA Finder.",
     url: pageUrl,
     siteName: siteConfig.name,
     type: "website",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "Privacy Policy",
-    description: "Understand how CM Directory protects community and customer data.",
+    description: "Understand how PCBA Finder protects community and customer data.",
   },
   robots: {
     index: true,

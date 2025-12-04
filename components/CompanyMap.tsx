@@ -327,7 +327,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
   if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN === "pk.demo_token") {
     return (
-      <div className="relative h-[450px] w-full flex items-center justify-center text-center p-8">
+      <div className="relative h-[450px] w-full flex items-center justify-center text-center p-8 rounded-2xl border border-gray-200 bg-slate-50">
         <div>
           <MapPin className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <h3 className="font-medium text-gray-900">Interactive Map</h3>
@@ -338,7 +338,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   }
 
   return (
-    <div className="relative h-[450px] w-full overflow-hidden group isolate">
+    <div className="relative h-[450px] w-full overflow-hidden rounded-2xl border border-gray-200 bg-slate-50 group isolate shadow-sm">
       <div className="absolute top-4 left-4 z-20 max-w-[80%] animate-in fade-in slide-in-from-top-2 duration-300">
         <div className="flex items-center justify-between gap-4 ">
           <div className="flex items-center gap-3">

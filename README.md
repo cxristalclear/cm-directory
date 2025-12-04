@@ -87,7 +87,7 @@ ZOOMINFO_WEBHOOK_URL=https://hook.example.com/your-make-scenario
 
 # Site Configuration (Required)
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_SITE_NAME=CM Directory
+NEXT_PUBLIC_SITE_NAME=PCBA Finder
 
 # Social Profiles (Required for production metadata)
 NEXT_PUBLIC_TWITTER_URL=https://twitter.com/cmdirectory
@@ -172,7 +172,7 @@ Leaving these fields empty is safe—the schema output automatically omits undef
 
 - The live feed of company updates is exposed at `https://www.cm-directory.com/feed.xml` (also available locally at `/feed.xml`).
 - Submit the feed to Google Search Console alongside the sitemap so crawlers learn about profile refreshes faster:
-  1. Open Search Console for the CM Directory property.
+  1. Open Search Console for the PCBA Finder property.
   2. Navigate to **Indexing → Sitemaps**.
   3. Enter `https://www.cm-directory.com/feed.xml` in the submission form and click **Submit**.
 - The feed and sitemap share the `NEXT_PUBLIC_BUILD_TIMESTAMP` (or `BUILD_TIMESTAMP`) fallback, so triggering the existing build hook refreshes both documents together.
@@ -224,7 +224,7 @@ The application can be deployed to any platform that supports Next.js:
 | `OPENAI_API_KEY` | Conditional | Server-only key for OpenAI requests used by the AI importer (never expose via `NEXT_PUBLIC_`) |
 | `ZOOMINFO_WEBHOOK_URL` | Conditional | Server-only Make.com webhook URL for ZoomInfo enrichment calls |
 | `NEXT_PUBLIC_SITE_URL` | Yes | Full URL of your deployed site |
-| `NEXT_PUBLIC_SITE_NAME` | No | Name of your site (default: "CM Directory") |
+| `NEXT_PUBLIC_SITE_NAME` | No | Name of your site (default: "PCBA Finder") |
 | `NEXT_PUBLIC_TWITTER_URL` | Yes | Public Twitter/X profile URL referenced in metadata |
 | `NEXT_PUBLIC_LINKEDIN_URL` | Yes | LinkedIn company page for social links |
 | `NEXT_PUBLIC_GITHUB_URL` | Yes | GitHub organization or repository to surface in the footer |
@@ -305,4 +305,4 @@ For support, email support@cm-directory.com or open an issue in the GitHub repos
 
 ---
 
-Made with ❤️ by the CM Directory Team
+Made with ❤️ by the PCBA Finder Team

@@ -45,7 +45,7 @@ export async function generateMetadata({
   
   if (!company) {
     return {
-      title: 'Company Not Found | CM Directory',
+      title: 'Company Not Found | PCBA Finder',
       description: 'The requested manufacturer profile could not be found.'
     }
   }
