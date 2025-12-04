@@ -5,7 +5,7 @@ import 'server-only'
  * Orchestrates ZoomInfo enrichment and OpenAI research
  */
 
-import { callOpenAI } from './openaiClient'
+import { callOpenAI } from '@/lib/ai/openaiClient'
 import { enrichCompanyData, formatEnrichmentData } from './zoomInfoEnrich'
 import type { CompanyFormData } from '@/types/admin'
 import { createClient } from '@supabase/supabase-js'

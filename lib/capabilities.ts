@@ -1,4 +1,4 @@
-import type { CapabilitySlug } from "@/lib/filters/url"
+import type { CapabilitySlug } from "@/lib/filters/url";
 import type { Database } from "@/lib/database.types"
 
 type CapabilityTable = Database["public"]["Tables"]["capabilities"]["Row"]
@@ -52,7 +52,7 @@ export const CAPABILITY_DEFINITIONS: CapabilityMetadata[] = [
           "Review placement accuracy specifications, feeder capacity, and inspection coverage. Confirm the team can document reflow profiles and process capability for your component mix.",
       },
       {
-        question: "How does PCBA Finder score SMT suppliers?",
+        question: "How does CM Directory score SMT suppliers?",
         answer:
           "We prioritize factories with automated inline inspection, process engineering support, and documented quality escapes below industry benchmarks.",
       },
