@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useFilters } from '../contexts/FilterContext'
-import { ChevronDown, X, Filter, Search, Check } from 'lucide-react'
+import { BarChart3, Check, ChevronDown, Cog, Filter, Globe2, MapPin, Search, Users, X } from 'lucide-react'
 import type { HomepageCompanyWithLocations } from '@/types/homepage'
 import type { CapabilitySlug, ProductionVolume } from '@/lib/filters/url'
 import { EmployeeCountRanges, type EmployeeCountRange } from '@/types/company'
@@ -273,12 +273,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
       {/* Sidebar Container */}
       <div className={`
         fixed lg:relative top-0 left-0 h-full lg:h-auto z-30 
-        bg-white lg:bg-transparent
         transition-transform duration-300 ease-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        w-[250px] lg:w-full lg:max-w-[220px]
+        w-[250px] lg:w-full lg:max-w-[240px]
         overflow-y-auto lg:overflow-visible
-        border-r lg:border-none border-gray-200 shadow-2xl lg:shadow-none
+        border-r border-gray-100/80
       `}>
         {/* Mobile Header */}
         <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 lg:hidden px-4 py-4 border-b border-gray-100">
@@ -311,11 +310,11 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
           </div>
         </div>
 
-        <div className="px-3 lg:px-0 pb-6 pt-3 lg:pt-0 lg:sticky lg:top-4">
-          <div className="rounded-2xl border border-gray-200/80  bg-gradient-to-b from-blue-50/60 via-white to-white shadow-sm ring-1 ring-gray-100/70 backdrop-blur supports-[backdrop-filter]:bg-white/90">
-            <div className="px-2.5 py-3 lg:px-3 lg:py-4 space-y-5">
-              <FilterGroup 
+        <div className="px-4 lg:px-0 pb-8 pt-4 lg:pt-0 lg:sticky lg:top-4">
+          <div className="space-y-3">
+            <FilterGroup 
                 title="Country" 
+                icon={<Globe2 className="h-4 w-4" />}
                 isOpen={expandedSections.includes('countries')} 
                 onToggle={() => toggleSection('countries')}
                 count={filters.countries.length}
@@ -327,10 +326,10 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                     placeholder="Search countries..." 
                     value={countrySearch}
                     onChange={(e) => setCountrySearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-transparent border-0 rounded-full text-gray-600 focus:ring-0 focus:outline-none placeholder:text-gray-400"
+                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-full border border-gray-200 bg-white text-gray-700 shadow-inner focus:border-blue-200 focus:ring-2 focus:ring-blue-100 placeholder:text-gray-400"
                   />
                 </div>
-                <div className="space-y-1 pr-2">
+                <div className="space-y-1 pr-1">
                   {visibleCountries.map(([code, count]) => (
                     <CheckboxOption 
                       key={code}
@@ -362,8 +361,9 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 </div>
               </FilterGroup>
 
-              <FilterGroup 
+            <FilterGroup 
                 title="State" 
+                icon={<MapPin className="h-4 w-4" />}
                 isOpen={expandedSections.includes('states')} 
                 onToggle={() => toggleSection('states')}
                 count={filters.states.length}
@@ -375,10 +375,10 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                     placeholder="Search states..." 
                     value={stateSearch}
                     onChange={(e) => setStateSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-transparent border-0 rounded-full text-gray-600 focus:ring-0 focus:outline-none placeholder:text-gray-400"
+                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-full border border-gray-200 bg-white text-gray-700 shadow-inner focus:border-blue-200 focus:ring-2 focus:ring-blue-100 placeholder:text-gray-400"
                   />
                 </div>
-                <div className="space-y-1 pr-2">
+                <div className="space-y-1 pr-1">
                   {visibleStates.map(([code, data]) => (
                     <CheckboxOption 
                       key={code}
@@ -410,8 +410,9 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 </div>
               </FilterGroup>
 
-              <FilterGroup 
+            <FilterGroup 
                 title="Capabilities" 
+                icon={<Cog className="h-4 w-4" />}
                 isOpen={expandedSections.includes('capabilities')} 
                 onToggle={() => toggleSection('capabilities')}
                 count={filters.capabilities.length}
@@ -447,13 +448,14 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 </div>
               </FilterGroup>
 
-              <FilterGroup 
+            <FilterGroup 
                 title="Volume" 
+                icon={<BarChart3 className="h-4 w-4" />}
                 isOpen={expandedSections.includes('volume')} 
                 onToggle={() => toggleSection('volume')}
                 count={filters.productionVolume ? 1 : 0}
               >
-                <div className="flex gap-1">
+                <div className="flex gap-2">
                   {(['low', 'medium', 'high'] as ProductionVolume[]).map(vol => {
                     const isActive = filters.productionVolume === vol
                     return (
@@ -461,10 +463,10 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                         key={vol}
                         type="button"
                         onClick={() => updateFilter('productionVolume', isActive ? null : vol)}
-                        className={`flex-1 px-2 py-1.5 text-xs font-semibold border rounded-md transition-colors ${
+                        className={`flex-1 rounded-xl border px-3 py-2 text-[12px] font-semibold transition-all ${
                           isActive
-                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-700'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-[0_8px_16px_rgba(59,130,246,0.25)]'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-blue-200 hover:text-blue-700 hover:shadow-sm'
                         }`}
                         aria-pressed={isActive}
                       >
@@ -475,8 +477,9 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                 </div>
               </FilterGroup>
 
-              <FilterGroup 
+            <FilterGroup 
                 title="Employees" 
+                icon={<Users className="h-4 w-4" />}
                 isOpen={expandedSections.includes('employees')} 
                 onToggle={() => toggleSection('employees')}
                 count={filters.employeeCountRanges.length}
@@ -511,7 +514,6 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
                   )}
                 </div>
               </FilterGroup>
-            </div>
           </div>
         </div>
       </div>
@@ -525,38 +527,42 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
 
 interface FilterGroupProps {
   title: string
+  icon?: React.ReactNode
   isOpen: boolean
   onToggle: () => void
   count: number
   children: React.ReactNode
 }
 
-function FilterGroup({ title, isOpen, onToggle, count, children }: FilterGroupProps) {
-  const collapsedStyles = isOpen
-    ? 'bg-white border border-gray-200/80'
-    : 'bg-white border border-transparent'
-
+function FilterGroup({ title, icon, isOpen, onToggle, count, children }: FilterGroupProps) {
   return (
-    <div className={`group/filter rounded-xl transition-colors duration-200 ${collapsedStyles}`}>
+    <div className={`group/filter rounded-2xl border border-gray-100 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.06)] transition-all duration-200 ${isOpen ? 'border-blue-100 ring-1 ring-blue-100 shadow-md' : 'hover:border-gray-200 hover:shadow-sm'}`}>
       <button 
         onClick={onToggle} 
-        className="relative w-full flex items-center justify-between px-3 py-2.5 select-none group text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500 hover:text-gray-700"
+        className="relative flex w-full select-none items-center justify-between px-3 py-3 text-sm font-semibold text-gray-800 hover:text-gray-900"
         aria-expanded={isOpen}
       >
-        <div className="flex items-center gap-2 text-left">
-          <span className="truncate">{title}</span>
-          {count > 0 && (
-            <span className="ml-1 bg-blue-50 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-              {count}
+        <div className="flex items-center gap-3 text-left">
+          {icon && (
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 shadow-inner">
+              {icon}
             </span>
           )}
+          <div className="flex items-center gap-2">
+            <span className="truncate">{title}</span>
+            {count > 0 && (
+              <span className="ml-1 min-w-[20px] rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                {count}
+              </span>
+            )}
+          </div>
         </div>
-        <ChevronDown className={`absolute right-2 w-4 h-4 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-6 w-6 rounded-full border border-gray-200/70 bg-white/80 p-1.5 text-gray-400 shadow-sm transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       
-      <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-        <div className="overflow-hidden">
-          <div className="px-1.5 pb-3 pt-1">
+      <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+        <div className="overflow-hidden border-t border-gray-100/80">
+          <div className="bg-white px-3 pb-4 pt-3">
             {children}
           </div>
         </div>
@@ -577,24 +583,26 @@ function CheckboxOption({ label, count, checked, onChange }: CheckboxOptionProps
   
   return (
     <label className={`
-      group flex items-center justify-between gap-2 py-1 px-1.5 rounded-md transition-colors
-      ${checked ? 'bg-transparent' : 'hover:bg-gray-50'}
-      ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
+      group flex items-center justify-between gap-2 rounded-lg border border-transparent px-2 py-1.5 transition-all
+      ${checked ? 'bg-blue-50/80 border-blue-100 shadow-[0_6px_18px_rgba(59,130,246,0.12)]' : 'hover:bg-white hover:border-gray-200'}
+      ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}
     `}>
-      <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+      <div className="flex min-w-0 items-center gap-2 overflow-hidden">
         <div className={`
-          relative flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-[3px] border transition-colors duration-200
-          ${checked ? 'border-blue-600 bg-blue-600 text-white shadow-[0_1px_4px_rgba(37,99,235,0.28)]' : 'border-gray-300 bg-white'}
-          ${disabled ? 'opacity-70' : 'group-hover:border-blue-300 group-hover:bg-blue-50/40'}
+          relative flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-none border transition-colors duration-200
+          ${checked ? 'border-blue-600 bg-blue-600 text-white shadow-[0_4px_12px_rgba(37,99,235,0.35)]' : 'border-gray-300 bg-white'}
+          ${disabled ? 'opacity-70' : 'group-hover:border-blue-300 group-hover:bg-blue-50'}
         `}>
           {checked && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
         </div>
         <input type="checkbox" className="sr-only" checked={checked} onChange={onChange} disabled={disabled} />
-        <span className={`text-sm truncate transition-colors ${checked ? 'text-blue-700 font-medium' : 'text-gray-600 group-hover:text-gray-800'}`}>
+        <span className={`truncate text-sm transition-colors ${checked ? 'font-semibold text-blue-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
           {label}
         </span>
       </div>
-      <span className={`text-[10px] tabular-nums transition-colors ${checked ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}`}>
+      <span className={`rounded-full px-2 py-0.5 text-[11px] leading-none tabular-nums transition-colors ${
+        checked ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-500 group-hover:text-gray-700'
+      }`}>
         {count}
       </span>
     </label>

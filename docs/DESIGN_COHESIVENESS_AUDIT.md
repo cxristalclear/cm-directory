@@ -1,13 +1,13 @@
 # Design Cohesiveness Audit & Decision Document
 **Date:** November 6, 2025  
-**Project:** CM Directory  
+**Project:** PCBA Finder  
 **Purpose:** Identify design inconsistencies and establish design decisions before implementation
 
 ---
 
 ## Executive Summary
 
-This audit identifies design inconsistencies across CM Directory pages and provides actionable decisions to create a cohesive user experience. Issues are categorized by priority and impact.
+This audit identifies design inconsistencies across PCBA Finder pages and provides actionable decisions to create a cohesive user experience. Issues are categorized by priority and impact.
 
 ### Key Findings:
 - 🔴 **Critical:** Inconsistent navigation patterns across pages

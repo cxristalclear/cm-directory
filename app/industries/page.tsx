@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Industries | Specialized Manufacturing Markets",
     description:
-      "Explore regulated and high-reliability industries served by CM Directory partners.",
+      "Explore regulated and high-reliability industries served by PCBA Finder partners.",
     url: pageUrl,
     siteName: siteConfig.name,
   },

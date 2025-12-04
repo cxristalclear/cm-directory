@@ -36,7 +36,7 @@ export async function generateMetadata({
 
   if (!industryData) {
     return {
-      title: 'Industry Not Found | CM Directory',
+      title: 'Industry Not Found | PCBA Finder',
       description: 'The requested industry page could not be found.'
     }
   }

@@ -21,7 +21,7 @@ export default function CompanyHeader() {
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white font-sans">CM Directory</h1>
+                  <h1 className="text-xl font-bold text-white font-sans">PCBA Finder</h1>
                   <p className="text-xs text-blue-100">Manufacturing Network</p>
                 </div>
               </Link>

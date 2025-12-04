@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Building2, ChevronRight, MapPin, Users, Grid, List } from "lucide-react"
+import { Building2, ChevronDown, ChevronRight, Grid, List, MapPin, Users } from "lucide-react"
 
 import { useFilters } from "@/contexts/FilterContext"
 import ActiveFiltersBar from "@/components/ActiveFiltersBar"
@@ -98,28 +98,29 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT, showI
       )}
 
       {/* List Header */}
-      <div className="flex flex-col gap-2 pb-2 border-b border-gray-200">
+      <div className="flex flex-col gap-3 pb-3 border-b border-gray-200">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <div className="flex flex-wrap items-baseline gap-2">
             <h2 className="text-lg font-bold text-gray-900 tracking-tight">Results</h2>
-            <span className="text-sm font-semibold text-gray-600">{summary}</span>
+            <span className="text-sm font-semibold text-gray-500">{summary}</span>
           </div>
           <div className="flex flex-wrap items-center gap-3 justify-start sm:justify-end">
-            <div className="flex items-center bg-gray-100/80 p-0.5 rounded-md border border-gray-200/50 backdrop-blur-sm">
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-[4px] transition-all duration-200 ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm ring-1 ring-black/5" : "text-gray-400 hover:text-gray-600 hover:bg-gray-200/50"}`}
-                title="List View"
-              >
-                <List className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-[4px] transition-all duration-200 ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm ring-1 ring-black/5" : "text-gray-400 hover:text-gray-600 hover:bg-gray-200/50"}`}
-                title="Grid View"
-              >
-                <Grid className="w-5 h-5" />
-              </button>
+            <div className="flex items-center rounded-full bg-gray-100 px-1 py-1 shadow-inner border border-gray-200">
+              {[
+                { mode: "list" as const, icon: List, label: "List" },
+                { mode: "grid" as const, icon: Grid, label: "Grid" },
+              ].map(({ mode, icon: Icon, label }) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === mode ? "bg-white text-gray-900 shadow-sm ring-1 ring-gray-200" : "text-gray-500 hover:text-gray-700"}`}
+                  title={`${label} View`}
+                  aria-pressed={viewMode === mode}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -129,7 +130,7 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT, showI
                   id="sort-by"
                   value={sortBy}
                   onChange={event => setSortBy(event.target.value as "relevance" | "employees" | "name")}
-                  className="appearance-none rounded-md border border-gray-200 bg-white py-2 pl-3 pr-8 text-xs font-semibold text-gray-700 shadow-sm transition-colors focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  className="appearance-none rounded-full border border-gray-200 bg-white py-2 pl-3 pr-9 text-xs font-semibold text-gray-700 shadow-sm transition-colors focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 >
                   <option value="relevance">Relevance</option>
                   <option value="employees">Employees</option>
@@ -186,79 +187,80 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT, showI
             .filter((cert): cert is string => Boolean(cert))
             .map(cert => ({ label: cert, type: "certification" as const }))
 
-          const combinedHighlights = Array.from(
-            new Map(
-              [...capabilityHighlights, ...certificationHighlights].map(item => [`${item.type}:${item.label}`, item])
-            ).values()
+          const uniqueCapabilities = Array.from(new Map(capabilityHighlights.map(item => [item.label, item])).values())
+          const uniqueCertifications = Array.from(new Map(certificationHighlights.map(item => [item.label, item])).values())
+
+          const displayedCapabilities = uniqueCapabilities.slice(0, 3)
+          const displayedCertifications = uniqueCertifications.slice(0, 2)
+          const hiddenHighlightCount = Math.max(
+            uniqueCapabilities.length + uniqueCertifications.length - displayedCapabilities.length - displayedCertifications.length,
+            0
           )
-          const visibleHighlights = combinedHighlights.slice(0, 3)
-          const hiddenHighlightCount = Math.max(combinedHighlights.length - visibleHighlights.length, 0)
 
           return (
             <Fragment key={company.id}>
               <Link
                 href={`/companies/${company.slug}`}
                 prefetch
-                className={`group relative block cursor-pointer rounded-xl border border-l-[3px] border-l-transparent border-gray-200 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-300 hover:border-l-blue-500 hover:bg-blue-50/60 hover:shadow-lg ${
-                  viewMode === "list" ? "p-2" : "p-4 h-full flex flex-col"
+                className={`group relative block cursor-pointer rounded-2xl border border-gray-200 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_12px_28px_rgba(59,130,246,0.15)] ${
+                  viewMode === "list" ? "p-3" : "p-4 h-full flex flex-col"
                 }`}
               >
-                {/* Hover Gradient Overlay */}
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-50/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
-
-                <div className={`relative z-10 flex ${viewMode === "list" ? "flex-col md:flex-row gap-5 items-start" : "flex-col gap-4 items-start h-full"}`}>
-                  {/* Compact Logo Placeholder */}
-                  
+                <div className={`relative flex ${viewMode === "list" ? "flex-col md:flex-row gap-4 items-start" : "flex-col gap-4 items-start h-full"}`}>
+                  <div className="flex-shrink-0">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-400 transition-colors duration-200 group-hover:bg-blue-50 group-hover:text-blue-600">
+                      <Building2 className="h-6 w-6" />
+                    </div>
+                  </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0 w-full flex flex-col gap-3 pl-5">
+                  <div className="flex-1 min-w-0 w-full flex flex-col gap-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 space-y-2">
                         <h3
-                          className={`font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300 ${viewMode === "list" ? "text-lg" : "text-base"}`}
+                          className={`font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-300 ${viewMode === "list" ? "text-medium" : "text-medium"}`}
                         >
                           {company.company_name}
                         </h3>
 
                         {company.dba_name && (
-                          <p className="text-[11px] font-medium text-gray-400 group-hover:text-gray-500 transition-colors">
+                          <p className="text-[11px] font-medium text-gray-300 group-hover:text-gray-500 transition-colors">
                             DBA: {company.dba_name}
                           </p>
                         )}
 
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-700 ring-1 ring-gray-200 group-hover:bg-white group-hover:ring-gray-300 transition-colors">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                          <span className="flex items-center gap-1.5">
                             <MapPin className="h-3.5 w-3.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
                             <span className="truncate max-w-[160px] sm:max-w-[220px]">{locationLabel}</span>
                             {locationCodes && <span className="text-gray-400 hidden sm:inline">({locationCodes})</span>}
-                          </div>
-
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-700 ring-1 ring-gray-200 group-hover:bg-white group-hover:ring-gray-300 transition-colors">
+                          </span>
+                          <span className="flex items-center gap-1.5">
                             <Users className="h-3.5 w-3.5 text-gray-400 group-hover:text-purple-500 transition-colors" />
                             <span>{employeeCountLabel}</span>
-                          </div>
+                          </span>
                         </div>
                       </div>
 
                     </div>
 
                     {company.description && (
-                      <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">
+                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
                         {company.description}
                       </p>
                     )}
 
-                    {combinedHighlights.length > 0 && (
+                    {(displayedCapabilities.length > 0 || displayedCertifications.length > 0) && (
                       <div className={`flex flex-wrap items-center gap-2.5 ${viewMode === "grid" ? "mt-auto" : ""}`}>
-                        {visibleHighlights.map(highlight => {
+                        {[...displayedCapabilities, ...displayedCertifications].map(highlight => {
                           const isCapability = highlight.type === "capability"
                           const badgeStyles = isCapability
-                            ? "border-violet-200 bg-violet-50 text-violet-700"
-                            : "border-amber-200 bg-amber-50 text-amber-700"
+                            ? "border border-violet-200 bg-violet-50 text-violet-700"
+                            : "border border-amber-200 bg-amber-50 text-amber-700"
                           return (
                             <span
                               key={`${highlight.type}-${highlight.label}`}
-                              className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${badgeStyles}`}
+                              className={`inline-flex items-center rounded-sm px-3 py-1 text-[11px] font-semibold ${badgeStyles}`}
                             >
                               {highlight.label}
                             </span>
@@ -295,21 +297,13 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT, showI
           <button
             type="button"
             onClick={() => setPagesLoaded(prev => Math.min(prev + 1, totalPages))}
-            className="group px-6 py-2 bg-white border border-gray-200 rounded-full shadow-sm text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow transition-all flex items-center gap-1.5"
+            className="group px-6 py-2.5 bg-white border border-gray-200 rounded-full shadow-sm text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow transition-all flex items-center gap-1.5"
           >
-            Show More
+            Show More Results
             <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-colors" />
           </button>
         </div>
       )}
     </div>
-  )
-}
-
-function ChevronDown({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="m6 9 6 6 6-6"/>
-    </svg>
   )
 }
