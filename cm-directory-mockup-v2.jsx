@@ -51,7 +51,7 @@ export default function CMDirectoryMockupV2() {
   ];
 
   const removeFilter = (filter) => {
-    setActiveFilters(activeFilters.filter(f => f !== filter));
+    setActiveFilters((prevFilters) => prevFilters.filter((f) => f !== filter));
   };
 
   return (

@@ -77,7 +77,7 @@ export function hasMinimumAddressData(facility: FacilityAddress): boolean {
 
 /**
  * Build display address string
- */
+ 
 export function buildDisplayAddress(
   facility: FacilityAddress,
   options?: { excludeCountries?: string[] }
@@ -100,3 +100,4 @@ export function buildDisplayAddress(
   
   return parts.join(', ')
 }
+*/
