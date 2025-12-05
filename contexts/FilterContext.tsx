@@ -38,8 +38,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
   const [filteredCount, setFilteredCount] = useState(0)
 
   // Debounce URL writes only (filters are used live elsewhere)
-  const debouncedFilters = useDebounce(filters, 200)
-  const debouncedSearchQuery = useDebounce(filters.searchQuery, 500)
+  const debouncedFilters = useDebounce(filters, 500)
 
   // Load filters from URL on mount
   useEffect(() => {
@@ -72,7 +71,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
     if (debouncedFilters.capabilities.length) params.set("capabilities", debouncedFilters.capabilities.join(","))
     if (debouncedFilters.productionVolume) params.set("volume", debouncedFilters.productionVolume)
     if (debouncedFilters.employeeCountRanges.length) params.set("employees", debouncedFilters.employeeCountRanges.join(","))
-    if (debouncedSearchQuery.trim()) params.set("q", debouncedSearchQuery.trim())
+    if (debouncedFilters.searchQuery.trim()) params.set("q", debouncedFilters.searchQuery.trim())
 
     const newQuery = params.toString()
     const currentQuery = searchParams.toString()
@@ -84,7 +83,7 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
     startTransition(() => {
       router.replace(newUrl, { scroll: false })
     })
-  }, [debouncedFilters, debouncedSearchQuery, pathname, router, searchParams, startTransition])
+  }, [debouncedFilters, pathname, router, searchParams, startTransition])
 
   const updateFilter = useCallback(
     <K extends keyof FilterState>(key: K, value: FilterState[K]) => {

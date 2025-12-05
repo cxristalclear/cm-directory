@@ -398,7 +398,7 @@ export default function CompanyPreview({
 
       {/* Save All Confirmation Modal */}
       {showSaveAllConfirm && totalCount && totalCount > 1 && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 rounded-lg">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 rounded-lg">
           <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
             <h4 className="text-lg font-semibold text-gray-900 mb-4">Save All Companies?</h4>
             <p className="text-sm text-gray-600 mb-6">
