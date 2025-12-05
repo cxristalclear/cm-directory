@@ -4,6 +4,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 const pageUrl = getCanonicalUrl("/contact")
+const siteName = siteConfig.name
 
 export const metadata: Metadata = {
   title: "Contact | Contract Manufacturer Directory",
@@ -14,15 +15,15 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Contact | Contract Manufacturer Directory",
-    description: "Get in touch with PCBA Finder for help with sourcing manufacturers or updating your company profile.",
+    description: `Get in touch with ${siteName} for help with sourcing manufacturers or updating your company profile.`,
     url: pageUrl,
     siteName: siteConfig.name,
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Contact PCBA Finder",
-    description: "Reach the PCBA Finder team for support and collaboration requests.",
+    title: `Contact ${siteName}`,
+    description: `Reach the ${siteName} team for support and collaboration requests.`,
   },
   robots: {
     index: true,
@@ -36,7 +37,7 @@ export default function ContactPage() {
       <header className="gradient-bg pb-20 pt-16 text-white">
         <div className="container mx-auto px-4">
           <p className="text-sm uppercase tracking-wide text-blue-100">Support & Partnerships</p>
-          <h1 className="mt-3 text-4xl font-semibold md:text-5xl">Contact PCBA Finder</h1>
+          <h1 className="mt-3 text-4xl font-semibold md:text-5xl">Contact {siteName}</h1>
           <p className="mt-4 max-w-2xl text-lg text-blue-100">
             We help engineering, operations, and sourcing teams find the right manufacturing partners. Reach out and we will
             respond within one business day.

@@ -92,5 +92,3 @@ export class MapErrorBoundary extends Component<Props, State> {
 }
 
 export default MapErrorBoundary
-
-// lib/admin/addressCompat.ts

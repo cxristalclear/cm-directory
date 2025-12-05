@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { Building2, Plus, Eye } from 'lucide-react'
+import { siteConfig } from '@/lib/config'
 
 // Type for the query results with explicit fields
 type CompanyDashboardItem = {
@@ -46,7 +47,7 @@ export default async function AdminDashboard() {
       <div>
         <h1 className="text-3xl font-bold gradient-text">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Manage your PCBA Finder companies
+          Manage your {siteConfig.name} companies
         </p>
       </div>
 

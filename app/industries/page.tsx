@@ -6,6 +6,7 @@ import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { allIndustries } from "@/lib/industries"
 
 const pageUrl = getCanonicalUrl("/industries")
+const siteName = siteConfig.name
 
 export const metadata: Metadata = {
   title: "Industries | Specialized Manufacturing Markets",
@@ -16,8 +17,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Industries | Specialized Manufacturing Markets",
-    description:
-      "Explore regulated and high-reliability industries served by PCBA Finder partners.",
+    description: `Explore regulated and high-reliability industries served by ${siteName} partners.`,
     url: pageUrl,
     siteName: siteConfig.name,
   },

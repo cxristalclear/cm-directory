@@ -26,9 +26,10 @@ async function fetchCapabilityCounts(): Promise<Record<string, number>> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const pageUrl = getCanonicalUrl("/capabilities")
+  const siteName = siteConfig.name
 
   return {
-    title: "Manufacturing Capabilities Directory | CM Directory",
+    title: `Manufacturing Capabilities Directory | ${siteName}`,
     description:
       "Browse electronics manufacturing capabilities including SMT assembly, through-hole, cable harness, box build, and prototyping services.",
     openGraph: {

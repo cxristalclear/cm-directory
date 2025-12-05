@@ -73,7 +73,7 @@ const normalizeUrl = (url: string): string => {
   return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed
 }
 
-const defaultSiteUrl = 'https://www.cm-directory.com'
+const defaultSiteUrl = 'https://www.pcbafinder.com'
 const siteUrl = normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL || defaultSiteUrl)
 
 const defaultSocialLinks = {

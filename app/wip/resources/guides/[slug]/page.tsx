@@ -16,6 +16,8 @@ const guideSummaryBySlug: Record<string, string> = {
     "Guidance for steering cross-functional conversations when supply chain issues threaten schedules or quality metrics.",
 }
 
+const siteName = siteConfig.name
+
 function formatGuideTitle(slug: string): string {
   return slug
     .split("-")
@@ -30,11 +32,11 @@ export async function generateMetadata({ params }: GuideArticlePageProps): Promi
   const canonicalUrl = getCanonicalUrl(`/resources/guides/${slug}`)
 
   return {
-    title: `${articleTitle} | CM Directory Guides`,
+    title: `${articleTitle} | ${siteName} Guides`,
     description: summary,
     alternates: { canonical: canonicalUrl },
     openGraph: {
-      title: `${articleTitle} | CM Directory Guides`,
+      title: `${articleTitle} | ${siteName} Guides`,
       description: summary,
       url: canonicalUrl,
       siteName: siteConfig.name,

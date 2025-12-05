@@ -7,11 +7,13 @@ import { Toaster } from "sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { OG_IMAGE_PATH, siteConfig } from "@/lib/config"
 import SiteFooter from "@/components/SiteFooter"
+import { Analytics } from "@vercel/analytics/next"
 import {
   jsonLdScriptProps,
   organizationJsonLd,
   webSiteJsonLd,
 } from "@/lib/schema"
+
 
 const inter = Inter({
   variable: "--font-inter",
@@ -74,6 +76,7 @@ export default function RootLayout({
   const rootStructuredData = [organizationJsonLd, webSiteJsonLd]
 
   return (
+    
     <html lang="en" suppressHydrationWarning className="h-full">
       <head>
         {rootStructuredData.map((schema) => (
@@ -96,6 +99,7 @@ export default function RootLayout({
         </div>
         <SpeedInsights />
         <Toaster position="top-right" />
+        <Analytics />
       </body>
     </html>
   )

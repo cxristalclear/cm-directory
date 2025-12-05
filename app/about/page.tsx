@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 
 import Navbar from "@/components/navbar"
+import { siteConfig } from "@/lib/config"
 
 export const metadata: Metadata = {
   title: "About | Contract Manufacturer Directory",
@@ -335,7 +336,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="heading-lg text-white mb-4">Claim your profile</h3>
                 <p className="text-blue-100 mb-8 max-w-md leading-relaxed">
-                  Join 800+ manufacturers who use PCBA Finder to reach qualified buyers. Verification is free and takes less than 24 hours.
+                  Join 800+ manufacturers who use {siteConfig.name} to reach qualified buyers. Verification is free and takes less than 24 hours.
                 </p>
                 
                 <ul className="space-y-3 mb-8">

@@ -4,6 +4,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 const pageUrl = getCanonicalUrl("/privacy")
+const siteName = siteConfig.name
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Contract Manufacturer Directory",
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Privacy Policy | Contract Manufacturer Directory",
-    description: "Details on data collection, usage, and security practices for PCBA Finder.",
+    description: `Details on data collection, usage, and security practices for ${siteName}.`,
     url: pageUrl,
     siteName: siteConfig.name,
     type: "website",
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "Privacy Policy",
-    description: "Understand how PCBA Finder protects community and customer data.",
+    description: `Understand how ${siteName} protects community and customer data.`,
   },
   robots: {
     index: true,

@@ -10,6 +10,8 @@ import { CERTIFICATION_DIRECTORY } from "@/lib/certifications-data"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
+const siteName = siteConfig.name
+
 export async function generateStaticParams() {
   return Object.keys(CERTIFICATION_DIRECTORY).map(certification => ({
     certification
@@ -26,7 +28,7 @@ export async function generateMetadata({
   
   if (!certData) {
     return {
-      title: 'Certification Not Found | CM Directory',
+      title: `Certification Not Found | ${siteName}`,
       description: 'The requested certification page could not be found.'
     }
   }

@@ -23,6 +23,8 @@ const cityListFormatter = new Intl.ListFormat("en-US", {
   type: "conjunction",
 })
 
+const siteName = siteConfig.name
+
 const formatCityList = (cities: string[]): string | null => {
   if (cities.length === 0) {
     return null
@@ -67,7 +69,7 @@ export async function generateMetadata({
 
   if (!stateMetadata) {
     return {
-      title: "State Not Found | PCBA Finder",
+      title: `State Not Found | ${siteName}`,
       description: "The requested state page could not be found.",
     }
   }

@@ -213,4 +213,3 @@ export function getCapabilityDefinition(slug: string): CapabilityMetadata | null
   return CAPABILITY_BY_SLUG[slug] ?? null
 }
 
-/** Check if a capability slug is valid */
