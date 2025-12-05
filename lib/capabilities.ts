@@ -204,6 +204,7 @@ export const CAPABILITY_DEFINITIONS: CapabilityMetadata[] = [
   },
 ]
 
+
 export const CAPABILITY_BY_SLUG = Object.fromEntries(
   CAPABILITY_DEFINITIONS.map(definition => [definition.slug, definition as CapabilityMetadata]),
 )
@@ -211,3 +212,5 @@ export const CAPABILITY_BY_SLUG = Object.fromEntries(
 export function getCapabilityDefinition(slug: string): CapabilityMetadata | null {
   return CAPABILITY_BY_SLUG[slug] ?? null
 }
+
+/** Check if a capability slug is valid */

@@ -28,7 +28,7 @@ export function getCountryName(code: string): string {
   return COUNTRIES[code as keyof typeof COUNTRIES] || code
 }
 
-// For non-US countries, you might want province/region mapping
+/* For non-US countries, you might want province/region mapping */
 export const REGIONS = {
   'CA': { // Canada
     'ON': 'Ontario',

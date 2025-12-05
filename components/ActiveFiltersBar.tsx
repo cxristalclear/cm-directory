@@ -45,6 +45,7 @@ function FilterChip({ label, category, onRemove }: FilterChipProps) {
   
   return (
     <button
+      type="button"
       onClick={onRemove}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 border rounded-full transition-all group flex-shrink-0 shadow-[0_2px_6px_rgba(0,0,0,0.04)] ${bg}`}
     >
@@ -147,6 +148,8 @@ export default function ActiveFiltersBar({ variant = 'page' }: ActiveFiltersBarP
         </div>
 
         <button 
+          type="button"
+          aria-label="Clear filters"
           onClick={clearFilters}
           className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors flex-shrink-0"
         >
@@ -175,6 +178,8 @@ export default function ActiveFiltersBar({ variant = 'page' }: ActiveFiltersBarP
             </div>
           </div>
           <button 
+            type="button"
+            aria-label="Clear all filters"
             onClick={clearFilters}
             className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           >

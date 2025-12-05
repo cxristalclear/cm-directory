@@ -15,6 +15,7 @@ export type IndustryDefinition = {
   requirements: string[]
 }
 
+/** Definitions for each industry */
 export const INDUSTRY_DATA: Record<IndustrySlug, IndustryDefinition> = {
   'medical-devices': {
     slug: 'medical-devices',

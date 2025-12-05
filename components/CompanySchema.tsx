@@ -62,6 +62,7 @@ const extractVerifiedSocialUrls = (links?: CompanySocialLink[] | null): string[]
     .map((link) => link.url)
 }
 
+/** Builds JSON-LD structured data for a company */
 export const buildCompanyJsonLd = (
   company: CompanySchemaInput,
   canonicalUrl?: string,

@@ -64,7 +64,7 @@ export default function AdminSidebar() {
           <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-200">
             <Building2 className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-lg admin-sidebar-logo">PCBA Finder</h1>
+              <p className="text-lg admin-sidebar-logo">PCBA Finder</p>
               <p className="text-xs text-gray-500">Admin Dashboard</p>
             </div>
           </div>
