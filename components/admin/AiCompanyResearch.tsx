@@ -469,7 +469,7 @@ export default function AiCompanyResearch({
     try {
       const successful: ResearchedCompany[] = []
       const errors: Array<{ index: number; company: string; reason: string }> = []
-      let completedCount = 0
+      const completedCount = 0
 
       const researchPromises = uniqueCompanies.map((raw, index) => {
         const normalizedName = raw.name
@@ -500,13 +500,13 @@ export default function AiCompanyResearch({
               reason,
             })
           })
+
           .finally(() => {
-            completedCount += 1
-            setBatchProgress({
-              current: completedCount,
-              total: uniqueCompanies.length,
+            setBatchProgress(prev => ({
+              ...prev,
+              current: prev.current + 1,
               company: normalizedName,
-            })
+            }))
           })
       })
 
@@ -632,42 +632,46 @@ export default function AiCompanyResearch({
       errors: [],
     })
 
-    const errors: Array<{ companyId: string; company: string; reason: string }> = []
-    let successCount = 0
-    let failCount = 0
-    const savedCompanyIds = new Set<string>()
-    let completedCount = 0
-
-    await Promise.all(
+    const results = await Promise.allSettled(
       researchedCompanies.map(async company => {
         try {
           await onSaveCompany(company.data, false, company.enrichmentPayload)
-          successCount+= 1
-          savedCompanyIds.add(company.id)
-        } catch (err) {
-          failCount+= 1
-          const reason = err instanceof Error ? err.message : 'Unknown error'
-          errors.push({
-            companyId: company.id,
-            company: company.data.company_name,
-            reason,
-          })
-
-          setBatchSaveProgress(prev => ({
-            ...prev,
-            failed: prev.failed + 1,
-            errors: [...prev.errors, { companyId: company.id, company: company.data.company_name, reason }],
-          }))
+          return company.id
         } finally {
-          completedCount+= 1
           setBatchSaveProgress(prev => ({
             ...prev,
-            current: completedCount,
+            current: prev.current + 1,
             currentCompanyName: company.data.company_name,
           }))
         }
       })
     )
+
+    const savedCompanyIds = new Set<string>()
+    const errors: Array<{ companyId: string; company: string; reason: string }> = []
+
+    results.forEach((result, index) => {
+      const company = researchedCompanies[index]
+      if (result.status === 'fulfilled') {
+        savedCompanyIds.add(result.value)
+      } else {
+        const reason = result.reason instanceof Error ? result.reason.message : 'Unknown error'
+        errors.push({
+          companyId: company.id,
+          company: company.data.company_name,
+          reason,
+        })
+      }
+    })
+
+    const successCount = savedCompanyIds.size
+    const failCount = errors.length
+
+    setBatchSaveProgress(prev => ({
+      ...prev,
+      failed: failCount,
+      errors,
+    }))
 
     setIsSavingAll(false)
 
