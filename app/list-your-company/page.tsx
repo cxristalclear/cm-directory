@@ -8,14 +8,14 @@ import JotformEmbed from "@/components/JotformEmbed"
 import { siteConfig } from "@/lib/config"
 
 export const metadata: Metadata = {
-  title: "List Your Company | CM Directory",
+  title: "List Your Company | PCBA Finder",
   description:
-    "List your contract manufacturing company for free on CM Directory. Reach qualified buyers, showcase your capabilities, certifications, and get featured placement options.",
+    "List your contract manufacturing company for free on PCBA Finder. Reach qualified buyers, showcase your capabilities, certifications, and get featured placement options.",
   alternates: {
     canonical: `${siteConfig.url}/list-your-company`,
   },
   openGraph: {
-    title: "List Your Company — CM Directory",
+    title: "List Your Company — PCBA Finder",
     description:
       "Get free visibility to qualified buyers. Showcase your manufacturing capabilities and connect with OEMs and engineers.",
     url: `${siteConfig.url}/list-your-company`,
@@ -165,7 +165,7 @@ export default function ListYourCompanyPage() {
           {/* Benefits & FAQ Split */}
           <section className="grid md:grid-cols-2 gap-12 items-start">
             <div>
-              <h2 className="heading-lg mb-6">Why list on CM Directory?</h2>
+              <h2 className="heading-lg mb-6">Why list on PCBA Finder?</h2>
               <div className="space-y-6">
                 {benefits.map((benefit) => (
                   <div key={benefit.title} className="flex gap-4">

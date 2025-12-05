@@ -67,7 +67,7 @@ export async function generateMetadata({
 
   if (!stateMetadata) {
     return {
-      title: "State Not Found | CM Directory",
+      title: "State Not Found | PCBA Finder",
       description: "The requested state page could not be found.",
     }
   }

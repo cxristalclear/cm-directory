@@ -1,6 +1,6 @@
 # Production Readiness Analysis
 **Date:** November 6, 2025  
-**Project:** CM Directory  
+**Project:** PCBA Finder  
 **Status:** Pre-Production Review
 
 ---
@@ -306,7 +306,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # Site Metadata (REQUIRED)
 NEXT_PUBLIC_SITE_URL=https://www.cm-directory.com
-NEXT_PUBLIC_SITE_NAME="CM Directory"
+NEXT_PUBLIC_SITE_NAME="PCBA Finder"
 
 # Google Analytics (REQUIRED for analytics)
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX

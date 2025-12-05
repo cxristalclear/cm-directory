@@ -69,12 +69,12 @@ const COMPANY_FIELDS = `
 const MAX_COMPANIES = 500
 
 export const metadata = {
-  title: "CM Directory - Find Electronics Contract Manufacturers",
+  title: "PCBA Finder - Find Electronics Contract Manufacturers",
   description:
     "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities, certifications, industries, and location.",
   alternates: { canonical: siteConfig.url },
   openGraph: {
-    title: "CM Directory - Electronics Contract Manufacturers",
+    title: "PCBA Finder - Electronics Contract Manufacturers",
     description:
       "Find and compare PCB assembly partners by capability, certification, and location.",
     url: siteConfig.url,
@@ -83,7 +83,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary",
-    title: "CM Directory - Electronics Contract Manufacturers",
+    title: "PCBA Finder - Electronics Contract Manufacturers",
     description:
       "Filter verified manufacturers by capability, certification, and location.",
   },
@@ -179,12 +179,12 @@ export default async function Home({
                 </div>
 
                 {/* Main Content Area */}
-                <div className="lg:col-span-10 space-y-6 lg:order-last">
+                <div className="lg:col-span-10 space-y-5 lg:order-last">
                   <SearchBar companies={companies} variant="inline" />
                   <ActiveFiltersBar variant="inline" />
 
                   <div className="flex justify-center">
-                    <div className="w-full lg:w-full">
+                    <div className="w-full lg:w-full rounded-2xl border border-gray-200 bg-slate-50 shadow-sm overflow-hidden">
                       <MapErrorBoundary>
                         <LazyCompanyMap allCompanies={companies} />
                       </MapErrorBoundary>

@@ -1,4 +1,4 @@
-import type { CapabilitySlug } from "@/lib/filters/url"
+import type { CapabilitySlug } from "@/lib/filters/url";
 import type { Database } from "@/lib/database.types"
 
 type CapabilityTable = Database["public"]["Tables"]["capabilities"]["Row"]

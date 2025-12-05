@@ -4,7 +4,7 @@ import {
   type FacilityAddressLike,
   type GeocodeFacilityOptions,
   type GeocodeFacilitySuccess,
-} from './geocoding'
+} from '../lib/admin/geocoding'
 
 /**
  * Geocodes a facility using the Mapbox API and persists the latitude/longitude
