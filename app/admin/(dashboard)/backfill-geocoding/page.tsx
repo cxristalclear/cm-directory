@@ -3,9 +3,6 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { geocodeFacilityToPoint, GeocodeFacilityError } from '@/lib/admin/geocoding'
-import type { Database } from '@/lib/database.types'
-
-type Facility = Database['public']['Tables']['facilities']['Row']
 
 interface GeocodingResult {
   facilityId: string

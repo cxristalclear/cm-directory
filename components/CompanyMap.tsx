@@ -313,7 +313,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   useEffect(() => {
     if (!map.current || !isStyleLoaded || isLoading) return
     const shouldFitToFilteredFacilities = hasActiveDebouncedFilters && filteredFacilities.facilities.length > 0
-    if (!shouldFitToFilteredFacilities && previousShouldFitRef.current) {
+    if (!hasActiveDebouncedFilters && previousShouldFitRef.current) {
       resetView()
     }
     previousShouldFitRef.current = shouldFitToFilteredFacilities

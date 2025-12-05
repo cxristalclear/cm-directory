@@ -70,7 +70,7 @@ export async function generateMetadata({
   
   const typedCompany = company as unknown as CompanyMetadata
   
-  const primaryFacility = typedCompany.facilities?.[0]
+  const [primaryFacility] = typedCompany.facilities ?? []
   const region = primaryFacility
     ? primaryFacility.state_province || primaryFacility.state
     : null
@@ -87,11 +87,11 @@ export async function generateMetadata({
   
   // Get key capabilities for description
   const capabilities = []
-  if (typedCompany.capabilities?.[0]) {
-    const cap = typedCompany.capabilities[0]
-    if (cap.pcb_assembly_smt) capabilities.push('SMT Assembly')
-    if (cap.cable_harness_assembly) capabilities.push('Cable Assembly')
-    if (cap.box_build_assembly) capabilities.push('Box Build')
+  const [primaryCapability] = typedCompany.capabilities ?? []
+  if (primaryCapability) {
+    if (primaryCapability.pcb_assembly_smt) capabilities.push('SMT Assembly')
+    if (primaryCapability.cable_harness_assembly) capabilities.push('Cable Assembly')
+    if (primaryCapability.box_build_assembly) capabilities.push('Box Build')
   }
   
   const certifications = typedCompany.certifications?.map((c: { certification_type: string }) => c.certification_type).slice(0, 3).join(', ')
