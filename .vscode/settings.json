@@ -28,4 +28,5 @@
   "python-envs.pythonProjects": [],
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.validate.enable": true,
+  "codeantai.pythonDocstringFormat": "\"\"\"{Short one sentence description of function}\nParameters:\n    - param1 (type): Short Description of param1.\n    - param2 (type): Short Description of param2, if applicable.\nReturns:\n    - type: Short Description of the return value.\nExample:\n    - Write only one example of sample input and sample output function(sample_input) -> sample_output\n    - This example should try to mock the input schema and output schema with relevant values\n\"\"\"",
 }

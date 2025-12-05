@@ -12,7 +12,7 @@ describe("schema helpers", () => {
         "@context": "https://schema.org",
         "@type": "Organization",
         "logo": "https://www.cm-directory.com/og-image.png",
-        "name": "CM Directory",
+        "name": "PCBA Finder",
         "sameAs": [
           "https://twitter.com/cmdirectory",
           "https://www.linkedin.com/company/cm-directory",
@@ -28,7 +28,7 @@ describe("schema helpers", () => {
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "CM Directory",
+        "name": "PCBA Finder",
         "url": "https://www.cm-directory.com",
       }
     `)

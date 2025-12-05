@@ -1,6 +1,6 @@
-# CM Directory - Quick Setup Guide
+# PCBA Finder - Quick Setup Guide
 
-This guide will walk you through setting up the CM Directory application from scratch.
+This guide will walk you through setting up the PCBA Finder application from scratch.
 
 ## 📋 Prerequisites Checklist
 
@@ -59,7 +59,7 @@ npm install
 
    # Site Configuration (Required)
    NEXT_PUBLIC_SITE_URL=http://localhost:3000
-   NEXT_PUBLIC_SITE_NAME=CM Directory
+   NEXT_PUBLIC_SITE_NAME=PCBA Finder
 
    # Social Profiles (Required for production metadata)
    NEXT_PUBLIC_TWITTER_URL=https://twitter.com/cmdirectory
@@ -206,7 +206,7 @@ If you're stuck:
 
 ## 🎉 You're All Set!
 
-Your CM Directory is now running locally. Happy coding!
+Your PCBA Finder is now running locally. Happy coding!
 
 ---
 

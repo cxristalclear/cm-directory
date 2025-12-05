@@ -24,7 +24,7 @@
   </defs>
 
   <!-- Header -->
-  <text x="700" y="40" text-anchor="middle" class="header">CM Directory – Site Flow (Pages & Connections)</text>
+  <text x="700" y="40" text-anchor="middle" class="header">PCBA Finder – Site Flow (Pages & Connections)</text>
   <text x="700" y="62" text-anchor="middle" class="subtle">Blue = key nav routes · Light groups = related sections · Arrows = primary user paths</text>
 
   <!-- ENTRY POINTS -->
