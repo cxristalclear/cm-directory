@@ -16,14 +16,17 @@ async function fetchCapabilityCounts(): Promise<Record<string, number>> {
         query = query.eq(`capabilities.${filter.column}`, filter.value)
       }
 
-      const { count } = await query
+      const { count, error } = await query
+      if (error) {
+        console.error(`Error fetching count for ${definition.slug}:`, error)
+        return [definition.slug, 0] as const
+      }
       return [definition.slug, count ?? 0] as const
     }),
   )
 
   return Object.fromEntries(counts)
 }
-
 export async function generateMetadata(): Promise<Metadata> {
   const pageUrl = getCanonicalUrl("/capabilities")
   const siteName = siteConfig.name

@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: GuideArticlePageProps): Promi
       title: `${articleTitle} | ${siteName} Guides`,
       description: summary,
       url: canonicalUrl,
-      siteName: siteConfig.name,
+      siteName: siteName,
       type: "article",
     },
     twitter: {
@@ -130,7 +130,7 @@ export default async function GuideArticlePage({ params }: GuideArticlePageProps
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebSite",
-            name: siteConfig.name,
+            name: siteName,
             url: siteConfig.url,
           }),
         }}
@@ -147,12 +147,12 @@ export default async function GuideArticlePage({ params }: GuideArticlePageProps
             description: summary,
             author: {
               "@type": "Organization",
-              name: siteConfig.name,
+              name: siteName,
               url: siteConfig.url,
             },
             publisher: {
               "@type": "Organization",
-              name: siteConfig.name,
+              name: siteName,
               url: siteConfig.url,
             },
             datePublished: publicationDate,

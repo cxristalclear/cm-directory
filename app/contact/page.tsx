@@ -63,7 +63,15 @@ export default function ContactPage() {
               steps.
             </p>
 
-            <form className="mt-8 space-y-6" aria-label="Contact form">
+            <form 
+              className="mt-8 space-y-6" 
+              aria-label="Contact form"
+              onSubmit={(e) => {
+                e.preventDefault()
+                // TODO: Implement form submission logic
+                console.log('Form submitted')
+              }}
+            >
               <div className="space-y-2">
                 <label htmlFor="contact-name" className="text-sm font-medium text-gray-700">
                   Full name
@@ -111,8 +119,7 @@ export default function ContactPage() {
               >
                 Submit request
               </button>
-            </form>
-          </div>
+            </form>          </div>
 
           <aside className="space-y-6">
             <div className="rounded-3xl border border-blue-100 bg-blue-50/80 p-6 shadow-inner">

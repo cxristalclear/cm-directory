@@ -29,8 +29,7 @@ export default async function AdminDashboard() {
     .limit(5)
 
   // Cast to proper type to fix TypeScript inference
-  const recentlyAdded = (recentlyAddedRaw || []) as CompanyDashboardItem[]
-
+  const recentlyAdded = (recentlyAddedRaw || []) as Omit<CompanyDashboardItem, 'updated_at'>[]
   // Get recently edited companies with explicit type casting
   const { data: recentlyEditedRaw } = await supabase
     .from('companies')
@@ -39,7 +38,7 @@ export default async function AdminDashboard() {
     .limit(5)
 
   // Cast to proper type to fix TypeScript inference  
-  const recentlyEdited = (recentlyEditedRaw || []) as CompanyDashboardItem[]
+  const recentlyEdited = (recentlyEditedRaw || []) as Omit<CompanyDashboardItem, 'created_at'>[]
 
   return (
     <div className="space-y-6">
