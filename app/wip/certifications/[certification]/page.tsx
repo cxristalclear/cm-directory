@@ -73,7 +73,7 @@ export default async function CertificationPage({
   }
   
   // Fetch companies with this certification
-  const { data: companies } = await supabase
+  const { data: companies, error } = await supabase
     .from('companies')
     .select(`
       *,
@@ -86,8 +86,11 @@ export default async function CertificationPage({
     .eq('certifications.status', 'Active')
     .eq('is_active', true)
   
-  const typedCompanies = companies as Company[] | null
+  if (error) {
+    console.error('Failed to fetch companies:', error)
+  }
   
+  const typedCompanies = companies as Company[] | null  
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">

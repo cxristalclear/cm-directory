@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { supabase } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import type { Metadata } from 'next'
@@ -8,6 +9,24 @@ import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 const siteName = siteConfig.name
 
+// Cached fetch to avoid duplicate Supabase queries between metadata and page render
+const fetchCompanyBySlug = cache(async (slug: string) => {
+  return supabase
+    .from("companies")
+    .select(`
+      *,
+      facilities (*),
+      capabilities (*),
+      industries (industry_name),
+      certifications (*),
+      technical_specs (*),
+      business_info (*),
+      contacts (*)
+    `)
+    .eq("slug", slug)
+    .single<CompanyWithRelations>()
+})
+
 // Generate dynamic metadata for SEO
 export async function generateMetadata({ 
   params 
@@ -15,18 +34,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }> 
 }): Promise<Metadata> {
   const { slug } = await params
-  
-  const { data: company } = await supabase
-    .from("companies")
-    .select(`
-      company_name,
-      description,
-      facilities (city, state, state_province, state_code, country, country_code),
-      capabilities (*),
-      certifications (certification_type)
-    `)
-    .eq("slug", slug)
-    .single()
+  const { data: company } = await fetchCompanyBySlug(slug)
   
   if (!company) {
     return {
@@ -118,7 +126,7 @@ export async function generateMetadata({
     twitter: {
       card: 'summary_large_image',
       title: `${typedCompany.company_name} - Contract Manufacturer`,
-      description: typedCompany.description?.substring(0, 160),
+      description: (typedCompany.description || defaultDescription).substring(0, 160),
       images: [siteConfig.ogImage],
     },
 
@@ -147,20 +155,7 @@ export default async function CompanyPage({
   const { slug } = await params
 
   // Fetch all company data
-  const { data: company } = await supabase
-    .from("companies")
-    .select(`
-      *,
-      facilities (*),
-      capabilities (*),
-      industries (industry_name),
-      certifications (*),
-      technical_specs (*),
-      business_info (*),
-      contacts (*)
-    `)
-    .eq("slug", slug)
-    .single<CompanyWithRelations>()
+  const { data: company } = await fetchCompanyBySlug(slug)
 
   if (!company) {
     notFound()

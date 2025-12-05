@@ -77,9 +77,9 @@ const defaultSiteUrl = 'https://www.pcbafinder.com'
 const siteUrl = normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL || defaultSiteUrl)
 
 const defaultSocialLinks = {
-  twitter: 'https://twitter.com/cmdirectory',
-  linkedin: 'https://www.linkedin.com/company/cm-directory',
-  github: 'https://github.com/cm-directory/app',
+  twitter: 'https://twitter.com/pcbafinder',
+  linkedin: 'https://www.linkedin.com/company/pcbafinder',
+  github: 'https://github.com/pcbafinder/app',
 } as const
 
 export const OG_IMAGE_PATH = '/og-image.png' as const

@@ -50,15 +50,15 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const currentFacilitiesRef = useRef<FacilityWithCoordinates[]>([])
 
   const debouncedFilters = useDebounce(filters, 300)
-  const hasActiveFilters = useMemo(
+  const hasActiveDebouncedFilters = useMemo(
     () =>
-      filters.countries.length > 0 ||
-      filters.states.length > 0 ||
-      filters.capabilities.length > 0 ||
-      filters.productionVolume !== null,
-    [filters]
+      debouncedFilters.countries.length > 0 ||
+      debouncedFilters.states.length > 0 ||
+      debouncedFilters.capabilities.length > 0 ||
+      debouncedFilters.productionVolume !== null,
+    [debouncedFilters]
   )
-  const previousHasActiveFilters = useRef(hasActiveFilters)
+  const previousHasActiveFilters = useRef(hasActiveDebouncedFilters)
 
   const filteredFacilities = useMemo(() => {
     const filteredCompanies = filterCompanies(allCompanies, debouncedFilters)
@@ -290,7 +290,7 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       return
     }
 
-    if (hasActiveFilters) {
+    if (hasActiveDebouncedFilters) {
       const bounds = new mapboxgl.LngLatBounds()
       filteredFacilities.facilities.forEach((f) => bounds.extend([f.longitude, f.latitude]))
 
@@ -303,15 +303,15 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
         })
       }, 100)
     }
-  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers, debouncedFilters, resetView, hasActiveFilters])
+  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers, debouncedFilters, resetView, hasActiveDebouncedFilters])
 
   useEffect(() => {
     if (!map.current || !isStyleLoaded || isLoading) return
-    if (!hasActiveFilters && previousHasActiveFilters.current) {
+    if (!hasActiveDebouncedFilters && previousHasActiveFilters.current) {
       resetView()
     }
-    previousHasActiveFilters.current = hasActiveFilters
-  }, [hasActiveFilters, isStyleLoaded, isLoading, resetView])
+    previousHasActiveFilters.current = hasActiveDebouncedFilters
+  }, [hasActiveDebouncedFilters, isStyleLoaded, isLoading, resetView])
 
   const handleStyleChange = (newStyle: string) => {
     if (map.current && newStyle !== mapStyle) {

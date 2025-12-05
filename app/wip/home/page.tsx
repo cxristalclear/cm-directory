@@ -16,8 +16,7 @@ import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import Navbar from "@/components/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import Link from "next/dist/client/link"
-
+import Link from "next/link"
 export const revalidate = 300
 
 const COMPANY_FIELDS = `
@@ -280,16 +279,16 @@ export default async function Home({
                                 Connect directly with qualified partners.
                                 </p>
                                 <div className="flex gap-4 justify-center flex-wrap">
-                                    <Button size="lg" className="rounded-xl px-8">
-                                        <Link href="/search">
-                                        Search Manufacturers
-                                        </Link>
-                                    </Button>
-                                    <Button size="lg" variant="outline" className="rounded-xl px-8">
-                                        <Link href="/list-your-company">
-                                        List Your Company
-                                        </Link>
-                                    </Button>
+                                  <Link href="/search">
+                                      <Button size="lg" className="rounded-xl px-8">
+                                          Search Manufacturers
+                                      </Button>
+                                  </Link>
+                                  <Link href="/list-your-company">
+                                      <Button size="lg" className="rounded-xl px-8">
+                                          List Your Company
+                                      </Button>
+                                  </Link>
                                 </div>  
                             </div>
                         </div>
@@ -343,7 +342,9 @@ export default async function Home({
                         </li>
                       </ul>
                       <div className="mt-6">
-                        <Button className="w-full rounded-xl">Start Your Search</Button>
+                        <Link href="/search">
+                          <Button className="w-full rounded-xl">Start Your Search</Button>
+                        </Link>
                       </div>
                     </CardContent>
                   </Card>
@@ -370,7 +371,9 @@ export default async function Home({
                         </li>
                       </ul>
                       <div className="mt-6">
-                        <Button variant="outline" className="w-full rounded-xl">Get Listed Free</Button>
+                        <Link href="/list-your-company">
+                          <Button variant="outline" className="w-full rounded-xl">Get Listed Free</Button>
+                        </Link>                      
                       </div>
                     </CardContent>
                   </Card>
@@ -387,7 +390,9 @@ export default async function Home({
                       <h2 className="text-3xl font-bold text-slate-900">Featured Manufacturers</h2>
                       <p className="text-slate-600 mt-2">Recently updated verified partners</p>
                     </div>
-                    <Button variant="outline" className="rounded-xl">View All</Button>
+                    <Link href="/manufacturers">
+                      <Button variant="outline" className="rounded-xl">View All</Button>
+                    </Link>
                   </div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {featuredCompanies.map((company) => (
@@ -572,12 +577,16 @@ export default async function Home({
                   Join {stats.manufacturers}+ verified manufacturers and start connecting today
                 </p>
                 <div className="flex gap-4 justify-center flex-wrap">
-                  <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 rounded-xl px-8">
-                    Search Manufacturers
-                  </Button>
-                  <Button size="lg" variant="outline" className="text-white border-white hover:bg-blue-700 rounded-xl px-8">
-                    List Your Company Free
-                  </Button>
+                    <Link href="/search">
+                      <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 rounded-xl px-8">
+                        Search Manufacturers
+                      </Button>
+                    </Link>
+                    <Link href="/list-your-company">
+                      <Button size="lg" variant="outline" className="text-white border-white hover:bg-blue-700 rounded-xl px-8">
+                        List Your Company Free
+                      </Button>
+                    </Link>
                 </div>
               </div>
             </section>
