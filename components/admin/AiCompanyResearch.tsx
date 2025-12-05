@@ -469,7 +469,6 @@ export default function AiCompanyResearch({
     try {
       const successful: ResearchedCompany[] = []
       const errors: Array<{ index: number; company: string; reason: string }> = []
-      const completedCount = 0
 
       const researchPromises = uniqueCompanies.map((raw, index) => {
         const normalizedName = raw.name
