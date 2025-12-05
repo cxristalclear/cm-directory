@@ -6,6 +6,8 @@ import { CompanySchema } from "@/components/CompanySchema"
 import CompanyDetailClient from "./CompanyDetailClient"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
+const siteName = siteConfig.name
+
 // Generate dynamic metadata for SEO
 export async function generateMetadata({ 
   params 
@@ -28,7 +30,7 @@ export async function generateMetadata({
   
   if (!company) {
     return {
-      title: 'Company Not Found | PCBA Finder',
+      title: `Company Not Found | ${siteName}`,
       description: 'The requested manufacturer profile could not be found.',
     }
   }
@@ -82,13 +84,22 @@ export async function generateMetadata({
   const certifications = typedCompany.certifications?.map((c: { certification_type: string }) => c.certification_type).slice(0, 3).join(', ')
   
   const pageUrl = getCanonicalUrl(`/companies/${slug}`)
+  const titleLocation = location ? ` in ${location}` : ''
+  const locationDetail = location ? ` located in ${location}` : ''
+  const descriptionCapabilities = capabilities.length > 0 ? `Capabilities include ${capabilities.join(', ')}.` : ''
+  const descriptionCertifications = certifications ? `Certifications: ${certifications}.` : ''
+  const defaultDescription = [
+    `${typedCompany.company_name} is a contract manufacturer${locationDetail}.`,
+    descriptionCapabilities,
+    descriptionCertifications,
+    'View full profile and contact information.',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return {
-    title: `${typedCompany.company_name} - Contract Manufacturer${location ? ` in ${location}` : ''} | PCBA Finder`,
-    description: typedCompany.description ||
-      `${typedCompany.company_name} is a contract manufacturer${location ? ` located in ${location}` : ''}. ${
-        capabilities.length > 0 ? `Capabilities include ${capabilities.join(', ')}.` : ''
-      } ${certifications ? `Certifications: ${certifications}.` : ''} View full profile and contact information.`,
+    title: `${typedCompany.company_name} - Contract Manufacturer${titleLocation} | ${siteName}`,
+    description: typedCompany.description || defaultDescription,
 
     openGraph: {
       title: `${typedCompany.company_name} - Contract Manufacturer`,

@@ -65,17 +65,18 @@ const COMPANY_FIELDS = `
 `
 
 const MAX_COMPANIES = 500
+const siteName = siteConfig.name
 
 // AI-Enhanced SEO Metadata with JSON-LD Schema
 export const metadata = {
-  title: "CM Directory – Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
+  title: `${siteName} – Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)`,
   description:
     "Search verified electronics contract manufacturers by capability, certification, and location. Filter by SMT, Through-Hole, Box Build, ISO 13485, AS9100, and more. List your company for free.",
   alternates: { 
     canonical: siteConfig.url 
   },
   openGraph: {
-    title: "CM Directory – Electronics Contract Manufacturers",
+    title: `${siteName} – Electronics Contract Manufacturers`,
     description:
       "Find and compare PCB assembly partners by capability, certification, and location. Connect with qualified manufacturers worldwide.",
     url: siteConfig.url,
@@ -86,13 +87,13 @@ export const metadata = {
         url: `${siteConfig.url}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "CM Directory - Contract Manufacturing Search Platform"
+        alt: `${siteName} - Contract Manufacturing Search Platform`
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "CM Directory – Electronics Contract Manufacturers",
+    title: `${siteName} – Electronics Contract Manufacturers`,
     description:
       "Filter verified manufacturers by capability, certification, and location. Find your next manufacturing partner.",
   },
@@ -108,7 +109,7 @@ export const metadata = {
     },
   },
   other: {
-    'ai-summary': 'CM Directory is an engineer-first platform for finding electronics contract manufacturers. Search by capabilities (SMT, Through-Hole, Box Build), certifications (ISO 13485, AS9100), and location.',
+    'ai-summary': `${siteName} is an engineer-first platform for finding electronics contract manufacturers. Search by capabilities (SMT, Through-Hole, Box Build), certifications (ISO 13485, AS9100), and location.`,
   }
 }
 
@@ -129,7 +130,7 @@ function generateJSONLD() {
     {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
-      'name': 'CM Directory',
+      'name': siteName,
       'url': siteConfig.url,
       'description': 'Engineer-first directory of verified electronics contract manufacturers',
       'potentialAction': {
@@ -155,7 +156,7 @@ function generateJSONLD() {
     {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      'name': 'CM Directory',
+      'name': siteName,
       'url': siteConfig.url,
       'logo': `${siteConfig.url}/logo.png`,
       'description': 'Directory of verified electronics contract manufacturers',
@@ -168,10 +169,10 @@ function generateJSONLD() {
       'mainEntity': [
         {
           '@type': 'Question',
-          'name': 'What is CM Directory?',
+          'name': `What is ${siteName}?`,
           'acceptedAnswer': {
             '@type': 'Answer',
-            'text': 'CM Directory is an engineer-first platform for finding verified electronics contract manufacturers. Filter by capabilities, certifications, and location to find your ideal manufacturing partner.'
+            'text': `${siteName} is an engineer-first platform for finding verified electronics contract manufacturers. Filter by capabilities, certifications, and location to find your ideal manufacturing partner.`
           }
         },
         {
@@ -481,7 +482,7 @@ export default async function Home({
             {/* How It Works Section */}
             <section className="py-12 px-4 bg-white">
               <div className="max-w-6xl mx-auto">
-                <h2 className="text-3xl font-bold text-center mb-12 text-slate-900">How CM Directory Works</h2>
+                <h2 className="text-3xl font-bold text-center mb-12 text-slate-900">How {siteName} Works</h2>
                 <div className="grid md:grid-cols-3 gap-8">
                   {[
                     {
@@ -521,8 +522,8 @@ export default async function Home({
                 <div className="grid md:grid-cols-2 gap-6">
                   {[
                     {
-                      q: 'What is CM Directory?',
-                      a: 'CM Directory is an engineer-first platform for finding verified electronics contract manufacturers. Filter by capabilities, certifications, and location to find your ideal manufacturing partner.'
+                      q: `What is ${siteName}?`,
+                      a: `${siteName} is an engineer-first platform for finding verified electronics contract manufacturers. Filter by capabilities, certifications, and location to find your ideal manufacturing partner.`
                     },
                     {
                       q: 'How do I search for manufacturers?',
@@ -542,7 +543,7 @@ export default async function Home({
                     },
                     {
                       q: 'Is there a fee for buyers?',
-                      a: 'No, CM Directory is completely free for buyers. Search, compare, and contact manufacturers at no cost.'
+                      a: `No, ${siteName} is completely free for buyers. Search, compare, and contact manufacturers at no cost.`
                     }
                   ].map((faq, index) => (
                     <Card key={index} className="border-slate-200">

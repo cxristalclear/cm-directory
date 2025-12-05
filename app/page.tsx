@@ -67,14 +67,15 @@ const COMPANY_FIELDS = `
 `
 
 const MAX_COMPANIES = 500
+const siteName = siteConfig.name
 
 export const metadata = {
-  title: "PCBA Finder - Find Electronics Contract Manufacturers",
+  title: `${siteName} - Find Electronics Contract Manufacturers`,
   description:
     "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities, certifications, industries, and location.",
   alternates: { canonical: siteConfig.url },
   openGraph: {
-    title: "PCBA Finder - Electronics Contract Manufacturers",
+    title: `${siteName} - Electronics Contract Manufacturers`,
     description:
       "Find and compare PCB assembly partners by capability, certification, and location.",
     url: siteConfig.url,
@@ -83,7 +84,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary",
-    title: "PCBA Finder - Electronics Contract Manufacturers",
+    title: `${siteName} - Electronics Contract Manufacturers`,
     description:
       "Filter verified manufacturers by capability, certification, and location.",
   },

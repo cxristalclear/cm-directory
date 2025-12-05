@@ -556,7 +556,7 @@
 }
 
 /* Progress bar animation */
-@keyframes progressFill {
+@keyframes progress {
   from {
     width: 0;
   }
@@ -566,7 +566,7 @@
 }
 
 .animate-progress {
-  animation: progressFill 1.5s ease-out forwards;
+  animation: progress 1.5s ease-out forwards;
 }
 
 /* Soft pulse animation for CTAs */

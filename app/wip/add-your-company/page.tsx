@@ -6,6 +6,8 @@ import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { jsonLdScriptProps, type JsonLd } from "@/lib/schema"
 import Navbar from "@/components/navbar"
 
+const siteName = siteConfig.name
+
 const benefits = [
   {
     title: "Reach purchasing teams early",
@@ -27,7 +29,7 @@ const benefits = [
 const testimonials = [
   {
     quote:
-      "We were fielding qualified PCB assembly opportunities within a week of updating our capabilities on CM Directory.",
+      `We were fielding qualified PCB assembly opportunities within a week of updating our capabilities on ${siteName}.`,
     name: "Director of Business Development",
     company: "Precision Circuits Group",
   },
@@ -48,7 +50,7 @@ const onboardingResources = [
   {
     title: "Certification spotlight program",
     href: "/certifications/iso-13485",
-    description: "Learn how regulated industries use CM Directory filters to shortlist partners.",
+    description: `Learn how regulated industries use ${siteName} filters to shortlist partners.`,
   },
   {
     title: "Supplier success checklist",
@@ -61,35 +63,35 @@ export async function generateMetadata(): Promise<Metadata> {
   const pageUrl = getCanonicalUrl("/add-your-company")
 
   return {
-    title: "Why List Your Company on CM Directory | Benefits & Process",
+    title: `Why List Your Company on ${siteName} | Benefits & Process`,
     description:
-      "Learn how listing your EMS company on CM Directory helps you reach vetted electronics brands, highlight capabilities, and win more programs. Free listing available.",
+      `Learn how listing your EMS company on ${siteName} helps you reach vetted electronics brands, highlight capabilities, and win more programs. Free listing available.`,
     alternates: {
       canonical: pageUrl,
     },
     openGraph: {
-      title: "Why List Your EMS Company on CM Directory",
+      title: `Why List Your EMS Company on ${siteName}`,
       description:
-        "Discover the benefits of joining CM Directory to showcase certifications, capabilities, and connect with qualified electronics buyers.",
+        `Discover the benefits of joining ${siteName} to showcase certifications, capabilities, and connect with qualified electronics buyers.`,
       type: "website",
       url: pageUrl,
       siteName: siteConfig.name,
       images: [
         {
           url: siteConfig.ogImage,
-          alt: "Learn about listing on CM Directory",
+          alt: `Learn about listing on ${siteName}`,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Why List Your Company on CM Directory",
+      title: `Why List Your Company on ${siteName}`,
       description:
-        "Learn how CM Directory helps manufacturers connect with qualified electronics buyers.",
+        `Learn how ${siteName} helps manufacturers connect with qualified electronics buyers.`,
       images: [
         {
           url: siteConfig.ogImage,
-          alt: "CM Directory listing benefits",
+          alt: `${siteName} listing benefits`,
         },
       ],
     },
@@ -123,9 +125,9 @@ export default function AddYourCompanyPage() {
   }> = {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    name: "How to add your company to CM Directory",
+    name: `How to add your company to ${siteName}`,
     description:
-      "Follow these quick steps to submit your electronics manufacturing business for inclusion on CM Directory.",
+      `Follow these quick steps to submit your electronics manufacturing business for inclusion on ${siteName}.`,
     url: canonicalUrl,
     publisher: {
       "@type": "Organization",
@@ -173,9 +175,9 @@ export default function AddYourCompanyPage() {
                 <Building2 className="h-5 w-5 text-white" />
                 For Manufacturers
               </div>
-              <h1 className="heading-xl text-white md:text-5xl">Why List Your Company on CM Directory?</h1>
+              <h1 className="heading-xl text-white md:text-5xl">Why List Your Company on {siteName}?</h1>
               <p className="body-lg max-w-3xl text-blue-100">
-                Learn how CM Directory connects verified EMS partners with hardware companies that are ready to place
+                Learn how {siteName} connects verified EMS partners with hardware companies that are ready to place
                 production orders.
               </p>
               <div className="flex flex-col items-center gap-3 sm:flex-row">
@@ -241,7 +243,7 @@ export default function AddYourCompanyPage() {
               and schedule a brief onboarding call to verify capabilities and certifications.
             </Step>
             <Step number={3} title="Go Live &amp; Start Connecting">
-              Once published, your profile goes live on CM Directory. You can update your information anytime and you&apos;ll
+              Once published, your profile goes live on {siteName}. You can update your information anytime and you&apos;ll
               receive alerts when qualified buyers request introductions.
             </Step>
           </ol>
