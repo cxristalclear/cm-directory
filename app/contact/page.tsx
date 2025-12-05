@@ -68,11 +68,19 @@ export default function ContactPage() {
               aria-label="Contact form"
               onSubmit={(e) => {
                 e.preventDefault()
+                const formData = new FormData(e.currentTarget)
+                const name = formData.get('name')
+                const email = formData.get('email')
+                const message = formData.get('message')
+                
+                if (!name || !email || !message) {
+                  alert('Please fill in all fields')
+                  return
+                }
+                
                 // TODO: Implement form submission logic
-                console.log('Form submitted')
               }}
-            >
-              <div className="space-y-2">
+            >              <div className="space-y-2">
                 <label htmlFor="contact-name" className="text-sm font-medium text-gray-700">
                   Full name
                 </label>

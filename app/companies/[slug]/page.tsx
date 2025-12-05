@@ -11,7 +11,7 @@ const siteName = siteConfig.name
 
 // Cached fetch to avoid duplicate Supabase queries between metadata and page render
 const fetchCompanyBySlug = cache(async (slug: string) => {
-  return supabase
+  const result = await supabase
     .from("companies")
     .select(`
       *,
@@ -25,6 +25,11 @@ const fetchCompanyBySlug = cache(async (slug: string) => {
     `)
     .eq("slug", slug)
     .single<CompanyWithRelations>()
+    if (result.error && result.error.code !== 'PGRST116') {
+    console.error('Error fetching company:', result.error)
+    throw new Error('Failed to fetch company data')
+  }
+  return result
 })
 
 // Generate dynamic metadata for SEO

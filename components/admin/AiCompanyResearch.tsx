@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import type { CompanyFormData } from '@/types/admin'
 import CompanyPreview from './CompanyPreview'
 import { normalizeWebsiteUrl } from '@/lib/admin/utils'
@@ -331,21 +331,21 @@ export default function AiCompanyResearch({
     }
   }, [uploadCreateNew])
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     if (!isDraggingFile) {
       setIsDraggingFile(true)
     }
   }
 
-  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     if (isDraggingFile) {
       setIsDraggingFile(false)
     }
   }
 
-  const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleFileDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     setIsDraggingFile(false)
     const file = event.dataTransfer.files?.[0] ?? null

@@ -81,12 +81,11 @@ export async function generateMetadata({
 
   const companyCount = count ?? 0
   const countLabel = companyCount > 0 ? `${companyCount}+` : ""
-  const titleCountLabel = companyCount > 0 ? `${companyCount}+` : ""
   const pageUrl = getCanonicalUrl(`/manufacturers/${stateMetadata.slug}`)
 
   return {
-    title: `Contract Manufacturers in ${stateMetadata.name}${titleCountLabel ? ` | ${titleCountLabel} Verified Companies` : ""}`,
-    description: `Find ${countLabel}verified contract manufacturers in ${stateMetadata.name}. Compare capabilities, certifications, and connect with local manufacturing partners.`,
+    title: `Contract Manufacturers in ${stateMetadata.name}${countLabel ? ` | ${countLabel} Verified Companies` : ""}`,
+    description: `Find ${countLabel ? `${countLabel} ` : ""}verified contract manufacturers in ${stateMetadata.name}. Compare capabilities, certifications, and connect with local manufacturing partners.`,
     openGraph: {
       title: `${stateMetadata.name} Contract Manufacturers Directory`,
       description: `Browse verified contract manufacturers in ${stateMetadata.name}. Compare capabilities, certifications, and supplier experience.`,

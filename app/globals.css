@@ -789,15 +789,12 @@
 /* Focus visible enhancements */
 .focus-ring-enhanced:focus-visible {
   outline: none;
-  ring: 3px solid var(--ring);
-.focus-ring-enhanced:focus-visible {
-  outline: none;
   box-shadow: 0 0 0 3px var(--ring);
-}  html {
-    scroll-behavior: smooth;
-  }
 }
 
+html {
+  scroll-behavior: smooth;
+}
 /* Dark mode adjustments for new utilities */
 .dark .text-gradient-light {
   background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%);
