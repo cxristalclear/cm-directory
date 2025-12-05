@@ -30,6 +30,34 @@ export class MapErrorBoundary extends Component<Props, State> {
     // Example: logErrorToService(error, errorInfo)
   }
 
+  /**
+  * Error boundary wrapper for map components that catches rendering errors and displays a user-friendly fallback UI (with a default "Map Unavailable" message) or a custom fallback provided via props.
+  * @component
+  * @example
+  *   <MapErrorBoundary fallback={<CustomFallback />}>
+  *     <MapComponent accessToken="pk..." />
+  *   </MapErrorBoundary>
+  * @prop {React.ReactNode} [fallback] - Optional custom React node to render when a child throws an error. If omitted, the component renders a built-in "Map Unavailable" UI explaining common causes (missing/invalid Mapbox token, network issues, browser compatibility).
+  * @prop {React.ReactNode} children - The child components to be wrapped by the error boundary (typically a Map or map-related components).
+  *
+  * State:
+  * - hasError {boolean} - Tracks whether an error has been caught; when true the boundary renders either the provided fallback or the default error UI.
+  * - error {Error | null} - Stores the caught Error object so development-only details (error.message) can be shown to help debugging.
+  *
+  * Lifecycle methods (typical implementation expected in the component):
+  * - static getDerivedStateFromError(error) - Called when a child throws; sets hasError to true and stores the error in state so the fallback UI can be shown.
+  * - componentDidCatch(error, info) - Receives the error and component stack; intended for logging or telemetry.
+  *
+  * Rendering logic:
+  * - If state.hasError is true:
+  *   - If props.fallback is provided, render that React node directly.
+  *   - Otherwise render a default, styled "Map Unavailable" panel that includes:
+  *     - An alert icon and a headline "Map Unavailable".
+  *     - Explanatory text and a bullet list of common causes (missing/invalid token, network, compatibility).
+  *     - In development mode (process.env.NODE_ENV === 'development') and when error exists, render a <details> block with the error.message for debugging.
+  *     - A small hint row with a location icon and a message that the user can still browse companies via the list below.
+  * - If no error has been caught, return this.props.children (render the wrapped map content normally).
+  */
   render() {
     if (this.state.hasError) {
       // If custom fallback is provided, use it

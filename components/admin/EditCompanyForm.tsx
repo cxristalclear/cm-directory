@@ -29,6 +29,14 @@ interface EditCompanyFormProps {
   company: CompanyWithRelations
 }
 
+/**
+* Admin React component that renders a form for editing an existing company's data and persisting updates to Supabase.
+* @example
+* EditCompanyForm({ company })
+* <CompanyForm initialData={initialData} onSubmit={handleSubmit} loading={loading} />
+* @param {{EditCompanyFormProps}} {{ company }} - Props object containing the company record to edit.
+* @returns {{JSX.Element}} Returns a CompanyForm JSX element configured for editing the provided company.
+**/
 export default function EditCompanyForm({ company }: EditCompanyFormProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -125,6 +133,15 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
     } : {},
   }
 
+  /**
+  * Synchronizes and persists company form data to Supabase: validates input, updates the company row, regenerates slug if needed, updates/creates related tables (facilities, capabilities, industries, certifications, technical_specs, business_info), logs changes, and navigates on success.
+  * @example
+  * sync(formData, false)
+  * Promise<void>
+  * @param {{CompanyFormData}} {{formData}} - Company form payload containing company fields plus facilities, capabilities, industries, certifications, technical_specs and business_info.
+  * @param {{boolean}} {{isDraft}} - Whether to save as a draft (true = do not publish / set is_active false).
+  * @returns {{Promise<void>}} Promise that resolves when the operation completes (shows a toast and navigates on success).
+  **/
   const handleSubmit = async (formData: CompanyFormData, isDraft: boolean) => {
     setLoading(true)
 

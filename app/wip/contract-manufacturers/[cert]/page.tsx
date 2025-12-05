@@ -9,6 +9,15 @@ import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
+/**
+* Fetches active companies and their related facilities, capabilities, certifications, and industries from Supabase.
+* @example
+* getCompanies()
+* [
+*   {
+*     id: 'uuid',
+*     name: 'Acme Corp',
+*     facilities: [{ /* facility objects */
 async function getCompanies(): Promise<Company[]> {
   const { data, error } = await supabase
     .from("companies")
@@ -29,6 +38,14 @@ function normalizeCertParam(param: string) {
   return param.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
+/**
+* Generate metadata for the contract manufacturers page using the `cert` route parameter.
+* @example
+* generateMetadata({ params: Promise.resolve({ cert: 'iso9001' }) })
+* { title: "ISO9001 Contract Manufacturers | ExampleSite", description: "Browse verified electronics manufacturers with ISO9001. Compare capabilities (SMT, Through-Hole, Box Build) and locations.", alternates: "https://example.com/contract-manufacturers/iso9001", openGraph: { title: "...", description: "...", url: "...", type: "website", siteName: "ExampleSite", images: ["..."] }, twitter: { card: "summary_large_image", title: "...", description: "...", images: ["..."] } }
+* @param {{Promise<{ cert: string }>} } {{params}} - Object containing a promise that resolves to an object with a `cert` string.
+* @returns {{Promise<Metadata>}} Promise resolving to the metadata object for the page.
+**/
 export async function generateMetadata({
   params,
 }: {
@@ -55,6 +72,15 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * Render a contract manufacturers page filtered by a certification route parameter and optional search params.
+ * @example
+ * CertManufacturers({ params: Promise.resolve({ cert: 'ISO13485' }), searchParams: Promise.resolve({ region: 'US' }) })
+ * // returns Promise resolving to a JSX.Element representing the manufacturers listing page
+ * @param {Promise<{ cert: string }>} params - Promise resolving to route params object containing the "cert" string.
+ * @param {Promise<Record<string, string | string[] | undefined>>} searchParams - Promise resolving to URL search parameters.
+ * @returns {Promise<JSX.Element>} Promise that resolves to a JSX.Element rendering the filtered manufacturers page.
+ */
 export default async function CertManufacturers({
   params,
   searchParams,

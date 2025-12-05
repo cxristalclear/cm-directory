@@ -41,6 +41,14 @@ type FacilityFeatureProperties = {
   facility_type: string
 }
 
+/**
+* Renders an interactive Mapbox map showing company facilities with clustering, popups, zoom/style controls and loading state.
+* @example
+* CompanyMap({ allCompanies: companies })
+* <JSX.Element>
+* @param {CompanyMapProps} { allCompanies } - Props object (destructured) containing companies and their facilities used to populate map markers and clusters.
+* @returns {JSX.Element} Rendered React component containing the interactive map and UI controls.
+**/
 export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)

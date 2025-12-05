@@ -54,6 +54,14 @@ function looksLikeWebsite(value?: string): boolean {
     WEBSITE_PATTERN.test(trimmed)
 }
 
+/**
+* Split an input string into a name and an optional website URL, normalizing the URL if found.
+* @example
+* splitNameAndWebsite("OpenAI | https://openai.com")
+* { name: "OpenAI", website: "https://openai.com" }
+* @param {{string}} {{input}} - The raw input string that may contain a name and an optional website (separated by '|' or ',' or embedded anywhere).
+* @returns {{ { name: string; website?: string } }} An object containing the extracted name and an optional normalized website URL.
+**/
 function splitNameAndWebsite(input: string): { name: string; website?: string } {
   const trimmed = input.trim()
   let name = trimmed
@@ -103,6 +111,14 @@ function splitNameAndWebsite(input: string): { name: string; website?: string } 
   }
 }
 
+/**
+ * Parse a newline-separated batch of "name with optional website" entries into objects.
+ * @example
+ * parseBatchEntries("Acme Corp - https://acme.com\nBeta Company")
+ * [{ name: "Acme Corp", website: "https://acme.com" }, { name: "Beta Company" }]
+ * @param {string} input - Newline-separated list of company entries (name and optional website).
+ * @returns {Array<{name: string, website?: string}>} Array of parsed entries with name and optional website.
+ */
 function parseBatchEntries(input: string): Array<{ name: string; website?: string }> {
   return input
     .split('\n')
@@ -150,6 +166,14 @@ function isSupportedUploadFile(file: File | null): boolean {
   return SUPPORTED_UPLOAD_EXTENSIONS.includes(extension)
 }
 
+/**
+* Convert a byte count into a human-readable file size string (B, KB, MB, GB).
+* @example
+* formatFileSize(1536)
+* 1.5 KB
+* @param {{number}} {{bytes}} - Number of bytes to format.
+* @returns {{string}} Formatted file size string (e.g., "0 B", "1 KB", "1.5 MB").
+**/
 function formatFileSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) {
     return '0 B'
@@ -191,6 +215,11 @@ async function requestResearch(companyName: string, website?: string): Promise<R
   return data
 }
 
+/**
+* Uploads a document via FormData to the AI research upload endpoint and returns the parsed research result.
+* @example
+* requestDocumentResearch(formData)
+* // Promise resolves to an object like: { results: [...], metadata: { /* ... */
 async function requestDocumentResearch(formData: FormData): Promise<ResearchResultResponse> {
   const response = await fetch('/api/ai/research/upload', {
     method: 'POST',
@@ -250,6 +279,14 @@ export default function AiCompanyResearch({
     }
   }
 
+  /**
+  * Handle file input change events: validate the selected file, set it to upload state or set an error and clear the input.
+  * @example
+  * handleFileChange(event)
+  * undefined
+  * @param {{ChangeEvent<HTMLInputElement>}} {{event}} - Change event from a file input; the handler validates event.target.files[0] and updates state accordingly (sets upload file or error and clears the input if unsupported).
+  * @returns {{void}} No return value; updates upload file state or error state and may clear the file input.
+  **/
   const handleFileSelection = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null
     if (file && !isSupportedUploadFile(file)) {
@@ -354,6 +391,14 @@ export default function AiCompanyResearch({
     }
   }
 
+  /**
+  * Handle drop event on a div to process a single dragged file and update component state.
+  * @example
+  * handleDrop(event)
+  * undefined
+  * @param {{DragEvent<HTMLDivElement>}} {{event}} - The drag event triggered when a file is dropped onto the div.
+  * @returns {{void}} No return value; updates state (setUploadFile, setIsDraggingFile, setError) based on the dropped file and its supported type.
+  **/
   const handleFileDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     setIsDraggingFile(false)
@@ -386,6 +431,14 @@ export default function AiCompanyResearch({
     setCompanySearchError(null)
   }
 
+  /**
+   * Initiates company research using current state (companyName and website), validates and normalizes inputs, calls the research API, and updates loading, error, and researched companies state.
+   * @example
+   * sync()
+   * Promise<void>
+   * @param {void} none - No arguments.
+   * @returns {Promise<void>} Resolves when the research operation completes and state has been updated.
+   **/
   const handleSingleResearch = async () => {
     const { name: extractedName, website: inlineWebsite } = splitNameAndWebsite(companyName)
     const normalizedName = extractedName.trim()
@@ -423,6 +476,13 @@ export default function AiCompanyResearch({
     }
   }
 
+  /**
+  * Parse and deduplicate batchInput company entries, perform async research for each unique company, and update component state with progress, successful results, and errors.
+  * @example
+  * sync()
+  * Promise<void>
+  * @returns {Promise<void>} Resolves when all research requests have completed and state (loading, error, batch progress, researched companies, preview index) has been updated.
+  **/
   const handleBatchResearch = async () => {
     if (!batchInput.trim()) {
       setError('Please enter company data')
@@ -538,6 +598,13 @@ export default function AiCompanyResearch({
     }
   }
 
+  /**
+  * Validate inputs, upload a document for the specified company, call the research API, and update component state with the returned company research or error.
+  * @example
+  * sync()
+  * Promise<void>
+  * @returns {Promise<void>} Resolves when the upload and research flow completes; updates component state with researched companies on success or sets an error on failure.
+  **/
   const handleUploadResearch = async () => {
     const normalizedName = uploadCompanyName.trim()
     if (!normalizedName) {
@@ -593,6 +660,14 @@ export default function AiCompanyResearch({
     }
   }
 
+  /**
+  * Save the currently previewed company (or mark it as a draft), remove it from the pending list, update the preview index or trigger redirect/reset, and set an error message on failure.
+  * @example
+  * sync(true)
+  * Promise<void>
+  * @param {boolean} isDraft - Whether to save the current company as a draft.
+  * @returns {Promise<void>} Returns a promise that resolves when the save and subsequent UI updates complete.
+  **/
   const handleSave = async (isDraft: boolean) => {
     const currentCompany = researchedCompanies[currentPreviewIndex]
     if (!currentCompany) return
@@ -620,6 +695,13 @@ export default function AiCompanyResearch({
     }
   }
 
+  /**
+  * Save all researched companies in parallel, update UI progress, remove saved items, and report errors.
+  * @example
+  * sync()
+  * Promise<void>
+  * @returns {{Promise<void>}} Resolves when all save attempts complete and UI state is updated.
+  **/
   const handleSaveAll = async () => {
     if (researchedCompanies.length === 0) return
 
@@ -701,6 +783,13 @@ export default function AiCompanyResearch({
     setResearchedCompanies(updated)
   }
 
+  /**
+  * Attempts to retry saving companies that previously failed, updates progress and UI state, and triggers callbacks or error messages accordingly.
+  * @example
+  * sync()
+  * // Returns a Promise that resolves when all retry attempts complete
+  * @returns {Promise<void>} Resolves when retry attempts complete and UI state has been updated.
+  **/
   const handleRetryFailedCompanies = async () => {
     if (batchSaveProgress.errors.length === 0) return
 

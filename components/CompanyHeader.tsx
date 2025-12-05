@@ -6,6 +6,14 @@ import { siteConfig } from '@/lib/config'
 
 
 
+/**
+* Render the company header and top navigation used across pages.
+* @example
+* CompanyHeader()
+* <header className="relative overflow-hidden">...company header JSX...</header>
+* @param {void} none - This component does not accept any props.
+* @returns {JSX.Element} JSX element representing the header and navigation for the site.
+**/
 export default function CompanyHeader() {
   const ADD_COMPANY_PATH = "/add-your-company"
 

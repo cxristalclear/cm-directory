@@ -39,6 +39,14 @@ type FacilityFeatureProperties = {
   facility_type: string
 }
 
+/**
+* Render an interactive Mapbox map showing company facility locations with clustering, filtering, and map controls.
+* @example
+* CompanyMap({ allCompanies: companiesArray })
+* <JSX.Element /> (interactive map component)
+* @param {{CompanyMapProps}} {{props}} - Props object containing an allCompanies array used to render facilities on the map.
+* @returns {{JSX.Element}} Rendered React element containing the interactive map and UI controls.
+**/
 export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
@@ -194,6 +202,14 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
 
     map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-right")
 
+    /**
+    * Handle click on a cluster to zoom and center the map on the expanded cluster.
+    * @example
+    * handleClusterClick(e)
+    * undefined
+    * @param {mapboxgl.MapLayerMouseEvent} e - Mouse event from a Mapbox GL layer interaction.
+    * @returns {void} Does not return a value.
+    **/
     const handleClusterClick = (e: mapboxgl.MapLayerMouseEvent) => {
       if (!map.current) return
       const features = map.current.queryRenderedFeatures(e.point, { layers: ["clusters"] })
@@ -210,6 +226,14 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       }
     }
 
+    /**
+    * Handle a Mapbox layer mouse event by opening a facility popup for the first feature under the cursor (accounts for longitude wrapping).
+    * @example
+    * onMapLayerMouseEvent(e)
+    * undefined
+    * @param {{mapboxgl.MapLayerMouseEvent}} {{e}} - Mapbox GL mouse event containing features, geometry and lngLat.
+    * @returns {{void}} Void.
+    **/
     const handlePointClick = (e: mapboxgl.MapLayerMouseEvent) => {
       if (!map.current || !e.features?.[0]) return
       const coordinates = (e.features[0].geometry as GeoJSON.Point).coordinates.slice() as [number, number]

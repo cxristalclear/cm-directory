@@ -69,6 +69,13 @@ interface CastContext {
   records: number
 }
 
+/**
+* Import companies from data/companies_rows_filled.csv into Supabase: parses the CSV, normalizes fields (booleans, numbers, empty -> null), deduplicates by id/website/slug, inserts new companies in batches and updates existing companies (per-id) in batches while logging progress; exits the process on failure.
+* @example
+* importCompanies()
+* undefined
+* @returns {Promise<void>} Resolves when the import completes (or the process exits on unrecoverable error).
+**/
 async function importCompanies() {
   try {
     // Read and parse CSV file

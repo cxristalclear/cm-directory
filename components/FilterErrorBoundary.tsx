@@ -42,6 +42,30 @@ export class FilterErrorBoundary extends Component<Props, State> {
     }
   }
 
+  /**
+  * Error boundary around filter-related UI that catches rendering errors and shows a fallback or default error panel
+  * @component
+  * @example
+  *   <FilterErrorBoundary fallback={<div>Failed to load filters</div>}>
+  *     <Filters />
+  *   </FilterErrorBoundary>
+  * @prop {React.ReactNode} children - The child elements to render when no error has occurred.
+  * @prop {React.ReactNode} [fallback] - Optional custom fallback UI to display when an error is caught. If provided, this node is rendered instead of the default error panel.
+  * @state {boolean} hasError - Whether an error has been captured by the boundary; when true the component renders the fallback or default error UI.
+  * @state {Error|null} error - The captured Error object (if any); used to display a detailed message during development.
+  * @lifecycle static getDerivedStateFromError(error) - Typical static lifecycle that sets hasError=true and stores the error so the boundary can render a fallback UI.
+  * @lifecycle componentDidCatch(error, info) - Typical lifecycle used to log/report the error (e.g., send to monitoring) and preserve any additional info about the failure.
+  * @method handleReset() - Resets the boundary state (clears hasError and error) to allow children to attempt rendering again; wired to the "Reset Filters" button.
+  * @rendering
+  *   - When no error: returns this.props.children.
+  *   - When an error is present:
+  *     1) If this.props.fallback is provided, returns that node.
+  *     2) Otherwise returns a default styled error card containing:
+  *        - An alert icon and heading "Filter Error".
+  *        - A brief message explaining there was a problem loading filters (e.g., invalid filter parameters).
+  *        - In development only (process.env.NODE_ENV === 'development'), a preformatted block showing error.message.
+  *        - A "Reset Filters" destructive button that invokes handleReset; icons and utility classes are used for presentation.
+  */
   render() {
     if (this.state.hasError) {
       // If custom fallback is provided, use it

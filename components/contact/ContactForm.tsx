@@ -2,7 +2,23 @@
 
 import type { FormEvent } from "react"
 
+/**
+* Renders a contact form component with name, email, and message fields and validates input on submit.
+* @example
+* <ContactForm />
+* <form aria-label="Contact form">...</form>
+* @param {void} props - This component does not accept any props.
+* @returns {JSX.Element} A JSX form element for collecting contact requests.
+**/
 export default function ContactForm() {
+  /**
+  * Handle the contact form submit: prevent default, extract and validate fields, and trigger submission logic.
+  * @example
+  * handleContactSubmit(event)
+  * undefined
+  * @param {FormEvent<HTMLFormElement>} event - Submit event from the contact form.
+  * @returns {void} No return value; exits early if validation fails.
+  **/
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)

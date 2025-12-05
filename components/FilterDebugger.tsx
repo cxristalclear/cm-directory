@@ -10,6 +10,14 @@ interface FilterDebuggerProps {
   allCompanies: HomepageCompanyWithLocations[]
 }
 
+/**
+ * Debug panel component that displays counts and lists related to the active filters, filtered companies, and map markers for debugging purposes.
+ * @example
+ * <FilterDebugger allCompanies={sampleCompanies} />
+ * <div>...Filter Debug Info panel JSX...</div>
+ * @param {FilterDebuggerProps} allCompanies - Props object containing the array of companies to inspect and debug filtering behavior.
+ * @returns {JSX.Element} Returns a JSX element rendering a floating debug panel with filtered company counts, map marker counts, lists of problematic companies, and active filter values.
+ */
 export default function FilterDebugger({ allCompanies }: FilterDebuggerProps) {
   const { filters } = useFilters()
   

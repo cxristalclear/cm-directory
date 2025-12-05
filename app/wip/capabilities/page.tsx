@@ -4,6 +4,13 @@ import { CAPABILITY_DEFINITIONS } from "@/lib/capabilities"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { supabase } from "@/lib/supabase"
 
+/**
+ * Fetches the number of active companies matching each capability definition and returns a map of capability slug to count.
+ * @example
+ * fetchCapabilityCounts()
+ * { "analytics": 42, "integrations": 17 }
+ * @returns {Promise<Record<string, number>>} Promise resolving to an object where keys are capability slugs and values are counts of active companies; individual fetch errors are logged and those counts default to 0.
+ */
 async function fetchCapabilityCounts(): Promise<Record<string, number>> {
   const counts = await Promise.all(
     CAPABILITY_DEFINITIONS.map(async definition => {
@@ -27,6 +34,31 @@ async function fetchCapabilityCounts(): Promise<Record<string, number>> {
 
   return Object.fromEntries(counts)
 }
+/**
+* Generate metadata for the /capabilities page including title, description, Open Graph, Twitter, and canonical alternates.
+* @example
+* generateMetadata()
+* Promise resolves to {
+*   title: "Manufacturing Capabilities Directory | My Site",
+*   description: "Browse electronics manufacturing capabilities including SMT assembly, through-hole, cable harness, box build, and prototyping services.",
+*   openGraph: {
+*     title: "Manufacturing Capabilities Directory",
+*     description: "Compare contract manufacturers by SMT, through-hole, cable harness, box build, and prototyping capabilities.",
+*     type: "website",
+*     url: "https://example.com/capabilities",
+*     siteName: "My Site",
+*     images: [{ url: "https://example.com/og.png", alt: "Manufacturing capabilities" }]
+*   },
+*   twitter: {
+*     card: "summary_large_image",
+*     title: "Manufacturing Capabilities Directory",
+*     description: "Explore verified EMS partners by SMT, through-hole, cable harness, box build, and prototyping services.",
+*     images: [{ url: "https://example.com/og.png", alt: "Manufacturing capabilities" }]
+*   },
+*   alternates: { canonical: "https://example.com/capabilities" }
+* }
+* @returns {Promise<Metadata>} Promise resolving to a Metadata object for the capabilities page.
+**/
 export async function generateMetadata(): Promise<Metadata> {
   const pageUrl = getCanonicalUrl("/capabilities")
   const siteName = siteConfig.name
@@ -67,6 +99,14 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
+/**
+* Renders the capabilities index page listing manufacturing capabilities and supplier counts.
+* @example
+* CapabilitiesIndexPage()
+* <div className="min-h-screen">...rendered capabilities grid...</div>
+* @param {void} none - This component does not accept any arguments.
+* @returns {Promise<JSX.Element>} A React element (JSX) representing the capabilities index page.
+**/
 export default async function CapabilitiesIndexPage() {
   const counts = await fetchCapabilityCounts()
 

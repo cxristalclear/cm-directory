@@ -2,6 +2,13 @@
 
 import { useFilters } from "@/contexts/FilterContext"
 
+/**
+* Header component that renders the hero section with title, description, and decorative backgrounds while invoking the useFilters hook.
+* @example
+* Header()
+* <header className="relative overflow-hidden">...</header>
+* @returns {{JSX.Element}} Rendered header JSX element.
+**/
 export default function Header() {
   useFilters()
 

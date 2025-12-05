@@ -5,6 +5,13 @@ import { Building2, Menu, X } from "lucide-react"
 import { useState } from "react"
 import { siteConfig } from "@/lib/config"
 
+/**
+* Renders the site's top navigation bar with logo, links, and a mobile menu toggle.
+* @example
+* <Navbar />
+* // returns a JSX element representing the navigation bar
+* @returns {JSX.Element} The Navbar React component as a JSX element.
+**/
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 

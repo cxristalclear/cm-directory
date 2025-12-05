@@ -25,6 +25,14 @@ const navigation = [
   { name: 'Research History', href: '/admin/companies/research/history', icon: History },
 ]
 
+/**
+* Renders the admin sidebar UI for the dashboard, including navigation, mobile menu toggle, and logout handling.
+* @example
+* AdminSidebar()
+* <JSX.Element />
+* @param {{void}} {{props}} - No props are accepted by this component.
+* @returns {{JSX.Element}} Return the sidebar as a JSX element.
+**/
 export default function AdminSidebar() {
   const pathname = usePathname()
   const router = useRouter()

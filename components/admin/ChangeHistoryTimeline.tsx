@@ -39,6 +39,14 @@ const changeTypeLabels: Record<string, string> = {
   rejected: 'Rejected',
 }
 
+/**
+* Renders a vertical timeline of change history entries for the admin UI.
+* @example
+* ChangeHistoryTimeline({ changes: [{ id: '1', change_type: 'update', changed_at: '2023-01-01T00:00:00Z', changed_by_name: 'Alice', changed_by_email: 'alice@example.com', field_name: 'title', old_value: 'Old', new_value: 'New' }] })
+* JSX.Element (rendered timeline or a "No change history available" message)
+* @param {ChangeHistoryTimelineProps} props - Props object containing a 'changes' array of change history records.
+* @returns {JSX.Element} Rendered React element representing the change history timeline.
+*/
 export default function ChangeHistoryTimeline({ changes }: ChangeHistoryTimelineProps) {
   if (!changes || changes.length === 0) {
     return (

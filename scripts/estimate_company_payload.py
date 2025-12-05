@@ -10,6 +10,16 @@ DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "EMS_Companies_Dat
 
 
 def load_payload() -> list[dict]:
+    """Load and assemble company records from a CSV file (DATA_PATH) into a nested list of dictionaries.
+    Parameters:
+        - None: This function takes no parameters; it reads rows from the module-level DATA_PATH CSV file.
+    Returns:
+        - list[dict]: A list of company records where each dict contains company fields and nested lists:
+            - "facilities": list[dict] of facility records
+            - "capabilities": list containing a single capabilities dict (or empty list)
+            - "certifications": list[dict] of certification records
+            - "industries": list[dict] of industry records
+        The payload is sorted by the company_name field."""
     companies: dict[str, dict] = {}
     facilities: dict[str, list[dict]] = defaultdict(list)
     capabilities: dict[str, dict] = {}
@@ -94,6 +104,11 @@ def load_payload() -> list[dict]:
 
 
 def main() -> None:
+    """Compute and print size statistics for a loaded payload of company data.
+    Parameters:
+        - None: This function takes no parameters; it obtains data by calling load_payload().
+    Returns:
+        - None: Prints company count, total payload size (bytes and KB), and approximate per-company footprint to stdout."""
     payload = load_payload()
     json_blob = json.dumps(payload, ensure_ascii=False)
     size_bytes = len(json_blob.encode("utf-8"))

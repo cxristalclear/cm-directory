@@ -26,6 +26,14 @@ function createSummary(totalCount: number, visibleCount: number): string {
   return `Showing ${visibleCount} of ${totalCount}`
 }
 
+/**
+* Render a paginated, filterable and sortable list/grid of companies with view controls and inline ads.
+* @example
+* CompanyList({ allCompanies: companiesArray, limit: 20 })
+* <div>...JSX element with company results...</div>
+* @param {{CompanyListProps}} {{props}} - Props object containing allCompanies (array of company records) and optional limit (items per page).
+* @returns {{JSX.Element}} Return a React element that renders the company results UI.
+**/
 export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: CompanyListProps) {
   const { filters, setFilteredCount } = useFilters()
   const [pagesLoaded, setPagesLoaded] = useState(1)

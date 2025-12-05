@@ -75,6 +75,15 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
     onSubmit(formData, isDraft)
   }
 
+  /**
+  * Update a facility's country by index using an ISO2 code (normalizes code, resolves display name, and clears state fields).
+  * @example
+  * setFacilityCountry(2, 'US')
+  * undefined
+  * @param {{number}} {{index}} - Index of the facility to update.
+  * @param {{string}} {{iso2}} - ISO2 country code (may be unnormalized) to apply to the facility.
+  * @returns {{void}} Does not return a value; patches the facility via patchFacility.
+  **/
   const handleCountryChange = (index: number, iso2: string) => {
     const normalized = normalizeCountryCode(iso2) || null
     const displayName =
@@ -90,6 +99,15 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
     })
   }
 
+  /**
+  * Update a facility's country and derived ISO country code then call patchFacility.
+  * @example
+  * handleFacilityCountryChange(0, 'US')
+  * undefined
+  * @param {{number}} {{index}} - Zero-based index of the facility to update.
+  * @param {{string}} {{value}} - Country input string (name or code); trimmed and normalized for ISO lookup.
+  * @returns {{void}} Returns undefined after invoking patchFacility.
+  **/
   const handleCountryInput = (index: number, value: string) => {
     const trimmed = value.trim()
     const normalizedCandidate =
@@ -104,6 +122,16 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
     })
   }
 
+  /**
+  * Update the state code and state province for a facility at the given index.
+  * @example
+  * updateFacilityState(2, 'CA', 'California')
+  * undefined
+  * @param {{number}} {{index}} - Index of the facility to patch.
+  * @param {{string}} {{stateCode}} - State code to set; if falsy the state's code and province will be cleared.
+  * @param {{string|null|undefined}} {{stateName}} - Optional display name for the state; if omitted it will be derived from stateCode.
+  * @returns {{void}} Does not return a value.
+  **/
   const handleStateSelect = (index: number, stateCode: string, stateName?: string | null) => {
     if (!stateCode) {
       patchFacility(index, {
@@ -129,6 +157,14 @@ export default function CompanyForm({ initialData, onSubmit, loading = false }: 
   }
 
   // Facility management
+  /**
+  * Adds a new "Manufacturing" facility object to the facilities array by invoking updateFacilities; the new facility is prefilled with defaults and marked primary if it is the first entry.
+  * @example
+  * addManufacturingFacility()
+  * undefined
+  * @param {Function} updateFacilities - State updater function (setState-style) that receives a callback with the current facilities array and appends the new facility.
+  * @returns {void} Returns undefined.
+  **/
   const addFacility = () => {
     updateFacilities((facilities) => [
       ...facilities,

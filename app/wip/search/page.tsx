@@ -86,6 +86,11 @@ export const metadata = {
   },
 }
 
+/**
+* Fetches active companies with their locations from Supabase, ordered by most recently updated and limited by MAX_COMPANIES.
+* @example
+* getData().then(data => console.log(data))
+* // => [{ id: 'company_1', name: 'Acme Corp', locations: [/* ... */
 async function getData(): Promise<HomepageCompanyWithLocations[]> {
   try {
     const { data, error } = await supabase
@@ -110,6 +115,14 @@ async function getData(): Promise<HomepageCompanyWithLocations[]> {
 
 type HomeSearchParams = Record<string, string | string[] | undefined>
 
+/**
+* Renders the home/search page with filters, search bar, company list and map, initializing filter state from search parameters.
+* @example
+* Home({ searchParams: { q: 'design' } })
+* <JSX.Element />
+* @param {{PageProps<Record<string, string | string[]>, HomeSearchParams>}} {{props}} - Props object containing searchParams used to initialize the page filters.
+* @returns {{Promise<JSX.Element>}} Promise that resolves to the rendered page JSX element.
+**/
 export default async function Home({
   searchParams,
 }: PageProps<Record<string, string | string[]>, HomeSearchParams>) {

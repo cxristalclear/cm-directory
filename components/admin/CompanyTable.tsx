@@ -26,6 +26,14 @@ interface CompanyTableProps {
   searchParams: Record<string, string | undefined>
 }
 
+/**
+* Render an admin companies table with search, filters, delete confirmation, and pagination.
+* @example
+* CompanyTable({ companies: [], totalPages: 1, currentPage: 1, searchParams: {} })
+* <JSX.Element />
+* @param {{CompanyTableProps}} {{props}} - Props object containing companies, totalPages, currentPage, and searchParams.
+* @returns {{JSX.Element}} Rendered JSX element representing the companies admin table.
+**/
 export default function CompanyTable({
   companies,
   totalPages,
@@ -55,6 +63,15 @@ export default function CompanyTable({
     updateFilters('search', searchInput)
   }
 
+  /**
+  * Delete a company and its related records after a confirmation click.
+  * @example
+  * sync('company-123', 'Acme Corp')
+  * Promise<void>
+  * @param {{string}} {{companyId}} - ID of the company to delete.
+  * @param {{string}} {{companyName}} - Human-readable company name shown in confirmation toast.
+  * @returns {{Promise<void>}} A promise that resolves when the deletion process (including related records) completes.
+  **/
   const handleDelete = async (companyId: string, companyName: string) => {
     if (deleteConfirm !== companyId) {
       setDeleteConfirm(companyId)

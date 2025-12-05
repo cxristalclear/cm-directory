@@ -7,6 +7,14 @@ interface AddCompanyButtonProps {
   variant?: 'primary' | 'secondary'
 }
 
+/**
+* Renders an anchor button that opens a JotForm in a new popup to add a company.
+* @example
+* AddCompanyButton({ className: 'mx-2', variant: 'primary' })
+* <a href="https://form.jotform.com/252715469871165" ...>Add Your Company</a>
+* @param {{AddCompanyButtonProps}} {{props}} - Props object with optional className and variant to control styling.
+* @returns {{JSX.Element}} Rendered anchor element that opens the add-company form in a popup.
+**/
 export default function AddCompanyButton({ 
   className = '',
   variant = 'primary' 

@@ -36,6 +36,14 @@ const VOLUME_NAMES: Record<ProductionVolume, string> = {
   'high': 'High Volume'
 }
 
+/**
+* Sidebar component that renders and manages filters (countries, states, capabilities, production volume and employee ranges) for a list of companies, computing dynamic counts and updating filter state.
+* @example
+* FilterSidebar({ allCompanies: sampleCompanies })
+* <JSX.Element />
+* @param {FilterSidebarProps} props - Props object with an allCompanies array used to compute filter options and dynamic counts.
+* @returns {JSX.Element} React element that renders the interactive filter sidebar UI.
+**/
 export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
   const { filters, updateFilter, clearFilters } = useFilters()
   const [isOpen, setIsOpen] = useState(false)
@@ -61,6 +69,14 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
 
     type CompanyFacility = NonNullable<HomepageCompanyWithLocations["facilities"]>[number]
 
+    /**
+    * Determines if a given CompanyFacility satisfies the currently selected country and state filters.
+    * @example
+    * facilityPassesFilters(facility)
+    * true
+    * @param {{CompanyFacility}} {{facility}} - The facility object to evaluate against active filters.
+    * @returns {{boolean}} Return true if the facility matches the country and state filters, otherwise false.
+    **/
     const facilityMatchesLocation = (facility: CompanyFacility) => {
       const countryCode = getFacilityCountryCode(facility)
       const stateKey = getFacilityStateKey(facility)
@@ -534,6 +550,19 @@ interface FilterGroupProps {
   children: React.ReactNode
 }
 
+/**
+* Render a collapsible filter group used in a sidebar with a title, optional icon, count badge and expandable children.
+* @example
+* FilterGroup({ title: 'Categories', icon: <CategoryIcon />, isOpen: false, onToggle: () => {}, count: 3, children: <div>Options...</div> })
+* <div>...Filter group JSX element...</div>
+* @param {{string}} {{title}} - The visible title of the filter group.
+* @param {{React.ReactNode}} {{icon}} - Optional icon displayed to the left of the title.
+* @param {{boolean}} {{isOpen}} - Whether the group is expanded (true) or collapsed (false).
+* @param {{() => void}} {{onToggle}} - Callback invoked when the group header is clicked to toggle open state.
+* @param {{number}} {{count}} - Optional numeric badge to show item count; rendered only when greater than 0.
+* @param {{React.ReactNode}} {{children}} - Content rendered inside the expandable area of the group.
+* @returns {{JSX.Element}} Returns a JSX element representing the filter group component.
+**/
 function FilterGroup({ title, icon, isOpen, onToggle, count, children }: FilterGroupProps) {
   return (
     <div className={`group/filter rounded-2xl border border-gray-100 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.06)] transition-all duration-200 ${isOpen ? 'border-blue-100 ring-1 ring-blue-100 shadow-md' : 'hover:border-gray-200 hover:shadow-sm'}`}>
@@ -578,6 +607,17 @@ interface CheckboxOptionProps {
   onChange: () => void
 }
 
+/**
+* Renders a checkbox-style option row with a label, a numeric count badge, and visual states for checked/disabled.
+* @example
+* CheckboxOption({ label: 'Example Option', count: 3, checked: true, onChange: (e) => {} })
+* <label>...JSX element representing the option with checkbox, label and count badge...</label>
+* @param {{string}} {{label}} - The visible label text for the option.
+* @param {{number}} {{count}} - Numeric badge displayed to the right of the label.
+* @param {{boolean}} {{checked}} - Whether the option is currently checked/selected.
+* @param {{(e: React.ChangeEvent<HTMLInputElement>) => void}} {{onChange}} - Callback invoked when the checkbox value changes.
+* @returns {{JSX.Element}} Rendered JSX label element containing the checkbox, label text and count badge.
+**/
 function CheckboxOption({ label, count, checked, onChange }: CheckboxOptionProps) {
   const disabled = !checked && count === 0
   

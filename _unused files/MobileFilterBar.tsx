@@ -37,6 +37,14 @@ interface MobileFilterChipProps {
   onRemove: () => void
 }
 
+/**
+* Render a mobile-friendly removable filter chip button with an icon, label, and remove action.
+* @example
+* MobileFilterChip({ label: 'Size: M', category: 'size', onRemove: () => {} })
+* <button>...JSX Element...</button>
+* @param {MobileFilterChipProps} props - Component props containing label, category and onRemove callback.
+* @returns {JSX.Element} Return a button JSX element representing the filter chip.
+**/
 function MobileFilterChip({ label, category, onRemove }: MobileFilterChipProps) {
   const { bg, icon: Icon } = categoryStyles[category]
   
@@ -52,6 +60,14 @@ function MobileFilterChip({ label, category, onRemove }: MobileFilterChipProps) 
   )
 }
 
+/**
+ * Mobile-only bottom bar component that displays active filter chips, allows clearing and removing filters, and toggles an expandable panel showing applied filters on mobile devices.
+ * @example
+ * MobileFilterBar()
+ * <JSX.Element|null>
+ * @param {void} - This component accepts no props.
+ * @returns {JSX.Element|null} Rendered mobile filter bar JSX element or null when there are no active filters.
+ */
 export default function MobileFilterBar() {
   const [isExpanded, setIsExpanded] = useState(false)
   const { filters, updateFilter, clearFilters, filteredCount } = useFilters()

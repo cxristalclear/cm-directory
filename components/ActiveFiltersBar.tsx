@@ -40,6 +40,16 @@ const categoryStyles: Record<FilterCategory, { bg: string; icon: React.ElementTy
   employees: { bg: 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100', icon: Users }
 }
 
+/**
+* Renders a removable filter chip button with an icon and label based on category.
+* @example
+* FilterChip({ label: 'Open', category: 'status', onRemove: () => {} })
+* <button type="button">...</button>
+* @param {{string}} {{label}} - The visible text label for the filter chip.
+* @param {{string}} {{category}} - The key used to select styles and icon for the chip.
+* @param {{() => void}} {{onRemove}} - Callback invoked when the chip is clicked to remove the filter.
+* @returns {{JSX.Element}} Return a JSX button element representing the filter chip.
+**/
 function FilterChip({ label, category, onRemove }: FilterChipProps) {
   const { bg, icon: Icon } = categoryStyles[category]
   
@@ -56,6 +66,14 @@ function FilterChip({ label, category, onRemove }: FilterChipProps) {
   )
 }
 
+/**
+* Render a responsive bar showing the currently active filters as removable chips with a clear action; supports "page" and "inline" variants.
+* @example
+* ActiveFiltersBar({ variant: 'inline' })
+* <div>...filter chips and controls...</div>
+* @param {{ActiveFiltersBarProps}} {{props}} - Props object containing an optional "variant" ("page" | "inline").
+* @returns {{JSX.Element | null}} Rendered filters bar JSX or null when no filters are active.
+**/
 export default function ActiveFiltersBar({ variant = 'page' }: ActiveFiltersBarProps) {
   const { filters, updateFilter, clearFilters, filteredCount } = useFilters()
   
@@ -89,6 +107,24 @@ export default function ActiveFiltersBar({ variant = 'page' }: ActiveFiltersBarP
     updateFilter('employeeCountRanges', filters.employeeCountRanges.filter(r => r !== range))
   }
 
+  /**
+  * Render a list of active filter chips from the provided filters and removal callbacks.
+  * @example
+  * ActiveFiltersBar({filters, formatCountryLabel, formatStateLabelFromKey, handleRemoveCountry, handleRemoveState, handleRemoveCapability, handleRemoveVolume, handleRemoveEmployeeRange, CAPABILITY_NAMES, VOLUME_NAMES})
+  * <>...FilterChip elements...</>
+  * @param {{Object}} props - Component props object containing filters, label formatters, handlers, and name maps.
+  * @param {{Object}} props.filters - Active filters object with keys: countries[], states[], capabilities[], productionVolume?, employeeCountRanges[].
+  * @param {{Function}} props.formatCountryLabel - Function that converts a country code to a display label.
+  * @param {{Function}} props.formatStateLabelFromKey - Function that converts a state key to a display label.
+  * @param {{Function}} props.handleRemoveCountry - Callback invoked to remove a country filter.
+  * @param {{Function}} props.handleRemoveState - Callback invoked to remove a state filter.
+  * @param {{Function}} props.handleRemoveCapability - Callback invoked to remove a capability filter.
+  * @param {{Function}} props.handleRemoveVolume - Callback invoked to remove the production volume filter.
+  * @param {{Function}} props.handleRemoveEmployeeRange - Callback invoked to remove an employee count range filter.
+  * @param {{Object}} props.CAPABILITY_NAMES - Map of capability keys to human-readable names.
+  * @param {{Object}} props.VOLUME_NAMES - Map of production volume keys to human-readable names.
+  * @returns {{JSX.Element}} Rendered fragment containing FilterChip elements for every active filter.
+  */
   const renderFilterChips = () => (
     <>
       {filters.countries.map(code => (

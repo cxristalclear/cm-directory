@@ -14,6 +14,14 @@ export const compressFilters = (filters: FilterState) => {
   return compress(JSON.stringify(filters))
 }
 
+/**
+* Decompresses a compressed filter JSON string into a FilterState object, applying defaults and returning DEFAULT_FILTERS on error.
+* @example
+* decodeFilterState("eJyrVkrLz1eyUkpKLFKqBQA1BwYJ")
+* { countries: [], states: [], capabilities: [], productionVolume: null, employeeCountRanges: [], searchQuery: "" }
+* @param {{string}} {{compressed}} - Compressed filter string produced by the corresponding compression utility.
+* @returns {{FilterState}} Parsed FilterState with defaults applied; returns DEFAULT_FILTERS if decompression or parsing fails.
+**/
 export const decompressFilters = (compressed: string): FilterState => {
   try {
     const decompressed = decompress(compressed)

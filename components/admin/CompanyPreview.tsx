@@ -26,6 +26,40 @@ interface CompanyPreviewProps {
   onRetryFailed?: () => Promise<void>
 }
 
+/**
+* Renders a preview UI for researched company data with edit, save, batch-save, navigation and error handling.
+* @example
+* CompanyPreview({
+*   companyData: sampleCompany,
+*   enrichmentInfo: 'raw source data or JSON',
+*   onSave: async (isDraft) => {},
+*   onEdit: (updatedData) => {},
+*   onCancel: () => {},
+*   currentIndex: 1,
+*   totalCount: 5,
+*   onNavigate: (dir) => {},
+*   onSaveAll: async () => {},
+*   isSavingAll: false,
+*   batchSaveProgress: { current: 1, total: 5, failed: 0, currentCompanyName: 'Acme' },
+*   batchSaveErrors: [],
+*   onRetryFailed: async () => {},
+* })
+* <JSX.Element />
+* @param {Object} companyData - Company data object containing fields like company_name, website_url, year_founded, employee_count_range, annual_revenue_range, description, facilities, capabilities, certifications, industries, etc.
+* @param {string|Object} enrichmentInfo - Optional enrichment/source data to display for the company.
+* @param {(isDraft:boolean) => Promise<void>} onSave - Callback invoked to save the current company; receives a boolean indicating draft save.
+* @param {(updatedData: Object) => Promise<void>|void} onEdit - Callback invoked when edited company data is submitted.
+* @param {() => void} onCancel - Callback invoked to cancel/close the preview.
+* @param {number} currentIndex - Current 1-based index of the company when viewing a batch.
+* @param {number} totalCount - Total number of companies in the batch.
+* @param {(direction: 'prev'|'next') => void} onNavigate - Callback to navigate between companies in a batch; receives 'prev' or 'next'.
+* @param {() => Promise<void>} [onSaveAll] - Optional callback to save all companies in the batch.
+* @param {boolean} [isSavingAll] - Flag indicating a batch save operation is in progress.
+* @param {{current:number,total:number,failed?:number,currentCompanyName?:string}|null} [batchSaveProgress] - Optional progress info for batch save operations.
+* @param {Array<{company:string,reason:string}>} [batchSaveErrors] - Optional array of errors from a batch save operation.
+* @param {() => Promise<void>} [onRetryFailed] - Optional callback to retry failed saves from a batch operation.
+* @returns {JSX.Element} Returns a React element that displays the company preview, edit form, action buttons, batch save progress/errors and navigation controls.
+**/
 export default function CompanyPreview({
   companyData,
   enrichmentInfo,

@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { Search, MapPin, Users, Building2, Star, Clock, CheckCircle, X, Filter, ChevronDown, List, Grid, Map, Layers, RotateCcw, Plus, Minus } from 'lucide-react';
 
+/**
+* Renders a mockup React component for a PCBA/contract manufacturer directory with header, prominent search, active filters, stats, sidebar filters, an interactive-looking map, and company result cards.
+* @example
+* CMDirectoryMockupV2()
+* // Returns a JSX element: <div className="min-h-screen bg-gray-50 text-sm">...</div>
+* @returns {JSX.Element} The JSX element representing the complete directory UI mockup.
+*/
 export default function CMDirectoryMockupV2() {
   const [activeFilters, setActiveFilters] = useState(['United States', 'SMT Assembly']);
   const [viewMode, setViewMode] = useState('split');

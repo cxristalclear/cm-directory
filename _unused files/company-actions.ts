@@ -5,6 +5,14 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type { CompanyUpdate, CompanyInsert } from '@/lib/supabase'
 
+/**
+* Update a company record in the database using values from a FormData object; requires an authenticated user and will redirect to /login if not authenticated.
+* @example
+* updateCompany(formData)
+* { success: true }
+* @param {{FormData}} {{formData}} - FormData containing 'id', 'company_name', 'description', and 'website_url'.
+* @returns {{Promise<{success: boolean} | {error: string}>}} Return an object with success:true on success or an error message on failure; may redirect to /login if unauthenticated.
+**/
 export async function updateCompany(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -34,6 +42,14 @@ export async function updateCompany(formData: FormData) {
   return { success: true }
 }
 
+/**
+* Create a new company in Supabase from provided FormData, generate a slug, insert it into the companies table, and revalidate the admin dashboard.
+* @example
+* createCompany(formData)
+* { success: true, data: { id: 123, company_name: 'Acme', slug: 'acme', description: 'Acme description', website_url: 'https://acme.com' } }
+* @param {FormData} formData - Form data containing company_name, description, and website_url.
+* @returns {Promise<{success?: boolean, data?: any, error?: string}>} Return a promise resolving to an object with success and data on success or an error message on failure.
+*/
 export async function createCompany(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -65,6 +81,14 @@ export async function createCompany(formData: FormData) {
 }
 
 // Optional: Handle contacts separately
+/**
+* Update or create the primary contact for a company using provided FormData; redirects to login if the user is not authenticated.
+* @example
+* updateCompanyContact(formData)
+* { success: true }
+* @param {{FormData}} {{formData}} - FormData containing 'company_id', 'email', and 'phone'.
+* @returns {{Promise<{success: boolean} | {error: string}>}} Promise resolving to an object with success:true or an error message.
+**/
 export async function updateCompanyContact(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

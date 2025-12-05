@@ -42,6 +42,14 @@ const footerLinks = [
 const linkClass =
   'text-sm text-slate-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950'
 
+/**
+* Renders the site's footer including branding, resource links, top cities, capabilities, manufacturer actions, and legal links.
+* @example
+* SiteFooter()
+* <footer className="bg-slate-950">...footer content...</footer>
+* @param {object} props - Optional props object (none are used by this component).
+* @returns {JSX.Element} React element representing the site footer.
+**/
 export default function SiteFooter() {
   return (
     <footer className="bg-slate-950 text-slate-200">

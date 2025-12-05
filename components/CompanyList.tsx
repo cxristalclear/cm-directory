@@ -27,6 +27,16 @@ function createSummary(totalCount: number, visibleCount: number): string {
   return `Showing ${visibleCount} of ${totalCount}`
 }
 
+/**
+* Renders a paginated, filterable, and sortable list or grid of company cards with optional inline search and inline ad placement.
+* @example
+* CompanyList({ allCompanies: companiesArray, limit: 20, showInlineSearch: true })
+* <JSX.Element />
+* @param {{Company[]}} {{allCompanies}} - Array of company records to display.
+* @param {{number}} {{limit}} - Maximum number of companies to show per page (default: DEFAULT_LIMIT).
+* @param {{boolean}} {{showInlineSearch}} - Whether to display the inline search bar (default: true).
+* @returns {{JSX.Element}} Rendered React element containing the company list view.
+**/
 export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT, showInlineSearch = true }: CompanyListProps) {
   const { filters, setFilteredCount } = useFilters()
   const [pagesLoaded, setPagesLoaded] = useState(1)

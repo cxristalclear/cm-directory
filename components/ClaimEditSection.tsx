@@ -8,6 +8,16 @@ interface ClaimEditSectionProps {
   className?: string
 }
 
+/**
+* Renders a section with "Claim Company" and "Suggest Edit" links that open a prefilled JotForm for the given company.
+* @example
+* ClaimEditSection({ companyName: 'Acme Corp', companySlug: 'acme-corp' })
+* Returns a JSX element rendering the claim/edit links.
+* @param {string} companyName - Company display name used to prefill the claim/edit form.
+* @param {string} companySlug - Company slug used to prefill the claim/edit form.
+* @param {string} [className] - Optional additional CSS class names for the outer container.
+* @returns {JSX.Element} Rendered JSX element containing claim and suggest edit actions.
+**/
 export default function ClaimEditSection({
   companyName,
   companySlug,

@@ -22,6 +22,19 @@ type CanonicalLocationState = {
   error: string | null
 }
 
+/**
+ * Custom React hook that loads canonical country and state option lists from Supabase and provides loading and error state.
+ * @example
+ * useCanonicalLocations()
+ * // {
+ * //   countries: [{ iso2: 'US', name: 'United States' }],
+ * //   states: [{ country_iso2: 'US', code: 'CA', name: 'California' }],
+ * //   loading: false,
+ * //   error: null
+ * // }
+ * @param {void} none - No arguments.
+ * @returns {{countries: Array<{iso2: string, name: string}>, states: Array<{country_iso2: string, code: string, name: string}>, loading: boolean, error: string | null}} Returns an object containing country and state option arrays, a loading flag, and an optional error message.
+ */
 export function useCanonicalLocations(): CanonicalLocationState {
   const supabase = useMemo(() => createClientComponentClient<Database>(), [])
   const [countries, setCountries] = useState<CountryOption[]>([])
@@ -32,6 +45,14 @@ export function useCanonicalLocations(): CanonicalLocationState {
   useEffect(() => {
     let isMounted = true
 
+    /**
+    * Load countries and states from Supabase and update local state while managing loading and error flags.
+    * @example
+    * sync()
+    * Promise<void>
+    * @param {void} none - No parameters.
+    * @returns {Promise<void>} Resolves when location data is loaded (or an error has been set) and loading is cleared.
+    **/
     const loadLocations = async () => {
       try {
         setLoading(true)

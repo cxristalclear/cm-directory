@@ -10,6 +10,15 @@ interface VenkelAdProps {
   className?: string
 }
 
+/**
+* Renders a Venkel promotional ad in one of three layouts: banner, sidebar, or featured.
+* @example
+* VenkelAd({ size: 'banner', className: '' })
+* JSX element for the 'banner' ad variant
+* @param {{'banner'|'sidebar'|'featured'}} {{size}} - The ad variant to render; one of 'banner', 'sidebar', or 'featured'. Default: 'banner'.
+* @param {{string}} {{className}} - Optional additional CSS class names applied to the root element.
+* @returns {{JSX.Element|null}} The React element representing the requested ad layout, or null if no matching size is provided.
+**/
 export default function VenkelAd({ size = 'banner', className = '' }: VenkelAdProps) {
   
   // Banner Ad (horizontal, top/bottom of content)

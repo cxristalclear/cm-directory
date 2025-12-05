@@ -13,6 +13,14 @@ interface LazyCompanyMapProps {
 }
 
 // Loading placeholder component
+/**
+* Renders a placeholder loading state for the company map while interactive facility locations are being prepared.
+* @example
+* LazyCompanyMap()
+* // returns JSX for a centered loading card with a spinning indicator and "Loading Map" text
+* @param {void} props - No props are accepted.
+* @returns {JSX.Element} A JSX element representing the loading map placeholder.
+**/
 const MapLoadingFallback = () => (
   <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-sm border border-gray-200/50 p-8 text-center min-h-[500px] flex items-center justify-center">
     <div className="max-w-md">

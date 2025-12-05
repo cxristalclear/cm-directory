@@ -44,6 +44,13 @@ const resourceCards = [
   },
 ]
 
+/**
+* Renders the Resources Hub page containing header text, breadcrumbs, a grid of resource cards, and JSON-LD scripts.
+* @example
+* ResourcesHubPage()
+* <div className="min-h-screen bg-gray-50 pb-16">...</div>
+* @returns {{React.JSX.Element}} The React element representing the complete Resources Hub page.
+**/
 export default function ResourcesHubPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">

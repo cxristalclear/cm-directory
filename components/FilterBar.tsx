@@ -26,6 +26,14 @@ type PopoverProps = {
   onOpenChange: (open: boolean) => void
 }
 
+/**
+* Renders a positioned popover anchored to a trigger element, handling open state, outside clicks, and repositioning on scroll/resize.
+* @example
+* Popover({ trigger: <button>Open</button>, children: <div>Content</div>, open: true, onOpenChange: (v) => {} })
+* <JSX.Element>
+* @param {{PopoverProps}} {{props}} - Props object containing trigger (ReactNode), children (ReactNode), optional widthClass (string), open (boolean), and onOpenChange (function).
+* @returns {{JSX.Element}} Return the rendered popover React element (or no portal content when closed).
+**/
 function Popover({ trigger, children, widthClass = "w-72", open, onOpenChange }: PopoverProps) {
   const triggerRef = useRef<HTMLDivElement>(null)
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
@@ -90,6 +98,16 @@ interface PillButtonProps {
   count?: number
 }
 
+/**
+* Renders a pill-shaped filter button with an optional numeric badge and active styling.
+* @example
+* PillButton({ active: true, label: "All", count: 5 })
+* <button class="inline-flex items-center ...">All<span class="flex h-4 ...">5</span><svg ... /></button>
+* @param {{boolean}} {{active}} - Whether the pill is active; controls highlighted styles (default: false).
+* @param {{React.ReactNode}} {{label}} - The label or content to display inside the pill.
+* @param {{number}} {{count}} - Optional count to show as a small badge; ignored if undefined or <= 0.
+* @returns {{JSX.Element}} Rendered JSX element for the pill button.
+**/
 function PillButton({ active = false, label, count }: PillButtonProps) {
   return (
     <button
@@ -131,6 +149,14 @@ interface FilterBarProps {
   allCompanies: HomepageCompanyWithLocations[]
 }
 
+/**
+* Renders a horizontal filter bar UI for companies (location, capabilities, production volume, and employee ranges).
+* @example
+* FilterBar({ allCompanies })
+* <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1 px-1 -mx-1">...</div>
+* @param {{FilterBarProps}} {{props}} - Props object containing allCompanies used to build filter options and counts.
+* @returns {{JSX.Element}} Rendered FilterBar component as a React element.
+**/
 export default function FilterBar({ allCompanies }: FilterBarProps) {
   const { filters, updateFilter } = useFilters()
   
@@ -400,6 +426,18 @@ interface CheckboxRowProps {
   type?: "checkbox" | "radio"
 }
 
+/**
+* Render a selectable row for a checkbox or radio option used in the filter bar.
+* @example
+* CheckboxRow({ label: "Active", count: 12, checked: false, onChange: e => console.log(e), type: "checkbox" })
+* <label>...</label>
+* @param {{string}} {{label}} - The visible text label for the option.
+* @param {{number|undefined}} {{count}} - Optional numeric badge displayed alongside the label.
+* @param {{boolean}} {{checked}} - Whether the option is currently selected.
+* @param {{(e: React.ChangeEvent<HTMLInputElement>) => void}} {{onChange}} - Handler invoked when the hidden input changes.
+* @param {{("checkbox"|"radio")}} {{type}} - Input type, either "checkbox" (default) or "radio".
+* @returns {{JSX.Element}} Rendered row element containing the custom control and hidden input.
+**/
 function CheckboxRow({ label, count, checked, onChange, type = "checkbox" }: CheckboxRowProps) {
   return (
     <label className={`

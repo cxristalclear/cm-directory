@@ -13,6 +13,14 @@ interface LazyCompanyMapProps {
   className?: string
 }
 
+/**
+* Renders a centered loading placeholder UI for a company map with animated icons and status text.
+* @example
+* LazyCompanyMap1()
+* JSX.Element // a div-based loading placeholder JSX
+* @param {{void}} {{props}} - No props are accepted by this component.
+* @returns {{JSX.Element}} Rendered JSX element representing the map loading placeholder.
+**/
 const MapLoadingFallback = () => (
   <div className="relative w-full h-full bg-slate-50 flex items-center justify-center p-8 text-center min-h-[400px]">
     <div className="max-w-md animate-pulse">

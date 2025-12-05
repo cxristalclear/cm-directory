@@ -10,6 +10,14 @@ interface AdminHeaderProps {
   user: SupabaseUser
 }
 
+/**
+* Renders the admin header with a search input and a user menu (email display, dropdown, and logout).
+* @example
+* AdminHeader({ user: { email: 'admin@example.com' } })
+* <header>...admin header markup...</header>
+* @param {{AdminHeaderProps}} {{user}} - Props object with a `user` field containing admin details (e.g. email) used in the header.
+* @returns {{JSX.Element}} The header element for the admin layout.
+**/
 export default function AdminHeader({ user }: AdminHeaderProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const router = useRouter()

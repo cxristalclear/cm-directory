@@ -123,6 +123,13 @@ const AdPlaceholder = ({ width, height, label, className = "" }: { width: string
 )
 
 // JSON-LD Schema Generator
+/**
+* Generates JSON-LD structured data (WebSite, BreadcrumbList, Organization, FAQPage) and returns a React script element containing the serialized JSON-LD.
+* @example
+* generateJSONLD()
+* <script type="application/ld+json">[{"@context":"https://schema.org","@type":"WebSite",...}, ...]</script>
+* @returns {JSX.Element} A React <script> element with type "application/ld+json" whose inner HTML is the JSON.stringify'd schema array.
+**/
 function generateJSONLD() {
   const schemas = [
     // WebSite Schema
@@ -211,6 +218,13 @@ function generateJSONLD() {
 }
 
 // ---------- Data Fetch ----------
+/**
+* Fetch active companies with their locations from Supabase.
+* @example
+* getData()
+* [{ id: 'company_1', name: 'Acme Corp', locations: [{ id: 'loc_1', address: '123 Main St' }] }]
+* @returns {Promise<HomepageCompanyWithLocations[]>} List of active companies with locations, ordered by updated_at (descending) and limited to MAX_COMPANIES; returns an empty array on error.
+**/
 async function getData(): Promise<HomepageCompanyWithLocations[]> {
   try {
     const { data, error } = await supabase
@@ -235,6 +249,14 @@ async function getData(): Promise<HomepageCompanyWithLocations[]> {
 
 type HomeSearchParams = Record<string, string | string[] | undefined>
 
+/**
+* Render the Home page server component: fetches company data, derives stats and featured companies, initializes filters, and returns the full page UI.
+* @example
+* Home({ searchParams })
+* <JSX.Element />
+* @param {{PageProps<Record<string, string | string[]>, HomeSearchParams>}} {{props}} - Props object containing searchParams (may be a Promise or Record) used to initialize filters and control page data.
+* @returns {{JSX.Element}} Rendered JSX element representing the home page.
+**/
 export default async function Home({
   searchParams,
 }: PageProps<Record<string, string | string[]>, HomeSearchParams>) {

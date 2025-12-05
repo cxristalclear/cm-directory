@@ -20,6 +20,14 @@ interface FilterProviderProps {
   }
 }
 
+/**
+* Provides filter state, synchronizes it with the URL, and supplies update/clear helpers and pending state to descendants via FilterContext.
+* @example
+* FilterProvider({ children: <App />, initialFilters: { countries: ['US'], states: [], capabilities: [], productionVolume: null, employeeCountRanges: [], searchQuery: '' } })
+* <FilterContext.Provider value={{...}}>...</FilterContext.Provider>
+* @param {{FilterProviderProps}} {{props}} - Props object containing children and optional initialFilters used to initialize the filter state.
+* @returns {{JSX.Element}} The FilterContext provider JSX element that wraps the provided children.
+**/
 export function FilterProvider({ children, initialFilters }: FilterProviderProps) {
   const router = useRouter()
   const pathname = usePathname()

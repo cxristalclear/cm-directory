@@ -8,6 +8,16 @@ interface PaginationProps {
   onPageChange: (page: number) => void
 }
 
+/**
+* Renders a pagination control that displays the current page, total pages, and previous/next navigation buttons.
+* @example
+* Pagination({ currentPage: 1, totalPages: 10, onPageChange: (page) => console.log(page) })
+* <div>...pagination JSX element...</div>
+* @param {{number}} {{currentPage}} - Current active page (1-based index).
+* @param {{number}} {{totalPages}} - Total number of pages available.
+* @param {{(page:number) => void}} {{onPageChange}} - Callback invoked with the new page number when navigation occurs.
+* @returns {{JSX.Element}} Rendered pagination JSX element.
+**/
 export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-white rounded-xl shadow-sm">

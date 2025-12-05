@@ -114,6 +114,13 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 // Main function to process facilities
+/**
+* Fetches companies and their facilities, geocodes or validates facility coordinates in batches, logs progress, and optionally updates the database (supports dry-run).
+* @example
+* processFacilities()
+* Promise<void>
+* @returns {Promise<void>} Resolves when processing, summarizing results and optionally updating the database.
+*/
 async function processFacilities() {
   console.log('🚀 Starting Geocoding Script')
   console.log(`📋 Mode: ${CONFIG.MODE}`)
@@ -357,6 +364,14 @@ async function processFacilities() {
 }
 
 // Helper function to determine if a facility should be processed
+/**
+* Determine whether a given facility should be processed based on the current CONFIG.MODE and its coordinates.
+* @example
+* shouldProcessFacility({ latitude: null, longitude: null })
+* true
+* @param {{Facility}} {{facility}} - Facility object to evaluate for processing.
+* @returns {{boolean}} True if the facility should be processed under the current CONFIG.MODE.
+**/
 function shouldProcessFacility(facility: Facility): boolean {
   switch (CONFIG.MODE) {
     case 'MISSING_ONLY':
@@ -371,6 +386,13 @@ function shouldProcessFacility(facility: Facility): boolean {
 }
 
 // Helper function to get mode description
+/**
+* Get a human-readable description for the current geocoding mode defined in CONFIG.MODE.
+* @example
+* getModeDescription()
+* 'Validating all existing coordinates and filling missing ones'
+* @returns {string} Human-readable description of the current geocoding mode.
+*/
 function getModeDescription(): string {
   switch (CONFIG.MODE) {
     case 'MISSING_ONLY':
@@ -385,6 +407,15 @@ function getModeDescription(): string {
 }
 
 // Display comprehensive results summary
+/**
+* Prints a formatted summary of geocoding results to the console.
+* @example
+* displayResultsSummary(resultsArray, 2)
+* undefined
+* @param {GeocodingResult[]} results - Array of geocoding result objects to summarize.
+* @param {number} skippedCount - Number of entries skipped due to incomplete addresses.
+* @returns {void} Logs a human-readable summary to the console; does not return a value.
+**/
 function displayResultsSummary(results: GeocodingResult[], skippedCount: number) {
   console.log('')
   console.log('📊 GEOCODING RESULTS SUMMARY')
@@ -456,6 +487,16 @@ function displayResultsSummary(results: GeocodingResult[], skippedCount: number)
 }
 
 // Update database with new coordinates
+/**
+* Update facility latitude and longitude in the database for geocoding results that require changes.
+* @example
+* updateDatabase([
+*   { facilityId: 1, companyName: 'Example Co', currentCoords: {lat: null, lng: null}, newCoords: {lat: 12.34, lng: 56.78}, status: 'updated' }
+* ])
+* undefined
+* @param {{GeocodingResult[]}} {{results}} - Array of geocoding results to evaluate and apply updates for facilities.
+* @returns {{Promise<void>}} Promise that resolves when all necessary updates are completed (no value returned).
+**/
 async function updateDatabase(results: GeocodingResult[]) {
   const toUpdate = results.filter(r => {
     if (!r.newCoords) return false

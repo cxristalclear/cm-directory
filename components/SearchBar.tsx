@@ -39,6 +39,14 @@ const QUICK_FILTERS: QuickFilter[] = [
   { label: "Prototype Ready", type: "productionVolume", value: "low" },
 ]
 
+/**
+* Renders a searchable input with debounced filter updates, autocomplete suggestions, keyboard navigation, accessibility attributes, and quick filters.
+* @example
+* SearchBar({ className: 'mb-4', companies: [{ id: '1', company_name: 'Acme Co', dba_name: 'Acme' }], variant: 'hero' })
+* <JSX.Element> (search bar UI)
+* @param {{SearchBarProps}} {{props}} - Props for the component: optional className, companies array for suggestions, and variant ('hero' | 'inline').
+* @returns {{JSX.Element}} Rendered search bar component.
+**/
 export default function SearchBar({
   className,
   companies = [],
@@ -139,6 +147,14 @@ export default function SearchBar({
   const suggestionListId = `${generatedId}-hero-search-suggestions`
   const inputId = `${generatedId}-hero-search-input`
 
+  /**
+  * Handle keyboard navigation and selection for the search suggestions in the SearchBar.
+  * @example
+  * onSuggestionsKeyDown(event)
+  * void
+  * @param {{React.KeyboardEvent<HTMLInputElement>}} {{event}} - Keyboard event from the input; handles ArrowDown/ArrowUp to move the active suggestion, Enter to select the active suggestion, and Escape to dismiss suggestions.
+  * @returns {{void}} Does not return a value; updates component state and may call a suggestion selection handler.
+  **/
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (!showSuggestions) return
 
@@ -188,6 +204,14 @@ export default function SearchBar({
 
   const placeholderText = HERO_PLACEHOLDER_PROMPTS[placeholderIndex] ?? HERO_PLACEHOLDER_PROMPTS[0]
 
+  /**
+  * Determine whether a given quick filter matches the current active filters.
+  * @example
+  * quickFilter({type: "search", value: "Acme"})
+  * true
+  * @param {{QuickFilter}} {{quickFilter}} - QuickFilter object with a type ("search" | "capability" | "country" | "productionVolume") and a value to test against the active filters.
+  * @returns {{boolean}} Boolean indicating if the provided quick filter matches the active filters.
+  **/
   const isQuickFilterActive = (quickFilter: QuickFilter) => {
     switch (quickFilter.type) {
       case "search":
@@ -203,6 +227,14 @@ export default function SearchBar({
     }
   }
 
+  /**
+  * Handle a quick filter action by updating search input, selected capabilities, country, or production volume.
+  * @example
+  * quickFilter({ type: "search", value: "widgets" })
+  * undefined
+  * @param {{QuickFilter}} {{quickFilter}} - The quick filter object with a type and value that determines which filter to update.
+  * @returns {{void}} Void - Performs side effects to update component state and filters; does not return a value.
+  **/
   const handleQuickFilterClick = (quickFilter: QuickFilter) => {
     if (quickFilter.type === "search") {
       const trimmed = quickFilter.value.trim()

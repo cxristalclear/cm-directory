@@ -49,6 +49,14 @@ const guideEntries = [
   },
 ]
 
+/**
+* Renders the Guides index page as a React component, listing guide cards and embedding structured data scripts.
+* @example
+* GuidesIndexPage()
+* <div>JSX element representing the guides index page</div>
+* @param {{Object}} {{props}} - Props object (not used; this component is self-contained).
+* @returns {{JSX.Element}} The rendered JSX element for the guides index page.
+**/
 export default function GuidesIndexPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
