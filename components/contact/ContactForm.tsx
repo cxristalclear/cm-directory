@@ -1,8 +1,11 @@
 "use client"
 
 import type { FormEvent } from "react"
+import { useState } from "react"
 
 export default function ContactForm() {
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
@@ -10,10 +13,16 @@ export default function ContactForm() {
     const email = formData.get("email")?.toString().trim()
     const message = formData.get("message")?.toString().trim()
 
-    if (!name || !email || !message) {
-      alert("Please fill in all fields")
+    const newErrors: Record<string, string> = {}
+    if (!name) newErrors.name = "Name is required"
+    if (!email) newErrors.email = "Email is required"
+    if (!message) newErrors.message = "Message is required"
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
       return
     }
+    setErrors({})
 
     // TODO: Implement form submission logic
   }
