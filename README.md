@@ -90,7 +90,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SITE_NAME=PCBA Finder
 
 # Social Profiles (Required for production metadata)
-NEXT_PUBLIC_TWITTER_URL=https://twitter.com/cmdirectory
+NEXT_PUBLIC_TWITTER_URL=https://twitter.com/pcbafinder
 NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/pcba-finder
 NEXT_PUBLIC_GITHUB_URL=https://github.com/pcba-finder/app
 
@@ -103,11 +103,31 @@ NEXT_PUBLIC_SHOW_DEBUG=false
 
 > **Deployment Tip:** Hosting on Vercel? Define the same environment variables in your project settings (Project Settings → Environment Variables). Files like `.env.local` are not uploaded during Vercel builds, so any values that only exist locally will be treated as missing at build time.
 
-### 4. Set up your Supabase database
+### 4. Create a local Python virtual environment
+
+Some utility scripts use Python. Create and activate a virtual environment in the project root so the auto-generated files stay local:
+
+```bash
+python -m venv .venv
+```
+
+Activate it:
+
+- macOS/Linux/WSL: `source .venv/bin/activate`
+- Windows PowerShell: `.venv\\Scripts\\Activate.ps1`
+
+Then install dependencies:
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 5. Set up your Supabase database
 
 Ensure your Supabase database has the required tables and schema. See the database schema documentation in `/docs/database-schema.md` (if available).
 
-### 5. Run the development server
+### 6. Run the development server
 
 ```bash
 npm run dev

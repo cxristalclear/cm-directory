@@ -185,7 +185,7 @@ export default async function Home({
                   <ActiveFiltersBar variant="inline" />
 
                   <div className="flex justify-center">
-                    <div className="w-full lg:w-full rounded-2xl border border-gray-200 bg-slate-50 shadow-sm overflow-hidden">
+                    <div className="w-full lg:w-full rounded-2xl border border-gray-200 bg-slate-50 shadow-sm overflow-hidden min-h-[520px]">
                       <MapErrorBoundary>
                         <LazyCompanyMap allCompanies={companies} />
                       </MapErrorBoundary>

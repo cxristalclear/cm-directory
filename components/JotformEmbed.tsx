@@ -15,12 +15,14 @@ export default function JotformEmbed({
 
   return (
     <div className="w-full">
-      <iframe
-        src={resolvedFormUrl}
-        title={title}
-        loading="lazy"
-        style={{ width: "100%", minHeight: minimumHeight, border: "none" }}
-      />
+      <div className="relative w-full" style={{ minHeight: minimumHeight, aspectRatio: "3 / 4" }}>
+        <iframe
+          src={resolvedFormUrl}
+          title={title}
+          loading="lazy"
+          style={{ width: "100%", height: "100%", border: "none" }}
+        />
+      </div>
     </div>
   )
 }
