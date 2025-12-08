@@ -5,9 +5,9 @@ import "./globals.css"
 import "./admin-glass.css"
 import { Toaster } from "sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics as VercelAnalytics } from "@vercel/analytics/next"
 import { OG_IMAGE_PATH, siteConfig } from "@/lib/config"
 import SiteFooter from "@/components/SiteFooter"
-import { Analytics } from "@vercel/analytics/next"
 import {
   jsonLdScriptProps,
   organizationJsonLd,
@@ -76,7 +76,6 @@ export default function RootLayout({
   const rootStructuredData = [organizationJsonLd, webSiteJsonLd]
 
   return (
-    
     <html lang="en" suppressHydrationWarning className="h-full">
       <head>
         {rootStructuredData.map((schema) => (
@@ -98,8 +97,8 @@ export default function RootLayout({
           <SiteFooter />
         </div>
         <SpeedInsights />
+        <VercelAnalytics />
         <Toaster position="top-right" />
-        <Analytics />
       </body>
     </html>
   )
