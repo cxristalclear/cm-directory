@@ -90,7 +90,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SITE_NAME=PCBA Finder
 
 # Social Profiles (Required for production metadata)
-NEXT_PUBLIC_TWITTER_URL=https://twitter.com/cmdirectory
+NEXT_PUBLIC_TWITTER_URL=https://twitter.com/PCBAFinder
 NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/pcba-finder
 NEXT_PUBLIC_GITHUB_URL=https://github.com/pcba-finder/app
 
