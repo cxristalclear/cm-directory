@@ -305,7 +305,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # Site Metadata (REQUIRED)
-NEXT_PUBLIC_SITE_URL=https://www.cm-directory.com
+NEXT_PUBLIC_SITE_URL=https://www.pcba-finder.com
 NEXT_PUBLIC_SITE_NAME="PCBA Finder"
 
 # Google Analytics (REQUIRED for analytics)

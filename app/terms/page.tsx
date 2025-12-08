@@ -84,8 +84,8 @@ export default function TermsOfServicePage() {
             <h2 className="text-2xl font-semibold text-gray-900">Contact</h2>
             <p className="text-sm text-gray-700">
               Questions about these terms can be directed to{" "}
-              <a href="mailto:legal@cm-directory.com" className="font-medium text-blue-600 underline">
-                legal@cm-directory.com
+              <a href="mailto:legal@pcba-finder.com" className="font-medium text-blue-600 underline">
+                legal@pcba-finder.com
               </a>
               .
             </p>

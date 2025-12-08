@@ -19,7 +19,7 @@ yarn add @supabase/auth-helpers-nextjs sonner
 Here's the complete file structure created:
 
 ``` plaintext
-cm-directory/
+pcba-finder/
 ├── app/
 │   └── admin/
 │       ├── login/

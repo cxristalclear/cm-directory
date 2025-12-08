@@ -11,14 +11,14 @@ describe("schema helpers", () => {
       {
         "@context": "https://schema.org",
         "@type": "Organization",
-        "logo": "https://www.cm-directory.com/og-image.png",
+        "logo": "https://www.pcbafinder.com/og-image.png",
         "name": "PCBA Finder",
         "sameAs": [
-          "https://twitter.com/cmdirectory",
-          "https://www.linkedin.com/company/cm-directory",
-          "https://github.com/cm-directory/app",
+          "https://twitter.com/pcbafinder",
+          "https://www.linkedin.com/company/pcbafinder",
+          "https://github.com/pcbafinder/app",
         ],
-        "url": "https://www.cm-directory.com",
+        "url": "https://www.pcbafinder.com",
       }
     `)
   })
@@ -29,17 +29,17 @@ describe("schema helpers", () => {
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "PCBA Finder",
-        "url": "https://www.cm-directory.com",
+        "url": "https://www.pcbafinder.com",
       }
     `)
   })
 
   it("builds breadcrumb lists with canonical URLs", () => {
     const breadcrumbSchema = createBreadcrumbListJsonLd([
-      { name: "Home", url: "https://www.cm-directory.com/" },
+      { name: "Home", url: "https://www.pcbafinder.com/" },
       {
         name: "Manufacturers",
-        url: "https://www.cm-directory.com/manufacturers",
+        url: "https://www.pcbafinder.com/manufacturers",
       },
     ])
 
@@ -50,13 +50,13 @@ describe("schema helpers", () => {
         "itemListElement": [
           {
             "@type": "ListItem",
-            "item": "https://www.cm-directory.com/",
+            "item": "https://www.pcbafinder.com/",
             "name": "Home",
             "position": 1,
           },
           {
             "@type": "ListItem",
-            "item": "https://www.cm-directory.com/manufacturers",
+            "item": "https://www.pcbafinder.com/manufacturers",
             "name": "Manufacturers",
             "position": 2,
           },
@@ -69,17 +69,17 @@ describe("schema helpers", () => {
     const collectionSchema = createCollectionPageJsonLd({
       name: "Contract Manufacturers in California",
       description: "Verified partners across the state",
-      url: "https://www.cm-directory.com/manufacturers/california",
+      url: "https://www.pcbafinder.com/manufacturers/california",
       numberOfItems: 42,
       breadcrumbs: [
-        { name: "Home", url: "https://www.cm-directory.com/" },
+        { name: "Home", url: "https://www.pcbafinder.com/" },
         {
           name: "Manufacturers",
-          url: "https://www.cm-directory.com/manufacturers",
+          url: "https://www.pcbafinder.com/manufacturers",
         },
         {
           name: "California",
-          url: "https://www.cm-directory.com/manufacturers/california",
+          url: "https://www.pcbafinder.com/manufacturers/california",
         },
       ],
     })
@@ -94,19 +94,19 @@ describe("schema helpers", () => {
           "itemListElement": [
             {
               "@type": "ListItem",
-              "item": "https://www.cm-directory.com/",
+              "item": "https://www.pcbafinder.com/",
               "name": "Home",
               "position": 1,
             },
             {
               "@type": "ListItem",
-              "item": "https://www.cm-directory.com/manufacturers",
+              "item": "https://www.pcbafinder.com/manufacturers",
               "name": "Manufacturers",
               "position": 2,
             },
             {
               "@type": "ListItem",
-              "item": "https://www.cm-directory.com/manufacturers/california",
+              "item": "https://www.pcbafinder.com/manufacturers/california",
               "name": "California",
               "position": 3,
             },
@@ -115,7 +115,7 @@ describe("schema helpers", () => {
         "description": "Verified partners across the state",
         "name": "Contract Manufacturers in California",
         "numberOfItems": 42,
-        "url": "https://www.cm-directory.com/manufacturers/california",
+        "url": "https://www.pcbafinder.com/manufacturers/california",
       }
     `)
   })

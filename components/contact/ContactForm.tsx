@@ -1,78 +1,32 @@
 "use client"
 
-import type { FormEvent } from "react"
-import { useState } from "react"
+import JotformEmbed from "@/components/JotformEmbed"
+
+const contactFormUrl = process.env.NEXT_PUBLIC_CONTACT_FORM_URL
 
 export default function ContactForm() {
-  const [errors, setErrors] = useState<Record<string, string>>({})
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-    const name = formData.get("name")?.toString().trim()
-    const email = formData.get("email")?.toString().trim()
-    const message = formData.get("message")?.toString().trim()
-
-    const newErrors: Record<string, string> = {}
-    if (!name) newErrors.name = "Name is required"
-    if (!email) newErrors.email = "Email is required"
-    if (!message) newErrors.message = "Message is required"
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
-    setErrors({})
-
-    // TODO: Implement form submission logic
+  if (!contactFormUrl) {
+    return (
+      <div className="mt-6 space-y-4 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900">
+        <p className="font-semibold">Add your Jotform link</p>
+        <p className="text-sm text-amber-800">
+          Provide a dedicated contact Jotform URL in <code>NEXT_PUBLIC_CONTACT_FORM_URL</code> to embed it here.
+          Until then, visitors can reach us at{" "}
+          <a className="font-medium text-amber-900 underline" href="mailto:team@pcbafinder.com">
+            team@pcbafinder.com
+          </a>.
+        </p>
+      </div>
+    )
   }
 
   return (
-    <form className="mt-8 space-y-6" aria-label="Contact form" onSubmit={handleSubmit}>
-      <div className="space-y-2">
-        <label htmlFor="contact-name" className="text-sm font-medium text-gray-700">
-          Full name
-        </label>
-        <input
-          id="contact-name"
-          name="name"
-          type="text"
-          autoComplete="name"
-          placeholder="Jane Smith"
-          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="contact-email" className="text-sm font-medium text-gray-700">
-          Work email
-        </label>
-        <input
-          id="contact-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@company.com"
-          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="contact-message" className="text-sm font-medium text-gray-700">
-          Message
-        </label>
-        <textarea
-          id="contact-message"
-          name="message"
-          rows={6}
-          placeholder="Describe your project, timeline, or questions for the team."
-          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-        />
-      </div>
-
-      <button type="submit" className="btn btn--primary btn--lg shadow-lg">
-        Submit request
-      </button>
-    </form>
+    <div className="mt-8 space-y-4">
+      <JotformEmbed
+        formUrl={contactFormUrl}
+        minimumHeight={1200}
+        title="Contact PCBA Finder"
+      />
+    </div>
   )
 }

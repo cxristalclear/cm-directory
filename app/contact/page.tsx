@@ -97,8 +97,8 @@ export default function ContactPage() {
               <p className="mt-2 text-sm text-gray-600">Monday – Friday, 8:00 AM to 6:00 PM PT</p>
               <p className="mt-4 text-sm text-gray-600">
                 Prefer email? Contact us at{" "}
-                <a href="mailto:team@cm-directory.com" className="font-medium text-blue-600 underline">
-                  team@cm-directory.com
+                <a href="mailto:team@pcba-finder.com" className="font-medium text-blue-600 underline">
+                  team@pcba-finder.com
                 </a>
               </p>
             </div>
@@ -132,7 +132,7 @@ export default function ContactPage() {
                 name: "How do I update our manufacturer profile?",
                 acceptedAnswer: {
                   "@type": "Answer",
-                  text: "Email the latest certifications, capabilities, and facility updates to team@cm-directory.com and the directory will be refreshed within two business days.",
+                  text: "Email the latest certifications, capabilities, and facility updates to team@pcba-finder.com and the directory will be refreshed within two business days.",
                 },
               },
               {
@@ -148,7 +148,7 @@ export default function ContactPage() {
                 name: "Who should I contact for media or partnership requests?",
                 acceptedAnswer: {
                   "@type": "Answer",
-                  text: "Reach out via the contact form or email team@cm-directory.com with your publication or organization details and the partnerships team will follow up.",
+                  text: "Reach out via the contact form or email team@pcba-finder.com with your publication or organization details and the partnerships team will follow up.",
                 },
               },
             ],
