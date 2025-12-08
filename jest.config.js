@@ -6,9 +6,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
     '^server-only$': '<rootDir>/test/__mocks__/server-only.ts',
   },
-  globals: {
-    'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.jest.json',
-    },
+  transform: {
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.jest.json' }],
   },
 }

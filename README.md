@@ -51,8 +51,8 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/cm-directory.git
-cd cm-directory
+git clone https://github.com/yourusername/pcba-finder.git
+cd pcba-finder
 ```
 
 ### 2. Install dependencies
@@ -91,8 +91,8 @@ NEXT_PUBLIC_SITE_NAME=PCBA Finder
 
 # Social Profiles (Required for production metadata)
 NEXT_PUBLIC_TWITTER_URL=https://twitter.com/cmdirectory
-NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/cm-directory
-NEXT_PUBLIC_GITHUB_URL=https://github.com/cm-directory/app
+NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/pcba-finder
+NEXT_PUBLIC_GITHUB_URL=https://github.com/pcba-finder/app
 
 # Analytics (Optional)
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
@@ -120,7 +120,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 ## 📁 Project Structure
 
 ```
-cm-directory/
+pcba-finder/
 ├── app/                      # Next.js app directory
 │   ├── companies/           # Company detail pages
 │   ├── manufacturers/       # Geographic filtering pages
@@ -170,11 +170,11 @@ Leaving these fields empty is safe—the schema output automatically omits undef
 
 ## 🔔 RSS Feed & Search Console
 
-- The live feed of company updates is exposed at `https://www.cm-directory.com/feed.xml` (also available locally at `/feed.xml`).
+- The live feed of company updates is exposed at `https://www.pcba-finder.com/feed.xml` (also available locally at `/feed.xml`).
 - Submit the feed to Google Search Console alongside the sitemap so crawlers learn about profile refreshes faster:
   1. Open Search Console for the PCBA Finder property.
   2. Navigate to **Indexing → Sitemaps**.
-  3. Enter `https://www.cm-directory.com/feed.xml` in the submission form and click **Submit**.
+  3. Enter `https://www.pcba-finder.com/feed.xml` in the submission form and click **Submit**.
 - The feed and sitemap share the `NEXT_PUBLIC_BUILD_TIMESTAMP` (or `BUILD_TIMESTAMP`) fallback, so triggering the existing build hook refreshes both documents together.
 
 ## 🧪 Testing
@@ -204,7 +204,7 @@ yarn test:watch
 3. Add your environment variables in the Vercel dashboard
 4. Deploy!
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/cm-directory)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/pcba-finder)
 
 ### Other Platforms
 
@@ -289,7 +289,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📧 Support
 
-For support, email support@cm-directory.com or open an issue in the GitHub repository.
+For support, email support@pcba-finder.com or open an issue in the GitHub repository.
 
 ## 🗺️ Roadmap
 

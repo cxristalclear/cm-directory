@@ -75,7 +75,7 @@ export default function Error({
           <p className="mt-6 text-sm text-gray-500">
             Need help?{' '}
             <a
-              href="mailto:support@cm-directory.com"
+              href="mailto:support@pcba-finder.com"
               className="btn btn--link font-medium"
             >
               Contact Support

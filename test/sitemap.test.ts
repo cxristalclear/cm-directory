@@ -66,7 +66,7 @@ describe('sitemap metadata serialization', () => {
     )
     const californiaEntry = entries.find(entry => entry.url.endsWith('/manufacturers/california'))
     const texasEntry = entries.find(entry => entry.url.endsWith('/manufacturers/texas'))
-    const rootEntry = entries.find(entry => entry.url === 'https://www.cm-directory.com')
+    const rootEntry = entries.find(entry => entry.url === 'https://www.pcbafinder.com')
     const capabilitiesIndexEntry = entries.find(entry => entry.url === getCanonicalUrl('/capabilities'))
     const pcbAssemblyEntry = entries.find(entry => entry.url === getCanonicalUrl('/pcb-assembly-manufacturers'))
     const certificationsIndexEntry = entries.find(entry => entry.url === getCanonicalUrl('/certifications'))

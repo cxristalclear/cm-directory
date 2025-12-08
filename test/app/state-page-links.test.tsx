@@ -213,7 +213,7 @@ describe("state manufacturers page links", () => {
       }),
     )
 
-    results.forEach(({ status, href }) => {
+    results.forEach(({ status }) => {
       expect(status).toBe(200)
     })
   })
