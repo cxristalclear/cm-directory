@@ -138,7 +138,8 @@ Choose ONE:
 **Current issue:** Multiple CTAs pointing to different pages
 
 Choose ONE destination for "Add Your Company" buttons:
-- [ ] **/add-your-company** (Educational resource page)- [X] **/list-your-company** (Different existing page)
+- [ ] **/add-your-company** (Current page that exists) **change this to a educational page**
+- [X] **/list-your-company** (Different existing page)
 - [ ] External Jotform link directly
 - [ ] Other: _______________
 
