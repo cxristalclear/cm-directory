@@ -803,8 +803,8 @@
   }
 }
 
-/* Dark mode adjustments for new utilities */.dark .text-gradient-light {
-  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%);
+/* Dark mode adjustments for new utilities */
+.dark .text-gradient-light {  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

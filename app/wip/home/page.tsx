@@ -279,17 +279,12 @@ export default async function Home({
                                 Connect directly with qualified partners.
                                 </p>
                                 <div className="flex gap-4 justify-center flex-wrap">
-                                  <Link href="/search">
-                                      <Button size="lg" className="rounded-xl px-8">
-                                          Search Manufacturers
-                                      </Button>
-                                  </Link>
-                                  <Link href="/list-your-company">
-                                      <Button size="lg" className="rounded-xl px-8">
-                                          List Your Company
-                                      </Button>
-                                  </Link>
-                                </div>  
+                                  <Button asChild size="lg" className="rounded-xl px-8">
+                                      <Link href="/search">Search Manufacturers</Link>
+                                  </Button>
+                                  <Button asChild size="lg" className="rounded-xl px-8">
+                                      <Link href="/list-your-company">List Your Company</Link>
+                                  </Button>                                </div>  
                             </div>
                         </div>
                         {/* Stats Grid */}

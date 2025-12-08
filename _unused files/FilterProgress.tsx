@@ -9,8 +9,10 @@ export const FilterProgress = ({ isPending }: { isPending: boolean }) => {
       role="progressbar"
       aria-label="Loading"
       aria-live="polite"
-    >
-      <div className="h-full bg-blue-600 transition-all duration-300 animate-progress" />
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuetext="Loading"
+    >      <div className="h-full bg-blue-600 transition-all duration-300 animate-progress" />
     </div>
   )
 }
