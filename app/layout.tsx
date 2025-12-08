@@ -5,6 +5,7 @@ import "./globals.css"
 import "./admin-glass.css"
 import { Toaster } from "sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next"
 import { OG_IMAGE_PATH, siteConfig } from "@/lib/config"
 import SiteFooter from "@/components/SiteFooter"
 import { Analytics } from "@vercel/analytics/next"
@@ -98,6 +99,7 @@ export default function RootLayout({
           <SiteFooter />
         </div>
         <SpeedInsights />
+        <Analytics />
         <Toaster position="top-right" />
         <Analytics />
       </body>
