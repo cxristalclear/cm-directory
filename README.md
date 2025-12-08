@@ -51,7 +51,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/pcba-finder.git
+git clone https://github.com/pcba-finder/app.git
 cd pcba-finder
 ```
 
@@ -204,7 +204,7 @@ yarn test:watch
 3. Add your environment variables in the Vercel dashboard
 4. Deploy!
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/pcba-finder)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/pcba-finder/app)
 
 ### Other Platforms
 

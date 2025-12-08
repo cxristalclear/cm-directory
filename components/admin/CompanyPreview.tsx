@@ -182,8 +182,11 @@ export default function CompanyPreview({
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Batch Save Complete (With Errors)</h3>
             <p className="text-sm text-gray-600">
-              {batchSaveProgress ? (batchSaveProgress.current - batchSaveProgress.failed) : 0} of {batchSaveProgress?.total ?? 'unknown'} saved successfully
-            </p>
+              {batchSaveProgress 
+                ? `${batchSaveProgress.current - batchSaveProgress.failed} of ${batchSaveProgress.total}` 
+                : totalCount 
+                  ? `${totalCount - batchSaveErrors.length} of ${totalCount}`
+                  : 'Save count unavailable'} saved successfully            </p>
           </div>
         </div>
 
