@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { siteConfig } from '@/lib/config'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -64,7 +65,7 @@ export default function AdminSidebar() {
           <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-200">
             <Building2 className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-lg admin-sidebar-logo">PCBA Finder</h1>
+              <h1 className="text-lg admin-sidebar-logo">{siteConfig.name}</h1>
               <p className="text-xs text-gray-500">Admin Dashboard</p>
             </div>
           </div>

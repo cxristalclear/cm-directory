@@ -17,7 +17,7 @@ export default function VenkelAd({ size = 'banner', className = '' }: VenkelAdPr
     return (
       <div className={`bg-gradient-to-r from-orange-50 via-white to-orange-50 rounded-xl border-2 border-dashed border-orange-200 px-4 py-2`}>
         <div className="flex items-center gap-1 mb-1">
-          <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider px-2 py-0.5 bg-orange-100 rounde">Sponsored</span>
+          <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider px-2 py-0.5 bg-orange-100 rounded">Sponsored</span>
         </div>
         <div className="p-1">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5">

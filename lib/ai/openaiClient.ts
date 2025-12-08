@@ -87,7 +87,7 @@ export async function callOpenAI(
 
 /**
  * Validate that the response is valid JSON
- */
+
 export function validateJSON(jsonString: string): boolean {
   try {
     JSON.parse(jsonString)
@@ -96,3 +96,5 @@ export function validateJSON(jsonString: string): boolean {
     return false
   }
 }
+  
+*/

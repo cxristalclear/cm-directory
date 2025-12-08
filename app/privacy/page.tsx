@@ -4,6 +4,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 const pageUrl = getCanonicalUrl("/privacy")
+const siteName = siteConfig.name
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Contract Manufacturer Directory",
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Privacy Policy | Contract Manufacturer Directory",
-    description: "Details on data collection, usage, and security practices for PCBA Finder.",
+    description: `Details on data collection, usage, and security practices for ${siteName}.`,
     url: pageUrl,
     siteName: siteConfig.name,
     type: "website",
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "Privacy Policy",
-    description: "Understand how PCBA Finder protects community and customer data.",
+    description: `Understand how ${siteName} protects community and customer data.`,
   },
   robots: {
     index: true,
@@ -85,8 +86,8 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-2xl font-semibold text-gray-900">Your choices</h2>
             <p className="text-sm text-gray-700">
               Contact{" "}
-              <a href="mailto:privacy@cm-directory.com" className="font-medium text-blue-600 underline">
-                privacy@cm-directory.com
+              <a href="mailto:privacy@pcba-finder.com" className="font-medium text-blue-600 underline">
+                privacy@pcba-finder.com
               </a>{" "}
               to request data removal or to ask questions about this policy. We respond to verified requests within 5 business days.
             </p>

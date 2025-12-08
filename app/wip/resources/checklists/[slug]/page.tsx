@@ -16,6 +16,8 @@ const checklistSummaryBySlug: Record<string, string> = {
     "Coordinate cross-functional milestones to ensure first builds stay on schedule.",
 }
 
+const siteName = siteConfig.name
+
 function formatChecklistTitle(slug: string): string {
   return slug
     .split("-")
@@ -31,13 +33,13 @@ export async function generateMetadata({ params }: ChecklistPageProps): Promise<
   const canonicalUrl = getCanonicalUrl(`/resources/checklists/${slug}`)
 
   return {
-    title: `${checklistTitle} | CM Directory Checklists`,
+    title: `${checklistTitle} | ${siteName} Checklists`,
     description: summary,
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: `${checklistTitle} | CM Directory Checklists`,
+      title: `${checklistTitle} | ${siteName} Checklists`,
       description: summary,
       url: canonicalUrl,
       siteName: siteConfig.name,

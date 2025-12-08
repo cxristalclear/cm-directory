@@ -27,6 +27,7 @@ export async function generateMetadata({
 }: { 
   params: Promise<{ slug: string }> 
 }): Promise<Metadata> {
+  const siteName = siteConfig.name
   const { slug } = await params
   
   // Fetch company data
@@ -45,7 +46,7 @@ export async function generateMetadata({
   
   if (!company) {
     return {
-      title: 'Company Not Found | PCBA Finder',
+      title: `Company Not Found | ${siteName}`,
       description: 'The requested manufacturer profile could not be found.'
     }
   }

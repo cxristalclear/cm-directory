@@ -110,6 +110,7 @@ export interface FacilityWithCompany extends Facility {
   company: Company
 }
 
+/** Predefined ranges for filters */
 export const EmployeeCountRanges = ["<50", "50-150", "150-500", "500-1000", "1000+"] as const
 export const RevenueRanges = ["<$10M", "$10M-50M", "$50M-150M", "$150M+"] as const
 export const FacilityTypes = ["HQ", "Manufacturing", "Engineering", "Sales Office"] as const

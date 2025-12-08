@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import type { CompanyFormData } from '@/types/admin'
 import CompanyPreview from './CompanyPreview'
 import { normalizeWebsiteUrl } from '@/lib/admin/utils'
@@ -316,6 +316,15 @@ export default function AiCompanyResearch({
     }
   }, [uploadCompanyName])
 
+  const clearCompanySelection = useCallback((options?: { clearSlug?: boolean }) => {
+    setSelectedCompanyId(null)
+    selectedCompanyNameRef.current = ''
+    const shouldClearSlug = options?.clearSlug ?? uploadCreateNew
+    if (shouldClearSlug) {
+      setUploadCompanySlug('')
+    }
+  }, [uploadCreateNew])
+
   useEffect(() => {
     if (!selectedCompanyId) {
       return
@@ -323,29 +332,29 @@ export default function AiCompanyResearch({
     if (uploadCompanyName.trim() !== selectedCompanyNameRef.current.trim()) {
       clearCompanySelection({ clearSlug: true })
     }
-  }, [uploadCompanyName, selectedCompanyId])
+  }, [uploadCompanyName, selectedCompanyId, clearCompanySelection])
 
   useEffect(() => {
     if (uploadCreateNew) {
       clearCompanySelection({ clearSlug: true })
     }
-  }, [uploadCreateNew])
+  }, [uploadCreateNew, clearCompanySelection])
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     if (!isDraggingFile) {
       setIsDraggingFile(true)
     }
   }
 
-  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     if (isDraggingFile) {
       setIsDraggingFile(false)
     }
   }
 
-  const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleFileDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     setIsDraggingFile(false)
     const file = event.dataTransfer.files?.[0] ?? null
@@ -362,15 +371,6 @@ export default function AiCompanyResearch({
     if (result?.slug) {
       setUploadCompanySlug(result.slug)
     } else {
-      setUploadCompanySlug('')
-    }
-  }
-
-  const clearCompanySelection = (options?: { clearSlug?: boolean }) => {
-    setSelectedCompanyId(null)
-    selectedCompanyNameRef.current = ''
-    const shouldClearSlug = options?.clearSlug ?? uploadCreateNew
-    if (shouldClearSlug) {
       setUploadCompanySlug('')
     }
   }
@@ -470,43 +470,47 @@ export default function AiCompanyResearch({
       const successful: ResearchedCompany[] = []
       const errors: Array<{ index: number; company: string; reason: string }> = []
 
-      for (let i = 0; i < uniqueCompanies.length; i++) {
-        const raw = uniqueCompanies[i]
+      const researchPromises = uniqueCompanies.map((raw, index) => {
         const normalizedName = raw.name
         const normalizedWebsite = raw.website
 
-        setBatchProgress({
-          current: i + 1,
-          total: uniqueCompanies.length,
-          company: normalizedName,
-        })
-
-        try {
-          const result = await requestResearch(normalizedName, normalizedWebsite)
-
-          if (result.success && result.data) {
-            successful.push({
-              id: createTempCompanyId(),
-              data: result.data,
-              enrichmentInfo: result.enrichmentData || 'No enrichment data available',
-              enrichmentPayload: result.enrichmentRaw,
-            })
-          } else {
-            errors.push({
-              index: i,
-              company: normalizedName,
-              reason: result.error || 'Failed to research company',
-            })
-          }
-        } catch (err) {
-          const reason = err instanceof Error ? err.message : 'Unknown error'
-          errors.push({
-            index: i,
-            company: normalizedName,
-            reason,
+        return requestResearch(normalizedName, normalizedWebsite)
+          .then(result => {
+            if (result.success && result.data) {
+              successful.push({
+                id: createTempCompanyId(),
+                data: result.data,
+                enrichmentInfo: result.enrichmentData || 'No enrichment data available',
+                enrichmentPayload: result.enrichmentRaw,
+              })
+            } else {
+              errors.push({
+                index,
+                company: normalizedName,
+                reason: result.error || 'Failed to research company',
+              })
+            }
           })
-        }
-      }
+          .catch(err => {
+            const reason = err instanceof Error ? err.message : 'Unknown error'
+            errors.push({
+              index,
+              company: normalizedName,
+              reason,
+            })
+          })
+
+          .finally(() => {
+            setBatchProgress(prev => ({
+              ...prev,
+              current: prev.current + 1,
+              company: normalizedName,
+            }))
+          })
+      })
+
+      await Promise.all(researchPromises)
+      errors.sort((a, b) => a.index - b.index)
 
       if (successful.length === 0) {
         messageParts.push(errors[0]?.reason || 'No companies were successfully researched')
@@ -627,45 +631,46 @@ export default function AiCompanyResearch({
       errors: [],
     })
 
-    const errors: Array<{ companyId: string; company: string; reason: string }> = []
-    let successCount = 0
-    let failCount = 0
+    const results = await Promise.allSettled(
+      researchedCompanies.map(async company => {
+        try {
+          await onSaveCompany(company.data, false, company.enrichmentPayload)
+          return company.id
+        } finally {
+          setBatchSaveProgress(prev => ({
+            ...prev,
+            current: prev.current + 1,
+            currentCompanyName: company.data.company_name,
+          }))
+        }
+      })
+    )
+
     const savedCompanyIds = new Set<string>()
+    const errors: Array<{ companyId: string; company: string; reason: string }> = []
 
-    for (let i = 0; i < researchedCompanies.length; i++) {
-      const company = researchedCompanies[i]
-      
-      try {
-        setBatchSaveProgress(prev => ({
-          ...prev,
-          currentCompanyName: company.data.company_name,
-        }))
-
-        await onSaveCompany(company.data, false, company.enrichmentPayload)
-        successCount++
-        savedCompanyIds.add(company.id)
-        
-        setBatchSaveProgress(prev => ({
-          ...prev,
-          current: prev.current + 1,
-        }))
-      } catch (err) {
-        failCount++
-        const reason = err instanceof Error ? err.message : 'Unknown error'
+    results.forEach((result, index) => {
+      const company = researchedCompanies[index]
+      if (result.status === 'fulfilled') {
+        savedCompanyIds.add(result.value)
+      } else {
+        const reason = result.reason instanceof Error ? result.reason.message : 'Unknown error'
         errors.push({
           companyId: company.id,
           company: company.data.company_name,
           reason,
         })
-
-        setBatchSaveProgress(prev => ({
-          ...prev,
-          current: prev.current + 1,
-          failed: prev.failed + 1,
-          errors: [...prev.errors, { companyId: company.id, company: company.data.company_name, reason }],
-        }))
       }
-    }
+    })
+
+    const successCount = savedCompanyIds.size
+    const failCount = errors.length
+
+    setBatchSaveProgress(prev => ({
+      ...prev,
+      failed: failCount,
+      errors,
+    }))
 
     setIsSavingAll(false)
 
@@ -703,32 +708,31 @@ export default function AiCompanyResearch({
     if (batchSaveProgress.errors.length === 0) return
 
     setIsSavingAll(true)
-    const newErrors: Array<{ companyId: string; company: string; reason: string }> = []
-    let failCount = 0
     const retriedSuccessIds = new Set<string>()
 
-    for (const errorItem of batchSaveProgress.errors) {
-      const company = researchedCompanies.find(c => c.id === errorItem.companyId)
-      if (!company) continue
+    const retryableCompanies = batchSaveProgress.errors
+      .map(errorItem => researchedCompanies.find(company => company.id === errorItem.companyId))
+      .filter((company): company is ResearchedCompany => Boolean(company))
 
-      try {
-        setBatchSaveProgress(prev => ({
-          ...prev,
-          currentCompanyName: company.data.company_name,
-        }))
+    const retryResults = await Promise.all(
+      retryableCompanies.map(async company => {
+        try {
+          await onSaveCompany(company.data, false, company.enrichmentPayload)
+          retriedSuccessIds.add(company.id)
+          return null
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : 'Unknown error'
+          return {
+            companyId: company.id,
+            company: company.data.company_name,
+            reason,
+          }
+        }
+      })
+    )
 
-        await onSaveCompany(company.data, false, company.enrichmentPayload)
-        retriedSuccessIds.add(company.id)
-      } catch (err) {
-        failCount++
-        const reason = err instanceof Error ? err.message : 'Unknown error'
-        newErrors.push({
-          companyId: company.id,
-          company: company.data.company_name,
-          reason,
-        })
-      }
-    }
+    const newErrors = retryResults.filter((result): result is { companyId: string; company: string; reason: string } => Boolean(result))
+    const failCount = newErrors.length
 
     setIsSavingAll(false)
 

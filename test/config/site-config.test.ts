@@ -26,19 +26,19 @@ describe('site configuration', () => {
   it('maps environment-backed urls into the site config', () => {
     setEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co')
     setEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'anon-key')
-    setEnv('NEXT_PUBLIC_SITE_URL', 'https://www.cm-directory.com/')
-    setEnv('NEXT_PUBLIC_TWITTER_URL', 'https://twitter.com/cm_directory')
-    setEnv('NEXT_PUBLIC_LINKEDIN_URL', 'https://www.linkedin.com/company/cm-directory')
-    setEnv('NEXT_PUBLIC_GITHUB_URL', 'https://github.com/cm-directory/app')
+    setEnv('NEXT_PUBLIC_SITE_URL', 'https://www.pcbafinder.com/')
+    setEnv('NEXT_PUBLIC_TWITTER_URL', 'https://twitter.com/pcbafinder')
+    setEnv('NEXT_PUBLIC_LINKEDIN_URL', 'https://www.linkedin.com/company/pcbafinder')
+    setEnv('NEXT_PUBLIC_GITHUB_URL', 'https://github.com/pcbafinder/app')
 
      const { siteConfig, OG_IMAGE_PATH } = loadConfig()
 
-    expect(siteConfig.url).toBe('https://www.cm-directory.com')
-    expect(siteConfig.ogImage).toBe(`https://www.cm-directory.com${OG_IMAGE_PATH}`)
+    expect(siteConfig.url).toBe('https://www.pcbafinder.com')
+    expect(siteConfig.ogImage).toBe(`https://www.pcbafinder.com${OG_IMAGE_PATH}`)
     expect(siteConfig.links).toEqual({
-      twitter: 'https://twitter.com/cm_directory',
-      linkedin: 'https://www.linkedin.com/company/cm-directory',
-      github: 'https://github.com/cm-directory/app',
+      twitter: 'https://twitter.com/pcbafinder',
+      linkedin: 'https://www.linkedin.com/company/pcbafinder',
+      github: 'https://github.com/pcbafinder/app',
     })
   })
 
@@ -51,11 +51,11 @@ describe('site configuration', () => {
 
     const { siteConfig } = loadConfig()
 
-    expect(siteConfig.url).toBe('https://www.cm-directory.com')
+    expect(siteConfig.url).toBe('https://www.pcbafinder.com')
     expect(siteConfig.links).toEqual({
-      twitter: 'https://twitter.com/cmdirectory',
-      linkedin: 'https://www.linkedin.com/company/cm-directory',
-      github: 'https://github.com/cm-directory/app',
+      twitter: 'https://twitter.com/pcbafinder',
+      linkedin: 'https://www.linkedin.com/company/pcbafinder',
+      github: 'https://github.com/pcbafinder/app',
     })
 
     expect(warningSpy).toHaveBeenCalledWith(
@@ -87,10 +87,10 @@ describe('site configuration', () => {
     setEnv('NODE_ENV', 'production')
     setEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co')
     setEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'anon-key')
-    setEnv('NEXT_PUBLIC_SITE_URL', 'https://www.cm-directory.com')
+    setEnv('NEXT_PUBLIC_SITE_URL', 'https://www.pcbafinder.com')
     setEnv('NEXT_PUBLIC_TWITTER_URL', 'https://twitter.com/your_handle')
-    setEnv('NEXT_PUBLIC_LINKEDIN_URL', 'https://www.linkedin.com/company/cm-directory')
-    setEnv('NEXT_PUBLIC_GITHUB_URL', 'https://github.com/cm-directory/app')
+    setEnv('NEXT_PUBLIC_LINKEDIN_URL', 'https://www.linkedin.com/company/pcbafinder')
+    setEnv('NEXT_PUBLIC_GITHUB_URL', 'https://github.com/pcbafinder/app')
 
     expect(() => loadConfig()).toThrow('Placeholder environment variable(s) detected')
   })

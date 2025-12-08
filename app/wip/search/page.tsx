@@ -1,5 +1,4 @@
 import { Suspense } from "react"
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Map as MapIcon } from "lucide-react"
 import CompanyList from "@/components/wip/CompanyList1"
 import FilterDebugger from "@/components/FilterDebugger"
@@ -64,14 +63,15 @@ const COMPANY_FIELDS = `
 `
 
 const MAX_COMPANIES = 500
+const siteName = siteConfig.name
 
 export const metadata = {
-  title: "CM Directory - Find Electronics Contract Manufacturers",
+  title: `${siteName} - Find Electronics Contract Manufacturers`,
   description:
     "Engineer-first directory of verified electronics contract manufacturers. Filter by capabilities, certifications, industries, and location.",
   alternates: { canonical: siteConfig.url },
   openGraph: {
-    title: "CM Directory - Electronics Contract Manufacturers",
+    title: `${siteName} - Electronics Contract Manufacturers`,
     description:
       "Find and compare PCB assembly partners by capability, certification, and location.",
     url: siteConfig.url,
@@ -80,7 +80,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary",
-    title: "CM Directory - Electronics Contract Manufacturers",
+    title: `${siteName} - Electronics Contract Manufacturers`,
     description:
       "Filter verified manufacturers by capability, certification, and location.",
   },
@@ -118,8 +118,6 @@ export default async function Home({
   const companies = await getData()
 
   return (
-    <Suspense fallback={<div className="p-4">Loading...</div>}>
-      <SpeedInsights />
       <FilterProvider initialFilters={initialFilters}>
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <Navbar />
@@ -131,8 +129,7 @@ export default async function Home({
               {/* Spans 7 columns. Flows naturally. */}
               <div className="lg:col-span-7 px-1 md:px-0 space-y-6">
                 {/* Sticky search + filters scoped to the list column */}
-                <div className=" top-0 z-30 -mx-4 md:mx-0">
-                  <div className="py-3 space-y-6">
+                <div className="sticky top-0 z-30 -mx-4 md:mx-0">                  <div className="py-3 space-y-6">
                     <div className="max-w-full">
                       <SearchBar companies={companies} variant="inline" />
                     </div>
@@ -142,8 +139,10 @@ export default async function Home({
                 
                 {/* Mobile Map Toggle (Floating Button) */}
                 <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-                   <button className="pointer-events-auto bg-gray-900 text-white px-5 py-2.5 rounded-full shadow-xl flex items-center gap-2 font-medium text-sm hover:scale-105 transition-transform">
-                     <MapIcon className="w-4 h-4" /> Map View
+                   <button 
+                     onClick={() => {/* Add map toggle logic */}}
+                     className="pointer-events-auto bg-gray-900 text-white px-5 py-2.5 rounded-full shadow-xl flex items-center gap-2 font-medium text-sm hover:scale-105 transition-transform"
+                   >                     <MapIcon className="w-4 h-4" /> Map View
                    </button>
                 </div>
 
@@ -194,6 +193,5 @@ export default async function Home({
           </main>
         </div>
       </FilterProvider>
-    </Suspense>
   )
 }

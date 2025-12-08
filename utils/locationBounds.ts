@@ -1,6 +1,7 @@
 import type { LngLatBoundsLike } from "mapbox-gl"
 import type { FilterState } from "@/types/company"
 
+/** Predefined bounds for countries */
 export const COUNTRY_BOUNDS: Record<string, LngLatBoundsLike> = {
   USA: [-124.848974, 24.396308, -66.885444, 49.384358],
   US: [-124.848974, 24.396308, -66.885444, 49.384358],

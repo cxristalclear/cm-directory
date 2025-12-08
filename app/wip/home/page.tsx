@@ -16,8 +16,7 @@ import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import Navbar from "@/components/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import Link from "next/dist/client/link"
-
+import Link from "next/link"
 export const revalidate = 300
 
 const COMPANY_FIELDS = `
@@ -65,17 +64,18 @@ const COMPANY_FIELDS = `
 `
 
 const MAX_COMPANIES = 500
+const siteName = siteConfig.name
 
 // AI-Enhanced SEO Metadata with JSON-LD Schema
 export const metadata = {
-  title: "CM Directory – Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)",
+  title: `${siteName} – Find Electronics Contract Manufacturers (PCB Assembly, Box Build, Cable Harness)`,
   description:
     "Search verified electronics contract manufacturers by capability, certification, and location. Filter by SMT, Through-Hole, Box Build, ISO 13485, AS9100, and more. List your company for free.",
   alternates: { 
     canonical: siteConfig.url 
   },
   openGraph: {
-    title: "CM Directory – Electronics Contract Manufacturers",
+    title: `${siteName} – Electronics Contract Manufacturers`,
     description:
       "Find and compare PCB assembly partners by capability, certification, and location. Connect with qualified manufacturers worldwide.",
     url: siteConfig.url,
@@ -86,13 +86,13 @@ export const metadata = {
         url: `${siteConfig.url}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "CM Directory - Contract Manufacturing Search Platform"
+        alt: `${siteName} - Contract Manufacturing Search Platform`
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "CM Directory – Electronics Contract Manufacturers",
+    title: `${siteName} – Electronics Contract Manufacturers`,
     description:
       "Filter verified manufacturers by capability, certification, and location. Find your next manufacturing partner.",
   },
@@ -108,7 +108,7 @@ export const metadata = {
     },
   },
   other: {
-    'ai-summary': 'CM Directory is an engineer-first platform for finding electronics contract manufacturers. Search by capabilities (SMT, Through-Hole, Box Build), certifications (ISO 13485, AS9100), and location.',
+    'ai-summary': `${siteName} is an engineer-first platform for finding electronics contract manufacturers. Search by capabilities (SMT, Through-Hole, Box Build), certifications (ISO 13485, AS9100), and location.`,
   }
 }
 
@@ -129,7 +129,7 @@ function generateJSONLD() {
     {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
-      'name': 'CM Directory',
+      'name': siteName,
       'url': siteConfig.url,
       'description': 'Engineer-first directory of verified electronics contract manufacturers',
       'potentialAction': {
@@ -155,7 +155,7 @@ function generateJSONLD() {
     {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      'name': 'CM Directory',
+      'name': siteName,
       'url': siteConfig.url,
       'logo': `${siteConfig.url}/logo.png`,
       'description': 'Directory of verified electronics contract manufacturers',
@@ -168,10 +168,10 @@ function generateJSONLD() {
       'mainEntity': [
         {
           '@type': 'Question',
-          'name': 'What is CM Directory?',
+          'name': `What is ${siteName}?`,
           'acceptedAnswer': {
             '@type': 'Answer',
-            'text': 'CM Directory is an engineer-first platform for finding verified electronics contract manufacturers. Filter by capabilities, certifications, and location to find your ideal manufacturing partner.'
+            'text': `${siteName} is an engineer-first platform for finding verified electronics contract manufacturers. Filter by capabilities, certifications, and location to find your ideal manufacturing partner.`
           }
         },
         {
@@ -279,17 +279,12 @@ export default async function Home({
                                 Connect directly with qualified partners.
                                 </p>
                                 <div className="flex gap-4 justify-center flex-wrap">
-                                    <Button size="lg" className="rounded-xl px-8">
-                                        <Link href="/search">
-                                        Search Manufacturers
-                                        </Link>
-                                    </Button>
-                                    <Button size="lg" variant="outline" className="rounded-xl px-8">
-                                        <Link href="/list-your-company">
-                                        List Your Company
-                                        </Link>
-                                    </Button>
-                                </div>  
+                                  <Button asChild size="lg" className="rounded-xl px-8">
+                                      <Link href="/search">Search Manufacturers</Link>
+                                  </Button>
+                                  <Button asChild size="lg" className="rounded-xl px-8">
+                                      <Link href="/list-your-company">List Your Company</Link>
+                                  </Button>                                </div>  
                             </div>
                         </div>
                         {/* Stats Grid */}
@@ -342,7 +337,9 @@ export default async function Home({
                         </li>
                       </ul>
                       <div className="mt-6">
-                        <Button className="w-full rounded-xl">Start Your Search</Button>
+                        <Link href="/search">
+                          <Button className="w-full rounded-xl">Start Your Search</Button>
+                        </Link>
                       </div>
                     </CardContent>
                   </Card>
@@ -369,7 +366,9 @@ export default async function Home({
                         </li>
                       </ul>
                       <div className="mt-6">
-                        <Button variant="outline" className="w-full rounded-xl">Get Listed Free</Button>
+                        <Link href="/list-your-company">
+                          <Button variant="outline" className="w-full rounded-xl">Get Listed Free</Button>
+                        </Link>                      
                       </div>
                     </CardContent>
                   </Card>
@@ -386,7 +385,9 @@ export default async function Home({
                       <h2 className="text-3xl font-bold text-slate-900">Featured Manufacturers</h2>
                       <p className="text-slate-600 mt-2">Recently updated verified partners</p>
                     </div>
-                    <Button variant="outline" className="rounded-xl">View All</Button>
+                    <Link href="/manufacturers">
+                      <Button variant="outline" className="rounded-xl">View All</Button>
+                    </Link>
                   </div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {featuredCompanies.map((company) => (
@@ -481,7 +482,7 @@ export default async function Home({
             {/* How It Works Section */}
             <section className="py-12 px-4 bg-white">
               <div className="max-w-6xl mx-auto">
-                <h2 className="text-3xl font-bold text-center mb-12 text-slate-900">How CM Directory Works</h2>
+                <h2 className="text-3xl font-bold text-center mb-12 text-slate-900">How {siteName} Works</h2>
                 <div className="grid md:grid-cols-3 gap-8">
                   {[
                     {
@@ -521,8 +522,8 @@ export default async function Home({
                 <div className="grid md:grid-cols-2 gap-6">
                   {[
                     {
-                      q: 'What is CM Directory?',
-                      a: 'CM Directory is an engineer-first platform for finding verified electronics contract manufacturers. Filter by capabilities, certifications, and location to find your ideal manufacturing partner.'
+                      q: `What is ${siteName}?`,
+                      a: `${siteName} is an engineer-first platform for finding verified electronics contract manufacturers. Filter by capabilities, certifications, and location to find your ideal manufacturing partner.`
                     },
                     {
                       q: 'How do I search for manufacturers?',
@@ -542,7 +543,7 @@ export default async function Home({
                     },
                     {
                       q: 'Is there a fee for buyers?',
-                      a: 'No, CM Directory is completely free for buyers. Search, compare, and contact manufacturers at no cost.'
+                      a: `No, ${siteName} is completely free for buyers. Search, compare, and contact manufacturers at no cost.`
                     }
                   ].map((faq, index) => (
                     <Card key={index} className="border-slate-200">
@@ -571,12 +572,16 @@ export default async function Home({
                   Join {stats.manufacturers}+ verified manufacturers and start connecting today
                 </p>
                 <div className="flex gap-4 justify-center flex-wrap">
-                  <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 rounded-xl px-8">
-                    Search Manufacturers
-                  </Button>
-                  <Button size="lg" variant="outline" className="text-white border-white hover:bg-blue-700 rounded-xl px-8">
-                    List Your Company Free
-                  </Button>
+                    <Link href="/search">
+                      <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 rounded-xl px-8">
+                        Search Manufacturers
+                      </Button>
+                    </Link>
+                    <Link href="/list-your-company">
+                      <Button size="lg" variant="outline" className="text-white border-white hover:bg-blue-700 rounded-xl px-8">
+                        List Your Company Free
+                      </Button>
+                    </Link>
                 </div>
               </div>
             </section>

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
+import { siteConfig } from '@/lib/config'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -46,7 +47,7 @@ export default function AdminLoginPage() {
             Admin Login
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            PCBA Finder Admin Dashboard
+            {siteConfig.name} Admin Dashboard
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>

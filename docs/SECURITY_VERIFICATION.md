@@ -88,13 +88,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # Site Configuration
-NEXT_PUBLIC_SITE_URL=https://www.cm-directory.com
+NEXT_PUBLIC_SITE_URL=https://www.pcba-finder.com
 NEXT_PUBLIC_SITE_NAME=PCBA Finder
 
 # Social Profiles
-NEXT_PUBLIC_TWITTER_URL=https://twitter.com/cmdirectory
-NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/cm-directory
-NEXT_PUBLIC_GITHUB_URL=https://github.com/cm-directory/app
+NEXT_PUBLIC_TWITTER_URL=https://twitter.com/PCBAFinder
+NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/pcba-finder
+NEXT_PUBLIC_GITHUB_URL=https://github.com/pcba-finder/app
 ```
 
 ### Required for AI Features (Admin Only)

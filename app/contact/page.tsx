@@ -1,9 +1,11 @@
 import Script from "next/script"
 import type { Metadata } from "next"
+import ContactForm from "@/components/contact/ContactForm"
 import { Breadcrumbs } from "@/components/Breadcrumbs"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 const pageUrl = getCanonicalUrl("/contact")
+const siteName = siteConfig.name
 
 export const metadata: Metadata = {
   title: "Contact | Contract Manufacturer Directory",
@@ -14,15 +16,15 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Contact | Contract Manufacturer Directory",
-    description: "Get in touch with PCBA Finder for help with sourcing manufacturers or updating your company profile.",
+    description: `Get in touch with ${siteName} for help with sourcing manufacturers or updating your company profile.`,
     url: pageUrl,
     siteName: siteConfig.name,
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Contact PCBA Finder",
-    description: "Reach the PCBA Finder team for support and collaboration requests.",
+    title: `Contact ${siteName}`,
+    description: `Reach the ${siteName} team for support and collaboration requests.`,
   },
   robots: {
     index: true,
@@ -36,7 +38,7 @@ export default function ContactPage() {
       <header className="gradient-bg pb-20 pt-16 text-white">
         <div className="container mx-auto px-4">
           <p className="text-sm uppercase tracking-wide text-blue-100">Support & Partnerships</p>
-          <h1 className="mt-3 text-4xl font-semibold md:text-5xl">Contact PCBA Finder</h1>
+          <h1 className="mt-3 text-4xl font-semibold md:text-5xl">Contact {siteName}</h1>
           <p className="mt-4 max-w-2xl text-lg text-blue-100">
             We help engineering, operations, and sourcing teams find the right manufacturing partners. Reach out and we will
             respond within one business day.
@@ -62,55 +64,7 @@ export default function ContactPage() {
               steps.
             </p>
 
-            <form className="mt-8 space-y-6" aria-label="Contact form">
-              <div className="space-y-2">
-                <label htmlFor="contact-name" className="text-sm font-medium text-gray-700">
-                  Full name
-                </label>
-                <input
-                  id="contact-name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  placeholder="Jane Smith"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="contact-email" className="text-sm font-medium text-gray-700">
-                  Work email
-                </label>
-                <input
-                  id="contact-email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@company.com"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="contact-message" className="text-sm font-medium text-gray-700">
-                  Message
-                </label>
-                <textarea
-                  id="contact-message"
-                  name="message"
-                  rows={6}
-                  placeholder="Describe your project, timeline, or questions for the team."
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn--primary btn--lg shadow-lg"
-              >
-                Submit request
-              </button>
-            </form>
+            <ContactForm />
           </div>
 
           <aside className="space-y-6">
@@ -143,8 +97,8 @@ export default function ContactPage() {
               <p className="mt-2 text-sm text-gray-600">Monday – Friday, 8:00 AM to 6:00 PM PT</p>
               <p className="mt-4 text-sm text-gray-600">
                 Prefer email? Contact us at{" "}
-                <a href="mailto:team@cm-directory.com" className="font-medium text-blue-600 underline">
-                  team@cm-directory.com
+                <a href="mailto:team@pcba-finder.com" className="font-medium text-blue-600 underline">
+                  team@pcba-finder.com
                 </a>
               </p>
             </div>
@@ -178,7 +132,7 @@ export default function ContactPage() {
                 name: "How do I update our manufacturer profile?",
                 acceptedAnswer: {
                   "@type": "Answer",
-                  text: "Email the latest certifications, capabilities, and facility updates to team@cm-directory.com and the directory will be refreshed within two business days.",
+                  text: "Email the latest certifications, capabilities, and facility updates to team@pcba-finder.com and the directory will be refreshed within two business days.",
                 },
               },
               {
@@ -194,7 +148,7 @@ export default function ContactPage() {
                 name: "Who should I contact for media or partnership requests?",
                 acceptedAnswer: {
                   "@type": "Answer",
-                  text: "Reach out via the contact form or email team@cm-directory.com with your publication or organization details and the partnerships team will follow up.",
+                  text: "Reach out via the contact form or email team@pcba-finder.com with your publication or organization details and the partnerships team will follow up.",
                 },
               },
             ],

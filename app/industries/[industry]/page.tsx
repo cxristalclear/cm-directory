@@ -20,6 +20,8 @@ import {
   type IndustrySlug,
 } from "@/lib/industries"
 
+const siteName = siteConfig.name
+
 export async function generateStaticParams() {
   return getIndustrySlugs().map(industry => ({
     industry,
@@ -36,7 +38,7 @@ export async function generateMetadata({
 
   if (!industryData) {
     return {
-      title: 'Industry Not Found | PCBA Finder',
+      title: `Industry Not Found | ${siteName}`,
       description: 'The requested industry page could not be found.'
     }
   }

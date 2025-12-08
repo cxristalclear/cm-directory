@@ -3,9 +3,6 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { geocodeFacilityToPoint, GeocodeFacilityError } from '@/lib/admin/geocoding'
-import type { Database } from '@/lib/database.types'
-
-type Facility = Database['public']['Tables']['facilities']['Row']
 
 interface GeocodingResult {
   facilityId: string
@@ -124,10 +121,10 @@ export default function BackfillGeocodingPage() {
 
           failCount++
         }
-
-        // Update UI with progress
-        setResults([...geocodingResults])
       }
+
+     // Update UI with final results
+     setResults(geocodingResults)
 
       setSummary({
         total: facilities.length,
@@ -142,7 +139,6 @@ export default function BackfillGeocodingPage() {
       setLoading(false)
     }
   }
-
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Header */}

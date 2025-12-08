@@ -52,7 +52,7 @@ export const CAPABILITY_DEFINITIONS: CapabilityMetadata[] = [
           "Review placement accuracy specifications, feeder capacity, and inspection coverage. Confirm the team can document reflow profiles and process capability for your component mix.",
       },
       {
-        question: "How does CM Directory score SMT suppliers?",
+        question: "How does PCBA Finder score SMT suppliers?",
         answer:
           "We prioritize factories with automated inline inspection, process engineering support, and documented quality escapes below industry benchmarks.",
       },
@@ -204,6 +204,7 @@ export const CAPABILITY_DEFINITIONS: CapabilityMetadata[] = [
   },
 ]
 
+
 export const CAPABILITY_BY_SLUG = Object.fromEntries(
   CAPABILITY_DEFINITIONS.map(definition => [definition.slug, definition as CapabilityMetadata]),
 )
@@ -211,3 +212,4 @@ export const CAPABILITY_BY_SLUG = Object.fromEntries(
 export function getCapabilityDefinition(slug: string): CapabilityMetadata | null {
   return CAPABILITY_BY_SLUG[slug] ?? null
 }
+
