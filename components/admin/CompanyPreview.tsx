@@ -182,8 +182,11 @@ export default function CompanyPreview({
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Batch Save Complete (With Errors)</h3>
             <p className="text-sm text-gray-600">
-              {(batchSaveProgress?.current ?? 0) - (batchSaveProgress?.failed ?? 0)} of {batchSaveProgress?.total ?? 0} saved successfully
-            </p>
+              {batchSaveProgress 
+                ? `${batchSaveProgress.current - batchSaveProgress.failed} of ${batchSaveProgress.total}` 
+                : totalCount 
+                  ? `${totalCount - batchSaveErrors.length} of ${totalCount}`
+                  : 'Save count unavailable'} saved successfully            </p>
           </div>
         </div>
 
@@ -398,8 +401,8 @@ export default function CompanyPreview({
 
       {/* Save All Confirmation Modal */}
       {showSaveAllConfirm && totalCount && totalCount > 1 && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 rounded-lg">
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">            
             <h4 className="text-lg font-semibold text-gray-900 mb-4">Save All Companies?</h4>
             <p className="text-sm text-gray-600 mb-6">
               This will save all {totalCount} researched companies to the database.

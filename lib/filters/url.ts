@@ -3,7 +3,7 @@ import { normalizeCountryCode, normalizeStateFilterValue } from "@/utils/locatio
 import { EmployeeCountRanges, type EmployeeCountRange } from "@/types/company"
 
 export const US_STATE_CODES = new Set(Object.keys(STATE_NAMES))
-
+/** List of supported capability slugs */
 const CAPABILITIES = [
   "smt",
   "through_hole",

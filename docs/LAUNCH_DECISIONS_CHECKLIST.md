@@ -153,7 +153,7 @@ Choose ONE destination for "Add Your Company" buttons:
 For "Submit Free Listing" button:
 - [ ] Link to Jotform (provide URL: _______________)
 - [x] Link to /list-your-company page
-- [ ] Open email to: sales@cm-directory.com
+- [ ] Open email to: sales@pcba-finder.com
 - [ ] Other: _______________
 
 For "Contact Sales" button:
@@ -277,7 +277,7 @@ Choose ONE:
 
 Choose ONE:
 - [ ] **Option A: Generic Email**
-  - support@cm-directory.com
+  - support@pcba-finder.com
   - Professional
   - Need to set up inbox
   
@@ -287,9 +287,9 @@ Choose ONE:
   - Less professional
   
 - [ ] **Option C: Separate Emails by Type**
-  - support@cm-directory.com (user issues)
-  - sales@cm-directory.com (business inquiries)
-  - admin@cm-directory.com (internal)
+  - support@pcba-finder.com (user issues)
+  - sales@pcba-finder.com (business inquiries)
+  - admin@pcba-finder.com (internal)
 
 **My choice:** [ A / B / C ]
 

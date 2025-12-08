@@ -16,6 +16,8 @@ const guideSummaryBySlug: Record<string, string> = {
     "Guidance for steering cross-functional conversations when supply chain issues threaten schedules or quality metrics.",
 }
 
+const siteName = siteConfig.name
+
 function formatGuideTitle(slug: string): string {
   return slug
     .split("-")
@@ -30,14 +32,14 @@ export async function generateMetadata({ params }: GuideArticlePageProps): Promi
   const canonicalUrl = getCanonicalUrl(`/resources/guides/${slug}`)
 
   return {
-    title: `${articleTitle} | CM Directory Guides`,
+    title: `${articleTitle} | ${siteName} Guides`,
     description: summary,
     alternates: { canonical: canonicalUrl },
     openGraph: {
-      title: `${articleTitle} | CM Directory Guides`,
+      title: `${articleTitle} | ${siteName} Guides`,
       description: summary,
       url: canonicalUrl,
-      siteName: siteConfig.name,
+      siteName: siteName,
       type: "article",
     },
     twitter: {
@@ -128,7 +130,7 @@ export default async function GuideArticlePage({ params }: GuideArticlePageProps
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebSite",
-            name: siteConfig.name,
+            name: siteName,
             url: siteConfig.url,
           }),
         }}
@@ -145,12 +147,12 @@ export default async function GuideArticlePage({ params }: GuideArticlePageProps
             description: summary,
             author: {
               "@type": "Organization",
-              name: siteConfig.name,
+              name: siteName,
               url: siteConfig.url,
             },
             publisher: {
               "@type": "Organization",
-              name: siteConfig.name,
+              name: siteName,
               url: siteConfig.url,
             },
             datePublished: publicationDate,

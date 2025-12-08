@@ -889,7 +889,7 @@ Use only the document. If data is absent, leave the field empty (""), null, or [
 
 /**
  * Research multiple companies in sequence
- */
+ * 
 export async function researchBatchCompanies(
   companies: Array<{ name: string; website?: string }>,
     onProgress?: (index: number, total: number, company: string) => void,
@@ -915,3 +915,4 @@ export async function researchBatchCompanies(
 
   return results
 }
+ */

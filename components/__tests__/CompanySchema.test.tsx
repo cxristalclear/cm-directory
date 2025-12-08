@@ -200,8 +200,8 @@ describe('CompanySchema', () => {
     const scriptContent = markup.slice(markup.indexOf('>') + 1, markup.lastIndexOf('<'))
     const schema = JSON.parse(scriptContent)
 
-    expect(schema['@id']).toBe('https://www.cm-directory.com/companies/acme-manufacturing')
-    expect(schema.url).toBe('https://www.cm-directory.com/companies/acme-manufacturing')
+    expect(schema['@id']).toBe('https://www.pcbafinder.com/companies/acme-manufacturing')
+    expect(schema.url).toBe('https://www.pcbafinder.com/companies/acme-manufacturing')
     expect(schema.sameAs).toEqual([
       'https://acme.example.com',
       'https://www.linkedin.com/company/acme',
@@ -238,7 +238,7 @@ describe('CompanySchema', () => {
     const scriptContent = markup.slice(markup.indexOf('>') + 1, markup.lastIndexOf('<'))
     const schema = JSON.parse(scriptContent)
 
-    expect(schema['@id']).toBe('https://www.cm-directory.com/companies/minimal-manufacturer')
+    expect(schema['@id']).toBe('https://www.pcbafinder.com/companies/minimal-manufacturer')
     expect(schema.sameAs).toEqual(['https://acme.example.com'])
     expect(schema.logo).toBeUndefined()
     expect(schema.image).toBeUndefined()

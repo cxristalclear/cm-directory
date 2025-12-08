@@ -4,6 +4,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 const pageUrl = getCanonicalUrl("/terms")
+const siteName = siteConfig.name
 
 export const metadata: Metadata = {
   title: "Terms of Service | Contract Manufacturer Directory",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Terms of Service | Contract Manufacturer Directory",
-    description: "Understand the acceptable use policies and legal terms for the PCBA Finder platform.",
+    description: `Understand the acceptable use policies and legal terms for the ${siteName} platform.`,
     url: pageUrl,
     siteName: siteConfig.name,
     type: "website",
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "Terms of Service",
-    description: "Review the terms and acceptable use guidelines for PCBA Finder.",
+    description: `Review the terms and acceptable use guidelines for ${siteName}.`,
   },
   robots: {
     index: true,
@@ -37,7 +38,7 @@ export default function TermsOfServicePage() {
           <p className="text-sm uppercase tracking-wide text-blue-100">Terms</p>
           <h1 className="mt-3 text-4xl font-semibold md:text-5xl">Terms of Service</h1>
           <p className="mt-4 max-w-2xl text-lg text-blue-100">
-            These terms detail the acceptable use policies, responsibilities, and commitments between the PCBA Finder team and our
+            These terms detail the acceptable use policies, responsibilities, and commitments between the {siteName} team and our
             users.
           </p>
           <p className="mt-5 text-sm text-blue-200">Last updated: January 5, 2024</p>
@@ -58,7 +59,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-3">
             <h2 className="text-2xl font-semibold text-gray-900">Use of the platform</h2>
             <p className="text-sm text-gray-700">
-              Users agree to use PCBA Finder for lawful purposes related to discovering and collaborating with contract
+              Users agree to use {siteName} for lawful purposes related to discovering and collaborating with contract
               manufacturers. Automated scraping or republishing of content without consent is prohibited.
             </p>
           </section>
@@ -75,7 +76,7 @@ export default function TermsOfServicePage() {
             <h2 className="text-2xl font-semibold text-gray-900">Limitations of liability</h2>
             <p className="text-sm text-gray-700">
               We work diligently to curate accurate information, but users should conduct their own due diligence before entering
-              into commercial agreements. PCBA Finder is not liable for direct or indirect damages arising from use of the platform.
+              into commercial agreements. {siteName} is not liable for direct or indirect damages arising from use of the platform.
             </p>
           </section>
 
@@ -83,8 +84,8 @@ export default function TermsOfServicePage() {
             <h2 className="text-2xl font-semibold text-gray-900">Contact</h2>
             <p className="text-sm text-gray-700">
               Questions about these terms can be directed to{" "}
-              <a href="mailto:legal@cm-directory.com" className="font-medium text-blue-600 underline">
-                legal@cm-directory.com
+              <a href="mailto:legal@pcba-finder.com" className="font-medium text-blue-600 underline">
+                legal@pcba-finder.com
               </a>
               .
             </p>

@@ -50,15 +50,15 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const currentFacilitiesRef = useRef<FacilityWithCoordinates[]>([])
 
   const debouncedFilters = useDebounce(filters, 300)
-  const hasActiveFilters = useMemo(
+  const hasActiveDebouncedFilters = useMemo(
     () =>
-      filters.countries.length > 0 ||
-      filters.states.length > 0 ||
-      filters.capabilities.length > 0 ||
-      filters.productionVolume !== null,
-    [filters]
+      debouncedFilters.countries.length > 0 ||
+      debouncedFilters.states.length > 0 ||
+      debouncedFilters.capabilities.length > 0 ||
+      debouncedFilters.productionVolume !== null,
+    [debouncedFilters]
   )
-  const previousHasActiveFilters = useRef(hasActiveFilters)
+  const previousShouldFitRef = useRef(false)
 
   const filteredFacilities = useMemo(() => {
     const filteredCompanies = filterCompanies(allCompanies, debouncedFilters)
@@ -275,7 +275,10 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     if (!map.current || !isStyleLoaded || isLoading) return
     addClusteringLayers(filteredFacilities.facilities)
 
-    if (filteredFacilities.facilities.length === 0) {
+    const hasFilteredFacilities = filteredFacilities.facilities.length > 0
+    const shouldFitToFilteredFacilities = hasActiveDebouncedFilters && hasFilteredFacilities
+
+    if (!hasFilteredFacilities) {
       const fallback = getFallbackBounds(debouncedFilters)
       if (!map.current) return
       if (fallback) {
@@ -290,11 +293,11 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       return
     }
 
-    if (hasActiveFilters) {
+    if (shouldFitToFilteredFacilities) {
       const bounds = new mapboxgl.LngLatBounds()
       filteredFacilities.facilities.forEach((f) => bounds.extend([f.longitude, f.latitude]))
 
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         map.current?.fitBounds(bounds, {
           padding: { top: 100, bottom: 50, left: 50, right: 50 },
           maxZoom: 6,
@@ -302,16 +305,19 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
           duration: 1000,
         })
       }, 100)
+
+    return () => clearTimeout(timeoutId)
     }
-  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers, debouncedFilters, resetView, hasActiveFilters])
+  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers, debouncedFilters, resetView, hasActiveDebouncedFilters])
 
   useEffect(() => {
     if (!map.current || !isStyleLoaded || isLoading) return
-    if (!hasActiveFilters && previousHasActiveFilters.current) {
+    const shouldFitToFilteredFacilities = hasActiveDebouncedFilters && filteredFacilities.facilities.length > 0
+    if (!hasActiveDebouncedFilters && previousShouldFitRef.current) {
       resetView()
     }
-    previousHasActiveFilters.current = hasActiveFilters
-  }, [hasActiveFilters, isStyleLoaded, isLoading, resetView])
+    previousShouldFitRef.current = shouldFitToFilteredFacilities
+  }, [hasActiveDebouncedFilters, filteredFacilities.facilities.length, isStyleLoaded, isLoading, resetView])
 
   const handleStyleChange = (newStyle: string) => {
     if (map.current && newStyle !== mapStyle) {

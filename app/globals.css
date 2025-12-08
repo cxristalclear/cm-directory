@@ -469,10 +469,7 @@
   display: none;
 }
 
-/* ============================================
-   APPEND THESE CLASSES TO globals.css
-   ============================================ */
-
+/* Enhanced visual utilities and effects */
 /* Gradient text effect */
 .text-gradient-light {
   background: linear-gradient(135deg, #ffffff 0%, #bfdbfe 50%, #dbeafe 100%);
@@ -556,7 +553,7 @@
 }
 
 /* Progress bar animation */
-@keyframes progressFill {
+@keyframes progress {
   from {
     width: 0;
   }
@@ -566,7 +563,7 @@
 }
 
 .animate-progress {
-  animation: progressFill 1.5s ease-out forwards;
+  animation: progress 1.5s ease-out forwards;
 }
 
 /* Soft pulse animation for CTAs */
@@ -792,21 +789,22 @@
 /* Focus visible enhancements */
 .focus-ring-enhanced:focus-visible {
   outline: none;
-  ring: 3px solid var(--ring);
-  ring-offset: 2px;
   box-shadow: 0 0 0 3px var(--ring);
 }
 
-/* Smooth scroll behavior */
-@media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto !important;
   }
 }
 
 /* Dark mode adjustments for new utilities */
-.dark .text-gradient-light {
-  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%);
+.dark .text-gradient-light {  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

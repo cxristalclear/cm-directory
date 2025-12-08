@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { Building2, Plus, Eye } from 'lucide-react'
+import { siteConfig } from '@/lib/config'
 
 // Type for the query results with explicit fields
 type CompanyDashboardItem = {
@@ -28,8 +29,7 @@ export default async function AdminDashboard() {
     .limit(5)
 
   // Cast to proper type to fix TypeScript inference
-  const recentlyAdded = (recentlyAddedRaw || []) as CompanyDashboardItem[]
-
+  const recentlyAdded = (recentlyAddedRaw || []) as Omit<CompanyDashboardItem, 'updated_at'>[]
   // Get recently edited companies with explicit type casting
   const { data: recentlyEditedRaw } = await supabase
     .from('companies')
@@ -38,7 +38,7 @@ export default async function AdminDashboard() {
     .limit(5)
 
   // Cast to proper type to fix TypeScript inference  
-  const recentlyEdited = (recentlyEditedRaw || []) as CompanyDashboardItem[]
+  const recentlyEdited = (recentlyEditedRaw || []) as Omit<CompanyDashboardItem, 'created_at'>[]
 
   return (
     <div className="space-y-6">
@@ -46,7 +46,7 @@ export default async function AdminDashboard() {
       <div>
         <h1 className="text-3xl font-bold gradient-text">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Manage your PCBA Finder companies
+          Manage your {siteConfig.name} companies
         </p>
       </div>
 

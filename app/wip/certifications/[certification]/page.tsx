@@ -10,6 +10,8 @@ import { CERTIFICATION_DIRECTORY } from "@/lib/certifications-data"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
 
+const siteName = siteConfig.name
+
 export async function generateStaticParams() {
   return Object.keys(CERTIFICATION_DIRECTORY).map(certification => ({
     certification
@@ -26,7 +28,7 @@ export async function generateMetadata({
   
   if (!certData) {
     return {
-      title: 'Certification Not Found | CM Directory',
+      title: `Certification Not Found | ${siteName}`,
       description: 'The requested certification page could not be found.'
     }
   }
@@ -71,7 +73,7 @@ export default async function CertificationPage({
   }
   
   // Fetch companies with this certification
-  const { data: companies } = await supabase
+  const { data: companies, error } = await supabase
     .from('companies')
     .select(`
       *,
@@ -84,8 +86,11 @@ export default async function CertificationPage({
     .eq('certifications.status', 'Active')
     .eq('is_active', true)
   
-  const typedCompanies = companies as Company[] | null
+  if (error) {
+    console.error('Failed to fetch companies:', error)
+  }
   
+  const typedCompanies = companies as Company[] | null  
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">

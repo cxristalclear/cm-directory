@@ -6,11 +6,14 @@ import Header from "@/components/Header"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { CapabilitySlug, parseFiltersFromSearchParams } from "@/lib/filters/url"
+import { siteConfig } from "@/lib/config"
 import { supabase } from "@/lib/supabase"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 
+const siteName = siteConfig.name
+
 export const metadata = {
-  title: "PCB Assembly Manufacturers | CM Directory",
+  title: `PCB Assembly Manufacturers | ${siteName}`,
   description: "Browse contract manufacturers that offer SMT and through-hole PCB assembly services.",
 }
 

@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode, useTransition, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { useDebouncedCallback } from "use-debounce"
 import { EmployeeCountRanges, type FilterState, type FilterContextType } from "../types/company"
+import { useDebounce } from "../hooks/useDebounce"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
@@ -37,6 +37,9 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
 
   const [filteredCount, setFilteredCount] = useState(0)
 
+  // Debounce URL writes only (filters are used live elsewhere)
+  const debouncedFilters = useDebounce(filters, 500)
+
   // Load filters from URL on mount
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
@@ -60,49 +63,33 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
     })
   }, [searchParams])
 
-  const updateURLParams = useCallback(
-    (newFilters: FilterState) => {
-      const params = new URLSearchParams()
+  useEffect(() => {
+    const params = new URLSearchParams()
 
-      if (newFilters.countries.length) params.set("countries", newFilters.countries.join(","))
-      if (newFilters.states.length) params.set("states", newFilters.states.join(","))
-      if (newFilters.capabilities.length) params.set("capabilities", newFilters.capabilities.join(","))
-      if (newFilters.productionVolume) params.set("volume", newFilters.productionVolume)
-      if (newFilters.employeeCountRanges.length) params.set("employees", newFilters.employeeCountRanges.join(","))
-      if (newFilters.searchQuery.trim()) params.set("q", newFilters.searchQuery.trim())
+    if (debouncedFilters.countries.length) params.set("countries", debouncedFilters.countries.join(","))
+    if (debouncedFilters.states.length) params.set("states", debouncedFilters.states.join(","))
+    if (debouncedFilters.capabilities.length) params.set("capabilities", debouncedFilters.capabilities.join(","))
+    if (debouncedFilters.productionVolume) params.set("volume", debouncedFilters.productionVolume)
+    if (debouncedFilters.employeeCountRanges.length) params.set("employees", debouncedFilters.employeeCountRanges.join(","))
+    if (debouncedFilters.searchQuery.trim()) params.set("q", debouncedFilters.searchQuery.trim())
 
-      const newUrl = `${pathname}${params.toString() ? "?" + params.toString() : ""}`
-      
-      // Defer the router update to avoid updating during render
-      setTimeout(() => {
-        startTransition(() => {
-          router.replace(newUrl, { scroll: false })
-        })
-      }, 0)
-    },
-    [router, pathname]
-  )
+    const newQuery = params.toString()
+    const currentQuery = searchParams.toString()
 
-  const debouncedUpdateURL = useDebouncedCallback(updateURLParams, 300)
+    if (newQuery === currentQuery) return
+
+    const newUrl = `${pathname}${newQuery ? `?${newQuery}` : ""}`
+
+    startTransition(() => {
+      router.replace(newUrl, { scroll: false })
+    })
+  }, [debouncedFilters, pathname, router, searchParams, startTransition])
 
   const updateFilter = useCallback(
     <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
-      setFilters((prevFilters) => {
-        const newFilters = { ...prevFilters, [key]: value }
-        
-        // Defer URL update to after render
-        setTimeout(() => {
-          if (key === 'searchQuery') {
-            debouncedUpdateURL(newFilters)
-          } else {
-            updateURLParams(newFilters)
-          }
-        }, 0)
-        
-        return newFilters
-      })
+      setFilters((prevFilters) => ({ ...prevFilters, [key]: value }))
     },
-    [updateURLParams, debouncedUpdateURL]
+    []
   )
 
   const clearFilters = useCallback(() => {
@@ -114,16 +101,9 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
       employeeCountRanges: [],
       searchQuery: "",
     }
-    
+
     setFilters(defaultFilters)
-    
-    // Defer the router update to avoid updating during render
-    setTimeout(() => {
-      startTransition(() => {
-        router.replace(pathname, { scroll: false })
-      })
-    }, 0)
-  }, [router, pathname])
+  }, [])
 
   const contextValue: FilterContextType = {
     filters,

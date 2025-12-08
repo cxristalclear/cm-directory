@@ -15,6 +15,8 @@ import {
 import { supabase } from "@/lib/supabase"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 
+const siteName = siteConfig.name
+
 const HOMEPAGE_COMPANY_FIELDS = `
   id,
   slug,
@@ -75,7 +77,7 @@ export async function generateMetadata({
 
   if (!definition) {
     return {
-      title: "Capability Not Found | CM Directory",
+      title: `Capability Not Found | ${siteName}`,
       description: "The requested capability page could not be found.",
     }
   }
@@ -83,7 +85,7 @@ export async function generateMetadata({
   const pageUrl = getCanonicalUrl(`/capabilities/${definition.slug}`)
 
   return {
-    title: `${definition.title} | CM Directory`,
+    title: `${definition.title} | ${siteName}`,
     description: definition.summary,
     openGraph: {
       title: definition.title,
@@ -263,7 +265,7 @@ export default async function CapabilityPage({
           <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <div className="space-y-8">
               <div className="rounded-xl bg-white p-6 shadow-sm">
-                <h2 className="text-2xl font-semibold">How CM Directory scores {definition.name}</h2>
+                <h2 className="text-2xl font-semibold">How {siteName} scores {definition.name}</h2>
                 <p className="mt-3 text-gray-600">{definition.summary}</p>
                 <ul className="mt-6 list-disc space-y-2 pl-5 text-gray-700">
                   {definition.evaluationCriteria.map(criteria => (

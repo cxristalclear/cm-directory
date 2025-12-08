@@ -18,8 +18,8 @@ Before starting, make sure you have:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/cm-directory.git
-cd cm-directory
+git clone https://github.com/yourusername/pcba-finder.git
+cd pcba-finder
 
 # Install dependencies
 npm install
@@ -62,9 +62,9 @@ npm install
    NEXT_PUBLIC_SITE_NAME=PCBA Finder
 
    # Social Profiles (Required for production metadata)
-   NEXT_PUBLIC_TWITTER_URL=https://twitter.com/cmdirectory
-   NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/cm-directory
-   NEXT_PUBLIC_GITHUB_URL=https://github.com/cm-directory/app
+   NEXT_PUBLIC_TWITTER_URL=https://twitter.com/PCBAFinder
+   NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/company/pcba-finder
+   NEXT_PUBLIC_GITHUB_URL=https://github.com/pcba-finder/app
 
    # Mapbox (Required for AI Research importer & facility geocoding)
    NEXT_PUBLIC_MAPBOX_TOKEN=
@@ -201,7 +201,7 @@ If you're stuck:
 
 1. **Check the logs**: Look for error messages in the terminal and browser console
 2. **Review the README**: See [README.md](./README.md) for more detailed documentation
-3. **Open an issue**: [GitHub Issues](https://github.com/yourusername/cm-directory/issues)
+3. **Open an issue**: [GitHub Issues](https://github.com/yourusername/pcba-finder/issues)
 4. **Join our Discord**: [Link to Discord] (if available)
 
 ## 🎉 You're All Set!

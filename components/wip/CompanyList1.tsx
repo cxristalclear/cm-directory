@@ -268,7 +268,7 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT }: Com
                   {/* Arrow Action */}
                   {viewMode === "list" && (
                     <div className="hidden md:flex h-full items-center pl-2">
-                      <div className="p-1.5 rounded-full text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all transform group-hover:translate-x-1">
+                      <div className="p-1.5 rounded-full text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all group-hover:translate-x-1">
                         <ChevronRight className="h-5 w-5" />
                       </div>
                     </div>

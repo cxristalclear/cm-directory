@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, MapPin, Users, Building2, Star, Clock, CheckCircle, X, Filter, ChevronDown, List, Grid, Map, Layers, RotateCcw, Plus, Minus } from 'lucide-react';
 
-export default function CMDirectoryMockupV2() {
+export default function PCBAFinderMockupV2() {
   const [activeFilters, setActiveFilters] = useState(['United States', 'SMT Assembly']);
   const [viewMode, setViewMode] = useState('split');
 
@@ -51,7 +51,7 @@ export default function CMDirectoryMockupV2() {
   ];
 
   const removeFilter = (filter) => {
-    setActiveFilters(activeFilters.filter(f => f !== filter));
+    setActiveFilters((prevFilters) => prevFilters.filter((f) => f !== filter));
   };
 
   return (
