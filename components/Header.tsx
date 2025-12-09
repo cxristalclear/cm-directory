@@ -12,7 +12,7 @@ export default function Header() {
           <div className="container mx-auto px-4 text-center">
             <div className="mx-auto max-w-3xl">
               <h2 className="mb-2 text-2xl font-bold leading-tight text-white md:text-4xl">
-                Find Your Next Manufacturing Partner
+                The Search Engine for PCBA Manufacturing.
               </h2>
               <p className="mb-4 text-base leading-relaxed text-blue-100 md:text-lg">
                 Connect with verified contract manufacturers. Use interactive filters to discover contract manufacturers aligned with your technical, compliance, and capacity requirements.
