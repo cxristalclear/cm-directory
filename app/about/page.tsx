@@ -354,9 +354,10 @@ export default function AboutPage() {
 
               <Link 
                 href="/list-your-company" 
-                className="relative z-10 w-full sm:w-auto btn btn--lg bg-white text-slate-900 hover:bg-blue-50 border-none self-start"
+                className="relative z-10 w-full sm:w-auto btn btn--lg bg-white text-slate-900 hover:bg-blue-50 border-none self-start flex items-center gap-2"
               >
                 Start Free Listing
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
