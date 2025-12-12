@@ -67,7 +67,7 @@ export function endPerformanceMeasure(label: string): number | null {
       }
 
       return duration
-    } catch (error) {
+    } catch {
       // Performance marks might not exist
       return null
     }

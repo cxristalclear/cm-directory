@@ -7,6 +7,7 @@ import { Building2, ChevronDown, ChevronRight, Grid, List, MapPin, Users } from 
 import { useFilters } from "@/contexts/FilterContext"
 import ActiveFiltersBar from "@/components/ActiveFiltersBar"
 import VenkelAd from "@/components/VenkelAd"
+import EmptyState from "@/components/EmptyState"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import { EmployeeCountRanges } from "@/types/company"
 import { filterCompanies } from "@/utils/filtering"
@@ -76,15 +77,7 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT, showI
   )
 
   if (filteredCompanies.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 p-12 text-center">
-        <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 shadow-inner">
-          <Building2 className="h-6 w-6 text-gray-400" />
-        </div>
-        <h3 className="mb-1 text-base font-bold text-gray-900">No partners found</h3>
-        <p className="text-xs text-gray-500 max-w-xs mx-auto">Try removing some filters to broaden your search.</p>
-      </div>
-    )
+    return <EmptyState variant="no-results" />
   }
 
   return (

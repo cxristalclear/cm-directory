@@ -6,7 +6,7 @@ import { EmployeeCountRanges, type FilterState, type FilterContextType } from ".
 import { useDebounce } from "../hooks/useDebounce"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 
-const FilterContext = createContext<FilterContextType | undefined>(undefined)
+export const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
 interface FilterProviderProps {
   children: ReactNode

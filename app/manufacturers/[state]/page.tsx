@@ -20,6 +20,7 @@ import {
 } from "@/lib/states"
 import { supabase } from "@/lib/supabase"
 import type { Company } from "@/types/company"
+import { isValidStateSlug } from "@/lib/utils/validation"
 
 const cityListFormatter = new Intl.ListFormat("en-US", {
   style: "long",
@@ -68,6 +69,15 @@ export async function generateMetadata({
   params: Promise<{ state: string }>
 }): Promise<Metadata> {
   const { state } = await params
+  
+  // Validate slug format before querying
+  if (!isValidStateSlug(state)) {
+    return {
+      title: `State Not Found | ${siteName}`,
+      description: "The requested state page could not be found.",
+    }
+  }
+  
   const stateMetadata = getStateMetadataBySlug(state)
 
   if (!stateMetadata) {
@@ -116,6 +126,12 @@ export default async function StateManufacturersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const [{ state }, sp] = await Promise.all([params, searchParams])
+  
+  // Validate slug format before querying
+  if (!isValidStateSlug(state)) {
+    notFound()
+  }
+  
   const urlFilters = parseFiltersFromSearchParams(sp)
   const stateMetadata = getStateMetadataBySlug(state)
 

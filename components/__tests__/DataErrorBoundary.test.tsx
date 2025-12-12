@@ -101,7 +101,7 @@ describe('DataErrorBoundary', () => {
 
   it('should show error details in development mode', () => {
     const originalEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'development'
+    ;(process.env as { NODE_ENV: string }).NODE_ENV = 'development'
 
     render(
       <DataErrorBoundary>
@@ -111,12 +111,12 @@ describe('DataErrorBoundary', () => {
 
     expect(screen.getByText('Error Details (Development Only)')).toBeInTheDocument()
 
-    process.env.NODE_ENV = originalEnv
+    ;(process.env as { NODE_ENV: string }).NODE_ENV = originalEnv
   })
 
   it('should not show error details in production mode', () => {
     const originalEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'production'
+    ;(process.env as { NODE_ENV: string }).NODE_ENV = 'production'
 
     render(
       <DataErrorBoundary>
@@ -126,7 +126,7 @@ describe('DataErrorBoundary', () => {
 
     expect(screen.queryByText('Error Details (Development Only)')).not.toBeInTheDocument()
 
-    process.env.NODE_ENV = originalEnv
+    ;(process.env as { NODE_ENV: string }).NODE_ENV = originalEnv
   })
 })
 

@@ -136,7 +136,7 @@ describe('Performance Benchmarks', () => {
       expect(measurements.every(m => m !== null)).toBe(true)
       
       // Total time should be reasonable (10 measurements * 1.5ms each = 15ms)
-      const totalTime = measurements.reduce((sum, m) => sum + (m || 0), 0)
+      const totalTime = measurements.reduce((sum: number, m) => sum + (m || 0), 0)
       expect(totalTime).toBeLessThan(100)
     })
   })

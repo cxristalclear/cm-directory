@@ -13,14 +13,12 @@ const mockPerformance = {
 }
 
 let consoleLogSpy: jest.SpyInstance
-let consoleWarnSpy: jest.SpyInstance
 
 beforeEach(() => {
   jest.clearAllMocks()
   
   // Setup console spies
   consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {})
-  consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
 
   // Reset and setup performance mock
   if (typeof window !== 'undefined') {
@@ -53,7 +51,7 @@ describe('performance tracking utilities', () => {
 
     it('should log size in development mode', () => {
       const originalEnv = process.env.NODE_ENV
-      process.env.NODE_ENV = 'development'
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = 'development'
       
       // Reset spy before test
       consoleLogSpy.mockClear()
@@ -69,19 +67,19 @@ describe('performance tracking utilities', () => {
       })
       expect(hasPerformanceLog).toBe(true)
 
-      process.env.NODE_ENV = originalEnv
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = originalEnv
     })
 
     it('should not log in production mode', () => {
       const originalEnv = process.env.NODE_ENV
-      process.env.NODE_ENV = 'production'
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = 'production'
 
       const testData = { name: 'test' }
       trackPayloadSize(testData, 'Test Data')
 
       expect(consoleLogSpy).not.toHaveBeenCalled()
 
-      process.env.NODE_ENV = originalEnv
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = originalEnv
     })
 
     it('should create performance mark when performance API is available', () => {
@@ -163,7 +161,7 @@ describe('performance tracking utilities', () => {
 
     it('should log duration in development mode', () => {
       const originalEnv = process.env.NODE_ENV
-      process.env.NODE_ENV = 'development'
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = 'development'
       
       // Reset spy before test
       consoleLogSpy.mockClear()
@@ -180,7 +178,7 @@ describe('performance tracking utilities', () => {
       })
       expect(hasPerformanceLog).toBe(true)
 
-      process.env.NODE_ENV = originalEnv
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = originalEnv
     })
 
     it('should return null if measure fails', () => {
@@ -195,7 +193,6 @@ describe('performance tracking utilities', () => {
     it('should handle server-side (no window)', () => {
       // Save original
       const originalWindow = (global as any).window
-      const originalWindowType = typeof window
       
       // Mock typeof window to return 'undefined'
       // We can't actually delete window in Node environment, so we test the early return
@@ -222,7 +219,7 @@ describe('performance tracking utilities', () => {
   describe('logPerformanceSummary', () => {
     it('should log summary in development mode', () => {
       const originalEnv = process.env.NODE_ENV
-      process.env.NODE_ENV = 'development'
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = 'development'
       
       // Reset spies before test
       consoleLogSpy.mockClear()
@@ -248,25 +245,25 @@ describe('performance tracking utilities', () => {
       expect(hasLoadTimeLog).toBe(true)
       expect(consoleGroupEndSpy).toHaveBeenCalled()
 
-      process.env.NODE_ENV = originalEnv
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = originalEnv
       consoleGroupSpy.mockRestore()
       consoleGroupEndSpy.mockRestore()
     })
 
     it('should not log in production mode', () => {
       const originalEnv = process.env.NODE_ENV
-      process.env.NODE_ENV = 'production'
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = 'production'
 
       logPerformanceSummary('Test Operation', 1024 * 1024, 1500)
 
       expect(consoleLogSpy).not.toHaveBeenCalled()
 
-      process.env.NODE_ENV = originalEnv
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = originalEnv
     })
 
     it('should handle null load time', () => {
       const originalEnv = process.env.NODE_ENV
-      process.env.NODE_ENV = 'development'
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = 'development'
       
       // Reset spies before test
       consoleLogSpy.mockClear()
@@ -291,7 +288,7 @@ describe('performance tracking utilities', () => {
       expect(hasLoadTimeLog).toBe(false)
       expect(consoleGroupEndSpy).toHaveBeenCalled()
 
-      process.env.NODE_ENV = originalEnv
+      ;(process.env as { NODE_ENV: string }).NODE_ENV = originalEnv
       consoleGroupSpy.mockRestore()
       consoleGroupEndSpy.mockRestore()
     })

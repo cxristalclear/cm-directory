@@ -1,7 +1,7 @@
 'use client'
 
 import { Component, type ReactNode } from 'react'
-import { AlertCircle, RefreshCw, Building2 } from 'lucide-react'
+import { RefreshCw, Building2 } from 'lucide-react'
 
 interface Props {
   children: ReactNode

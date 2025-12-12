@@ -6,6 +6,7 @@ import {
   extractTextFromDocument,
   isSupportedDocument,
 } from '@/lib/documents/extractText'
+import { parseFormDataWithSizeLimit, REQUEST_SIZE_LIMITS } from '@/lib/utils/request-limits'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +25,17 @@ export async function POST(request: NextRequest) {
 
     // User authentication verified above
 
-    const formData = await request.formData().catch(() => null)
+    // Parse form data with size limit (10MB for file uploads)
+    const parseResult = await parseFormDataWithSizeLimit(request, REQUEST_SIZE_LIMITS.FILE_UPLOAD)
+    
+    if (parseResult.error) {
+      return NextResponse.json(
+        { success: false, error: parseResult.error },
+        { status: 413 } // 413 Payload Too Large
+      )
+    }
+
+    const formData = parseResult.data
     if (!formData) {
       return NextResponse.json(
         { success: false, error: 'Invalid form data payload' },

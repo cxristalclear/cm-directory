@@ -1,15 +1,18 @@
-import Link from 'next/link'
+import EmptyState from '@/components/EmptyState'
+import Navbar from '@/components/navbar'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-4">Company Not Found</h2>
-        <p className="mb-4">Could not find the requested company.</p>
-        <Link href="/" className="text-blue-600 hover:underline">
-          Return to Directory
-        </Link>
+    <>
+      <Navbar />
+      <div className="min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-2xl">
+          <EmptyState 
+            variant="not-found"
+            actionHref="/"
+          />
+        </div>
       </div>
-    </div>
+    </>
   )
 }

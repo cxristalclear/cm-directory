@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useTransition } from 'react'
+import { useState, useMemo } from 'react'
 import { useFilters } from '../contexts/FilterContext'
 import { BarChart3, Check, ChevronDown, Cog, Filter, Globe2, MapPin, Search, Users, X } from 'lucide-react'
 import type { HomepageCompanyWithLocations } from '@/types/homepage'

@@ -1,5 +1,3 @@
-import { CAPABILITY_DEFINITIONS } from '@/lib/capabilities'
-import { CERTIFICATION_DIRECTORY_SLUGS } from '@/lib/certifications-data'
 import { getCanonicalUrl } from '@/lib/config'
 
 const fromMock = jest.fn()

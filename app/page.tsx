@@ -9,7 +9,6 @@ import { FilterProvider } from "@/contexts/FilterContext"
 import { featureFlags, getCanonicalUrl, siteConfig } from "@/lib/config"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { getCompanies } from "@/lib/data/getCompanies"
-import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import type { PageProps } from "@/types/nxt"
 import SearchBar from "@/components/SearchBar"
 import ActiveFiltersBar from "@/components/ActiveFiltersBar"
@@ -21,7 +20,7 @@ import VenkelAd from "@/components/VenkelAd"
 import { jsonLdScriptProps } from "@/lib/schema"
 import DataErrorBoundary from "@/components/DataErrorBoundary"
 import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
-import { Building2 } from "lucide-react"
+import EmptyState from "@/components/EmptyState"
 
 export const revalidate = 300
 
@@ -47,22 +46,6 @@ export const metadata = {
     description:
       "Filter verified manufacturers by capability, certification, and location.",
   },
-}
-
-// Legacy function kept for backwards compatibility
-// Now uses enhanced getCompanies with retry and error handling
-async function getData(): Promise<HomepageCompanyWithLocations[]> {
-  const result = await getCompanies({
-    maxCompanies: MAX_COMPANIES,
-    enableRetry: true,
-  })
-
-  // If there's an error, throw it so error boundary can catch it
-  if (result.error) {
-    throw result.error
-  }
-
-  return result.companies
 }
 
 type HomeSearchParams = Record<string, string | string[] | undefined>
@@ -131,17 +114,7 @@ export default async function Home({
 
                   <div className="companies-directory space-y-3">
                     {isEmpty ? (
-                      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 p-12 text-center">
-                        <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
-                          <Building2 className="h-8 w-8 text-gray-400" />
-                        </div>
-                        <h3 className="mb-2 text-lg font-bold text-gray-900">
-                          No Companies Available
-                        </h3>
-                        <p className="text-sm text-gray-600 max-w-md mx-auto">
-                          The directory is currently empty. Companies will appear here once they are added to the database.
-                        </p>
-                      </div>
+                      <EmptyState variant="empty-database" />
                     ) : (
                       <Suspense
                         fallback={
@@ -193,17 +166,7 @@ export default async function Home({
 
                   <div className="companies-directory space-y-3 mt-6">
                     {isEmpty ? (
-                      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 p-12 text-center">
-                        <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
-                          <Building2 className="h-8 w-8 text-gray-400" />
-                        </div>
-                        <h3 className="mb-2 text-lg font-bold text-gray-900">
-                          No Companies Available
-                        </h3>
-                        <p className="text-sm text-gray-600 max-w-md mx-auto">
-                          The directory is currently empty. Companies will appear here once they are added to the database.
-                        </p>
-                      </div>
+                      <EmptyState variant="empty-database" />
                     ) : (
                       <Suspense
                         fallback={

@@ -14,9 +14,9 @@
 import { getCompanies } from '@/lib/data/getCompanies'
 
 // Skip integration tests if Supabase credentials are not configured
-const shouldRunIntegrationTests = 
-  process.env.NEXT_PUBLIC_SUPABASE_URL && 
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+const shouldRunIntegrationTests: boolean = 
+  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) && 
+  Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) &&
   process.env.RUN_INTEGRATION_TESTS === 'true'
 
 describe.skip('getCompanies integration tests', () => {
