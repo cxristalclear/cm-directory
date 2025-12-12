@@ -100,3 +100,54 @@ export function stateSlugFromAbbreviation(abbreviation: string | null | undefine
   const metadata = getStateMetadataByAbbreviation(abbreviation)
   return metadata?.slug ?? null
 }
+
+/**
+ * Converts a state name to its abbreviation by looking it up in STATE_NAMES.
+ * Returns null if the name doesn't match any US state.
+ */
+export function getStateAbbreviationFromName(stateName: string | null | undefined): string | null {
+  if (!stateName) return null
+  
+  const normalized = stateName.trim()
+  if (!normalized) return null
+  
+  // Direct lookup: find abbreviation where the name matches
+  for (const [abbreviation, name] of Object.entries(STATE_NAMES)) {
+    if (name.toLowerCase() === normalized.toLowerCase()) {
+      return abbreviation
+    }
+  }
+  
+  return null
+}
+
+/**
+ * Gets state slug from either an abbreviation or a full state name.
+ * Only works for US states. Returns null for non-US states/provinces.
+ */
+export function getStateSlug(abbreviationOrName: string | null | undefined): string | null {
+  if (!abbreviationOrName) return null
+  
+  const trimmed = abbreviationOrName.trim()
+  if (!trimmed) return null
+  
+  // First, try as abbreviation (2-letter codes)
+  if (/^[A-Z]{2}$/i.test(trimmed)) {
+    const metadata = abbreviationToMetadata.get(trimmed.toUpperCase())
+    if (metadata) {
+      return metadata.slug
+    }
+    // Not a valid US state abbreviation
+    return null
+  }
+  
+  // Try as full state name
+  const abbreviation = getStateAbbreviationFromName(trimmed)
+  if (abbreviation) {
+    const metadata = abbreviationToMetadata.get(abbreviation)
+    return metadata?.slug ?? null
+  }
+  
+  // Not a US state
+  return null
+}

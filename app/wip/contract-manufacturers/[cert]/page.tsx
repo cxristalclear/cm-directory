@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import Script from "next/script"
 import CompanyList from "@/components/CompanyList"
+import Navbar from "@/components/navbar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
@@ -88,6 +89,7 @@ export default async function CertManufacturers({
   return (
     <div className="min-h-screen bg-gray-50">
       <Script id="cert-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <Navbar />
 
       <main className="container mx-auto px-4 py-6">
         <nav aria-label="Breadcrumb" className="mb-3 text-sm text-gray-600">

@@ -1,5 +1,4 @@
 import { Suspense } from "react"
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import CompanyList from "@/components/CompanyList"
 import Header from "@/components/Header"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
@@ -7,7 +6,7 @@ import { MapErrorBoundary } from "@/components/MapErrorBoundary"
 import Navbar from "@/components/navbar"
 import FilterBar from "@/components/FilterBar"
 import { FilterProvider } from "@/contexts/FilterContext"
-import { featureFlags, siteConfig } from "@/lib/config"
+import { featureFlags, getCanonicalUrl, siteConfig } from "@/lib/config"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { supabase } from "@/lib/supabase"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
@@ -19,6 +18,7 @@ import FilterErrorBoundary from "@/components/FilterErrorBoundary"
 import FilterSidebar from "@/components/FilterSidebar"
 import FilterDebugger from "@/components/FilterDebugger"
 import VenkelAd from "@/components/VenkelAd"
+import { jsonLdScriptProps } from "@/lib/schema"
 
 export const revalidate = 300
 
@@ -121,14 +121,30 @@ export default async function Home({
   const initialFilters = parseFiltersFromSearchParams(resolvedSearchParams)
   const companies = await getData()
   const useHorizontalFilterBar = false
+  const itemListSchema = {
+    "@context": "https://schema.org" as const,
+    "@type": "ItemList",
+    name: `${siteName} Directory`,
+    url: siteConfig.url,
+    itemListElement: companies
+      .filter((company) => Boolean(company.slug))
+      .slice(0, 100)
+      .map((company, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: getCanonicalUrl(`/companies/${company.slug}`),
+        name: company.company_name,
+        ...(company.description ? { description: company.description } : {}),
+      })),
+  }
 
   return (
     <Suspense fallback={<div className="p-4">Loading...</div>}>
-      <SpeedInsights />
       <FilterProvider initialFilters={initialFilters}>
         <div className="page-shell">
           <Navbar />
           <Header />
+          <script {...jsonLdScriptProps(itemListSchema)} />
           
           <main className="page-container section section--tight space-y-4">
             {/* Top Ad Removed to bring content higher */}

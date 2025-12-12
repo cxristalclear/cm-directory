@@ -10,6 +10,7 @@ import {
   createCollectionPageJsonLd,
   jsonLdScriptProps,
 } from "@/lib/schema"
+import Navbar from "@/components/navbar"
 import {
   getAllStateMetadata,
   getStateMetadataBySlug,
@@ -265,15 +266,16 @@ export default async function StateManufacturersPage({
 
   return (
     <FilterProvider initialFilters={initialFilters}>
-      <>
+      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <script {...jsonLdScriptProps(stateSchema)} />
 
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-          {/* Hero Section */}
-          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white">
-          <div className="container mx-auto px-4 py-12">
-            {/* Breadcrumbs */}
-            <nav className="flex items-center gap-2 text-sm text-blue-100 mb-6">
+        <Navbar />
+
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white">
+        <div className="container mx-auto px-4 py-12">
+          {/* Breadcrumbs */}
+          <nav className="flex items-center gap-2 text-sm text-blue-100 mb-6">
               <Link href="/" className="hover:text-white">Home</Link>
               <span>/</span>
               <Link href="/manufacturers" className="hover:text-white">Manufacturers</Link>
@@ -399,8 +401,7 @@ export default async function StateManufacturersPage({
             </div>
           </div>
         </div>
-      </div>
-      </>
+      </main>
     </FilterProvider>
   )
 }

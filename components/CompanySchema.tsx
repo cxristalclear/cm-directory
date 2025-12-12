@@ -112,6 +112,23 @@ export const buildCompanyJsonLd = (
       })()
     : undefined
 
+  const geo = (() => {
+    if (!primaryFacility) return undefined
+
+    const lat = typeof primaryFacility.latitude === 'string' ? Number.parseFloat(primaryFacility.latitude) : primaryFacility.latitude
+    const lng = typeof primaryFacility.longitude === 'string' ? Number.parseFloat(primaryFacility.longitude) : primaryFacility.longitude
+
+    if (typeof lat !== 'number' || Number.isNaN(lat) || typeof lng !== 'number' || Number.isNaN(lng)) {
+      return undefined
+    }
+
+    return {
+      '@type': 'GeoCoordinates',
+      latitude: lat,
+      longitude: lng,
+    }
+  })()
+
   const primaryContact =
     company.contacts?.find((contact) => contact?.is_primary) ?? company.contacts?.[0]
 
@@ -186,7 +203,7 @@ export const buildCompanyJsonLd = (
 
   const schema = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': ['Organization', 'LocalBusiness'],
     '@id': profileUrl,
     url: profileUrl,
     name: company.company_name,
@@ -195,6 +212,7 @@ export const buildCompanyJsonLd = (
     ...(logoUrl ? { logo: logoUrl } : {}),
     ...(imageField ? { image: imageField } : {}),
     ...(address ? { address } : {}),
+    ...(geo ? { geo } : {}),
     ...(contactPoint ? { contactPoint } : {}),
     ...(company.year_founded ? { foundingDate: company.year_founded } : {}),
     ...(company.employee_count_range

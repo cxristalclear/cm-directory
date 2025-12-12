@@ -19,6 +19,7 @@ import {
   getRelatedIndustries,
   type IndustrySlug,
 } from "@/lib/industries"
+import Navbar from "@/components/navbar"
 
 const siteName = siteConfig.name
 
@@ -115,6 +116,7 @@ export default async function IndustryPage({
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
+        <Navbar />
         <script {...jsonLdScriptProps(industrySchema)} />
         {/* Hero Section */}
         <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">

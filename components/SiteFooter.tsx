@@ -4,19 +4,19 @@ import { siteConfig } from '@/lib/config'
 const currentYear = new Date().getFullYear()
 
 const topCityLinks = [
-  { href: '/manufacturers?state=TX&q=Austin', label: 'Manufacturers in Austin, TX' },
-  { href: '/manufacturers?state=MA&q=Boston', label: 'Manufacturers in Boston, MA' },
-  { href: '/manufacturers?state=CA&q=San%20Jose', label: 'Manufacturers in San Jose, CA' },
-  { href: '/manufacturers?state=AZ&q=Phoenix', label: 'Manufacturers in Phoenix, AZ' },
-  { href: '/manufacturers?state=IL&q=Chicago', label: 'Manufacturers in Chicago, IL' },
+  { href: '/manufacturers/texas', label: 'Manufacturers in Austin, TX' },
+  { href: '/manufacturers/massachusetts', label: 'Manufacturers in Boston, MA' },
+  { href: '/manufacturers/california', label: 'Manufacturers in San Jose, CA' },
+  { href: '/manufacturers/arizona', label: 'Manufacturers in Phoenix, AZ' },
+  { href: '/manufacturers/illinois', label: 'Manufacturers in Chicago, IL' },
 ]
 
 const topCapabilityLinks = [
-  { href: '/?capability=smt', label: 'SMT Assembly' },
-  { href: '/?capability=box_build', label: 'Box Build Integration' },
-  { href: '/?capability=cable_harness', label: 'Cable Harness Assembly' },
-  { href: '/?capability=through_hole', label: 'Through-Hole Assembly' },
-  { href: '/?capability=prototyping', label: 'Prototype Builds' },
+  { href: '/industries/medical-devices', label: 'Medical Devices' },
+  { href: '/industries/aerospace-defense', label: 'Aerospace & Defense' },
+  { href: '/industries/automotive', label: 'Automotive' },
+  { href: '/industries/industrial-controls', label: 'Industrial Controls' },
+  { href: '/industries/consumer-electronics', label: 'Consumer Electronics' },
 ]
 
 const legalLinks = [
@@ -87,7 +87,7 @@ export default function SiteFooter() {
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Top Capabilities</h3>
             <ul className="space-y-2">
               {topCapabilityLinks.map(link => (
-                <li key={link.href}>
+                <li key={`${link.href}-${link.label}`}>
                   <Link className={linkClass} href={link.href}>
                     {link.label}
                   </Link>

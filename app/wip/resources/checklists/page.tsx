@@ -3,6 +3,7 @@ import Link from "next/link"
 import type { Metadata } from "next"
 import { Download } from "lucide-react"
 import { Breadcrumbs } from "@/components/Breadcrumbs"
+import Navbar from "@/components/navbar"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 const pageUrl = getCanonicalUrl("/resources/checklists")
@@ -52,6 +53,7 @@ const checklistEntries = [
 export default function ChecklistsIndexPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
+      <Navbar />
       <header className="gradient-bg pb-20 pt-16 text-white">
         <div className="container mx-auto px-4">
           <p className="text-sm uppercase tracking-wide text-blue-100">Checklists</p>
