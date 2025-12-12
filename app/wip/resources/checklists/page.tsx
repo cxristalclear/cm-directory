@@ -27,8 +27,8 @@ export const metadata: Metadata = {
     description: "Use these checklists to evaluate facilities, compliance, and launch readiness.",
   },
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
   },
 }
 

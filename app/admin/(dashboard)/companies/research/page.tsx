@@ -139,7 +139,6 @@ async function syncRelatedTable<TableName extends CompanyRelatedTable>({
   }
 
   if (pendingInsert.length === 0 && idsToDelete.length === 0) {
-    console.log(`No ${description} changes detected; skipping update.`)
     return
   }
 
@@ -343,18 +342,12 @@ export default function AiResearchPage() {
   const supabase = createClient()
 
   const handleSubmit = async (formData: CompanyFormData, isDraft: boolean, enrichmentPayload?: unknown) => {
-    console.log('=== AI RESEARCH IMPORT STARTED ===')
-    console.log('Company Name:', formData.company_name)
-    console.log('Original Website URL:', formData.website_url)
-    
     try {
       // ⭐ NORMALIZE WEBSITE URL FIRST - before validation!
       const normalizedFormData = {
         ...formData,
         website_url: normalizeWebsiteUrl(formData.website_url),
       }
-      
-      console.log('Normalized Website URL:', normalizedFormData.website_url)
 
       // Now validate with the normalized URL
       const validation = validateCompanyData(normalizedFormData)
@@ -371,8 +364,6 @@ export default function AiResearchPage() {
       // ============================================================================
       // CHECK FOR DUPLICATE COMPANY (by name OR normalized website)
       // ============================================================================
-      console.log('\n--- Checking for Duplicate Company ---')
-
       const normalizedNameComparable = normalizedFormData.company_name.trim().toLowerCase()
       const normalizedWebsiteComparable = normalizeUrlForComparison(normalizedFormData.website_url, true)
       const websiteFilterValue = normalizedFormData.website_url
@@ -407,9 +398,6 @@ export default function AiResearchPage() {
       let changeType: 'created' | 'updated' = 'created'
 
       if (existingCompany) {
-        console.log(
-          `✓ Found existing company: ${existingCompany.company_name} (ID: ${existingCompany.id}) - updating with latest research`
-        )
         toast.info(`Company already exists: ${existingCompany.company_name}. Updating data...`)
 
         const { data: updatedCompany, error: updateError } = await supabase
@@ -424,7 +412,6 @@ export default function AiResearchPage() {
         companyId = updatedCompany.id
         changeType = 'updated'
       } else {
-        console.log('No duplicate found. Creating new company...')
         let newSlug = generateSlug(normalizedFormData.company_name)
         newSlug = await ensureUniqueSlug(supabase, newSlug)
 
@@ -442,7 +429,6 @@ export default function AiResearchPage() {
         if (companiesError) throw companiesError
         persistedCompany = companiesData
         companyId = companiesData.id
-        console.log('✓ Company created with ID:', companyId)
       }
 
       // Insert or replace facilities
@@ -455,11 +441,9 @@ export default function AiResearchPage() {
 
           if ((latitude == null || longitude == null) && hasMinimumAddressData(facility) && process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
             try {
-              console.log(`📍 Geocoding: ${facility.city}, ${facility.state_province || facility.state}`)
               const coordinates = await geocodeFacilityToPoint(facility)
               latitude = coordinates.latitude
               longitude = coordinates.longitude
-              console.log(`✓ Geocoded to: ${latitude}, ${longitude}`)
             } catch (error) {
               console.warn('⚠️ Geocoding failed:', error)
             }
@@ -640,7 +624,6 @@ export default function AiResearchPage() {
         )
       }
 
-      console.log('=== AI RESEARCH IMPORT COMPLETED SUCCESSFULLY ===')
       toast.success('Company saved successfully!')
       
       // Do NOT redirect here - child component will call onAllCompaniesSaved callback when done
@@ -663,7 +646,6 @@ export default function AiResearchPage() {
       
       // ⭐ CRITICAL: Show error WITHOUT redirecting - user can edit and retry
       toast.error(errorMessage + ' Please edit the data and try again.')
-      console.log('Error shown to user - they can edit and retry without losing research data')
     }
   }
 

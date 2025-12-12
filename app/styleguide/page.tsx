@@ -1,4 +1,16 @@
+import type { Metadata } from "next"
 import Navbar from "@/components/navbar"
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+}
 
 const colorSwatches = [
   { name: "Background", token: "var(--background)" },

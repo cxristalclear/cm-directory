@@ -27,8 +27,8 @@ export const metadata: Metadata = {
     description: "Best practices for selecting and partnering with contract manufacturers.",
   },
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
   },
 }
 

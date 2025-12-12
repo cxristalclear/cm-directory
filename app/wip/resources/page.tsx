@@ -27,8 +27,8 @@ export const metadata: Metadata = {
     description: "Practical resources for vetting and collaborating with manufacturing partners.",
   },
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
   },
 }
 

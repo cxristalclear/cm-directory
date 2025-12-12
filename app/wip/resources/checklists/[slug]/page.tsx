@@ -52,8 +52,8 @@ export async function generateMetadata({ params }: ChecklistPageProps): Promise<
       description: summary,
     },
     robots: {
-      index: true,
-      follow: true,
+      index: false,
+      follow: false,
     },
   }
 }

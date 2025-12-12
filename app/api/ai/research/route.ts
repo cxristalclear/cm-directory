@@ -15,8 +15,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Optional: Log who is making the request (for audit trail)
-    console.log(`AI research requested by user: ${user.email}`)
+    // User authentication verified above
 
     // Parse request body
     const body = await request.json().catch(() => null)

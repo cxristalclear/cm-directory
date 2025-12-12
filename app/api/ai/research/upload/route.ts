@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`Document upload requested by user: ${user.id}`)
+    // User authentication verified above
 
     const formData = await request.formData().catch(() => null)
     if (!formData) {

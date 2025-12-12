@@ -181,8 +181,6 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
         companyUpdate
       )
 
-      console.log('Updating company with data:', companyUpdate)
-
       // Update company
       const { error: companyError } = await supabase
         .from('companies')
@@ -198,8 +196,6 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
         })
         throw companyError
       }
-
-      console.log('Company updated successfully')
 
       // Update facilities (delete and recreate for simplicity)
       const { error: deleteFacilitiesError } = await supabase
@@ -242,8 +238,6 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
           })
         )
 
-        console.log('Inserting facilities:', facilitiesData)
-
         const { error: facilitiesError } = await supabase
           .from('facilities')
           .insert(facilitiesData)
@@ -265,7 +259,6 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
 
         if (existingCapabilities) {
           // Update existing
-          console.log('Updating capabilities:', capabilitiesData)
           const { error: capabilitiesError } = await supabase
             .from('capabilities')
             .update(capabilitiesData as CapabilitiesUpdate)
@@ -277,7 +270,6 @@ export default function EditCompanyForm({ company }: EditCompanyFormProps) {
           }
         } else {
           // Insert new
-          console.log('Inserting capabilities:', capabilitiesData)
           const { error: capabilitiesError } = await supabase
             .from('capabilities')
             .insert({

@@ -65,10 +65,10 @@ Remove or archive unused files to keep codebase clean.
 Remove debug code and console statements from production.
 
 ### Tasks
-- [ ] Verify `FilterDebugger` only shows when `NEXT_PUBLIC_SHOW_DEBUG=true`
-- [ ] Ensure debug flag is false in production environment
-- [ ] Remove console.log statements from production code (keep console.error for monitoring)
-- [ ] Replace console.error with proper error logging service (or keep for now if Sentry not ready)
+- [x] Verify `FilterDebugger` only shows when `NEXT_PUBLIC_SHOW_DEBUG=true`
+- [x] Ensure debug flag is false in production environment
+- [x] Remove console.log statements from production code (keep console.error for monitoring)
+- [x] Replace console.error with proper error logging service (or keep for now if Sentry not ready)
 
 ---
 
@@ -79,10 +79,10 @@ Remove debug code and console statements from production.
 Protect unfinished features from being indexed by search engines.
 
 ### Tasks
-- [ ] Add `/wip/` to robots.txt disallow list
-- [ ] Add `/styleguide/` to robots.txt disallow list
-- [ ] Remove `/styleguide` page entirely OR add noindex meta tag and password protect
-- [ ] Verify WIP pages have noindex meta tags (or add them)
+- [x] Add `/wip/` to robots.txt disallow list
+- [x] Add `/styleguide/` to robots.txt disallow list
+- [x] Remove `/styleguide` page entirely OR add noindex meta tag and password protect
+- [x] Verify WIP pages have noindex meta tags (or add them)
 
 ---
 
@@ -93,12 +93,12 @@ Protect unfinished features from being indexed by search engines.
 Ensure database indexes exist for optimal query performance with 500+ records.
 
 ### Tasks
-- [ ] Index on `companies.is_active` (for filtering active companies)
-- [ ] Index on `companies.slug` (for company lookups)
-- [ ] Index on `companies.updated_at` (for sorting)
-- [ ] Index on `facilities.company_id` (for joins)
-- [ ] Index on `facilities.country_code` and `facilities.state_code` (for location filtering)
-- [ ] Composite index on `(is_active, updated_at)` if needed
+- [x] Index on `companies.is_active` (for filtering active companies)
+- [x] Index on `companies.slug` (for company lookups)
+- [x] Index on `companies.updated_at` (for sorting)
+- [x] Index on `facilities.company_id` (for joins)
+- [x] Index on `facilities.country_code` and `facilities.state_code` (for location filtering)
+- [x] Composite index on `(is_active, updated_at)` if needed
 
 ---
 
@@ -346,8 +346,8 @@ Implement Google Analytics tracking.
 
 ### Tasks
 - [X] Create GA4 property and obtain Measurement ID (G-6VEF34G0WM)
-- [ ] Add Google Analytics script to `app/layout.tsx` using Next.js Script component
-- [ ] Verify GA script loads only when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set
+- [X] Add Google Analytics script to `app/layout.tsx` using Next.js Script component
+- [X] Verify GA script loads only when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set
 - [ ] Test GA4 pageview tracking in development
 
 ---
