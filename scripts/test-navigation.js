@@ -14,11 +14,9 @@
  * - Every page uses <Navbar />
  */
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const path = require('path');
-
-// Base URL for testing (defaults to localhost:3000)
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 // Colors for console output
 const colors = {

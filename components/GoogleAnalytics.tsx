@@ -3,7 +3,6 @@
 import Script from 'next/script'
 import { analyticsConfig } from '@/lib/config'
 import { useCookieConsent } from '@/hooks/useCookieConsent'
-import { useEffect } from 'react'
 
 /**
  * Google Analytics component that only loads after user consent

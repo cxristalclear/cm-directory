@@ -3,17 +3,19 @@
  */
 
 /**
- * Type for requests that may have json() method (e.g., in test environments)
+ * Type guard to check if request has json() method
+ * Used for test environments where requests may be mocked
  */
-interface RequestWithJson extends Request {
-  json?: () => Promise<unknown>
+function hasJsonMethod(request: Request): request is Request & { json: () => Promise<unknown> } {
+  return 'json' in request && typeof (request as Request & { json?: () => Promise<unknown> }).json === 'function'
 }
 
 /**
- * Type for requests that may have formData() method (e.g., in test environments)
+ * Type guard to check if request has formData() method
+ * Used for test environments where requests may be mocked
  */
-interface RequestWithFormData extends Request {
-  formData?: () => Promise<FormData>
+function hasFormDataMethod(request: Request): request is Request & { formData: () => Promise<FormData> } {
+  return 'formData' in request && typeof (request as Request & { formData?: () => Promise<FormData> }).formData === 'function'
 }
 
 /**
@@ -76,10 +78,9 @@ export async function parseJsonWithSizeLimit(
   try {
     // For test environments or requests without body, try to use json() directly
     // This handles cases where the request is already a mock with json() method
-    const requestWithJson = request as RequestWithJson
-    if (typeof requestWithJson.json === 'function') {
+    if (hasJsonMethod(request)) {
       try {
-        const data = await requestWithJson.json()
+        const data = await request.json()
         // Estimate size for validation
         const estimatedSize = new Blob([JSON.stringify(data)]).size
         if (estimatedSize > maxSize) {
@@ -140,10 +141,9 @@ export async function parseFormDataWithSizeLimit(
 
   try {
     // For test environments, try to use formData() directly if available
-    const requestWithFormData = request as RequestWithFormData
-    if (typeof requestWithFormData.formData === 'function') {
+    if (hasFormDataMethod(request)) {
       try {
-        const formData = await requestWithFormData.formData()
+        const formData = await request.formData()
         
         // Check total size of all files in FormData
         // Handle both standard FormData and test mocks
