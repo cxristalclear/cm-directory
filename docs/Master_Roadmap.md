@@ -833,27 +833,6 @@ Implement Google Analytics tracking.
 
 ---
 
-## ISSUE: PHASE 1 — Add Google Analytics Event Tracking
-**Labels:** analytics, pre-launch, blocker
-
-### Description
-Add conversion and funnel event tracking to Google Analytics.
-
-### Tasks
-- [ ] Add conversion tracking for key actions:
-  - [ ] "List Your Company" button clicks
-  - [ ] "Contact Sales" button clicks
-  - [ ] Form submissions
-- [ ] Add funnel event tracking:
-  - [ ] Company search events
-  - [ ] Filter application events
-  - [ ] Company profile views
-  - [ ] Map interactions
-- [ ] Verify GA events fire correctly in production build
-- [ ] Document GA event naming conventions
-
----
-
 ## ISSUE: PHASE 1 — Verify AI-Generated Content SEO
 **Labels:** seo, ai, pre-launch
 
@@ -1004,14 +983,16 @@ Verify critical files and services are accessible after deployment.
 1. Deploy to production
 2. Run: `npm run verify-deployment -- --url https://www.pcbafinder.com`
 3. Verify all checks pass
-4. Submit to Google Search Console (manual step - see DEPLOYMENT_RUNBOOK.md)
+4. Submit to Google Search Console (can be done in Phase 2 - see DEPLOYMENT_RUNBOOK.md)
 
 **Next Steps:**
-- ⚠️ **Google Search Console**: Manual steps required after deployment:
+- ⚠️ **Google Search Console**: Manual steps can be completed post-launch as part of Phase 2 SEO work:
   - Add property for production domain
   - Submit sitemap.xml URL
   - Submit feed.xml URL (optional)
   - Request indexing for key pages
+
+**Note:** Google Search Console submission is not a blocker for launch and can be completed in Phase 2.
 
 ---
 
@@ -1031,6 +1012,27 @@ Ensure navigation is consistent across all pages.
 
 ---
 
+## ISSUE: PHASE 2 — Google Analytics Event Tracking
+**Labels:** analytics, enhancement
+
+### Description
+Add conversion and funnel event tracking to Google Analytics for better insights.
+
+### Tasks
+- [ ] Add conversion tracking for key actions:
+  - [ ] "List Your Company" button clicks
+  - [ ] "Contact Sales" button clicks
+  - [ ] Form submissions
+- [ ] Add funnel event tracking:
+  - [ ] Company search events
+  - [ ] Filter application events
+  - [ ] Company profile views
+  - [ ] Map interactions
+- [ ] Verify GA events fire correctly in production build
+- [ ] Document GA event naming conventions
+
+---
+
 ## ISSUE: PHASE 2 — Metadata Consolidation
 **Labels:** seo, metadata
 
@@ -1042,6 +1044,20 @@ Metadata must be centralized and consistent.
 - [ ] Remove `app/companies/[slug]/metadata.ts`
 - [ ] Consolidate metadata in `page.tsx`
 - [ ] Standardize title & description patterns
+
+---
+
+## ISSUE: PHASE 2 — AI-Generated Content SEO Optimization
+**Labels:** seo, ai, enhancement
+
+### Description
+Optimize AI-generated company content for better SEO performance.
+
+### Tasks
+- [ ] Review AI research prompts ensure descriptions are SEO-optimized
+- [ ] Verify company descriptions are unique (not duplicated)
+- [ ] Check that AI-generated slugs are URL-friendly
+- [ ] Ensure AI-generated content includes relevant keywords naturally
 
 ---
 
