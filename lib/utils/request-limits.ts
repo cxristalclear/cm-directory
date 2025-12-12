@@ -3,6 +3,20 @@
  */
 
 /**
+ * Type for requests that may have json() method (e.g., in test environments)
+ */
+interface RequestWithJson extends Request {
+  json?: () => Promise<unknown>
+}
+
+/**
+ * Type for requests that may have formData() method (e.g., in test environments)
+ */
+interface RequestWithFormData extends Request {
+  formData?: () => Promise<FormData>
+}
+
+/**
  * Maximum request body size in bytes
  * Default: 1MB for JSON requests, 10MB for file uploads
  */
@@ -62,9 +76,10 @@ export async function parseJsonWithSizeLimit(
   try {
     // For test environments or requests without body, try to use json() directly
     // This handles cases where the request is already a mock with json() method
-    if (typeof (request as any).json === 'function') {
+    const requestWithJson = request as RequestWithJson
+    if (typeof requestWithJson.json === 'function') {
       try {
-        const data = await (request as any).json()
+        const data = await requestWithJson.json()
         // Estimate size for validation
         const estimatedSize = new Blob([JSON.stringify(data)]).size
         if (estimatedSize > maxSize) {
@@ -125,9 +140,10 @@ export async function parseFormDataWithSizeLimit(
 
   try {
     // For test environments, try to use formData() directly if available
-    if (typeof (request as any).formData === 'function') {
+    const requestWithFormData = request as RequestWithFormData
+    if (typeof requestWithFormData.formData === 'function') {
       try {
-        const formData = await (request as any).formData()
+        const formData = await requestWithFormData.formData()
         
         // Check total size of all files in FormData
         // Handle both standard FormData and test mocks
