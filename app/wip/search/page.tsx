@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { Map as MapIcon } from "lucide-react"
 import CompanyList from "@/components/wip/CompanyList1"
+import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
 import FilterDebugger from "@/components/FilterDebugger"
 import FilterBar from "@/components/FilterBar" // Your new component
 import LazyCompanyMap from "@/components/wip/LazyCompanyMap1"
@@ -165,7 +166,9 @@ export default async function Home({
                       </div>
                     }
                   >
-                    <CompanyList allCompanies={companies} />
+                    <CompanyListErrorBoundary>
+                      <CompanyList allCompanies={companies} />
+                    </CompanyListErrorBoundary>
                   </Suspense>
                 </div>
 

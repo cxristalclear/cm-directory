@@ -8,7 +8,7 @@ import FilterBar from "@/components/FilterBar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { featureFlags, getCanonicalUrl, siteConfig } from "@/lib/config"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
-import { supabase } from "@/lib/supabase"
+import { getCompanies } from "@/lib/data/getCompanies"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import type { PageProps } from "@/types/nxt"
 import SearchBar from "@/components/SearchBar"
@@ -19,52 +19,11 @@ import FilterSidebar from "@/components/FilterSidebar"
 import FilterDebugger from "@/components/FilterDebugger"
 import VenkelAd from "@/components/VenkelAd"
 import { jsonLdScriptProps } from "@/lib/schema"
+import DataErrorBoundary from "@/components/DataErrorBoundary"
+import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
+import { Building2 } from "lucide-react"
 
 export const revalidate = 300
-
-const COMPANY_FIELDS = `
-  id,
-  slug,
-  company_name,
-  dba_name,
-  description,
-  employee_count_range,
-  is_active,
-  website_url,
-  updated_at,
-  facilities (
-    id,
-    company_id,
-    city,
-    state,
-    state_code,
-    state_province,
-    country,
-    country_code,
-    latitude,
-    longitude,
-    facility_type,
-    is_primary
-  ),
-  capabilities (
-    pcb_assembly_smt,
-    pcb_assembly_through_hole,
-    cable_harness_assembly,
-    box_build_assembly,
-    prototyping,
-    low_volume_production,
-    medium_volume_production,
-    high_volume_production
-  ),
-  certifications (
-    id,
-    certification_type
-  ),
-  industries (
-    id,
-    industry_name
-  )
-`
 
 const MAX_COMPANIES = 500
 const siteName = siteConfig.name
@@ -90,26 +49,20 @@ export const metadata = {
   },
 }
 
+// Legacy function kept for backwards compatibility
+// Now uses enhanced getCompanies with retry and error handling
 async function getData(): Promise<HomepageCompanyWithLocations[]> {
-  try {
-    const { data, error } = await supabase
-      .from("companies")
-      .select(COMPANY_FIELDS)
-      .eq("is_active", true)
-      .order("updated_at", { ascending: false })
-      .limit(MAX_COMPANIES)
-      .returns<HomepageCompanyWithLocations[]>()
+  const result = await getCompanies({
+    maxCompanies: MAX_COMPANIES,
+    enableRetry: true,
+  })
 
-    if (error) {
-      console.error("Error fetching companies:", error)
-      return []
-    }
-
-    return data ?? []
-  } catch (error) {
-    console.error("Unexpected error fetching companies:", error)
-    return []
+  // If there's an error, throw it so error boundary can catch it
+  if (result.error) {
+    throw result.error
   }
+
+  return result.companies
 }
 
 type HomeSearchParams = Record<string, string | string[] | undefined>
@@ -119,7 +72,20 @@ export default async function Home({
 }: PageProps<Record<string, string | string[]>, HomeSearchParams>) {
   const resolvedSearchParams: HomeSearchParams = (await searchParams) ?? {}
   const initialFilters = parseFiltersFromSearchParams(resolvedSearchParams)
-  const companies = await getData()
+  
+  // Use enhanced getCompanies with retry and error handling
+  const dataResult = await getCompanies({
+    maxCompanies: MAX_COMPANIES,
+    enableRetry: true,
+  })
+
+  // If fetch failed, throw error to be caught by error.tsx
+  if (dataResult.error) {
+    throw dataResult.error
+  }
+
+  const companies = dataResult.companies
+  const isEmpty = companies.length === 0
   const useHorizontalFilterBar = false
   const itemListSchema = {
     "@context": "https://schema.org" as const,
@@ -140,8 +106,9 @@ export default async function Home({
 
   return (
     <Suspense fallback={<div className="p-4">Loading...</div>}>
-      <FilterProvider initialFilters={initialFilters}>
-        <div className="page-shell">
+      <DataErrorBoundary>
+        <FilterProvider initialFilters={initialFilters}>
+          <div className="page-shell">
           <Navbar />
           <Header />
           <script {...jsonLdScriptProps(itemListSchema)} />
@@ -162,22 +129,38 @@ export default async function Home({
                   </div>
                 </div>
 
-                <div className="companies-directory space-y-3">
-                  <Suspense
-                    fallback={
-                      <div className="card-compact animate-pulse p-8">
-                        <div className="mb-4 h-6 w-1/4 rounded bg-muted" />
-                        <div className="space-y-3">
-                          {[1, 2, 3].map(i => (
-                            <div key={i} className="h-24 rounded-md bg-muted" />
-                          ))}
+                  <div className="companies-directory space-y-3">
+                    {isEmpty ? (
+                      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 p-12 text-center">
+                        <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                          <Building2 className="h-8 w-8 text-gray-400" />
                         </div>
+                        <h3 className="mb-2 text-lg font-bold text-gray-900">
+                          No Companies Available
+                        </h3>
+                        <p className="text-sm text-gray-600 max-w-md mx-auto">
+                          The directory is currently empty. Companies will appear here once they are added to the database.
+                        </p>
                       </div>
-                    }
-                  >
-                    <CompanyList allCompanies={companies} showInlineSearch={false} />
-                  </Suspense>
-                </div>
+                    ) : (
+                      <Suspense
+                        fallback={
+                          <div className="card-compact animate-pulse p-8">
+                            <div className="mb-4 h-6 w-1/4 rounded bg-muted" />
+                            <div className="space-y-3">
+                              {[1, 2, 3].map(i => (
+                                <div key={i} className="h-24 rounded-md bg-muted" />
+                              ))}
+                            </div>
+                          </div>
+                        }
+                      >
+                        <CompanyListErrorBoundary>
+                          <CompanyList allCompanies={companies} showInlineSearch={false} />
+                        </CompanyListErrorBoundary>
+                      </Suspense>
+                    )}
+                  </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-x-[15px] items-start">
@@ -209,27 +192,44 @@ export default async function Home({
                   </div>
 
                   <div className="companies-directory space-y-3 mt-6">
-                    <Suspense
-                      fallback={
-                        <div className="card-compact animate-pulse p-8">
-                          <div className="mb-4 h-6 w-1/4 rounded bg-muted" />
-                          <div className="space-y-3">
-                            {[1, 2, 3].map(i => (
-                              <div key={i} className="h-24 rounded-md bg-muted" />
-                            ))}
-                          </div>
+                    {isEmpty ? (
+                      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 p-12 text-center">
+                        <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                          <Building2 className="h-8 w-8 text-gray-400" />
                         </div>
-                      }
-                    >
-                      <CompanyList allCompanies={companies} showInlineSearch={false} />
-                    </Suspense>
+                        <h3 className="mb-2 text-lg font-bold text-gray-900">
+                          No Companies Available
+                        </h3>
+                        <p className="text-sm text-gray-600 max-w-md mx-auto">
+                          The directory is currently empty. Companies will appear here once they are added to the database.
+                        </p>
+                      </div>
+                    ) : (
+                      <Suspense
+                        fallback={
+                          <div className="card-compact animate-pulse p-8">
+                            <div className="mb-4 h-6 w-1/4 rounded bg-muted" />
+                            <div className="space-y-3">
+                              {[1, 2, 3].map(i => (
+                                <div key={i} className="h-24 rounded-md bg-muted" />
+                              ))}
+                            </div>
+                          </div>
+                        }
+                      >
+                        <CompanyListErrorBoundary>
+                          <CompanyList allCompanies={companies} showInlineSearch={false} />
+                        </CompanyListErrorBoundary>
+                      </Suspense>
+                    )}
                   </div>
                 </div>
               </div>
             )}
           </main>
-        </div>
-      </FilterProvider>
+          </div>
+        </FilterProvider>
+      </DataErrorBoundary>
     </Suspense>
   )
 }

@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
+import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
 import FilterSidebar from "@/components/FilterSidebar"
 import FilterDebugger from "@/components/FilterDebugger"
 import { FilterErrorBoundary } from "@/components/FilterErrorBoundary"
@@ -471,7 +472,9 @@ export default async function Home({
                           </div>
                         </div>
                       }>
-                        <CompanyList allCompanies={companies} />
+                        <CompanyListErrorBoundary>
+                          <CompanyList allCompanies={companies} />
+                        </CompanyListErrorBoundary>
                       </Suspense>
                     </div>
                   </div>

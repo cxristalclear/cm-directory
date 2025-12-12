@@ -2,7 +2,9 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import CompanyList from "@/components/CompanyList"
+import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
 import FilterSidebar from "@/components/FilterSidebar"
+import FilterErrorBoundary from "@/components/FilterErrorBoundary"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { getCapabilityDefinition, CAPABILITY_DEFINITIONS } from "@/lib/capabilities"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
@@ -303,10 +305,14 @@ export default async function CapabilityPage({
 
             <div className="space-y-6">
               <div className="rounded-xl bg-white p-6 shadow-sm">
-                <FilterSidebar allCompanies={typedCompanies} />
+                <FilterErrorBoundary>
+                  <FilterSidebar allCompanies={typedCompanies} />
+                </FilterErrorBoundary>
               </div>
               <div className="rounded-xl bg-white p-6 shadow-sm">
-                <CompanyList allCompanies={typedCompanies} />
+                <CompanyListErrorBoundary>
+                  <CompanyList allCompanies={typedCompanies} />
+                </CompanyListErrorBoundary>
               </div>
             </div>
           </div>

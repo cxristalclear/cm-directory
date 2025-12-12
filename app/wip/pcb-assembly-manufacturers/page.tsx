@@ -1,9 +1,12 @@
 import { Suspense } from "react"
 import Script from "next/script"
 import CompanyList from "@/components/CompanyList"
+import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
 import FilterSidebar from "@/components/FilterSidebar"
+import FilterErrorBoundary from "@/components/FilterErrorBoundary"
 import Header from "@/components/Header"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
+import { MapErrorBoundary } from "@/components/MapErrorBoundary"
 import Navbar from "@/components/navbar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { CapabilitySlug, parseFiltersFromSearchParams } from "@/lib/filters/url"
@@ -112,14 +115,20 @@ export default async function PcbAssemblyManufacturers({
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-4 space-y-4">
-              <Suspense fallback={<div>Loading filters...</div>}>
-                <FilterSidebar allCompanies={companies} />
-              </Suspense>
+              <FilterErrorBoundary>
+                <Suspense fallback={<div>Loading filters...</div>}>
+                  <FilterSidebar allCompanies={companies} />
+                </Suspense>
+              </FilterErrorBoundary>
             </div>
             <div className="lg:col-span-8 space-y-6">
-              <LazyCompanyMap allCompanies={companies} />
+              <MapErrorBoundary>
+                <LazyCompanyMap allCompanies={companies} />
+              </MapErrorBoundary>
               <Suspense fallback={<div className="rounded-xl border border-dashed border-gray-300 p-6">Loading companies…</div>}>
-                <CompanyList allCompanies={companies} />
+                <CompanyListErrorBoundary>
+                  <CompanyList allCompanies={companies} />
+                </CompanyListErrorBoundary>
               </Suspense>
             </div>
           </div>

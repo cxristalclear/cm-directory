@@ -2,7 +2,9 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import CompanyList from "@/components/CompanyList"
+import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
 import FilterSidebar from "@/components/FilterSidebar"
+import FilterErrorBoundary from "@/components/FilterErrorBoundary"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
@@ -377,10 +379,14 @@ export default async function StateManufacturersPage({
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-4">
-              <FilterSidebar allCompanies={companies || []} />
+              <FilterErrorBoundary>
+                <FilterSidebar allCompanies={companies || []} />
+              </FilterErrorBoundary>
             </div>
             <div className="lg:col-span-8">
-              <CompanyList allCompanies={companies || []} />
+              <CompanyListErrorBoundary>
+                <CompanyList allCompanies={companies || []} />
+              </CompanyListErrorBoundary>
             </div>
           </div>
 
