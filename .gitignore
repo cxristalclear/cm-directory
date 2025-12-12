@@ -21,7 +21,6 @@
 /build
 
 # misc
-.DS_Store
 *.pem
 
 # debug
@@ -38,9 +37,68 @@ yarn-error.log*
 venv/
 __pycache__/
 *.pyc
+*.py[cod]
+*.so
+.Python
+*.egg-info/
+dist/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
+
+# cursor editor
+.cursor/
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# backup files
+*.backup
+*.bak
+*.tmp
+*.temp
+
+# logs
+*.log
+logs/
+*.log.*
+
+# cache directories
+.cache/
+.turbo/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# local database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal

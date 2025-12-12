@@ -32,15 +32,16 @@ export const metadata: Metadata = {
 }
 
 export default async function ManufacturersIndexPage() {
-  // Get counts by state
+  // Get counts by state - query both state_code and state to handle migration
   const { data: stateCounts } = await supabase
     .from('facilities')
-    .select('state')
-    .not('state', 'is', null)
+    .select('state, state_code')
   
-  const stateStats = stateCounts?.reduce((acc, { state }) => {
-    if (state) { // This check ensures state is not null
-      acc[state] = (acc[state] || 0) + 1
+  const stateStats = stateCounts?.reduce((acc, facility) => {
+    // Prioritize state_code (newer field) with fallback to state during migration
+    const stateValue = facility.state_code || facility.state
+    if (stateValue) {
+      acc[stateValue] = (acc[stateValue] || 0) + 1
     }
     return acc
   }, {} as Record<string, number>) || {}

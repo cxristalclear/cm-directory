@@ -52,9 +52,9 @@ Ensure no API keys are exposed or committed.
 Remove or archive unused files to keep codebase clean.
 
 ### Tasks
-- [ ] Review `_unused files/` folder contents
-- [ ] Archive or delete truly unused files
-- [ ] Move any needed files to proper locations
+- [x] Review `_unused files/` folder contents
+- [x] Archive or delete truly unused files
+- [x] Move any needed files to proper locations
 
 ---
 
@@ -345,7 +345,7 @@ Verify all content is complete and correct.
 Implement Google Analytics tracking.
 
 ### Tasks
-- [ ] Create GA4 property and obtain Measurement ID (G-XXXXXXXXXX)
+- [X] Create GA4 property and obtain Measurement ID (G-6VEF34G0WM)
 - [ ] Add Google Analytics script to `app/layout.tsx` using Next.js Script component
 - [ ] Verify GA script loads only when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set
 - [ ] Test GA4 pageview tracking in development
