@@ -12,12 +12,11 @@ type BuildMetadataOptions = {
   description: string
   canonicalPath?: string
   openGraph?: Metadata["openGraph"]
-  twitter?: Metadata["twitter"]
   robots?: Metadata["robots"]
 }
 
 /**
- * Builds a Metadata object with sensible defaults for title/OG/Twitter/canonical.
+ * Builds a Metadata object with sensible defaults for title/OG/canonical.
  * Provide a path for canonical; it will be resolved against the configured site URL.
  */
 export function buildMetadata({
@@ -25,7 +24,6 @@ export function buildMetadata({
   description,
   canonicalPath,
   openGraph,
-  twitter,
   robots,
 }: BuildMetadataOptions): Metadata {
   const canonical = canonicalPath ? getCanonicalUrl(canonicalPath) : siteConfig.url
@@ -43,13 +41,6 @@ export function buildMetadata({
     type: "website",
   }
 
-  const baseTwitter = {
-    card: "summary_large_image",
-    title,
-    description,
-    images: [siteConfig.ogImage],
-  }
-
   return {
     title,
     description,
@@ -61,11 +52,6 @@ export function buildMetadata({
       ...baseOg,
       ...openGraph,
       images: openGraph?.images ?? baseOg.images,
-    },
-    twitter: {
-      ...baseTwitter,
-      ...twitter,
-      images: twitter?.images ?? baseTwitter.images,
     },
     robots,
   }
@@ -88,11 +74,6 @@ export function mergeMetadataDefaults(base: Metadata, overrides?: Metadata): Met
       ...(base.openGraph || {}),
       ...(overrides.openGraph || {}),
       images: overrides.openGraph?.images ?? base.openGraph?.images,
-    },
-    twitter: {
-      ...(base.twitter || {}),
-      ...(overrides.twitter || {}),
-      images: overrides.twitter?.images ?? base.twitter?.images,
     },
     robots: overrides.robots ?? base.robots,
   }

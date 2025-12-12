@@ -21,11 +21,6 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     type: "website",
   },
-  twitter: {
-    card: "summary",
-    title: "Guides for Electronics Manufacturing Teams",
-    description: "Best practices for selecting and partnering with contract manufacturers.",
-  },
   robots: {
     index: false,
     follow: false,

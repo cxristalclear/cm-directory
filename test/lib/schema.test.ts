@@ -14,9 +14,7 @@ describe("schema helpers", () => {
         "logo": "https://www.pcbafinder.com/og-image.png",
         "name": "PCBA Finder",
         "sameAs": [
-          "https://twitter.com/pcbafinder",
           "https://www.linkedin.com/company/pcbafinder",
-          "https://github.com/pcbafinder/app",
         ],
         "url": "https://www.pcbafinder.com",
       }

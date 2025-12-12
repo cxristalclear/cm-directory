@@ -141,13 +141,6 @@ export async function generateMetadata({
       ],
     },
 
-    twitter: {
-      card: 'summary_large_image',
-      title: `${typedCompany.company_name} - Contract Manufacturer`,
-      description: (typedCompany.description || defaultDescription).substring(0, 160),
-      images: [logoUrl || siteConfig.ogImage],
-    },
-
     alternates: {
       canonical: pageUrl,
     },

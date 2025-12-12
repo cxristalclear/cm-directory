@@ -103,17 +103,6 @@ export async function generateMetadata({
         },
       ],
     },
-    twitter: {
-      card: "summary_large_image",
-      title: definition.title,
-      description: definition.summary,
-      images: [
-        {
-          url: siteConfig.ogImage,
-          alt: definition.title,
-        },
-      ],
-    },
     alternates: {
       canonical: pageUrl,
     },

@@ -18,6 +18,20 @@ export default function Error({
     // if (typeof window !== 'undefined') {
     //   Sentry.captureException(error)
     // }
+
+    // Add robots meta tag to prevent indexing of error pages
+    const robotsMeta = document.createElement('meta')
+    robotsMeta.name = 'robots'
+    robotsMeta.content = 'noindex, nofollow'
+    document.head.appendChild(robotsMeta)
+
+    return () => {
+      // Cleanup: remove the meta tag when component unmounts
+      const existingRobots = document.querySelector('meta[name="robots"]')
+      if (existingRobots && existingRobots.getAttribute('content') === 'noindex, nofollow') {
+        existingRobots.remove()
+      }
+    }
   }, [error])
 
   return (

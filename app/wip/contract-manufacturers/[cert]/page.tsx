@@ -53,7 +53,6 @@ export async function generateMetadata({
       siteName: siteConfig.name,
       images: [siteConfig.ogImage],
     },
-    twitter: { card: "summary_large_image", title, description, images: [siteConfig.ogImage] },
   };
 }
 

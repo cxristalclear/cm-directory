@@ -20,11 +20,6 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     type: "website",
   },
-  twitter: {
-    card: "summary",
-    title: "Terms of Service",
-    description: `Review the terms and acceptable use guidelines for ${siteName}.`,
-  },
   robots: {
     index: true,
     follow: true,

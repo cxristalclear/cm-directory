@@ -91,12 +91,6 @@ export const metadata = {
       }
     ]
   },
-  twitter: {
-    card: "summary_large_image",
-    title: `${siteName} – Electronics Contract Manufacturers`,
-    description:
-      "Filter verified manufacturers by capability, certification, and location. Find your next manufacturing partner.",
-  },
   robots: {
     index: false,
     follow: false,

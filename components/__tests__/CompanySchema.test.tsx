@@ -182,8 +182,8 @@ describe('CompanySchema', () => {
       },
       social_links: [
         {
-          platform: 'twitter',
-          url: 'https://twitter.com/acme',
+          platform: 'linkedin',
+          url: 'https://www.linkedin.com/company/acme',
           is_verified: true,
         },
       ],
@@ -205,7 +205,6 @@ describe('CompanySchema', () => {
     expect(schema.sameAs).toEqual([
       'https://acme.example.com',
       'https://www.linkedin.com/company/acme',
-      'https://twitter.com/acme',
     ])
     expect(schema.logo).toBe('https://cdn.example.com/acme-logo.svg')
     expect(schema.image).toEqual([

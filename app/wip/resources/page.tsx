@@ -21,11 +21,6 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     type: "website",
   },
-  twitter: {
-    card: "summary",
-    title: "Resources for Electronics Sourcing Teams",
-    description: "Practical resources for vetting and collaborating with manufacturing partners.",
-  },
   robots: {
     index: false,
     follow: false,

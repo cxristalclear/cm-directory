@@ -19,12 +19,15 @@ import {
 } from "lucide-react"
 
 import Navbar from "@/components/navbar"
-import { siteConfig } from "@/lib/config"
+import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 export const metadata: Metadata = {
   title: "About | Contract Manufacturer Directory",
   description:
     "Engineer-focused resource for discovering U.S. electronics contract manufacturers by capabilities, certifications, industries, and capacity faster.",
+  alternates: {
+    canonical: getCanonicalUrl("/about"),
+  },
 }
 
 const heroStats = [

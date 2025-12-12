@@ -40,12 +40,6 @@ export const metadata = {
     siteName: siteConfig.name,
     type: "website",
   },
-  twitter: {
-    card: "summary",
-    title: `${siteName} - Electronics Contract Manufacturers`,
-    description:
-      "Filter verified manufacturers by capability, certification, and location.",
-  },
 }
 
 type HomeSearchParams = Record<string, string | string[] | undefined>

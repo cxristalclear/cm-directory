@@ -68,7 +68,7 @@ describe('sitemap metadata serialization', () => {
     const manufacturersEntry = entries.find(entry => entry.url === getCanonicalUrl('/manufacturers'))
     const industriesEntry = entries.find(entry => entry.url === getCanonicalUrl('/industries'))
     const aboutEntry = entries.find(entry => entry.url === getCanonicalUrl('/about'))
-    const addCompanyEntry = entries.find(entry => entry.url === getCanonicalUrl('/add-your-company'))
+    const addCompanyEntry = entries.find(entry => entry.url === getCanonicalUrl('/list-your-company'))
 
     expect(companyEntry?.lastModified).toBe('2024-03-30T12:34:56.000Z')
     expect(fallbackCompanyEntry?.lastModified).toBe('2024-04-01T00:00:00.000Z')

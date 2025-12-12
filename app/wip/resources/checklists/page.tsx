@@ -21,11 +21,6 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     type: "website",
   },
-  twitter: {
-    card: "summary",
-    title: "Checklists for Manufacturing Readiness",
-    description: "Use these checklists to evaluate facilities, compliance, and launch readiness.",
-  },
   robots: {
     index: false,
     follow: false,
