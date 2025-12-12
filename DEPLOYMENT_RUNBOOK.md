@@ -12,3 +12,9 @@
 - Any time you trigger the existing build hook (or redeploy), both the sitemap and RSS feed will refresh together.
 - The feed is also reachable at `/api/feed` for integrations that prefer a JSON-style endpoint path while still receiving RSS XML.
 
+## Host redirects
+
+- Canonical www/HTTPS redirects are handled at the hosting/CDN layer (not in app middleware) to keep local/LAN dev and previews unaffected.
+- Configure the redirect rules with your host (e.g., Vercel/CloudFront/NGINX) to point all variants to `https://www.pcbafinder.com`.
+- Keep `NEXT_PUBLIC_SITE_URL` set to the canonical domain so metadata, sitemaps, and feeds emit the correct URLs even without in-app redirects.
+

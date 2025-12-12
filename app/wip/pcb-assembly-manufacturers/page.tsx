@@ -4,6 +4,7 @@ import CompanyList from "@/components/CompanyList"
 import FilterSidebar from "@/components/FilterSidebar"
 import Header from "@/components/Header"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
+import Navbar from "@/components/navbar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { CapabilitySlug, parseFiltersFromSearchParams } from "@/lib/filters/url"
 import { siteConfig } from "@/lib/config"
@@ -105,6 +106,7 @@ export default async function PcbAssemblyManufacturers({
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
+        <Navbar />
         <Header />
         <main className="container mx-auto px-4 py-8">
 

@@ -1,6 +1,7 @@
 import Script from "next/script"
 import type { Metadata } from "next"
 import { Breadcrumbs } from "@/components/Breadcrumbs"
+import Navbar from "@/components/navbar"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 type ChecklistPageProps = {
@@ -73,6 +74,7 @@ export default async function ChecklistPage({ params }: ChecklistPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
+      <Navbar />
       <header className="gradient-bg pb-20 pt-16 text-white">
         <div className="container mx-auto px-4">
           <p className="text-sm uppercase tracking-wide text-blue-100">Checklist</p>

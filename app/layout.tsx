@@ -1,12 +1,13 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter, Poppins } from "next/font/google"
+import Script from "next/script"
 import "./globals.css"
 import "./admin-glass.css"
 import { Toaster } from "sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics as VercelAnalytics } from "@vercel/analytics/next"
-import { OG_IMAGE_PATH, siteConfig } from "@/lib/config"
+import { OG_IMAGE_PATH, siteConfig, analyticsConfig } from "@/lib/config"
 import SiteFooter from "@/components/SiteFooter"
 import {
   jsonLdScriptProps,
@@ -99,6 +100,22 @@ export default function RootLayout({
         <SpeedInsights />
         <VercelAnalytics />
         <Toaster position="top-right" />
+        {analyticsConfig.enabled && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${analyticsConfig.gaId}');
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   )

@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import type { CompanyWithRelations } from "@/types/company"
 import { CompanySchema } from "@/components/CompanySchema"
 import CompanyDetailClient from "./CompanyDetailClient"
+import Navbar from "@/components/navbar"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 const siteName = siteConfig.name
@@ -52,6 +53,7 @@ export async function generateMetadata({
   type CompanyMetadata = {
     company_name: string
     description: string | null
+    logo_url: string | null
     facilities: Array<{
       city: string | null
       state: string | null
@@ -95,6 +97,7 @@ export async function generateMetadata({
   }
   
   const certifications = typedCompany.certifications?.map((c: { certification_type: string }) => c.certification_type).slice(0, 3).join(', ')
+  const logoUrl = typedCompany.logo_url?.trim() || null
   
   const pageUrl = getCanonicalUrl(`/companies/${slug}`)
   const titleLocation = location ? ` in ${location}` : ''
@@ -122,7 +125,7 @@ export async function generateMetadata({
       siteName: siteConfig.name,
       images: [
         {
-          url: siteConfig.ogImage,
+          url: logoUrl || siteConfig.ogImage,
           alt: `${typedCompany.company_name} - Contract Manufacturer`,
         },
       ],
@@ -132,7 +135,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: `${typedCompany.company_name} - Contract Manufacturer`,
       description: (typedCompany.description || defaultDescription).substring(0, 160),
-      images: [siteConfig.ogImage],
+      images: [logoUrl || siteConfig.ogImage],
     },
 
     alternates: {
@@ -168,6 +171,7 @@ export default async function CompanyPage({
 
   return (
     <>
+      <Navbar />
       {/* JSON-LD Schema for SEO */}
       <CompanySchema company={company} />
 

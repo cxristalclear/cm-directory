@@ -1,5 +1,6 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import Navbar from "@/components/navbar"
 import { CAPABILITY_DEFINITIONS } from "@/lib/capabilities"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { supabase } from "@/lib/supabase"
@@ -72,6 +73,7 @@ export default async function CapabilitiesIndexPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Navbar />
       <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
         <div className="container mx-auto px-4 py-12">
           <h1 className="text-4xl font-bold">Browse by Manufacturing Capability</h1>

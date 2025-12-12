@@ -14,6 +14,7 @@ import {
 } from "@/lib/schema"
 import { supabase } from "@/lib/supabase"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
+import Navbar from "@/components/navbar"
 
 const siteName = siteConfig.name
 
@@ -223,6 +224,7 @@ export default async function CapabilityPage({
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
+        <Navbar />
         <script {...jsonLdScriptProps(collectionSchema)} />
         {faqSchema ? <script {...jsonLdScriptProps(faqSchema)} /> : null}
         {howToSchema ? <script {...jsonLdScriptProps(howToSchema)} /> : null}
