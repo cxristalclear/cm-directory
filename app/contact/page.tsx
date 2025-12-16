@@ -22,11 +22,6 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     type: "website",
   },
-  twitter: {
-    card: "summary",
-    title: `Contact ${siteName}`,
-    description: `Reach the ${siteName} team for support and collaboration requests.`,
-  },
   robots: {
     index: true,
     follow: true,

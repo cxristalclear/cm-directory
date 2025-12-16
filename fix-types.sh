@@ -83,9 +83,7 @@ declare global {
       NEXT_PUBLIC_SITE_NAME?: string
       NEXT_PUBLIC_GA_MEASUREMENT_ID?: string
       NEXT_PUBLIC_SHOW_DEBUG?: string
-      NEXT_PUBLIC_TWITTER_URL: string
       NEXT_PUBLIC_LINKEDIN_URL: string
-      NEXT_PUBLIC_GITHUB_URL: string
       NODE_ENV: 'development' | 'production' | 'test'
     }
   }

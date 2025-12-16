@@ -50,18 +50,6 @@ export async function generateMetadata(): Promise<Metadata> {
         },
       ],
     },
-    twitter: {
-      card: "summary_large_image",
-      title: "Manufacturing Capabilities Directory",
-      description:
-        "Explore verified EMS partners by SMT, through-hole, cable harness, box build, and prototyping services.",
-      images: [
-        {
-          url: siteConfig.ogImage,
-          alt: "Manufacturing capabilities",
-        },
-      ],
-    },
     alternates: {
       canonical: pageUrl,
     },

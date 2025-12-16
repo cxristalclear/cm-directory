@@ -675,11 +675,6 @@ async function getCachedEnrichmentSnapshot(companyName: string, website?: string
   )
 
   const snapshot = matchingEntry?.enrichment_snapshot
-  if (snapshot) {
-    console.log('⚡ Using cached enrichment snapshot from research history (skipping ZoomInfo)')
-  } else if (data && data.length > 0) {
-    console.log('ℹ️  Cached enrichment snapshot ignored due to non-matching company metadata')
-  }
   return snapshot ?? null
 }
 
@@ -692,9 +687,6 @@ export async function researchCompany(
 ): Promise<ResearchResult> {
   try {
     // Step 1: Call ZoomInfo enrichment (or reuse cached snapshot)
-    console.log(`🤖 Starting research for: ${companyName}`)
-    console.log(`Enriching data for ${companyName}...`)
-
     let enrichmentResponse: EnrichmentResponse
     const cachedSnapshot = await getCachedEnrichmentSnapshot(companyName, website)
 
@@ -710,24 +702,8 @@ export async function researchCompany(
     const enrichmentPayload = enrichmentResponse.data ?? null
     const enrichedCompanyName = extractEnrichedCompanyName(enrichmentPayload)
     const effectiveCompanyName = enrichedCompanyName || companyName
-
-    console.log('📊 ZoomInfo enrichment result:', {
-      success: enrichmentResponse.success,
-      hasData: !!enrichmentResponse.data,
-      error: enrichmentResponse.error
-    })
     
     const enrichmentDataString = formatEnrichmentData(enrichmentResponse)
-    
-    // Log if enrichment was successful
-    if (enrichmentResponse.success && enrichmentResponse.data) {
-      console.log('✅ ZoomInfo enrichment SUCCESSFUL - Data will be included in OpenAI prompt')
-      console.log('📋 ZoomInfo data being sent to OpenAI:')
-      console.log(enrichmentDataString)
-    } else {
-      console.warn('⚠️  ZoomInfo enrichment FAILED or returned no data')
-      console.warn('OpenAI will rely on public web research only')
-    }
 
     // Step 2: Prepare user message with enrichment data
     const userMessage = `Research the following company and return complete JSON data:
@@ -749,12 +725,7 @@ Remember:
 - Include comprehensive capabilities, facilities, and certifications data`
 
     // Step 3: Call OpenAI with system prompt
-    console.log('📡 Calling OpenAI for research...')
-    console.log('📨 Full prompt being sent to OpenAI (length: ' + userMessage.length + ' chars)')
-    
     const aiResponse = await callOpenAI(SYSTEM_PROMPT, userMessage, 0.3)
-    
-    console.log('✅ OpenAI response received (length: ' + aiResponse.length + ' chars)')
 
     // Step 4: Parse and validate JSON response
     let parsedData: ParsedCompanyData
@@ -775,17 +746,6 @@ Remember:
       fallbackWebsite: website,
       enrichedCompanyName,
     })
-
-    // Log final results summary
-    console.log('\n=== 🎯 RESEARCH COMPLETE ===')
-    console.log(`Company: ${companyData.company_name}`)
-    console.log(`Facilities: ${companyData.facilities?.length || 0}`)
-    console.log(`Capabilities: ${Object.values(companyData.capabilities || {}).filter(Boolean).length}`)
-    console.log(`Industries: ${companyData.industries?.length || 0}`)
-    console.log(`Certifications: ${companyData.certifications?.length || 0}`)
-    console.log(`Business Info Fields: ${Object.values(companyData.business_info || {}).filter(v => v !== undefined && v !== null).length}`)
-    console.log(`Technical Specs Fields: ${Object.values(companyData.technical_specs || {}).filter(v => v !== undefined && v !== null).length}`)
-    console.log('=======================\n')
 
     return {
       success: true,
@@ -845,7 +805,6 @@ ${truncated ? '\n[Document truncated for model input]\n' : ''}
 
 Use only the document. If data is absent, leave the field empty (""), null, or [] as appropriate.`
 
-    console.log('📄 Processing uploaded document via OpenAI...')
     const aiResponse = await callOpenAI(DOCUMENT_SYSTEM_PROMPT, userMessage, 0.2)
 
     let parsedData: ParsedCompanyData

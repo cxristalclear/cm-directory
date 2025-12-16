@@ -43,14 +43,9 @@ export async function generateMetadata({ params }: GuideArticlePageProps): Promi
       siteName: siteName,
       type: "article",
     },
-    twitter: {
-      card: "summary_large_image",
-      title: articleTitle,
-      description: summary,
-    },
     robots: {
-      index: true,
-      follow: true,
+      index: false,
+      follow: false,
     },
   }
 }

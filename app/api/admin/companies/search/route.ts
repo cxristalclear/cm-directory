@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { validateSearchQuery } from '@/lib/utils/validation'
+import { checkRateLimit, getRateLimitKey } from '@/lib/utils/rate-limit'
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,10 +29,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ companies: [], error: 'Forbidden' }, { status: 403 })
     }
 
-    const query = new URL(request.url).searchParams.get('q')?.trim()
-    if (!query || query.length < 2) {
-      return NextResponse.json({ companies: [] })
+    // Rate limiting: 30 requests per minute per user
+    const rateLimitKey = getRateLimitKey(request, user.id)
+    const rateLimitResult = checkRateLimit(rateLimitKey, {
+      maxRequests: 30,
+      windowMs: 60 * 1000, // 1 minute
+      identifier: user.id,
+    })
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { companies: [], error: rateLimitResult.error || 'Rate limit exceeded' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '30',
+            'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
+            'Retry-After': String(Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)),
+          },
+        }
+      )
     }
+
+    const rawQuery = new URL(request.url).searchParams.get('q')?.trim() || ''
+    const queryValidation = validateSearchQuery(rawQuery, 2, 200) // Min 2 chars for search, max 200
+
+    if (!queryValidation.valid) {
+      return NextResponse.json(
+        { companies: [], error: queryValidation.error || 'Invalid search query' },
+        { status: 400 }
+      )
+    }
+
+    const query = queryValidation.sanitized
 
     const { data, error } = await supabase
       .from('companies')

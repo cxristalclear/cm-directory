@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect } from 'react'
-import { AlertTriangle, Home, Link, RefreshCcw } from 'lucide-react'
+import Link from 'next/link'
+import { AlertTriangle, Home, RefreshCcw } from 'lucide-react'
+import Navbar from '@/components/navbar'
 
 export default function Error({
   error,
@@ -18,10 +20,26 @@ export default function Error({
     // if (typeof window !== 'undefined') {
     //   Sentry.captureException(error)
     // }
+
+    // Add robots meta tag to prevent indexing of error pages
+    const robotsMeta = document.createElement('meta')
+    robotsMeta.name = 'robots'
+    robotsMeta.content = 'noindex, nofollow'
+    document.head.appendChild(robotsMeta)
+
+    return () => {
+      // Cleanup: remove the meta tag when component unmounts
+      const existingRobots = document.querySelector('meta[name="robots"]')
+      if (existingRobots && existingRobots.getAttribute('content') === 'noindex, nofollow') {
+        existingRobots.remove()
+      }
+    }
   }, [error])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
           {/* Error Icon */}
@@ -84,5 +102,6 @@ export default function Error({
         </div>
       </div>
     </div>
+    </>
   )
 }

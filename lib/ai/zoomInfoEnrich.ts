@@ -93,12 +93,6 @@ export async function enrichCompanyData(
 ): Promise<ZoomInfoEnrichmentResponse> {
   const webhookUrl = getWebhookUrl()
 
-  console.log('ZoomInfo Enrichment Request:', {
-    companyName,
-    website,
-    webhookConfigured: Boolean(webhookUrl),
-  })
-
   try {
     const requestBody: ZoomInfoEnrichmentRequest = {
       action: 'enrich_company',
@@ -112,8 +106,6 @@ export async function enrichCompanyData(
       requestBody.website = formattedWebsite
     }
 
-    console.log('Sending to webhook:', JSON.stringify(requestBody, null, 2))
-
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
@@ -121,8 +113,6 @@ export async function enrichCompanyData(
       },
       body: JSON.stringify(requestBody),
     })
-
-    console.log('Webhook response status:', response.status, response.statusText)
 
     if (!response.ok) {
       console.error('ZoomInfo webhook error:', response.status, response.statusText)
@@ -144,8 +134,6 @@ export async function enrichCompanyData(
         error: 'ZoomInfo webhook returned non-JSON response',
       }
     }
-
-    console.log('ZoomInfo raw response:', JSON.stringify(responseData, null, 2))
 
     let normalizedResponse: ZoomInfoEnrichmentResponse
 
@@ -174,10 +162,6 @@ export async function enrichCompanyData(
           success: true,
           data: responseData,
         }
-        console.log(
-          'Wrapped response data (no data property provided):',
-          JSON.stringify(normalizedResponse, null, 2)
-        )
       }
     } else if (responseData === null || responseData === undefined) {
       normalizedResponse = {
@@ -189,7 +173,6 @@ export async function enrichCompanyData(
         success: true,
         data: responseData,
       }
-      console.log('Wrapped response data:', JSON.stringify(normalizedResponse, null, 2))
     }
 
     return normalizedResponse

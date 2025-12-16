@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getCanonicalUrl, siteConfig } from '@/lib/config'
 import { getBuildTimestamp, toIsoString } from '@/lib/time'
 import { getStateMetadataByAbbreviation } from '@/lib/states'
+import { getIndustrySlugs } from '@/lib/industries'
 
 const buildTimestamp = getBuildTimestamp()
 
@@ -84,6 +85,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   })
 
+  const industryUrls = getIndustrySlugs().map((industrySlug) => ({
+    url: getCanonicalUrl(`/industries/${industrySlug}`),
+    lastModified: fallbackTimestamp,
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }))
+
   const evergreenPages = [
     {
       url: baseUrl,
@@ -106,9 +114,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
     {
-      url: getCanonicalUrl('/add-your-company'),
+      url: getCanonicalUrl('/list-your-company'),
       changeFrequency: 'monthly' as const,
       priority: 0.6,
+    },
+    {
+      url: getCanonicalUrl('/contact'),
+      changeFrequency: 'monthly' as const,
+      priority: 0.5,
+    },
+    {
+      url: getCanonicalUrl('/terms'),
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
+    },
+    {
+      url: getCanonicalUrl('/privacy'),
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
     },
   ]
 
@@ -121,5 +144,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...evergreenUrls,
     ...companyUrls,
     ...stateUrls,
+    ...industryUrls,
   ]
 }

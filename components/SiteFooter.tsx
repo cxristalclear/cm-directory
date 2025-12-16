@@ -84,7 +84,7 @@ export default function SiteFooter() {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Top Capabilities</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Top Industries</h3>
             <ul className="space-y-2">
               {topCapabilityLinks.map(link => (
                 <li key={`${link.href}-${link.label}`}>

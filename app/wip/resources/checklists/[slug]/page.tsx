@@ -46,14 +46,9 @@ export async function generateMetadata({ params }: ChecklistPageProps): Promise<
       siteName: siteConfig.name,
       type: "article",
     },
-    twitter: {
-      card: "summary",
-      title: checklistTitle,
-      description: summary,
-    },
     robots: {
-      index: true,
-      follow: true,
+      index: false,
+      follow: false,
     },
   }
 }

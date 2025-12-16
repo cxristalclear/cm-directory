@@ -14,9 +14,7 @@ describe("schema helpers", () => {
         "logo": "https://www.pcbafinder.com/og-image.png",
         "name": "PCBA Finder",
         "sameAs": [
-          "https://twitter.com/pcbafinder",
           "https://www.linkedin.com/company/pcbafinder",
-          "https://github.com/pcbafinder/app",
         ],
         "url": "https://www.pcbafinder.com",
       }
@@ -25,13 +23,18 @@ describe("schema helpers", () => {
 
   it("returns the production website schema", () => {
     expect(webSiteJsonLd).toMatchInlineSnapshot(`
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "PCBA Finder",
-        "url": "https://www.pcbafinder.com",
-      }
-    `)
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "PCBA Finder",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "query-input": "required name=search_term_string",
+    "target": "https://www.pcbafinder.com/?q={search_term_string}",
+  },
+  "url": "https://www.pcbafinder.com",
+}
+`)
   })
 
   it("builds breadcrumb lists with canonical URLs", () => {

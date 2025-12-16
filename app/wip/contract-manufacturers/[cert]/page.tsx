@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import Script from "next/script"
 import CompanyList from "@/components/CompanyList"
+import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
 import Navbar from "@/components/navbar"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
@@ -52,7 +53,6 @@ export async function generateMetadata({
       siteName: siteConfig.name,
       images: [siteConfig.ogImage],
     },
-    twitter: { card: "summary_large_image", title, description, images: [siteConfig.ogImage] },
   };
 }
 
@@ -107,7 +107,9 @@ export default async function CertManufacturers({
 
         <FilterProvider initialFilters={initialFilters}>
           <div className="companies-directory">
-            <CompanyList allCompanies={byCert} />
+            <CompanyListErrorBoundary>
+              <CompanyList allCompanies={byCert} />
+            </CompanyListErrorBoundary>
           </div>
         </FilterProvider>
       </main>

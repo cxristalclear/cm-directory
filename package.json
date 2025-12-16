@@ -12,7 +12,8 @@
     "geocode": "tsx scripts/geocode-facilities.ts",
     "geocode:dry-run": "DRY_RUN=true tsx scripts/geocode-facilities.ts",
     "generate-types": "bash scripts/generate-types.sh",
-    "db:pull-types": "supabase gen types typescript --project-id $(grep NEXT_PUBLIC_SUPABASE_URL .env.local | cut -d '/' -f 3 | cut -d '.' -f 1) > lib/database.types.ts"
+    "db:pull-types": "supabase gen types typescript --project-id $(grep NEXT_PUBLIC_SUPABASE_URL .env.local | cut -d '/' -f 3 | cut -d '.' -f 1) > lib/database.types.ts",
+    "verify-deployment": "tsx scripts/verify-deployment.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",

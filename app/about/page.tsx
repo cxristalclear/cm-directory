@@ -19,12 +19,15 @@ import {
 } from "lucide-react"
 
 import Navbar from "@/components/navbar"
-import { siteConfig } from "@/lib/config"
+import { getCanonicalUrl, siteConfig } from "@/lib/config"
 
 export const metadata: Metadata = {
   title: "About | Contract Manufacturer Directory",
   description:
     "Engineer-focused resource for discovering U.S. electronics contract manufacturers by capabilities, certifications, industries, and capacity faster.",
+  alternates: {
+    canonical: getCanonicalUrl("/about"),
+  },
 }
 
 const heroStats = [
@@ -351,9 +354,10 @@ export default function AboutPage() {
 
               <Link 
                 href="/list-your-company" 
-                className="relative z-10 w-full sm:w-auto btn btn--lg bg-white text-slate-900 hover:bg-blue-50 border-none self-start"
+                className="relative z-10 w-full sm:w-auto btn btn--lg bg-white text-slate-900 hover:bg-blue-50 border-none self-start flex items-center gap-2"
               >
                 Start Free Listing
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>

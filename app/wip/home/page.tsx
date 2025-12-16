@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import LazyCompanyMap from "@/components/LazyCompanyMap"
 import CompanyList from "@/components/CompanyList"
+import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
 import FilterSidebar from "@/components/FilterSidebar"
 import FilterDebugger from "@/components/FilterDebugger"
 import { FilterErrorBoundary } from "@/components/FilterErrorBoundary"
@@ -90,18 +91,12 @@ export const metadata = {
       }
     ]
   },
-  twitter: {
-    card: "summary_large_image",
-    title: `${siteName} – Electronics Contract Manufacturers`,
-    description:
-      "Filter verified manufacturers by capability, certification, and location. Find your next manufacturing partner.",
-  },
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
     googleBot: {
-      index: true,
-      follow: true,
+      index: false,
+      follow: false,
       'max-video-preview': -1,
       'max-image-preview': 'large',
       'max-snippet': -1,
@@ -471,7 +466,9 @@ export default async function Home({
                           </div>
                         </div>
                       }>
-                        <CompanyList allCompanies={companies} />
+                        <CompanyListErrorBoundary>
+                          <CompanyList allCompanies={companies} />
+                        </CompanyListErrorBoundary>
                       </Suspense>
                     </div>
                   </div>

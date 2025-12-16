@@ -24,11 +24,6 @@ export const metadata: Metadata = {
     url: pageUrl,
     siteName: siteConfig.name,
   },
-  twitter: {
-    card: "summary",
-    title: pageTitle,
-    description: pageDescription,
-  },
 }
 
 export default async function ManufacturersIndexPage() {

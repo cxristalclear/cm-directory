@@ -1,6 +1,7 @@
 import { STATE_NAMES } from "@/utils/stateMapping"
 import { normalizeCountryCode, normalizeStateFilterValue } from "@/utils/locationFilters"
 import { EmployeeCountRanges, type EmployeeCountRange } from "@/types/company"
+import { validateSearchQuery } from "@/lib/utils/validation"
 
 export const US_STATE_CODES = new Set(Object.keys(STATE_NAMES))
 /** List of supported capability slugs */
@@ -133,7 +134,10 @@ export function parseFiltersFromSearchParams(searchParams: SearchParamInput): Fi
   const productionVolume = volumeValues.find((value): value is ProductionVolume => isProductionVolume(value)) ?? null
   const employeeCountRanges = normalizeEmployeeRanges(employeeValues)
 
-  const searchQuery = queryValues[0]?.trim() ?? ""
+  // Validate and sanitize search query
+  const rawQuery = queryValues[0]?.trim() ?? ""
+  const queryValidation = validateSearchQuery(rawQuery, 0, 200) // Allow empty queries for filter-only searches
+  const searchQuery = queryValidation.valid ? queryValidation.sanitized : ""
 
   return { countries, states, capabilities, productionVolume, employeeCountRanges, searchQuery }
 }
@@ -165,7 +169,11 @@ export function serializeFiltersToSearchParams(filters: FilterUrlState): URLSear
     params.append("volume", filters.productionVolume)
   }
 
-  const trimmedQuery = (typeof filters.searchQuery === "string" ? filters.searchQuery : "").trim()
+  // Validate and sanitize before serializing
+  const rawQuery = (typeof filters.searchQuery === "string" ? filters.searchQuery : "").trim()
+  const queryValidation = validateSearchQuery(rawQuery, 0, 200) // Allow empty queries
+  const trimmedQuery = queryValidation.valid ? queryValidation.sanitized : ""
+  
   if (trimmedQuery.length > 0) {
     params.append("q", trimmedQuery)
   }

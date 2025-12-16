@@ -2,7 +2,9 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import CompanyList from "@/components/CompanyList"
+import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
 import FilterSidebar from "@/components/FilterSidebar"
+import FilterErrorBoundary from "@/components/FilterErrorBoundary"
 import { Breadcrumbs } from "@/components/Breadcrumbs"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
@@ -176,10 +178,14 @@ export default async function IndustryPage({
           <h2 className="text-2xl font-bold mb-6">{industryData.name} Manufacturers</h2>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-4">
-              <FilterSidebar allCompanies={typedCompanies || []} />
+              <FilterErrorBoundary>
+                <FilterSidebar allCompanies={typedCompanies || []} />
+              </FilterErrorBoundary>
             </div>
             <div className="lg:col-span-8">
-              <CompanyList allCompanies={typedCompanies || []} />
+              <CompanyListErrorBoundary>
+                <CompanyList allCompanies={typedCompanies || []} />
+              </CompanyListErrorBoundary>
             </div>
           </div>
 

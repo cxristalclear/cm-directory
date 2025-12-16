@@ -7,6 +7,7 @@ import { CompanySchema } from "@/components/CompanySchema"
 import CompanyDetailClient from "./CompanyDetailClient"
 import Navbar from "@/components/navbar"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
+import { isValidCompanySlug } from "@/lib/utils/validation"
 
 const siteName = siteConfig.name
 
@@ -37,9 +38,18 @@ const fetchCompanyBySlug = cache(async (slug: string) => {
 export async function generateMetadata({ 
   params 
 }: { 
-  params: Promise<{ slug: string }> 
+  params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
+  
+  // Validate slug format before querying database
+  if (!isValidCompanySlug(slug)) {
+    return {
+      title: `Company Not Found | ${siteName}`,
+      description: 'The requested manufacturer profile could not be found.',
+    }
+  }
+  
   const { data: company } = await fetchCompanyBySlug(slug)
   
   if (!company) {
@@ -131,13 +141,6 @@ export async function generateMetadata({
       ],
     },
 
-    twitter: {
-      card: 'summary_large_image',
-      title: `${typedCompany.company_name} - Contract Manufacturer`,
-      description: (typedCompany.description || defaultDescription).substring(0, 160),
-      images: [logoUrl || siteConfig.ogImage],
-    },
-
     alternates: {
       canonical: pageUrl,
     },
@@ -161,6 +164,11 @@ export default async function CompanyPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+
+  // Validate slug format before querying database
+  if (!isValidCompanySlug(slug)) {
+    notFound()
+  }
 
   // Fetch all company data
   const { data: company } = await fetchCompanyBySlug(slug)

@@ -21,11 +21,6 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     type: "website",
   },
-  twitter: {
-    card: "summary",
-    title: "Privacy Policy",
-    description: `Understand how ${siteName} protects community and customer data.`,
-  },
   robots: {
     index: true,
     follow: true,

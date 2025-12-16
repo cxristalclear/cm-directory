@@ -47,7 +47,7 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
   const [showAllCapabilities, setShowAllCapabilities] = useState(false)
   const [showAllEmployees, setShowAllEmployees] = useState(false)
 
-  // Calculate dynamic filter counts
+  // Calculate dynamic filter counts - optimized to iterate through facilities only once
   const dynamicCounts = useMemo(() => {
     const counts = {
       countries: new Map<string, number>(),
@@ -61,23 +61,39 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
 
     type CompanyFacility = NonNullable<HomepageCompanyWithLocations["facilities"]>[number]
 
-    const facilityMatchesLocation = (facility: CompanyFacility) => {
-      const countryCode = getFacilityCountryCode(facility)
-      const stateKey = getFacilityStateKey(facility)
+    // Pre-compute filter sets for faster lookups
+    const countryFilterSet = new Set(filters.countries)
+    const stateFilterSet = new Set(filters.states)
+    const employeeFilterSet = new Set(filters.employeeCountRanges)
+    const hasCountryFilter = filters.countries.length > 0
+    const hasStateFilter = filters.states.length > 0
+    const hasCapabilityFilter = filters.capabilities.length > 0
+    const hasVolumeFilter = filters.productionVolume !== null
+    const hasEmployeeFilter = filters.employeeCountRanges.length > 0
 
-      if (filters.countries.length > 0) {
-        if (!countryCode || !filters.countries.includes(countryCode)) return false
-      }
-      if (filters.states.length > 0) {
-        if (!stateKey || !filters.states.includes(stateKey)) return false
+    // Helper to check if facility matches location filters
+    const facilityMatchesLocationFilters = (facility: CompanyFacility): boolean => {
+      if (hasCountryFilter || hasStateFilter) {
+        const countryCode = getFacilityCountryCode(facility)
+        const stateKey = getFacilityStateKey(facility)
+        
+        if (hasCountryFilter && (!countryCode || !countryFilterSet.has(countryCode))) {
+          return false
+        }
+        if (hasStateFilter && (!stateKey || !stateFilterSet.has(stateKey))) {
+          return false
+        }
       }
       return true
     }
 
-    allCompanies.forEach(company => {
-      const matchesCapabilities = filters.capabilities.length === 0 || 
-        (company.capabilities?.[0] && filters.capabilities.some(selected => {
-          const cap = company.capabilities![0]
+    // Single pass through companies
+    for (const company of allCompanies) {
+      const cap = company.capabilities?.[0]
+      
+      // Check capability matches
+      const matchesCapabilities = !hasCapabilityFilter || 
+        (cap && filters.capabilities.some(selected => {
           switch (selected) {
             case 'smt': return cap.pcb_assembly_smt
             case 'through_hole': return cap.pcb_assembly_through_hole
@@ -88,9 +104,9 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
           }
         }))
 
-      const matchesVolume = !filters.productionVolume ||
-        (company.capabilities?.[0] && (() => {
-          const cap = company.capabilities![0]
+      // Check volume matches
+      const matchesVolume = !hasVolumeFilter ||
+        (cap && (() => {
           switch (filters.productionVolume) {
             case 'low': return cap.low_volume_production
             case 'medium': return cap.medium_volume_production
@@ -99,43 +115,57 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
           }
         })())
 
-      const matchesLocation = company.facilities?.some(facilityMatchesLocation) ?? false
-      const matchesEmployees = filters.employeeCountRanges.length === 0 ||
-        (company.employee_count_range ? filters.employeeCountRanges.includes(company.employee_count_range as EmployeeCountRange) : false)
+      // Check employee matches
+      const matchesEmployees = !hasEmployeeFilter ||
+        (company.employee_count_range ? employeeFilterSet.has(company.employee_count_range as EmployeeCountRange) : false)
 
-      if (!matchesCapabilities || !matchesVolume || !matchesLocation || !matchesEmployees) return
+      // Check location matches - need to check if ANY facility matches
+      let matchesLocation = true
+      if (hasCountryFilter || hasStateFilter) {
+        matchesLocation = company.facilities?.some(facilityMatchesLocationFilters) ?? false
+      }
 
-      company.facilities?.forEach(facility => {
-        const countryCode = getFacilityCountryCode(facility)
-        if (countryCode) {
-          allCountryCodes.add(countryCode)
-        }
-        if (!countryCode) return
+      // Skip company if it doesn't match filters
+      if (!matchesCapabilities || !matchesVolume || !matchesLocation || !matchesEmployees) {
+        continue
+      }
 
-        if (filters.states.length > 0) {
+      // Single pass through facilities - count both countries and states in one loop
+      if (company.facilities) {
+        for (const facility of company.facilities) {
+          const countryCode = getFacilityCountryCode(facility)
           const stateKey = getFacilityStateKey(facility)
-          if (!stateKey || !filters.states.includes(stateKey)) return
-        }
-        counts.countries.set(countryCode, (counts.countries.get(countryCode) || 0) + 1)
-      })
 
-      company.facilities?.forEach(facility => {
-        const countryCode = getFacilityCountryCode(facility)
-        if (countryCode) allCountryCodes.add(countryCode)
-        if (filters.countries.length > 0) {
-          if (!countryCode || !filters.countries.includes(countryCode)) return
-        }
-        const key = getFacilityStateKey(facility)
-        if (key) allStateKeys.add(key)
-        if (!key) return
-        const label = getFacilityStateLabel(facility) || formatStateLabelFromKey(key)
-        const existing = counts.states.get(key)
-        if (existing) existing.count += 1
-        else counts.states.set(key, { count: 1, label })
-      })
+          // Collect all country codes (for ensuring all are in counts later)
+          if (countryCode) {
+            allCountryCodes.add(countryCode)
+          }
 
-      if (company.capabilities?.[0]) {
-        const cap = company.capabilities[0]
+          // Count countries - facility must match location filters
+          if (countryCode && (!hasCountryFilter || countryFilterSet.has(countryCode))) {
+            if (!hasStateFilter || (stateKey && stateFilterSet.has(stateKey))) {
+              counts.countries.set(countryCode, (counts.countries.get(countryCode) || 0) + 1)
+            }
+          }
+
+          // Count states - facility must match location filters
+          if (stateKey) {
+            allStateKeys.add(stateKey)
+            if (!hasCountryFilter || (countryCode && countryFilterSet.has(countryCode))) {
+              const label = getFacilityStateLabel(facility) || formatStateLabelFromKey(stateKey)
+              const existing = counts.states.get(stateKey)
+              if (existing) {
+                existing.count += 1
+              } else {
+                counts.states.set(stateKey, { count: 1, label })
+              }
+            }
+          }
+        }
+      }
+
+      // Count capabilities and volume (only if company matched)
+      if (cap) {
         if (matchesVolume) {
           if (cap.pcb_assembly_smt) counts.capabilities.set('smt', (counts.capabilities.get('smt') || 0) + 1)
           if (cap.pcb_assembly_through_hole) counts.capabilities.set('through_hole', (counts.capabilities.get('through_hole') || 0) + 1)
@@ -150,26 +180,42 @@ export default function FilterSidebar({ allCompanies }: FilterSidebarProps) {
         }
       }
 
+      // Count employee ranges
       if (company.employee_count_range) {
         const range = company.employee_count_range as EmployeeCountRange
         counts.employeeCountRanges.set(range, (counts.employeeCountRanges.get(range) || 0) + 1)
       }
-    })
+    }
 
-    filters.countries.forEach(code => !counts.countries.has(code) && counts.countries.set(code, 0))
-    filters.states.forEach(state => !counts.states.has(state) && counts.states.set(state, { count: 0, label: formatStateLabelFromKey(state) }))
-    filters.capabilities.forEach(cap => !counts.capabilities.has(cap) && counts.capabilities.set(cap, 0))
-    if (filters.productionVolume && !counts.productionVolume.has(filters.productionVolume)) counts.productionVolume.set(filters.productionVolume, 0)
-    filters.employeeCountRanges.forEach(range => !counts.employeeCountRanges.has(range) && counts.employeeCountRanges.set(range, 0))
-    allCountryCodes.forEach(code => {
+    // Ensure all active filter values are in counts (even if count is 0)
+    for (const code of filters.countries) {
       if (!counts.countries.has(code)) counts.countries.set(code, 0)
-    })
-    allStateKeys.forEach(state => {
+    }
+    for (const state of filters.states) {
       if (!counts.states.has(state)) counts.states.set(state, { count: 0, label: formatStateLabelFromKey(state) })
-    })
-    ;(Object.keys(CAPABILITY_NAMES) as CapabilitySlug[]).forEach((cap: CapabilitySlug) => {
+    }
+    for (const cap of filters.capabilities) {
       if (!counts.capabilities.has(cap)) counts.capabilities.set(cap, 0)
-    })
+    }
+    if (filters.productionVolume && !counts.productionVolume.has(filters.productionVolume)) {
+      counts.productionVolume.set(filters.productionVolume, 0)
+    }
+    for (const range of filters.employeeCountRanges) {
+      if (!counts.employeeCountRanges.has(range)) counts.employeeCountRanges.set(range, 0)
+    }
+
+    // Ensure all discovered countries/states are in counts (even if count is 0)
+    for (const code of allCountryCodes) {
+      if (!counts.countries.has(code)) counts.countries.set(code, 0)
+    }
+    for (const state of allStateKeys) {
+      if (!counts.states.has(state)) counts.states.set(state, { count: 0, label: formatStateLabelFromKey(state) })
+    }
+    
+    // Ensure all capabilities are in counts
+    for (const cap of Object.keys(CAPABILITY_NAMES) as CapabilitySlug[]) {
+      if (!counts.capabilities.has(cap)) counts.capabilities.set(cap, 0)
+    }
 
     return counts
   }, [allCompanies, filters])

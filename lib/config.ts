@@ -18,9 +18,7 @@ const defaultSupabaseConfig = {
 
 const metadataEnvVars = {
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-  NEXT_PUBLIC_TWITTER_URL: process.env.NEXT_PUBLIC_TWITTER_URL,
   NEXT_PUBLIC_LINKEDIN_URL: process.env.NEXT_PUBLIC_LINKEDIN_URL,
-  NEXT_PUBLIC_GITHUB_URL: process.env.NEXT_PUBLIC_GITHUB_URL,
 } as const
 
 let metadataWarningLogged = false
@@ -54,9 +52,7 @@ if (missingMetadataEnvVars.length > 0 && process.env.NODE_ENV !== 'test' && !met
 const placeholderPatterns = [/your_/i, /example\.com/i, /yourdomain\.com/i, /placeholder/i]
 const flaggedEnvVars = Object.entries({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-  NEXT_PUBLIC_TWITTER_URL: process.env.NEXT_PUBLIC_TWITTER_URL,
   NEXT_PUBLIC_LINKEDIN_URL: process.env.NEXT_PUBLIC_LINKEDIN_URL,
-  NEXT_PUBLIC_GITHUB_URL: process.env.NEXT_PUBLIC_GITHUB_URL,
 }).filter(([, value]) =>
   typeof value === 'string' && placeholderPatterns.some((pattern) => pattern.test(value))
 )
@@ -77,9 +73,7 @@ const defaultSiteUrl = 'https://www.pcbafinder.com'
 const siteUrl = normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL || defaultSiteUrl)
 
 const defaultSocialLinks = {
-  twitter: 'https://twitter.com/pcbafinder',
   linkedin: 'https://www.linkedin.com/company/pcbafinder',
-  github: 'https://github.com/pcbafinder/app',
 } as const
 
 export const OG_IMAGE_PATH = '/og-image.png' as const
@@ -100,9 +94,7 @@ export const siteConfig = {
   url: siteUrl,
   ogImage: buildAbsoluteUrl(siteUrl, OG_IMAGE_PATH),
   links: {
-    twitter: process.env.NEXT_PUBLIC_TWITTER_URL || defaultSocialLinks.twitter,
     linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL || defaultSocialLinks.linkedin,
-    github: process.env.NEXT_PUBLIC_GITHUB_URL || defaultSocialLinks.github,
   },
 } as const
 

@@ -1,14 +1,15 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter, Poppins } from "next/font/google"
-import Script from "next/script"
 import "./globals.css"
 import "./admin-glass.css"
 import { Toaster } from "sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics as VercelAnalytics } from "@vercel/analytics/next"
-import { OG_IMAGE_PATH, siteConfig, analyticsConfig } from "@/lib/config"
+import { OG_IMAGE_PATH, siteConfig } from "@/lib/config"
 import SiteFooter from "@/components/SiteFooter"
+import CookieConsentBanner from "@/components/CookieConsentBanner"
+import GoogleAnalytics from "@/components/GoogleAnalytics"
 import {
   jsonLdScriptProps,
   organizationJsonLd,
@@ -61,12 +62,6 @@ export const metadata: Metadata = {
     ],
     type: "website",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: siteConfig.name,
-    description: defaultDescription,
-    images: [ogImageUrl],
-  },
 }
 
 export default function RootLayout({
@@ -100,22 +95,8 @@ export default function RootLayout({
         <SpeedInsights />
         <VercelAnalytics />
         <Toaster position="top-right" />
-        {analyticsConfig.enabled && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.gaId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${analyticsConfig.gaId}');
-              `}
-            </Script>
-          </>
-        )}
+        <CookieConsentBanner />
+        <GoogleAnalytics />
       </body>
     </html>
   )

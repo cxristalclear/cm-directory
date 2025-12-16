@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import NextLink from 'next/link'
 import { AlertTriangle, Home } from 'lucide-react'
+import Navbar from '@/components/navbar'
 
 export default function GlobalError({
   error,
@@ -18,7 +19,11 @@ export default function GlobalError({
 
   return (
     <html>
+      <head>
+        <meta name="robots" content="noindex, nofollow" />
+      </head>
       <body>
+        <Navbar />
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
           <div className="max-w-md w-full">
             <div className="bg-white rounded-2xl shadow-xl p-8 text-center">

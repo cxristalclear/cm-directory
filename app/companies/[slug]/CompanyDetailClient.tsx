@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { useState } from "react"
 import { Building2, Calendar, CheckCircle, DollarSign, Globe, MapPin, Users } from "lucide-react"
-import CompanyHeader from "@/components/CompanyHeader"
 import { Breadcrumbs } from "@/components/Breadcrumbs"
 import ClaimEditSection from "@/components/ClaimEditSection"
 import { getStateProvince, getPostalCode } from "@/lib/admin/addressCompat"
@@ -19,9 +18,6 @@ interface CompanyDetailClientProps {
 }
 
 type CompanyFacility = NonNullable<Company["facilities"]>[number]
-
-const normalizeTextSlug = (value: string): string =>
-  value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 
 const resolveIndustrySlugFromName = (name?: string | null) => {
   if (!name) return null
@@ -109,8 +105,6 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <CompanyHeader />
-
       <main className="bg-gradient-to-br from-white-600 via-white-700 to-white-800">
         <div className="container mx-auto px-4 py-6">
           <Breadcrumbs

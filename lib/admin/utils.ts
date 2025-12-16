@@ -223,14 +223,12 @@ export function normalizeWebsiteUrl(url: string | null | undefined): string {
   // Try with https:// first (more secure default)
   const normalizedHttps = `https://${trimmed}`
   if (isValidUrl(normalizedHttps)) {
-    console.log(`Normalized URL: ${trimmed} -> ${normalizedHttps}`)
     return normalizedHttps
   }
   
   // Fall back to http:// if https fails
   const normalizedHttp = `http://${trimmed}`
   if (isValidUrl(normalizedHttp)) {
-    console.log(`Normalized URL: ${trimmed} -> ${normalizedHttp}`)
     return normalizedHttp
   }
   

@@ -48,7 +48,10 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
   const [isStyleLoaded, setIsStyleLoaded] = useState(false)
   const [showStyleMenu, setShowStyleMenu] = useState(false)
   const currentFacilitiesRef = useRef<FacilityWithCoordinates[]>([])
-
+  const previousFiltersRef = useRef<string>('')
+  const isZoomingRef = useRef(false)
+  const zoomTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
   const debouncedFilters = useDebounce(filters, 300)
   const hasActiveDebouncedFilters = useMemo(
     () =>
@@ -58,7 +61,6 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       debouncedFilters.productionVolume !== null,
     [debouncedFilters]
   )
-  const previousShouldFitRef = useRef(false)
 
   const filteredFacilities = useMemo(() => {
     const filteredCompanies = filterCompanies(allCompanies, debouncedFilters)
@@ -271,53 +273,107 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
     map.current?.flyTo({ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM, pitch: 0, bearing: 0, duration: 1500 })
   }, [])
 
+  // Update map data when facilities change (without triggering zoom)
   useEffect(() => {
     if (!map.current || !isStyleLoaded || isLoading) return
     addClusteringLayers(filteredFacilities.facilities)
+  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers])
+
+  // Handle zoom/pan only when filters actually change (not just facilities array reference)
+  useEffect(() => {
+    if (!map.current || !isStyleLoaded || isLoading) return
+
+    // Create a stable filter key to detect actual filter changes
+    const filterKey = JSON.stringify({
+      countries: [...debouncedFilters.countries].sort(),
+      states: [...debouncedFilters.states].sort(),
+      capabilities: [...debouncedFilters.capabilities].sort(),
+      volume: debouncedFilters.productionVolume,
+      employees: [...debouncedFilters.employeeCountRanges].sort(),
+    })
+
+    // Skip if filters haven't actually changed
+    if (filterKey === previousFiltersRef.current) {
+      return
+    }
+
+    previousFiltersRef.current = filterKey
+
+    // Clear any pending zoom operations
+    if (zoomTimeoutRef.current) {
+      clearTimeout(zoomTimeoutRef.current)
+      zoomTimeoutRef.current = null
+    }
+
+    // Prevent overlapping zoom operations
+    if (isZoomingRef.current) {
+      return
+    }
 
     const hasFilteredFacilities = filteredFacilities.facilities.length > 0
     const shouldFitToFilteredFacilities = hasActiveDebouncedFilters && hasFilteredFacilities
 
-    if (!hasFilteredFacilities) {
-      const fallback = getFallbackBounds(debouncedFilters)
+    // Handle zoom logic
+    const performZoom = () => {
       if (!map.current) return
-      if (fallback) {
-        if (fallback.selectionCount > 1) {
-          map.current.fitBounds(fallback.bounds, { padding: 50, maxZoom: 8, duration: 1000 })
+
+      isZoomingRef.current = true
+
+      if (!hasFilteredFacilities) {
+        // No facilities - use fallback bounds or reset
+        const fallback = getFallbackBounds(debouncedFilters)
+        if (fallback) {
+          if (fallback.selectionCount > 1) {
+            map.current.fitBounds(fallback.bounds, { padding: 50, maxZoom: 8, duration: 1000 })
+          } else {
+            map.current.flyTo({ center: fallback.center, zoom: fallback.zoom, duration: 1200 })
+          }
         } else {
-          map.current.flyTo({ center: fallback.center, zoom: fallback.zoom, duration: 1200 })
+          resetView()
         }
-      } else {
-        resetView()
+        setTimeout(() => {
+          isZoomingRef.current = false
+        }, 1200)
+        return
       }
-      return
-    }
 
-    if (shouldFitToFilteredFacilities) {
-      const bounds = new mapboxgl.LngLatBounds()
-      filteredFacilities.facilities.forEach((f) => bounds.extend([f.longitude, f.latitude]))
+      if (shouldFitToFilteredFacilities) {
+        // Fit to filtered facilities
+        const bounds = new mapboxgl.LngLatBounds()
+        filteredFacilities.facilities.forEach((f) => bounds.extend([f.longitude, f.latitude]))
 
-      const timeoutId = setTimeout(() => {
-        map.current?.fitBounds(bounds, {
+        map.current.fitBounds(bounds, {
           padding: { top: 100, bottom: 50, left: 50, right: 50 },
           maxZoom: 6,
           minZoom: 2,
           duration: 1000,
         })
-      }, 100)
 
-    return () => clearTimeout(timeoutId)
+        setTimeout(() => {
+          isZoomingRef.current = false
+        }, 1000)
+      } else {
+        // No active filters - reset view
+        resetView()
+        setTimeout(() => {
+          isZoomingRef.current = false
+        }, 1500)
+      }
     }
-  }, [filteredFacilities.facilities, isStyleLoaded, isLoading, addClusteringLayers, debouncedFilters, resetView, hasActiveDebouncedFilters])
 
-  useEffect(() => {
-    if (!map.current || !isStyleLoaded || isLoading) return
-    const shouldFitToFilteredFacilities = hasActiveDebouncedFilters && filteredFacilities.facilities.length > 0
-    if (!hasActiveDebouncedFilters && previousShouldFitRef.current) {
-      resetView()
+    // Small delay to batch rapid filter changes
+    zoomTimeoutRef.current = setTimeout(performZoom, 150)
+
+    return () => {
+      if (zoomTimeoutRef.current) {
+        clearTimeout(zoomTimeoutRef.current)
+        zoomTimeoutRef.current = null
+      }
     }
-    previousShouldFitRef.current = shouldFitToFilteredFacilities
-  }, [hasActiveDebouncedFilters, filteredFacilities.facilities.length, isStyleLoaded, isLoading, resetView])
+    // Only depend on debouncedFilters - filterKey check prevents unnecessary zooms
+    // filteredFacilities is read from closure but not needed as dependency
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedFilters, isStyleLoaded, isLoading, resetView, hasActiveDebouncedFilters])
 
   const handleStyleChange = (newStyle: string) => {
     if (map.current && newStyle !== mapStyle) {
