@@ -1041,23 +1041,11 @@ Metadata must be centralized and consistent.
 
 ### Tasks
 - [x] Choose strategy: per-page metadata
-- [ ] Remove `app/companies/[slug]/metadata.ts`
-- [ ] Consolidate metadata in `page.tsx`
-- [ ] Standardize title & description patterns
+- [x] Remove `app/companies/[slug]/metadata.ts` (file doesn't exist - already removed)
+- [x] Consolidate metadata in `page.tsx`
+- [x] Standardize title & description patterns
  
 ---
-
-## ISSUE: PHASE 2 — AI-Generated Content SEO Optimization
-**Labels:** seo, ai, enhancement
-
-### Description
-Optimize AI-generated company content for better SEO performance.
-
-### Tasks
-- [ ] Review AI research prompts ensure descriptions are SEO-optimized
-- [ ] Verify company descriptions are unique (not duplicated)
-- [ ] Check that AI-generated slugs are URL-friendly
-- [ ] Ensure AI-generated content includes relevant keywords naturally
 
 ---
 
@@ -1065,10 +1053,10 @@ Optimize AI-generated company content for better SEO performance.
 **Labels:** seo, schema
 
 ### Tasks
-- [ ] Update CompanySchema to emit `LocalBusiness`
-- [ ] Add address, geo, phone, sameAs fields
-- [ ] Add SearchAction to `webSiteJsonLd`
-- [ ] Add ItemList to homepage, state, industry pages
+- [x] Update CompanySchema to emit `LocalBusiness` (already implemented)
+- [x] Add address, geo, phone, sameAs fields (already implemented)
+- [x] Add SearchAction to `webSiteJsonLd` (already implemented)
+- [x] Add ItemList to homepage, state, industry pages
 
 ---
 
@@ -1076,9 +1064,9 @@ Optimize AI-generated company content for better SEO performance.
 **Labels:** seo, navigation
 
 ### Tasks
-- [ ] Add "More in [State]" section
-- [ ] Add industry links in company profiles
-- [ ] Ensure breadcrumbs emit schema
+- [x] Add "More in [State]" section (already implemented in company profiles)
+- [x] Add industry links in company profiles (already implemented)
+- [x] Ensure breadcrumbs emit schema (already implemented via Breadcrumbs component)
 
 ---
 
@@ -1087,9 +1075,9 @@ Optimize AI-generated company content for better SEO performance.
 
 ### Tasks
 - [x] Decision: Add pagination URLs
-- [ ] Design URL structure
-- [ ] Implement pagination on manufacturers index
-- [ ] Add canonical + prev/next metadata
+- [x] Design URL structure
+- [x] Implement pagination on manufacturers index
+- [x] Add canonical + prev/next metadata
 
 ---
 
@@ -1105,11 +1093,22 @@ Optimize AI-generated company content for better SEO performance.
 ---
 
 ## ISSUE: PHASE 2 — Dynamic OG Images (Backlog)
-**Labels:** seo, enhancement
+**Labels:** seo, enhancement, backlog
+
+### Description
+Generate dynamic Open Graph images for company pages, industry pages, and state pages to improve social media sharing appearance and click-through rates. Currently using a static `og-image.png` for all pages.
 
 ### Tasks
 - [x] Decision: No for now; add TODO
-- [ ] Create backlog item for dynamic OG images
+- [x] Create backlog item for dynamic OG images
+- [ ] Research Next.js OG image generation options (e.g., `@vercel/og`, `next-og-image`)
+- [ ] Design OG image template for company pages (include company name, logo, key details)
+- [ ] Design OG image template for category pages (industries, states)
+- [ ] Implement dynamic OG image API route (`/api/og/company/[slug]`, etc.)
+- [ ] Update metadata to use dynamic OG images for company pages
+- [ ] Update metadata to use dynamic OG images for category pages
+- [ ] Test OG images with social media preview tools (Facebook Debugger, Twitter Card Validator, LinkedIn Post Inspector)
+- [ ] Ensure OG images are cached appropriately for performance
 
 ---
 
@@ -1239,6 +1238,20 @@ Optimize AI-generated company content for better SEO performance.
 ### [Design System Extended]
 - [ ] Optional move to shadcn/ui
 - [ ] Build Storybook
+
+---
+
+## ISSUE: PHASE 5 — AI-Generated Content SEO Optimization
+**Labels:** seo, ai, enhancement, backlog
+
+### Description
+Optimize AI-generated company content for better SEO performance.
+
+### Tasks
+- [ ] Review AI research prompts ensure descriptions are SEO-optimized
+- [ ] Verify company descriptions are unique (not duplicated)
+- [ ] Check that AI-generated slugs are URL-friendly
+- [ ] Ensure AI-generated content includes relevant keywords naturally
 
 ---
 

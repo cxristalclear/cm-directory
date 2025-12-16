@@ -115,11 +115,31 @@ export default async function IndustryPage({
     ],
   })
 
+  // ItemList schema for companies in this industry
+  const itemListSchema = {
+    "@context": "https://schema.org" as const,
+    "@type": "ItemList",
+    name: `${industryData.name} Contract Manufacturers`,
+    url: canonicalUrl,
+    numberOfItems: typedCompanies?.length ?? 0,
+    itemListElement: (typedCompanies || [])
+      .filter((company) => Boolean(company.slug))
+      .slice(0, 100)
+      .map((company, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: getCanonicalUrl(`/companies/${company.slug}`),
+        name: company.company_name,
+        ...(company.description ? { description: company.description } : {}),
+      })),
+  }
+
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <script {...jsonLdScriptProps(industrySchema)} />
+        <script {...jsonLdScriptProps(itemListSchema)} />
         {/* Hero Section */}
         <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
           <div className="container mx-auto px-4 py-12">

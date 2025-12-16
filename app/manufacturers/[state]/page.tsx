@@ -278,6 +278,25 @@ export default async function StateManufacturersPage({
     ],
   })
 
+  // ItemList schema for companies in this state
+  const itemListSchema = {
+    "@context": "https://schema.org" as const,
+    "@type": "ItemList",
+    name: `Contract Manufacturers in ${stateMetadata.name}`,
+    url: canonicalUrl,
+    numberOfItems: companies.length,
+    itemListElement: companies
+      .filter((company) => Boolean(company.slug))
+      .slice(0, 100)
+      .map((company, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: getCanonicalUrl(`/companies/${company.slug}`),
+        name: company.company_name,
+        ...(company.description ? { description: company.description } : {}),
+      })),
+  }
+
   const relatedStates = getAllStateMetadata()
     .filter((metadata) => metadata.slug !== stateMetadata.slug)
     .slice(0, 8)
@@ -286,6 +305,7 @@ export default async function StateManufacturersPage({
     <FilterProvider initialFilters={initialFilters}>
       <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <script {...jsonLdScriptProps(stateSchema)} />
+        <script {...jsonLdScriptProps(itemListSchema)} />
 
         <Navbar />
 

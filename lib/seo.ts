@@ -13,6 +13,9 @@ type BuildMetadataOptions = {
   canonicalPath?: string
   openGraph?: Metadata["openGraph"]
   robots?: Metadata["robots"]
+  twitter?: Metadata["twitter"]
+  keywords?: string[]
+  other?: Metadata["other"]
 }
 
 /**
@@ -25,6 +28,9 @@ export function buildMetadata({
   canonicalPath,
   openGraph,
   robots,
+  twitter,
+  keywords,
+  other,
 }: BuildMetadataOptions): Metadata {
   const canonical = canonicalPath ? getCanonicalUrl(canonicalPath) : siteConfig.url
   const baseOg = {
@@ -36,9 +42,12 @@ export function buildMetadata({
       {
         url: siteConfig.ogImage,
         alt: title,
+        width: 1200,
+        height: 630,
       },
     ],
     type: "website",
+    locale: "en_US",
   }
 
   return {
@@ -51,9 +60,18 @@ export function buildMetadata({
     openGraph: {
       ...baseOg,
       ...openGraph,
-      images: openGraph?.images ?? baseOg.images,
+      images: openGraph?.images?.map(img => ({
+        ...img,
+        width: img.width ?? 1200,
+        height: img.height ?? 630,
+      })) ?? baseOg.images,
     },
+    ...(twitter ? { twitter } : {}),
     robots,
+    other: {
+      ...(keywords?.length ? { keywords: keywords.join(', ') } : {}),
+      ...other,
+    },
   }
 }
 
