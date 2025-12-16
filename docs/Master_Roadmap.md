@@ -677,11 +677,11 @@ Verify critical files and services are accessible after deployment.
 - [x] Verify sitemap.xml is accessible at production URL
 - [x] Verify feed.xml is accessible at production URL
 - [x] Verify robots.txt is accessible at production URL
-- [ ] Submit to Google Search Console:
+- [x] Submit to Google Search Console:
   - [x] Add property for production domain (verification file placed in `public/googled17cadb5cf939200.html`)
-  - [ ] Submit sitemap.xml
-  - [ ] Submit feed.xml
-  - [ ] Request indexing for key pages
+  - [x] Submit sitemap.xml
+  - [x] Submit feed.xml
+  - [x] Request indexing for key pages
 
 ### Status
 ✅ **COMPLETED** - Automated verification script created for post-deployment checks.
@@ -956,43 +956,22 @@ Verify critical files and services are accessible after deployment.
 - [x] Verify sitemap.xml is accessible at production URL
 - [x] Verify feed.xml is accessible at production URL
 - [x] Verify robots.txt is accessible at production URL
-- [ ] Submit to Google Search Console:
+- [x] Submit to Google Search Console:
   - [x] Add property for production domain (verification file placed in `public/googled17cadb5cf939200.html`)
-  - [ ] Submit sitemap.xml
-  - [ ] Submit feed.xml
-  - [ ] Request indexing for key pages
+  - [x] Submit sitemap.xml
+  - [x] Submit feed.xml
+  - [x] Request indexing for key pages
 
 ### Status
-✅ **COMPLETED** - Automated verification script created for post-deployment checks.
+✅ **COMPLETED** - All Google Search Console tasks completed.
 
 **Summary:**
+- ✅ **Property verified**: Domain verified in Google Search Console
+- ✅ **Sitemap submitted**: `sitemap.xml` submitted and processed
+- ✅ **Feed accessible**: `feed.xml` accessible and valid
+- ✅ **Indexing requested**: Key pages submitted for indexing
 - ✅ **Automated verification**: `scripts/verify-deployment.ts` can verify all critical files after deployment
-- ✅ **Sitemap.xml verification**: Checks accessibility, HTTP status, content type, and XML structure
-- ✅ **Feed.xml verification**: Checks accessibility, HTTP status, content type, and RSS structure
-- ✅ **Robots.txt verification**: Checks accessibility, HTTP status, and sitemap reference
-- ✅ **Documentation**: `docs/DEPLOYMENT_RUNBOOK.md` includes post-deployment verification steps and Google Search Console submission instructions
-
-**Verification Script Capabilities:**
-- URL accessibility checks with proper error handling
-- Content type validation
-- XML/RSS structure validation
-- Clear failure messages with troubleshooting guidance
-- Works for both localhost and remote production URLs
-
-**Post-Deployment Workflow:**
-1. Deploy to production
-2. Run: `npm run verify-deployment -- --url https://www.pcbafinder.com`
-3. Verify all checks pass
-4. Submit to Google Search Console (can be done in Phase 2 - see DEPLOYMENT_RUNBOOK.md)
-
-**Next Steps:**
-- ⚠️ **Google Search Console**: Manual steps can be completed post-launch as part of Phase 2 SEO work:
-  - Add property for production domain
-  - Submit sitemap.xml URL
-  - Submit feed.xml URL (optional)
-  - Request indexing for key pages
-
-**Note:** Google Search Console submission is not a blocker for launch and can be completed in Phase 2.
+- ✅ **Documentation**: `docs/GOOGLE_SEARCH_CONSOLE_SETUP.md` includes complete setup guide
 
 ---
 
@@ -1050,9 +1029,7 @@ Add conversion and funnel event tracking to Google Analytics for better insights
 - `cm_directory_mapMarkerClick` - Map marker clicks
 
 **Next Steps:**
-- Mark conversion events in GA4 admin panel
-- Set up conversion goals in GA4
-- Monitor events in GA4 Real-Time reports
+- See "Future Tasks" section for remaining GA4 configuration steps
 
 ---
 
@@ -1067,7 +1044,7 @@ Metadata must be centralized and consistent.
 - [ ] Remove `app/companies/[slug]/metadata.ts`
 - [ ] Consolidate metadata in `page.tsx`
 - [ ] Standardize title & description patterns
-
+ 
 ---
 
 ## ISSUE: PHASE 2 — AI-Generated Content SEO Optimization
@@ -1262,3 +1239,35 @@ Optimize AI-generated company content for better SEO performance.
 ### [Design System Extended]
 - [ ] Optional move to shadcn/ui
 - [ ] Build Storybook
+
+---
+
+## FUTURE TASKS — Google Analytics Configuration
+**Labels:** analytics, post-launch
+
+### Description
+Complete GA4 configuration after deployment to enable conversion tracking and advanced analytics. These are manual configuration steps in the GA4 dashboard, not code changes.
+
+### Tasks
+- [ ] Mark conversion events in GA4 admin panel:
+  - [ ] Go to Google Analytics Admin → Events
+  - [ ] Find `cm_directory_conversion` event
+  - [ ] Toggle "Mark as conversion"
+  - [ ] Optionally create custom conversions for each conversion_type (list_company, contact_sales, form_submission)
+- [ ] Set up conversion goals in GA4:
+  - [ ] Create custom conversion goals
+  - [ ] Set up conversion funnels for user journeys
+  - [ ] Configure attribution models if needed
+- [ ] Verify events in production:
+  - [ ] Test actions on live site
+  - [ ] Check GA4 Real-Time reports to see events firing
+  - [ ] Verify console logs show `[GA Event]` messages (in development)
+- [ ] Set up email alerts for critical issues in GA4
+- [ ] Monitor GA4 reports:
+  - [ ] Check conversion rates weekly
+  - [ ] Review funnel drop-off points
+  - [ ] Analyze search and filter usage patterns
+
+### Documentation
+- See `docs/GA_EVENT_TRACKING.md` for event details
+- See `docs/ANALYTICS_SEO_CHECKLIST.md` for setup checklist

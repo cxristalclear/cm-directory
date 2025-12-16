@@ -1,5 +1,5 @@
 import { cache } from "react"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase-server"
 import { notFound } from "next/navigation"
 import type { Metadata } from 'next'
 import type { CompanyWithRelations } from "@/types/company"
@@ -13,6 +13,7 @@ const siteName = siteConfig.name
 
 // Cached fetch to avoid duplicate Supabase queries between metadata and page render
 const fetchCompanyBySlug = cache(async (slug: string) => {
+  const supabase = await createClient()
   const result = await supabase
     .from("companies")
     .select(`
