@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { TrackedLink } from "@/components/TrackedLink"
 import {
   ArrowRight,
   Building2,
@@ -146,12 +147,14 @@ export default function AboutPage() {
                 Browse Directory
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link
+              <TrackedLink
                 href="/list-your-company"
                 className="btn btn--outline btn--lg bg-card"
+                trackingType="list_company"
+                location="about_page_hero"
               >
                 List Your Company
-              </Link>
+              </TrackedLink>
             </div>
 
             {/* Stats Row */}
@@ -352,13 +355,15 @@ export default function AboutPage() {
                 </ul>
               </div>
 
-              <Link 
+              <TrackedLink 
                 href="/list-your-company" 
                 className="relative z-10 w-full sm:w-auto btn btn--lg bg-white text-slate-900 hover:bg-blue-50 border-none self-start flex items-center gap-2"
+                trackingType="list_company"
+                location="about_page_footer"
               >
                 Start Free Listing
                 <ArrowRight className="h-4 w-4" />
-              </Link>
+              </TrackedLink>
             </div>
           </div>
         </section>

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Building2, Calendar, CheckCircle, DollarSign, Globe, MapPin, Users } from "lucide-react"
 import { Breadcrumbs } from "@/components/Breadcrumbs"
 import ClaimEditSection from "@/components/ClaimEditSection"
@@ -11,6 +11,7 @@ import { getCanonicalUrl } from "@/lib/config"
 import { getStateSlug } from "@/lib/states"
 import { formatCountryLabel, getFacilityCountryCode } from "@/utils/locationFilters"
 import type { Company } from "@/types/company"
+import { trackCompanyView } from "@/lib/utils/analytics"
 
 interface CompanyDetailClientProps {
   company: Company
@@ -73,6 +74,16 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
   const capabilities = company.capabilities?.[0] ?? null
   const companyName = company.company_name ?? ""
   const primaryFacility = company.facilities?.[0] ?? null
+
+  // Track company profile view
+  useEffect(() => {
+    trackCompanyView({
+      company_name: companyName,
+      company_slug: company.slug || undefined,
+      company_id: company.id || undefined,
+      event_label: `Company View: ${companyName}`,
+    })
+  }, [company.id, company.slug, companyName])
 
   const relatedLinks = (() => {
     const links: Array<{ href: string; label: string }> = []

@@ -1,11 +1,11 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
-import Link from "next/link"
 import { ArrowRight, Building2, CheckCircle2, Globe2, ShieldCheck, TimerReset } from "lucide-react"
 
 import Navbar from "@/components/navbar"
 import JotformEmbed from "@/components/JotformEmbed"
 import { siteConfig } from "@/lib/config"
+import { ListCompanyButton, ContactSalesButton, SubmitFormButton } from "./TrackingButtons"
 
 const siteName = siteConfig.name
 
@@ -114,13 +114,13 @@ export default function ListYourCompanyPage() {
               List your contract manufacturing company for free and connect with OEMs, startups, and engineers searching for reliable partners.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="#submit" className="btn btn--primary btn--lg shadow-md shadow-primary/20">
+              <SubmitFormButton className="btn btn--primary btn--lg shadow-md shadow-primary/20">
                 Submit Free Listing
                 <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/contact" className="btn btn--outline btn--lg bg-card">
+              </SubmitFormButton>
+              <ContactSalesButton className="btn btn--outline btn--lg bg-card">
                 Have Questions?
-              </Link>
+              </ContactSalesButton>
             </div>
           </section>
 
@@ -212,13 +212,13 @@ export default function ListYourCompanyPage() {
                 Join manufacturers connecting with qualified buyers every day.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="#submit" className="btn btn--lg bg-white text-primary hover:bg-white/90 border-none w-full sm:w-auto">
+                <SubmitFormButton className="btn btn--lg bg-white text-primary hover:bg-white/90 border-none w-full sm:w-auto">
                   Submit Free Listing
                   <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link href="/contact" className="btn btn--lg btn--outline border-white/30 text-white hover:bg-white/10 w-full sm:w-auto">
+                </SubmitFormButton>
+                <ContactSalesButton className="btn btn--lg btn--outline border-white/30 text-white hover:bg-white/10 w-full sm:w-auto">
                   Contact Sales
-                </Link>
+                </ContactSalesButton>
               </div>
             </div>
           </section>

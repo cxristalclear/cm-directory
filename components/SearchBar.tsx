@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/components/utils"
 import type { HomepageCompanyWithLocations } from "@/types/homepage"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
+import { trackSearch } from "@/lib/utils/analytics"
 
 type HeroSearchVariant = "hero" | "inline"
 
@@ -97,15 +98,33 @@ export default function SearchBar({
   }
 
   const handleSuggestionSelect = (value: string) => {
-    updateFilter("searchQuery", value.trim())
-    setInputValue(value.trim())
+    const trimmedValue = value.trim()
+    updateFilter("searchQuery", trimmedValue)
+    setInputValue(trimmedValue)
     setIsFocused(false)
     setActiveIndex(-1)
+    
+    // Track search event when suggestion is selected
+    if (trimmedValue) {
+      trackSearch({
+        search_query: trimmedValue,
+        event_label: `Search (suggestion): ${trimmedValue}`,
+      })
+    }
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    updateFilter("searchQuery", inputValue.trim())
+    const query = inputValue.trim()
+    updateFilter("searchQuery", query)
+    
+    // Track search event
+    if (query) {
+      trackSearch({
+        search_query: query,
+        event_label: `Search: ${query}`,
+      })
+    }
   }
 
   const showSuggestions = isFocused && suggestions.length > 0

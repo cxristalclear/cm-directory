@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase-server'
 import { siteConfig } from '@/lib/config'
 import { resolveCompanyCanonicalUrl } from '@/lib/canonical'
 import { getBuildTimestamp, toIsoString } from '@/lib/time'
@@ -123,35 +123,57 @@ function serializeFeed(items: FeedItem[]): string {
 }
 
 export async function GET(): Promise<Response> {
-  const columns = 'slug, company_name, description, updated_at, cms_metadata'
-  const { data, error } = await supabase
-    .from('companies')
-    .select(columns as unknown as '*')
-    .eq('is_active', true)
-    .order('updated_at', { ascending: false, nullsFirst: false })
-    .limit(50)
+  try {
+    const supabase = await createClient()
+    const columns = 'slug, company_name, description, updated_at, cms_metadata'
+    const { data, error } = await supabase
+      .from('companies')
+      .select(columns as unknown as '*')
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false, nullsFirst: false })
+      .limit(50)
 
-  if (error) {
-    console.error('Failed to load feed data', error)
-    return new Response('Unable to load feed', { status: 500 })
+    if (error) {
+      console.error('Failed to load feed data:', error)
+      // Return a valid RSS feed with error message instead of plain text
+      const errorFeed = serializeFeed([])
+      return new Response(errorFeed, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/rss+xml; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        },
+      })
+    }
+
+    const supabaseRows = (data ?? []) as SupabaseCompanyRow[]
+    const rows: CompanyFeedRow[] = supabaseRows.map((row) => ({
+      slug: row.slug,
+      company_name: row.company_name,
+      description: row.description,
+      updated_at: row.updated_at,
+      cms_metadata: row.cms_metadata ?? null,
+    }))
+    const items = buildFeedItems(rows)
+    const body = serializeFeed(items)
+
+    return new Response(body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/rss+xml; charset=utf-8',
+        'Cache-Control': 's-maxage=1800, stale-while-revalidate=86400',
+      },
+    })
+  } catch (error) {
+    console.error('Unexpected error generating feed:', error)
+    // Return a valid empty RSS feed instead of error message
+    const emptyFeed = serializeFeed([])
+    return new Response(emptyFeed, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/rss+xml; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    })
   }
-
-  const supabaseRows = (data ?? []) as SupabaseCompanyRow[]
-  const rows: CompanyFeedRow[] = supabaseRows.map((row) => ({
-    slug: row.slug,
-    company_name: row.company_name,
-    description: row.description,
-    updated_at: row.updated_at,
-    cms_metadata: row.cms_metadata ?? null,
-  }))
-  const items = buildFeedItems(rows)
-  const body = serializeFeed(items)
-
-  return new Response(body, {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/rss+xml; charset=utf-8',
-      'Cache-Control': 's-maxage=1800, stale-while-revalidate=86400',
-    },
-  })
 }

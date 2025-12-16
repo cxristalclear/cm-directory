@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Building2, Menu, X } from "lucide-react"
 import { useState } from "react"
 import { siteConfig } from "@/lib/config"
+import { trackListCompanyClick } from "@/lib/utils/analytics"
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -42,6 +43,7 @@ export default function Navbar() {
           
           <Link
             href="/list-your-company"
+            onClick={() => trackListCompanyClick('navbar_desktop')}
             className="hidden md:inline-flex items-center justify-center h-9 px-4 rounded-lg bg-white/90 text-blue-700 text-sm font-semibold hover:bg-white transition-colors shadow-sm ring-1 ring-white/60 backdrop-blur"
           >
             Add Company
@@ -67,6 +69,7 @@ export default function Navbar() {
           </Link>
           <Link
             href="/list-your-company"
+            onClick={() => trackListCompanyClick('navbar_mobile')}
             className="block w-full text-center h-10 leading-10 rounded-lg bg-white/90 text-blue-700 text-sm font-semibold mt-4 shadow-sm ring-1 ring-white/60"
           >
             List Your Company
