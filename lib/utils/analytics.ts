@@ -68,7 +68,9 @@ export const trackEvent = (
 
   try {
     const fullEventName = `cm_directory_${eventName}`
-    window.gtag('event', fullEventName, params)
+    if (window.gtag) {
+      window.gtag('event', fullEventName, params)
+    }
     
     if (process.env.NODE_ENV === 'development') {
       console.log('[GA Event]', fullEventName, params)
