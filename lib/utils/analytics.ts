@@ -70,6 +70,10 @@ export const trackEvent = (
     const fullEventName = `cm_directory_${eventName}`
     if (window.gtag) {
       window.gtag('event', fullEventName, params)
+      // Always log in production for debugging (can be removed later)
+      console.log('[GA Event Sent]', fullEventName, params)
+    } else {
+      console.warn('[GA] window.gtag not available when trying to send event:', fullEventName)
     }
     
     if (process.env.NODE_ENV === 'development') {

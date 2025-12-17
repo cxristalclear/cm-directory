@@ -237,7 +237,7 @@ export default function AboutPage() {
                 Whether you are designing the board or sourcing the build, we have the data you need to make confident decisions.
               </p>
             </div>
-            <Link href="/search" className="btn btn--ghost group">
+            <Link href="/" className="btn btn--ghost group">
               View all features <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
