@@ -55,7 +55,7 @@ export default function StyleguidePage() {
                     Page titles and hero sections. Uses <code className="text-xs bg-muted px-1 py-0.5 rounded">font-bold</code>.
                   </p>
                   <code className="text-xs bg-muted px-2 py-1 rounded block">
-                    className="heading-xl"
+                    className=&quot;heading-xl&quot;
                   </code>
                   <p className="body-sm text-muted-foreground mt-1">
                     Size: <code className="text-xs">text-4xl md:text-5xl</code>
@@ -68,7 +68,7 @@ export default function StyleguidePage() {
                     Section titles and major subsections. Uses <code className="text-xs bg-muted px-1 py-0.5 rounded">font-semibold</code>.
                   </p>
                   <code className="text-xs bg-muted px-2 py-1 rounded block">
-                    className="heading-lg"
+                    className=&quot;heading-lg&quot;
                   </code>
                   <p className="body-sm text-muted-foreground mt-1">
                     Size: <code className="text-xs">text-3xl</code>
@@ -81,7 +81,7 @@ export default function StyleguidePage() {
                     Subsection titles. Uses <code className="text-xs bg-muted px-1 py-0.5 rounded">font-semibold</code>.
                   </p>
                   <code className="text-xs bg-muted px-2 py-1 rounded block">
-                    className="heading-md"
+                    className=&quot;heading-md&quot;
                   </code>
                   <p className="body-sm text-muted-foreground mt-1">
                     Size: <code className="text-xs">text-2xl</code>
@@ -94,7 +94,7 @@ export default function StyleguidePage() {
                     Card titles and minor headings. Uses <code className="text-xs bg-muted px-1 py-0.5 rounded">font-semibold</code>.
                   </p>
                   <code className="text-xs bg-muted px-2 py-1 rounded block">
-                    className="heading-sm"
+                    className=&quot;heading-sm&quot;
                   </code>
                   <p className="body-sm text-muted-foreground mt-1">
                     Size: <code className="text-xs">text-xl</code>
@@ -113,7 +113,7 @@ export default function StyleguidePage() {
                     Lead paragraphs and emphasized body text.
                   </p>
                   <code className="text-xs bg-muted px-2 py-1 rounded block">
-                    className="body-lg"
+                    className=&quot;body-lg&quot;
                   </code>
                   <p className="body-sm text-muted-foreground mt-1">
                     Size: <code className="text-xs">text-base md:text-lg</code>
@@ -126,7 +126,7 @@ export default function StyleguidePage() {
                     Standard body copy for paragraphs and content.
                   </p>
                   <code className="text-xs bg-muted px-2 py-1 rounded block">
-                    className="body"
+                    className=&quot;body&quot;
                   </code>
                   <p className="body-sm text-muted-foreground mt-1">
                     Size: <code className="text-xs">text-sm md:text-base</code>
@@ -139,7 +139,7 @@ export default function StyleguidePage() {
                     Supporting text, labels, and captions.
                   </p>
                   <code className="text-xs bg-muted px-2 py-1 rounded block">
-                    className="body-sm"
+                    className=&quot;body-sm&quot;
                   </code>
                   <p className="body-sm text-muted-foreground mt-1">
                     Size: <code className="text-xs">text-xs md:text-sm</code>
@@ -157,7 +157,7 @@ export default function StyleguidePage() {
                   Small uppercase labels for categorization and metadata.
                 </p>
                 <code className="text-xs bg-muted px-2 py-1 rounded block">
-                  className="eyebrow"
+                  className=&quot;eyebrow&quot;
                 </code>
                 <p className="body-sm text-muted-foreground mt-1">
                   Size: <code className="text-xs">text-xs</code> | Weight: <code className="text-xs">font-semibold</code> | Tracking: <code className="text-xs">tracking-[0.12em]</code>

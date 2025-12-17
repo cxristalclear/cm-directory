@@ -45,8 +45,8 @@ const linkClass =
 export default function SiteFooter() {
   return (
     <footer className="bg-slate-950 text-slate-200">
-      <div className="mx-auto max-w-6xl px-6 py-12">
-        <div className="grid gap-10 md:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,1fr))]">
+      <div className="mx-auto max-w-7xl px-6 py-8 md:py-12 lg:py-16">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,1fr))]">
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-white">{siteConfig.name}</h2>
             <p className="text-sm text-slate-300">
@@ -124,8 +124,8 @@ export default function SiteFooter() {
         </div>
       </div>
 
-      <div className="border-t border-slate-800 px-6 py-4">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 text-xs text-slate-500 md:flex-row md:justify-between">
+      <div className="border-t border-slate-800 px-6 py-6 md:py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 text-xs text-slate-500 md:flex-row md:justify-between">
           <p>© {currentYear} {siteConfig.name}. All rights reserved.</p>
           <nav aria-label="Footer secondary links">
             <ul className="flex flex-wrap items-center gap-3 text-slate-400">

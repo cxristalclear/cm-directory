@@ -1,6 +1,5 @@
 import * as React from "react"
 import { cn } from "@/components/utils"
-import Link from "next/link"
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/Breadcrumbs"
 
 export interface GradientHeroProps {

@@ -42,6 +42,9 @@ Ensure no API keys are exposed or committed.
 - [x] Confirm all keys stored in env vars only
 - [x] Confirm `.env.local` ignored in git
 - [x] Remove hardcoded keys in test files
+- [ ] Confirm API keys are ONLY in environment variables, never hardcoded (verify in production)
+- [ ] Use Vercel/deployment platform's encrypted environment variables
+- [ ] Set up separate API keys for dev/staging/production
 
 ---
 
@@ -816,20 +819,10 @@ Verify site works correctly on mobile devices.
 - [ ] Filters work on mobile
 - [ ] CTAs work on mobile
 - [ ] All pages readable on mobile
-
----
-
-## ISSUE: PHASE 1 — Set Up Google Analytics
-**Labels:** analytics, pre-launch, blocker
-
-### Description
-Implement Google Analytics tracking.
-
-### Tasks
-- [X] Create GA4 property and obtain Measurement ID (G-6VEF34G0WM)
-- [X] Add Google Analytics script to `app/layout.tsx` using Next.js Script component
-- [X] Verify GA script loads only when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set
-- [x] Test GA4 pageview tracking in development (console logging added for debugging)
+- [ ] Test on mobile (full user journey)
+- [ ] Test ads look good on all screen sizes
+- [ ] Test with slow 3G connection
+- [ ] Test mobile navigation (manual testing required)
 
 ---
 
@@ -1303,8 +1296,79 @@ Metadata must be centralized and consistent.
 
 ### Tasks
 - [x] Structure improved
-- [ ] FFinal spacing + alignment pass
-- [ ] Add dynamic copyright
+- [x] Final spacing + alignment pass
+- [x] Add dynamic copyright
+
+**Implementation Details:**
+- Updated footer container width from `max-w-6xl` to `max-w-7xl` to match design system standards
+- Standardized footer padding to responsive: `py-8 md:py-12 lg:py-16` (was `py-12`)
+- Updated grid gap from `gap-10` to `gap-6` to match spacing system standards
+- Made footer grid mobile-first: `grid-cols-1 md:grid-cols-2 lg:grid-cols-[...]` (was only desktop breakpoint)
+- Updated bottom section padding: `py-6 md:py-8` (was `py-4`) and gap: `gap-4` (was `gap-3`)
+- Dynamic copyright already implemented: `const currentYear = new Date().getFullYear()` displays current year automatically
+- All changes pass linting with no errors
+
+---
+
+## ISSUE: PHASE 1 — Facility Data Consistency
+**Labels:** data-quality, post-launch, low-priority
+
+### Description
+Upstream facility data should include full state/country names consistently to avoid empty segments in location strings.
+
+### Tasks
+- [ ] Review facility data import process
+- [ ] Update data model to require full state/country names
+- [ ] Migrate existing data to include full names
+- [ ] Remove workaround code after data is consistent (currently in `app/companies/[slug]/page.tsx` line 98)
+
+**Current Workaround:**
+- Code filters out empty/null values when building location strings
+- Works correctly but could be cleaner with better data
+
+**Impact:** Low - current implementation works correctly
+
+---
+
+## ISSUE: PHASE 1 — Mobile Filter Toggle Deprecation
+**Labels:** ui, cleanup, post-launch, low-priority
+
+### Description
+Mobile Toggle button should be removed after MobileFilterBar is implemented across all mobile entry points.
+
+### Tasks
+- [ ] Complete MobileFilterBar implementation across all mobile entry points
+- [ ] Get product design sign-off
+- [ ] Remove Mobile Toggle button and related TODO comment (in `components/FilterSidebar.tsx` lines 304-305)
+- [ ] Close tracking issue GH-2345
+
+**Current Status:**
+- Mobile Toggle is still needed until MobileFilterBar rollout is complete
+- Tracking issue: GH-2345
+- Requires product design sign-off before removal
+
+**Impact:** Low - feature works correctly, just needs cleanup after migration
+
+---
+
+## ISSUE: PHASE 3 — Design System Documentation
+**Labels:** design-system, documentation, post-launch
+
+### Description
+Create comprehensive design system documentation to guide future development and maintain consistency.
+
+### Tasks
+- [ ] Create `DESIGN_SYSTEM.md` documentation
+- [ ] Document color palette (Primary Blue: #2563eb, Blue Gradient: from-blue-600 to-indigo-700, Accent Orange: #ea580c)
+- [ ] Document typography scale (heading sizes, body variants, font weights)
+- [ ] Document spacing system (section padding, container widths, element spacing)
+- [ ] Document icon usage guidelines (sizes: w-4 h-4, w-5 h-5, w-6 h-6, w-8 h-8, w-10 h-10, w-12 h-12)
+- [ ] Document button system (variants, sizes, usage)
+- [ ] Document card system (variants, usage guidelines)
+- [ ] Document responsive breakpoints and grid patterns
+- [ ] Include code examples and usage guidelines
+
+**Reference:** See `app/styleguide/page.tsx` for existing documentation that can be extracted and expanded.
 
 ---
 
@@ -1317,8 +1381,17 @@ Set up monitoring infrastructure and create essential documentation for post-lau
 ### Tasks
 **Monitoring:**
 - [ ] Add Sentry
+  - [ ] Set up Sentry account and project
+  - [ ] Install `@sentry/nextjs` package
+  - [ ] Configure Sentry in `next.config.ts`
+  - [ ] Uncomment and implement error tracking in error boundaries (`app/error.tsx`, `app/global-error.tsx`)
+  - [ ] Test error reporting in staging environment
 - [ ] Add uptime monitoring
 - [ ] Add geocoding failure alerts
+  - [ ] Set up monitoring for Mapbox geocoding failures
+  - [ ] Add alerts for geocoding rate limits
+  - [ ] Create dashboard for geocoding success/failure rates
+  - [ ] Add operator feedback mechanism (currently only logs warnings)
 
 **Documentation:**
 - [ ] DESIGN_SYSTEM.md
@@ -1344,6 +1417,57 @@ Optimize application performance through code splitting, caching, and image opti
 - [ ] Replace all `<img>` with `<Image>`
 - [ ] Add responsive sizes
 - [ ] Add blur placeholder
+
+---
+
+## ISSUE: PHASE 4 — Scaling & Pagination
+**Labels:** performance, scaling, post-launch
+
+### Description
+Implement pagination when company count approaches the 500 company limit to ensure site can scale beyond initial capacity.
+
+### Tasks
+- [ ] Monitor company count (trigger at 450 companies - 90% of limit)
+- [ ] Implement pagination on homepage when limit is reached
+- [ ] Design URL structure for paginated pages (e.g., `/page/2`, `/page/3`)
+- [ ] Add pagination controls to UI
+- [ ] Update sitemap to include paginated URLs
+- [ ] Add canonical tags for paginated pages
+- [ ] Test pagination with 500+ companies
+- [ ] Update MAX_COMPANIES constant or remove limit
+
+**Current Status:**
+- Homepage currently limited to 500 companies (MAX_COMPANIES = 500)
+- Pagination already implemented on manufacturers index page
+- Need to extend to homepage when approaching limit
+
+**Reference:** See `docs/PRODUCTION_READINESS_ANALYSIS.md` (Item #14) and `docs/LAUNCH_DECISIONS_CHECKLIST.md` (Decision 9)
+
+---
+
+## ISSUE: PHASE 4 — Accessibility Audit
+**Labels:** accessibility, ux, post-launch
+
+### Description
+Ensure the site is accessible to all users, including those using assistive technologies.
+
+### Tasks
+- [ ] Conduct WCAG 2.1 compliance audit (target Level AA)
+- [ ] Test keyboard navigation (Tab, Enter, Escape, Arrow keys)
+- [ ] Test with screen readers (NVDA, JAWS, VoiceOver)
+- [ ] Verify color contrast ratios meet WCAG standards
+- [ ] Add ARIA labels where needed
+- [ ] Ensure all images have alt text
+- [ ] Test form accessibility (labels, error messages)
+- [ ] Verify focus indicators are visible
+- [ ] Test skip navigation links
+- [ ] Document accessibility features and compliance level
+
+**Tools:**
+- Lighthouse accessibility audit
+- WAVE browser extension
+- axe DevTools
+- Manual screen reader testing
 
 ---
 
@@ -1425,3 +1549,29 @@ Complete GA4 configuration after deployment to enable conversion tracking and ad
 ### Documentation
 - See `docs/GA_EVENT_TRACKING.md` for event details
 - See `docs/ANALYTICS_SEO_CHECKLIST.md` for setup checklist
+
+---
+
+## ISSUE: PHASE 6 — Future Features
+**Labels:** features, enhancement, backlog
+
+### Description
+Long-term feature roadmap from README.md. These are planned enhancements to be implemented based on user feedback and business priorities.
+
+### Tasks
+**User Features:**
+- [ ] Add user authentication (for end users, not just admin)
+- [ ] Implement company comparison feature
+- [ ] Add RFQ (Request for Quote) system
+- [ ] Implement review and rating system
+- [ ] Add advanced search functionality (beyond current basic search)
+- [ ] Add export functionality (CSV, PDF, etc.)
+
+**Admin Features:**
+- [ ] Add more filter categories (certifications, industries) - verify if already implemented
+- [ ] Implement email notifications (for claims, updates, etc.)
+- [ ] Email service configuration and setup
+- [ ] Email template design
+- [ ] Email deliverability testing
+
+**Reference:** See `README.md` roadmap section (lines 290-300)
