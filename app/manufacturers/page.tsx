@@ -163,33 +163,33 @@ export default async function ManufacturersIndexPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-shell">
       <Navbar />
-      <main className="container mx-auto px-4 py-12">
+      <main className="page-container section">
         <script {...jsonLdScriptProps(itemListSchema)} />
 
-        <h1 className="text-4xl font-bold mb-4">Contract Manufacturers by State</h1>
+        <h1 className="heading-xl mb-4">Contract Manufacturers by State</h1>
         <p className="text-xl text-gray-600 mb-8">
           Browse our directory of verified contract manufacturers organized by location
         </p>
         
         {paginatedStates.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
               {paginatedStates.map(([state, count]) => {
                 const slug = stateSlugFromAbbreviation(state) ?? state.toLowerCase()
                 return (
                   <Link
                     key={state}
                     href={`/manufacturers/${slug}`}
-                    className="bg-white p-4 rounded-lg border hover:border-blue-500 hover:shadow-lg transition-all"
+                    className="card p-4 hover:border-blue-500 hover:shadow-lg transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="font-semibold text-lg">{state}</h3>
+                        <h3 className="heading-sm">{state}</h3>
                         <p className="text-sm text-gray-500">{count} manufacturers</p>
                       </div>
-                      <MapPin className="w-5 h-5 text-gray-400" />
+                      <MapPin className="w-5 h-5 text-muted-foreground" />
                     </div>
                   </Link>
                 )

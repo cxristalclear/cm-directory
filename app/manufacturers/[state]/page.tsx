@@ -13,6 +13,7 @@ import {
   jsonLdScriptProps,
 } from "@/lib/schema"
 import Navbar from "@/components/navbar"
+import { GradientHero } from "@/components/GradientHero"
 import {
   getAllStateMetadata,
   getStateMetadataBySlug,
@@ -310,60 +311,30 @@ export default async function StateManufacturersPage({
         <Navbar />
 
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white">
-        <div className="container mx-auto px-4 py-12">
-          {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-sm text-blue-100 mb-6">
-              <Link href="/" className="hover:text-white">Home</Link>
-              <span>/</span>
-              <Link href="/manufacturers" className="hover:text-white">Manufacturers</Link>
-              <span>/</span>
-              <span className="text-white">{stateMetadata.name}</span>
-            </nav>
-
-            <div className="flex items-start gap-4 mb-6">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-2xl font-semibold">
-                {stateMetadata.abbreviation}
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold mb-3">
-                  Contract Manufacturers in {stateMetadata.name}
-                </h1>
-                {heroDescription && (
-                  <p className="text-xl text-blue-100 max-w-3xl">
-                    {heroDescription}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-3xl font-bold">{stats.totalCompanies}</div>
-                <div className="text-sm text-blue-100">Verified Manufacturers</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-3xl font-bold">{stats.cities.length}</div>
-                <div className="text-sm text-blue-100">Cities Covered</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-3xl font-bold">{stats.certifications.length}</div>
-                <div className="text-sm text-blue-100">Certification Types</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-3xl font-bold">{stats.capabilities.length}</div>
-                <div className="text-sm text-blue-100">Capabilities</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <GradientHero
+          title={`Contract Manufacturers in ${stateMetadata.name}`}
+          subtitle={heroDescription || undefined}
+          breadcrumbs={[
+            { name: "Home", url: "/" },
+            { name: "Manufacturers", url: "/manufacturers" },
+            { name: stateMetadata.name, url: `/manufacturers/${stateMetadata.slug}` },
+          ]}
+          icon={stateMetadata.abbreviation}
+          variant="with-icon"
+          stats={[
+            { value: stats.totalCompanies, label: "Verified Manufacturers" },
+            { value: stats.cities.length, label: "Cities Covered" },
+            { value: stats.certifications.length, label: "Certification Types" },
+            { value: stats.capabilities.length, label: "Capabilities" },
+          ]}
+          decorativeGlows={false}
+        />
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-8">
+        <div className="page-container section">
           {/* SEO Content Section */}
-          <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
-            <h2 className="text-2xl font-bold mb-4">
+          <div className="mb-16 bg-white rounded-xl shadow-sm p-8">
+            <h2 className="heading-lg mb-4">
               Finding Contract Manufacturers in {stateMetadata.name}
             </h2>
             <div className="prose max-w-none text-gray-700">
@@ -371,7 +342,7 @@ export default async function StateManufacturersPage({
                 {overviewParagraph}
               </p>
 
-              <h3 className="text-lg font-semibold mt-6 mb-3">Key Manufacturing Capabilities</h3>
+              <h3 className="heading-sm mt-6 mb-3">Key Manufacturing Capabilities</h3>
               <p>
                 Contract manufacturers in {stateMetadata.name} offer a comprehensive range of services
                 including PCB assembly, cable harness manufacturing, box build assembly, and full
@@ -379,7 +350,7 @@ export default async function StateManufacturersPage({
                 ISO 13485 for medical devices, and AS9100 for aerospace applications.
               </p>
 
-              <h3 className="text-lg font-semibold mt-6 mb-3">Industries Served</h3>
+              <h3 className="heading-sm mt-6 mb-3">Industries Served</h3>
               <p>
                 The state’s manufacturing sector supports critical industries with specialized requirements. From prototype development to high-volume production, {stateMetadata.name}’s contract manufacturers provide scalable solutions for companies of all sizes.
               </p>
@@ -388,7 +359,7 @@ export default async function StateManufacturersPage({
             {/* Popular Cities */}
             {stats.cities.length > 0 && (
               <div className="mt-8 pt-8 border-t">
-                <h3 className="font-semibold mb-4">Manufacturing Hubs in {stateMetadata.name}</h3>
+                <h3 className="heading-sm mb-4">Manufacturing Hubs in {stateMetadata.name}</h3>
                 <div className="flex flex-wrap gap-2">
                   {stats.cities.slice(0, 10).map((city) => (
                     <span
@@ -404,8 +375,8 @@ export default async function StateManufacturersPage({
           </div>
 
           {/* Company Listings */}
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <div className="mb-16">
+            <h2 className="heading-lg text-gray-900 mb-2">
               All Manufacturers in {stateMetadata.name}
             </h2>
             <p className="text-gray-600">
@@ -427,9 +398,9 @@ export default async function StateManufacturersPage({
           </div>
 
           {/* Related States Section */}
-          <div className="mt-12 bg-white rounded-xl shadow-sm p-8">
-            <h2 className="text-xl font-bold mb-4">Explore Other States</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl shadow-sm p-8">
+            <h2 className="heading-sm mb-4">Explore Other States</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {relatedStates.map((metadata) => (
                 <Link
                   key={metadata.slug}

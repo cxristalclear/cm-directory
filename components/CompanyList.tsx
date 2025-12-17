@@ -195,7 +195,7 @@ export default function CompanyList({ allCompanies, limit = DEFAULT_LIMIT, showI
               <Link
                 href={`/companies/${company.slug}`}
                 prefetch
-                className={`group relative block cursor-pointer rounded-2xl border border-gray-200 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_12px_28px_rgba(59,130,246,0.15)] ${
+                className={`group relative block cursor-pointer card rounded-2xl transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_12px_28px_rgba(59,130,246,0.15)] ${
                   viewMode === "list" ? "p-3" : "p-4 h-full flex flex-col"
                 }`}
               >

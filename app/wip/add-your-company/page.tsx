@@ -5,6 +5,7 @@ import { ArrowRight, Building2, CheckCircle } from "lucide-react"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { jsonLdScriptProps, type JsonLd } from "@/lib/schema"
 import Navbar from "@/components/navbar"
+import { GradientHero } from "@/components/GradientHero"
 
 const siteName = siteConfig.name
 
@@ -156,30 +157,25 @@ export default function AddYourCompanyPage() {
       <Navbar />
 
       <section className="section--flush">
-        <div className="gradient-bg text-white">
-          <div className="page-container py-16 text-center md:py-20">
-            <div className="mx-auto flex max-w-5xl flex-col items-center gap-4">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-100">
-                <Building2 className="h-5 w-5 text-white" />
-                For Manufacturers
-              </div>
-              <h1 className="heading-xl text-white md:text-5xl">Why List Your Company on {siteName}?</h1>
-              <p className="body-lg max-w-3xl text-blue-100">
-                Learn how {siteName} connects verified EMS partners with hardware companies that are ready to place
-                production orders.
-              </p>
-              <div className="flex flex-col items-center gap-3 sm:flex-row">
-                <Link href="/list-your-company" className="btn btn--primary btn--lg bg-white text-primary hover:bg-white/90">
-                  Submit Free Listing
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-                <Link href="/contact" className="btn btn--outline-primary btn--lg text-white hover:text-primary">
-                  Have Questions?
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        <GradientHero
+          title={`Why List Your Company on ${siteName}?`}
+          subtitle={`Learn how ${siteName} connects verified EMS partners with hardware companies that are ready to place production orders.`}
+          badge="For Manufacturers"
+          badgeIcon={<Building2 className="h-5 w-5 text-white" />}
+          variant="centered"
+          padding="lg"
+          actions={
+            <>
+              <Link href="/list-your-company" className="btn btn-primary btn--lg bg-white text-primary hover:bg-white/90">
+                Submit Free Listing
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+              <Link href="/contact" className="btn btn--outline-primary btn--lg text-white hover:text-primary">
+                Have Questions?
+              </Link>
+            </>
+          }
+        />
       </section>
 
       <main className="page-container section space-y-14">

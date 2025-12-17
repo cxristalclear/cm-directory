@@ -1081,45 +1081,39 @@ Metadata must be centralized and consistent.
 
 ---
 
-## ISSUE: PHASE 2 — Image Optimization
-**Labels:** performance, seo, ui
-
-### Tasks
-- [x] Decision: Migrate to `next/image`
-- [ ] Replace all `<img>` with `<Image>`
-- [ ] Add responsive sizes
-- [ ] Add blur placeholder
-
----
-
-## ISSUE: PHASE 2 — Dynamic OG Images (Backlog)
-**Labels:** seo, enhancement, backlog
-
-### Description
-Generate dynamic Open Graph images for company pages, industry pages, and state pages to improve social media sharing appearance and click-through rates. Currently using a static `og-image.png` for all pages.
-
-### Tasks
-- [x] Decision: No for now; add TODO
-- [x] Create backlog item for dynamic OG images
-- [ ] Research Next.js OG image generation options (e.g., `@vercel/og`, `next-og-image`)
-- [ ] Design OG image template for company pages (include company name, logo, key details)
-- [ ] Design OG image template for category pages (industries, states)
-- [ ] Implement dynamic OG image API route (`/api/og/company/[slug]`, etc.)
-- [ ] Update metadata to use dynamic OG images for company pages
-- [ ] Update metadata to use dynamic OG images for category pages
-- [ ] Test OG images with social media preview tools (Facebook Debugger, Twitter Card Validator, LinkedIn Post Inspector)
-- [ ] Ensure OG images are cached appropriately for performance
-
----
 
 ## ISSUE: PHASE 3 — Button System
 **Labels:** design-system, ui
 
 ### Tasks
 - [x] Decision: Tailwind shared classes
-- [ ] Create `.btn-primary`, `.btn-secondary`, `.btn-ghost`
-- [ ] Replace all buttons across project
-- [ ] Document button usage
+- [x] Create `.btn-primary`, `.btn-secondary`, `.btn-ghost`
+- [x] Replace all buttons across project
+- [x] Document button usage
+
+### Status
+✅ **COMPLETED** - Button system standardized with new CSS classes.
+
+**Summary:**
+- ✅ **CSS classes created**: Replaced BEM-style classes (`.btn--primary`, `.btn--secondary`, `.btn--ghost`) with new naming (`.btn-primary`, `.btn-secondary`, `.btn-ghost`) in `app/globals.css`
+- ✅ **Button usage migrated**: Updated 6 files to use new class names:
+  - `app/about/page.tsx` (2 instances)
+  - `app/list-your-company/page.tsx` (1 instance)
+  - `app/error.tsx` (1 instance)
+  - `app/global-error.tsx` (1 instance)
+  - `app/wip/add-your-company/page.tsx` (1 instance)
+  - `app/styleguide/page.tsx` (3 instances)
+- ✅ **shadcn/ui Button component updated**: Modified `components/ui/button.tsx` to use new CSS classes instead of inline Tailwind classes
+- ✅ **Documentation added**: Comprehensive button system documentation added to `app/styleguide/page.tsx` including:
+  - Variant explanations (primary, secondary, ghost, outline)
+  - Size options with descriptions
+  - Usage examples with code snippets
+  - Semantic HTML guidance
+
+**Implementation Details:**
+- Classes use CSS variables (`bg-primary`, `text-primary-foreground`) to match design system
+- Size modifiers (`.btn--sm`, `.btn--lg`) remain unchanged for consistency
+- All changes pass linting with no errors
 
 ---
 
@@ -1128,8 +1122,34 @@ Generate dynamic Open Graph images for company pages, industry pages, and state 
 
 ### Tasks
 - [x] Decision: Standard classes
-- [ ] Add `.card`, `.card-elevated`, `.card-subtle`
-- [ ] Replace inconsistent card styling
+- [x] Add `.card`, `.card-elevated`, `.card-subtle`
+- [x] Replace inconsistent card styling
+
+### Status
+✅ **COMPLETED** - Card system standardized with new CSS classes.
+
+**Summary:**
+- ✅ **CSS classes created**: Added `.card-elevated` and `.card-subtle` classes to `app/globals.css`, adapting design audit recommendations to use CSS variables (design system compatible)
+- ✅ **Existing classes maintained**: Kept `.card` and `.card-compact` classes unchanged for backward compatibility
+- ✅ **shadcn/ui Card component updated**: Modified `components/ui/card.tsx` to use `.card` CSS class instead of inline Tailwind classes
+- ✅ **Card usage migrated**: Updated 8 files to use standardized classes:
+  - `app/about/page.tsx` (2 instances - 1 to `.card-elevated`, 1 to `.card`)
+  - `app/list-your-company/page.tsx` (3 instances - 1 to `.card-elevated`, 2 to `.card`)
+  - `app/error.tsx` (1 instance to `.card-elevated`)
+  - `app/global-error.tsx` (1 instance to `.card-elevated`)
+  - `app/manufacturers/page.tsx` (1 instance to `.card`)
+  - `components/CompanyList.tsx` (1 instance to `.card`)
+- ✅ **Documentation added**: Comprehensive card system documentation added to `app/styleguide/page.tsx` including:
+  - All 4 card variants (default, elevated, subtle, compact) with visual examples
+  - Usage guidelines for each variant
+  - Code examples with snippets
+  - Border radius and shadow standards
+
+**Implementation Details:**
+- `.card-elevated`: Uses `rounded-xl` (12px), `shadow-lg` for emphasized content
+- `.card-subtle`: Uses `rounded-lg` (8px), `bg-muted`, reduced border opacity for nested content
+- Both classes use CSS variables (`bg-card`, `border-border`) to match design system
+- All changes pass linting with no errors
 
 ---
 
@@ -1138,8 +1158,33 @@ Generate dynamic Open Graph images for company pages, industry pages, and state 
 
 ### Tasks
 - [x] Decision: Build `<GradientHero />`
-- [ ] Create component
-- [ ] Replace gradient sections on pages
+- [x] Create component
+- [x] Replace gradient sections on pages
+
+### Status
+✅ **COMPLETED** - GradientHero component created and all gradient sections migrated.
+
+**Summary:**
+- ✅ **Component created**: `components/GradientHero.tsx` with flexible props supporting:
+  - Core props: `title`, `subtitle`
+  - Optional props: `badge`, `badgeIcon`, `breadcrumbs`, `icon`, `stats`, `actions`, `children`
+  - Layout variants: `centered`, `left`, `with-icon`
+  - Padding variants: `sm`, `md`, `lg`
+  - Decorative glows (optional, enabled by default)
+- ✅ **Gradient sections migrated**: Replaced 5 gradient hero implementations:
+  - `components/Header.tsx` - Simple centered hero with title and subtitle
+  - `app/manufacturers/[state]/page.tsx` - Hero with breadcrumbs, icon, stats grid
+  - `app/industries/[industry]/page.tsx` - Hero with breadcrumbs, icon, custom badge content
+  - `app/wip/add-your-company/page.tsx` - Hero with badge, title, subtitle, action buttons
+  - `app/wip/home/page.tsx` - Hero with title, subtitle, action buttons, custom stats cards
+- ✅ **Standardized gradient**: All implementations now use the `.gradient-bg` class which uses `var(--gradient-hero)` CSS variable
+
+**Implementation Details:**
+- Component uses TypeScript with proper type definitions
+- Supports flexible content via `children` prop for custom layouts
+- Integrates with existing `Breadcrumbs` component
+- All changes pass linting with no errors
+- Maintains backward compatibility with existing design patterns
 
 ---
 
@@ -1148,9 +1193,47 @@ Generate dynamic Open Graph images for company pages, industry pages, and state 
 
 ### Tasks
 - [x] Adopt scale
-- [ ] Update headings across site
-- [ ] Ensure consistent weights
-- [ ] Document typography
+- [x] Update headings across site
+- [x] Ensure consistent weights
+- [x] Document typography
+
+### Status
+✅ **COMPLETED** - Typography system unified with standardized classes and comprehensive documentation.
+
+**Summary:**
+- ✅ **Typography classes updated**: 
+  - Updated `.heading-xl` to use `font-bold` and `text-4xl md:text-5xl` (matches H1 standard)
+  - Updated `.heading-lg` to `text-3xl font-semibold` (matches H2 standard)
+  - Updated `.heading-md` to `text-2xl font-semibold` (matches H3 standard)
+  - Added `.heading-sm` class: `text-xl font-semibold` (matches H4 standard)
+- ✅ **GradientHero component updated**: Modified to use typography utility classes (`.heading-xl`, `.body-lg`) while maintaining color overrides for gradient backgrounds
+- ✅ **Production pages migrated**: Updated 10 production page files to use typography utility classes:
+  - `app/contact/page.tsx` (4 headings)
+  - `app/terms/page.tsx` (5 headings)
+  - `app/privacy/page.tsx` (5 headings)
+  - `app/about/page.tsx` (2 headings)
+  - `app/list-your-company/page.tsx` (1 heading)
+  - `app/manufacturers/page.tsx` (2 headings)
+  - `app/manufacturers/[state]/page.tsx` (6 headings)
+  - `app/industries/page.tsx` (2 headings)
+  - `app/industries/[industry]/page.tsx` (5 headings)
+  - `app/companies/[slug]/CompanyDetailClient.tsx` (15 headings)
+- ✅ **Font weights standardized**: 
+  - H1 elements use `font-bold` (via `.heading-xl`)
+  - H2-H4 elements use `font-semibold` (via `.heading-lg`, `.heading-md`, `.heading-sm`)
+- ✅ **Documentation added**: Comprehensive typography documentation added to `app/styleguide/page.tsx` including:
+  - All heading sizes with examples and code snippets
+  - Body text variants (body-lg, body, body-sm)
+  - Special typography (eyebrow)
+  - Usage guidelines with semantic HTML guidance
+  - Size specifications and font weight standards
+
+**Implementation Details:**
+- All typography classes use CSS variables (`text-foreground`, `text-muted-foreground`) for consistent theming
+- Responsive sizing maintained where appropriate
+- Semantic HTML structure preserved (proper h1-h4 tags)
+- All changes pass linting with no errors
+- WIP pages excluded from migration (as requested)
 
 ---
 
@@ -1159,8 +1242,16 @@ Generate dynamic Open Graph images for company pages, industry pages, and state 
 
 ### Tasks
 - [x] Adopt spacing rules
-- [ ] Audit all sections
-- [ ] Apply consistnent spacing and padding across pages
+- [x] Audit all sections
+- [x] Apply consistent spacing and padding across pages
+
+**Implementation Details:**
+- Updated `.section` class to use responsive padding: `py-8 md:py-12 lg:py-16`
+- Standardized `.page-container` to use `max-w-7xl` (80rem)
+- Applied consistent `mb-16` spacing between sections across all pages
+- Replaced custom padding values (`py-6`, `py-12`, `py-16`, `pb-16`, `pt-12`, etc.) with standard section classes
+- Updated all production pages (home, about, contact, privacy, terms, industries, manufacturers, list-your-company) to use consistent spacing
+- All changes pass linting with no errors
 
 ---
 
@@ -1168,8 +1259,19 @@ Generate dynamic Open Graph images for company pages, industry pages, and state 
 **Labels:** ux, responsive
 
 ### Tasks
-- [ ] Review breakpoints
-- [ ] Standardize grid patterns
+- [x] Review breakpoints
+- [x] Standardize grid patterns
+
+**Implementation Details:**
+- Reviewed all production pages for breakpoint usage
+- Standardized all grids to mobile-first approach: `grid-cols-1` → `md:grid-cols-2` → `lg:grid-cols-3/4`
+- Updated `app/about/page.tsx`: `lg:grid-cols-2` → `grid-cols-1 lg:grid-cols-2`, `grid-cols-3` → `grid-cols-1 md:grid-cols-3`
+- Updated `app/industries/page.tsx`: `xl:grid-cols-3` → `lg:grid-cols-3` for consistency
+- Updated `app/manufacturers/page.tsx`: Added `grid-cols-1 sm:grid-cols-2` for mobile-first
+- Updated `app/industries/[industry]/page.tsx`: `sm:grid-cols-2` → `grid-cols-1 md:grid-cols-2`
+- Updated `app/manufacturers/[state]/page.tsx`: `grid-cols-2` → `grid-cols-1 sm:grid-cols-2`
+- All grids now follow directory website best practices (Airbnb-style): mobile single column, tablet 2 columns, desktop 3-4 columns
+- All changes pass linting with no errors
 
 ---
 
@@ -1177,8 +1279,22 @@ Generate dynamic Open Graph images for company pages, industry pages, and state 
 **Labels:** design-system, ui
 
 ### Tasks
-- [ ] Audit icon sizes
-- [ ] Apply icon standards
+- [x] Audit icon sizes
+- [x] Apply icon standards
+
+**Implementation Details:**
+- Audited all icons across production pages
+- Standardized icon sizes: `w-4 h-4` (small/inline), `w-5 h-5` (default/buttons), `w-6 h-6`/`w-8 h-8` (large/features), `w-10 h-10`/`w-12 h-12` (hero)
+- Replaced hardcoded colors with semantic classes:
+  - `text-green-600`, `text-purple-600`, `text-blue-600`, `text-indigo-600` → `text-primary`
+  - `text-gray-400` → `text-muted-foreground`
+  - `bg-blue-50`, `bg-indigo-100` → `bg-primary/10`
+  - `text-blue-700`, `text-indigo-600` → `text-primary`
+  - `hover:bg-blue-100` → `hover:bg-primary/20`
+- Standardized icon spacing: `gap-2` for buttons, `gap-3` for lists, `ml-2` for inline icons
+- Updated icon sizes: `h-3.5 w-3.5` → `h-4 w-4`, `w-3 h-3` → `w-4 h-4`, `w-3.5 h-3.5` → `w-4 h-4`
+- Applied changes to: `app/about/page.tsx`, `app/list-your-company/page.tsx`, `app/manufacturers/page.tsx`, `app/industries/page.tsx`, `app/companies/[slug]/CompanyDetailClient.tsx`
+- All changes pass linting with no errors
 
 ---
 
@@ -1192,66 +1308,91 @@ Generate dynamic Open Graph images for company pages, industry pages, and state 
 
 ---
 
-## ISSUE: PHASE 4 — Monitoring
-**Labels:** monitoring, post-launch
+## ISSUE: PHASE 4 — Monitoring & Documentation
+**Labels:** monitoring, documentation, post-launch
+
+### Description
+Set up monitoring infrastructure and create essential documentation for post-launch operations.
 
 ### Tasks
+**Monitoring:**
 - [ ] Add Sentry
 - [ ] Add uptime monitoring
 - [ ] Add geocoding failure alerts
 
----
-
-## ISSUE: PHASE 4 — Documentation
-**Labels:** documentation, post-launch
-
-### Tasks
+**Documentation:**
 - [ ] DESIGN_SYSTEM.md
 - [ ] DATA_IMPORT_RUNBOOK.md
 - [ ] SEO_CHECKLIST.md
 
 ---
 
-## ISSUE: PHASE 4 — Performance Improvements
-**Labels:** performance
+## ISSUE: PHASE 4 — Performance & Image Optimization
+**Labels:** performance, seo, ui
+
+### Description
+Optimize application performance through code splitting, caching, and image optimization.
 
 ### Tasks
+**Performance Improvements:**
 - [ ] Lazy-load heavy components
 - [ ] Remove unused client JS
 - [ ] Add caching for directory queries
 
----
-
-## ISSUE: PHASE 5 — Future SEO Enhancements
-**Labels:** seo, backlog
-
-### Tasks
-### [SEO-Future]
-- [ ] Add company reviews/ratings schema fields
-- [ ] Implement dynamic OG images
-- [ ] Add FAQ schema per company
-
-### [UX Extended]
-- [ ] Redesign map dialog box
-- [ ] Add breadcrumbs to every page
-
-### [Design System Extended]
-- [ ] Optional move to shadcn/ui
-- [ ] Build Storybook
+**Image Optimization:**
+- [x] Decision: Migrate to `next/image`
+- [ ] Replace all `<img>` with `<Image>`
+- [ ] Add responsive sizes
+- [ ] Add blur placeholder
 
 ---
 
-## ISSUE: PHASE 5 — AI-Generated Content SEO Optimization
-**Labels:** seo, ai, enhancement, backlog
+## ISSUE: PHASE 5 — SEO Enhancements
+**Labels:** seo, enhancement, backlog
 
 ### Description
-Optimize AI-generated company content for better SEO performance.
+Comprehensive SEO improvements including structured data, dynamic OG images, and AI content optimization.
 
 ### Tasks
+**Structured Data:**
+- [ ] Add company reviews/ratings schema fields
+- [ ] Add FAQ schema per company
+
+**Dynamic OG Images:**
+- [x] Decision: No for now; add TODO
+- [x] Create backlog item for dynamic OG images
+- [ ] Research Next.js OG image generation options (e.g., `@vercel/og`, `next-og-image`)
+- [ ] Design OG image template for company pages (include company name, logo, key details)
+- [ ] Design OG image template for category pages (industries, states)
+- [ ] Implement dynamic OG image API route (`/api/og/company/[slug]`, etc.)
+- [ ] Update metadata to use dynamic OG images for company pages
+- [ ] Update metadata to use dynamic OG images for category pages
+- [ ] Test OG images with social media preview tools (Facebook Debugger, Twitter Card Validator, LinkedIn Post Inspector)
+- [ ] Ensure OG images are cached appropriately for performance
+- [ ] Optimize any image assets (logos, icons) used in OG generation for performance
+
+**AI-Generated Content SEO:**
 - [ ] Review AI research prompts ensure descriptions are SEO-optimized
 - [ ] Verify company descriptions are unique (not duplicated)
 - [ ] Check that AI-generated slugs are URL-friendly
 - [ ] Ensure AI-generated content includes relevant keywords naturally
+
+---
+
+## ISSUE: PHASE 5 — UX & Design System Enhancements
+**Labels:** ux, design-system, backlog
+
+### Description
+Improve user experience and design system tooling for better development workflow.
+
+### Tasks
+**UX Improvements:**
+- [ ] Redesign map dialog box
+- [ ] Add breadcrumbs to every page
+
+**Design System Tooling:**
+- [ ] Optional move to shadcn/ui
+- [ ] Build Storybook
 
 ---
 

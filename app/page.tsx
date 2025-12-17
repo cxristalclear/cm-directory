@@ -90,7 +90,7 @@ export default async function Home({
           <Header />
           <script {...jsonLdScriptProps(itemListSchema)} />
           
-          <main className="page-container section section--tight space-y-4">
+          <main className="page-container section">
             {/* Top Ad Removed to bring content higher */}
 
             {useHorizontalFilterBar ? (

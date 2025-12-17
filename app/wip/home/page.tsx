@@ -18,6 +18,7 @@ import Navbar from "@/components/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { GradientHero } from "@/components/GradientHero"
 export const revalidate = 300
 
 const COMPANY_FIELDS = `
@@ -261,29 +262,25 @@ export default async function Home({
             <Navbar />
             
             {/* Hero Section */}
-            <section className="relative overflow-hidden">
-                <div className="gradient-bg">
-                    <div className="relative z-10 py-8 md:py-12">
-                        <div className="container mx-auto px-4 text-center">
-                            <div className="mx-auto max-w-4xl">
-                                <h1 className="mb-3 text-3xl font-bold leading-tight text-white md:text-5xl">
-                                Find Your Next Contract Manufacturing Partner
-                                </h1>
-                                <p className="mb-6 text-lg leading-relaxed text-blue-100 md:text-xl">
-                                Search {stats.manufacturers}+ verified electronics manufacturers by capability, certification, and region. 
-                                Connect directly with qualified partners.
-                                </p>
-                                <div className="flex gap-4 justify-center flex-wrap">
-                                  <Button asChild size="lg" className="rounded-xl px-8">
-                                      <Link href="/search">Search Manufacturers</Link>
-                                  </Button>
-                                  <Button asChild size="lg" className="rounded-xl px-8">
-                                      <Link href="/list-your-company">List Your Company</Link>
-                                  </Button>                                </div>  
-                            </div>
-                        </div>
-                        {/* Stats Grid */}
-                        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <section>
+                <GradientHero
+                    title="Find Your Next Contract Manufacturing Partner"
+                    subtitle={`Search ${stats.manufacturers}+ verified electronics manufacturers by capability, certification, and region. Connect directly with qualified partners.`}
+                    variant="centered"
+                    padding="md"
+                    actions={
+                        <>
+                            <Button asChild size="lg" className="rounded-xl px-8">
+                                <Link href="/search">Search Manufacturers</Link>
+                            </Button>
+                            <Button asChild size="lg" className="rounded-xl px-8">
+                                <Link href="/list-your-company">List Your Company</Link>
+                            </Button>
+                        </>
+                    }
+                >
+                    {/* Stats Grid */}
+                    <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
                         {[
                             { label: 'Manufacturers', value: `${stats.manufacturers}+` },
                             { label: 'Capabilities', value: `${stats.capabilities}+` },
@@ -291,19 +288,14 @@ export default async function Home({
                             { label: 'Avg. Response', value: stats.avgResponse }
                         ].map((stat) => (
                             <Card key={stat.label} className="border-slate-200">
-                            <CardContent className="p-6 text-center">
-                                <p className="text-3xl font-bold text-blue-600">{stat.value}</p>
-                                <p className="text-slate-600 mt-2">{stat.label}</p>
-                            </CardContent>
+                                <CardContent className="p-6 text-center">
+                                    <p className="text-3xl font-bold text-blue-600">{stat.value}</p>
+                                    <p className="text-slate-600 mt-2">{stat.label}</p>
+                                </CardContent>
                             </Card>
                         ))}
-                        </div>
                     </div>
-                    <div className="pointer-events-none absolute inset-0">
-                        <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
-                        <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
-                    </div>
-                </div>
+                </GradientHero>
             </section>
 
             {/* Two-Audience Section */}
