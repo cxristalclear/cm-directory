@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { TrackedLink } from "@/components/TrackedLink"
 import {
   ArrowRight,
   Building2,
@@ -121,14 +122,14 @@ export default function AboutPage() {
     <div className="page-shell">
       <Navbar />
 
-      <main className="page-container section space-y-24">
+      <main className="page-container section">
         
         {/* Hero Section */}
-        <section className="grid lg:grid-cols-2 gap-12 items-center pt-8">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pt-8">
           <div className="space-y-8">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
-                <Building2 className="h-3.5 w-3.5 text-primary" />
+                <Building2 className="h-4 w-4 text-primary" />
                 <span>The Contract Manufacturer Directory</span>
               </div>
               
@@ -142,23 +143,25 @@ export default function AboutPage() {
             </div>
 
             <div className="flex flex-wrap gap-4">
-              <Link href="/" className="btn btn--primary btn--lg shadow-md shadow-primary/20">
+              <Link href="/" className="btn btn-primary btn--lg shadow-md shadow-primary/20">
                 Browse Directory
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
-              <Link
+              <TrackedLink
                 href="/list-your-company"
                 className="btn btn--outline btn--lg bg-card"
+                trackingType="list_company"
+                location="about_page_hero"
               >
                 List Your Company
-              </Link>
+              </TrackedLink>
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-6 border-t border-border pt-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-border pt-8">
               {heroStats.map((stat) => (
                 <div key={stat.label}>
-                  <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                  <div className="heading-lg text-foreground">{stat.value}</div>
                   <div className="text-xs text-muted-foreground font-medium mt-1">{stat.label}</div>
                 </div>
               ))}
@@ -169,7 +172,7 @@ export default function AboutPage() {
           <div className="relative lg:pl-10">
             <div className="absolute -inset-4 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-3xl -z-10" />
             
-            <div className="card p-6 shadow-xl border-border/60 bg-card/80 backdrop-blur-sm">
+            <div className="card-elevated p-6 border-border/60 bg-card/80 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -226,7 +229,7 @@ export default function AboutPage() {
         </section>
 
         {/* Personas Section */}
-        <section>
+        <section className="mb-16">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
             <div className="max-w-2xl">
               <h2 className="heading-lg mb-3">Trusted by the industry</h2>
@@ -234,7 +237,7 @@ export default function AboutPage() {
                 Whether you are designing the board or sourcing the build, we have the data you need to make confident decisions.
               </p>
             </div>
-            <Link href="/search" className="btn btn--ghost group">
+            <Link href="/search" className="btn btn-ghost group">
               View all features <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
@@ -257,7 +260,7 @@ export default function AboutPage() {
                     <div className={`h-full rounded-full ${persona.barColor}`} style={{ width: `${persona.metric.value}%` }} />
                   </div>
                   <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
                     {persona.proof}
                   </div>
                 </div>
@@ -267,7 +270,7 @@ export default function AboutPage() {
         </section>
 
         {/* How It Works */}
-        <section className="bg-muted/30 -mx-5 px-5 py-20 md:rounded-3xl">
+        <section className="mb-16 bg-muted/30 -mx-5 px-5 py-12 md:py-16 md:rounded-3xl">
           <div className="max-w-4xl mx-auto text-center mb-16">
             <h2 className="heading-lg mb-4">How it works</h2>
             <p className="body text-muted-foreground">
@@ -281,7 +284,7 @@ export default function AboutPage() {
 
             <div className="grid md:grid-cols-3 gap-8">
               {steps.map((step) => (
-                <div key={step.title} className="relative bg-card p-6 rounded-xl border border-border shadow-sm z-10">
+                <div key={step.title} className="relative card p-6 rounded-xl z-10">
                   <div className="absolute -top-5 left-6 h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm ring-4 ring-background">
                     {step.number}
                   </div>
@@ -293,7 +296,7 @@ export default function AboutPage() {
                     <p className="body-sm text-muted-foreground">{step.desc}</p>
                     <div className="pt-2">
                       <span className="text-sm font-medium text-primary flex items-center gap-1 cursor-pointer hover:underline">
-                        {step.action} <ArrowRight className="h-3 w-3" />
+                        {step.action} <ArrowRight className="h-4 w-4 ml-1" />
                       </span>
                     </div>
                   </div>
@@ -304,7 +307,7 @@ export default function AboutPage() {
         </section>
 
         {/* Data Quality Section */}
-        <section className="grid lg:grid-cols-12 gap-12">
+        <section className="mb-16 grid lg:grid-cols-12 gap-12">
           <div className="lg:col-span-5 space-y-6">
             <h2 className="heading-lg">Quality you can trust</h2>
             <p className="body text-muted-foreground">
@@ -313,12 +316,12 @@ export default function AboutPage() {
             <div className="space-y-4">
               {trustSignals.map(signal => (
                 <div key={signal.title} className="card-compact p-4 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
                     <signal.icon className="h-6 w-6" />
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-baseline">
-                      <h4 className="font-semibold text-foreground">{signal.title}</h4>
+                      <h4 className="heading-sm text-foreground">{signal.title}</h4>
                       <span className="text-sm font-bold text-primary">{signal.value}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">{signal.desc}</p>
@@ -334,7 +337,7 @@ export default function AboutPage() {
               
               <div className="relative z-10">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-100 mb-6">
-                  <Users className="h-3 w-3" />
+                  <Users className="h-4 w-4" />
                   For Manufacturers
                 </div>
                 <h3 className="heading-lg text-white mb-4">Claim your profile</h3>
@@ -345,20 +348,22 @@ export default function AboutPage() {
                 <ul className="space-y-3 mb-8">
                   {benefits.map(benefit => (
                     <li key={benefit.text} className="flex items-center gap-3 text-sm text-blue-50">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      <CheckCircle2 className="h-4 w-4 text-primary" />
                       {benefit.text}
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <Link 
+              <TrackedLink 
                 href="/list-your-company" 
                 className="relative z-10 w-full sm:w-auto btn btn--lg bg-white text-slate-900 hover:bg-blue-50 border-none self-start flex items-center gap-2"
+                trackingType="list_company"
+                location="about_page_footer"
               >
                 Start Free Listing
                 <ArrowRight className="h-4 w-4" />
-              </Link>
+              </TrackedLink>
             </div>
           </div>
         </section>

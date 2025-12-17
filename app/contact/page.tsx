@@ -30,12 +30,12 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="page-shell">
       <Navbar />
-      <header className="gradient-bg pb-20 pt-16 text-white">
+      <header className="gradient-bg py-8 md:py-12 lg:py-16 text-white">
         <div className="container mx-auto px-4">
           <p className="text-sm uppercase tracking-wide text-blue-100">Support & Partnerships</p>
-          <h1 className="mt-3 text-4xl font-semibold md:text-5xl">Contact {siteName}</h1>
+          <h1 className="heading-xl mt-3 text-white">Contact {siteName}</h1>
           <p className="mt-4 max-w-2xl text-lg text-blue-100">
             We help engineering, operations, and sourcing teams find the right manufacturing partners. Reach out and we will
             respond within one business day.
@@ -43,8 +43,8 @@ export default function ContactPage() {
         </div>
       </header>
 
-      <main className="container mx-auto -mt-12 px-4">
-        <section className="rounded-2xl border border-white/30 bg-white/80 p-4 shadow-lg backdrop-blur">
+      <main className="page-container section">
+        <section className="mb-8 rounded-2xl border border-white/30 bg-white/80 p-4 shadow-lg backdrop-blur">
           <Breadcrumbs
             items={[
               { name: "Home", url: "/" },
@@ -53,9 +53,9 @@ export default function ContactPage() {
           />
         </section>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-xl">
-            <h2 className="text-2xl font-semibold text-gray-900">Send us a message</h2>
+            <h2 className="heading-lg text-gray-900">Send us a message</h2>
             <p className="mt-2 text-sm text-gray-600">
               Share your project requirements, press inquiry, or support question. A member of the team will reach out with next
               steps.
@@ -66,7 +66,7 @@ export default function ContactPage() {
 
           <aside className="space-y-6">
             <div className="rounded-3xl border border-blue-100 bg-blue-50/80 p-6 shadow-inner">
-              <h2 className="text-lg font-semibold text-blue-900">FAQ / Help</h2>
+              <h2 className="heading-sm text-blue-900">FAQ / Help</h2>
               <ul className="mt-4 space-y-4 text-sm text-blue-900/80">
                 <li className="rounded-2xl border border-blue-100 bg-white/70 p-4 shadow-sm">
                   <p className="font-medium text-blue-900">Need to update your company profile?</p>
@@ -90,7 +90,7 @@ export default function ContactPage() {
             </div>
 
             <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Office hours</h3>
+              <h3 className="eyebrow text-gray-500">Office hours</h3>
               <p className="mt-2 text-sm text-gray-600">Monday – Friday, 8:00 AM to 6:00 PM PT</p>
               <p className="mt-4 text-sm text-gray-600">
                 Prefer email? Contact us at{" "}

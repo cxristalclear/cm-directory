@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ChevronRight, Home } from 'lucide-react'
 import { getCanonicalUrl } from '@/lib/config'
 
-interface BreadcrumbItem {
+export interface BreadcrumbItem {
   name: string
   url: string
 }

@@ -13,6 +13,9 @@ type BuildMetadataOptions = {
   canonicalPath?: string
   openGraph?: Metadata["openGraph"]
   robots?: Metadata["robots"]
+  twitter?: Metadata["twitter"]
+  keywords?: string[]
+  other?: Metadata["other"]
 }
 
 /**
@@ -25,6 +28,9 @@ export function buildMetadata({
   canonicalPath,
   openGraph,
   robots,
+  twitter,
+  keywords,
+  other,
 }: BuildMetadataOptions): Metadata {
   const canonical = canonicalPath ? getCanonicalUrl(canonicalPath) : siteConfig.url
   const baseOg = {
@@ -36,10 +42,20 @@ export function buildMetadata({
       {
         url: siteConfig.ogImage,
         alt: title,
+        width: 1200,
+        height: 630,
       },
     ],
     type: "website",
+    locale: "en_US",
   }
+
+  // Normalize images to an array - Next.js allows single image or array
+  const normalizedImages = openGraph?.images
+    ? Array.isArray(openGraph.images)
+      ? openGraph.images
+      : [openGraph.images]
+    : baseOg.images
 
   return {
     title,
@@ -51,9 +67,33 @@ export function buildMetadata({
     openGraph: {
       ...baseOg,
       ...openGraph,
-      images: openGraph?.images ?? baseOg.images,
+      images: normalizedImages.map(img => {
+        // Handle string or URL images (URL only)
+        if (typeof img === 'string' || img instanceof URL) {
+          return {
+            url: typeof img === 'string' ? img : img.toString(),
+            width: 1200,
+            height: 630,
+            alt: title,
+          }
+        }
+        // Handle image descriptor objects
+        return {
+          ...img,
+          url: typeof img.url === 'string' ? img.url : img.url.toString(),
+          width: 'width' in img ? (img.width ?? 1200) : 1200,
+          height: 'height' in img ? (img.height ?? 630) : 630,
+        }
+      }),
     },
+    ...(twitter ? { twitter } : {}),
     robots,
+    other: {
+      ...(keywords?.length ? { keywords: keywords.join(', ') } : {}),
+      ...(other ? Object.fromEntries(
+        Object.entries(other).filter(([, value]) => value !== undefined)
+      ) : {}),
+    },
   }
 }
 

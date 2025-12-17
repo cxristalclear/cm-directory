@@ -29,12 +29,12 @@ export const metadata: Metadata = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="page-shell">
       <Navbar />
-      <header className="gradient-bg pb-20 pt-16 text-white">
+      <header className="gradient-bg py-8 md:py-12 lg:py-16 text-white">
         <div className="container mx-auto px-4">
           <p className="text-sm uppercase tracking-wide text-blue-100">Privacy</p>
-          <h1 className="mt-3 text-4xl font-semibold md:text-5xl">Privacy Policy</h1>
+          <h1 className="heading-xl mt-3 text-white">Privacy Policy</h1>
           <p className="mt-4 max-w-2xl text-lg text-blue-100">
             We take privacy seriously when it comes to sourcing data, company submissions, and community research on manufacturing
             partners.
@@ -43,8 +43,8 @@ export default function PrivacyPolicyPage() {
         </div>
       </header>
 
-      <main className="container mx-auto -mt-12 px-4">
-        <section className="rounded-2xl border border-white/40 bg-white/80 p-4 shadow-lg backdrop-blur">
+      <main className="page-container section">
+        <section className="mb-8 rounded-2xl border border-white/40 bg-white/80 p-4 shadow-lg backdrop-blur">
           <Breadcrumbs
             items={[
               { name: "Home", url: "/" },
@@ -53,9 +53,9 @@ export default function PrivacyPolicyPage() {
           />
         </section>
 
-        <article className="mt-8 space-y-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-xl">
+        <article className="space-y-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-xl">
           <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-gray-900">Information we collect</h2>
+            <h2 className="heading-lg text-gray-900">Information we collect</h2>
             <p className="text-sm text-gray-700">
               We gather directory browsing analytics, manufacturer submissions, and support requests so we can improve the product,
               vet companies, and collaborate with sourcing teams. Personally identifiable information is limited to details that team
@@ -64,7 +64,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-gray-900">How data is used</h2>
+            <h2 className="heading-lg text-gray-900">How data is used</h2>
             <p className="text-sm text-gray-700">
               Directory usage patterns help us prioritize new features and content. Company submission data is reviewed by our
               operations team and published only after verification. We never sell or lease data to third parties.
@@ -72,7 +72,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-gray-900">Data security</h2>
+            <h2 className="heading-lg text-gray-900">Data security</h2>
             <p className="text-sm text-gray-700">
               Access to internal systems is restricted to core team members with multi-factor authentication. We retain submission
               records for auditability and remove them upon verified request from the submitting party.
@@ -80,7 +80,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-gray-900">Your choices</h2>
+            <h2 className="heading-lg text-gray-900">Your choices</h2>
             <p className="text-sm text-gray-700">
               Contact{" "}
               <a href="mailto:privacy@pcba-finder.com" className="font-medium text-blue-600 underline">

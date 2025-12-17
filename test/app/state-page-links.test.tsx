@@ -193,7 +193,9 @@ describe("state manufacturers page links", () => {
 
         if (href === "/manufacturers") {
           const { default: ManufacturersIndexPage } = await import("@/app/manufacturers/page")
-          const manufacturersElement = await ManufacturersIndexPage()
+          const manufacturersElement = await ManufacturersIndexPage({
+            searchParams: Promise.resolve({}),
+          })
           renderToStaticMarkup(manufacturersElement)
           return { href, status: 200 }
         }

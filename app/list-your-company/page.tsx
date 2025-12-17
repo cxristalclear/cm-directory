@@ -1,11 +1,11 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
-import Link from "next/link"
 import { ArrowRight, Building2, CheckCircle2, Globe2, ShieldCheck, TimerReset } from "lucide-react"
 
 import Navbar from "@/components/navbar"
 import JotformEmbed from "@/components/JotformEmbed"
 import { siteConfig } from "@/lib/config"
+import { ContactSalesButton, SubmitFormButton } from "./TrackingButtons"
 
 const siteName = siteConfig.name
 
@@ -100,11 +100,11 @@ export default function ListYourCompanyPage() {
       <div className="page-shell">
         <Navbar />
 
-        <main className="page-container section space-y-24">
+        <main className="page-container section">
           {/* Hero Section - Centered Light Theme */}
           <section className="text-center max-w-4xl mx-auto pt-12 space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm mx-auto">
-              <Building2 className="h-3.5 w-3.5 text-primary" />
+              <Building2 className="h-4 w-4 text-primary" />
               <span>For Manufacturers</span>
             </div>
             <h1 className="heading-xl text-foreground">
@@ -114,18 +114,18 @@ export default function ListYourCompanyPage() {
               List your contract manufacturing company for free and connect with OEMs, startups, and engineers searching for reliable partners.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="#submit" className="btn btn--primary btn--lg shadow-md shadow-primary/20">
+              <SubmitFormButton className="btn btn-primary btn--lg shadow-md shadow-primary/20">
                 Submit Free Listing
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/contact" className="btn btn--outline btn--lg bg-card">
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </SubmitFormButton>
+              <ContactSalesButton className="btn btn--outline btn--lg bg-card">
                 Have Questions?
-              </Link>
+              </ContactSalesButton>
             </div>
           </section>
 
           {/* How it works */}
-          <section>
+          <section className="mb-16">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <h2 className="heading-lg mb-4">How it works</h2>
               <p className="body text-muted-foreground">Three simple steps to publish your profile.</p>
@@ -133,7 +133,7 @@ export default function ListYourCompanyPage() {
             
             <div className="grid md:grid-cols-3 gap-8">
               {steps.map((step) => (
-                <div key={step.number} className="relative bg-card p-6 rounded-xl border border-border shadow-sm">
+                <div key={step.number} className="relative card p-6 rounded-xl">
                   <div className="absolute -top-5 left-6 h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm ring-4 ring-background">
                     {step.number}
                   </div>
@@ -150,8 +150,8 @@ export default function ListYourCompanyPage() {
           </section>
 
           {/* Form Section */}
-          <section id="submit" className="max-w-3xl mx-auto">
-            <div className="card p-1 bg-card border-border/60 shadow-xl">
+          <section id="submit" className="mb-16 max-w-3xl mx-auto">
+            <div className="card-elevated p-1 border-border/60">
               <div className="p-6 md:p-8 space-y-6">
                 <div className="text-center space-y-2 mb-8">
                   <h2 className="heading-lg">Submit your listing</h2>
@@ -165,7 +165,7 @@ export default function ListYourCompanyPage() {
           </section>
 
           {/* Benefits & FAQ Split */}
-          <section className="grid md:grid-cols-2 gap-12 items-start">
+          <section className="mb-16 grid md:grid-cols-2 gap-12 items-start">
             <div>
               <h2 className="heading-lg mb-6">Why list on {siteName}?</h2>
               <div className="space-y-6">
@@ -175,7 +175,7 @@ export default function ListYourCompanyPage() {
                       <benefit.icon className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground mb-1">{benefit.title}</h3>
+                      <h3 className="heading-sm text-foreground mb-1">{benefit.title}</h3>
                       <p className="text-sm text-muted-foreground">{benefit.description}</p>
                     </div>
                   </div>
@@ -188,7 +188,7 @@ export default function ListYourCompanyPage() {
               <h3 className="heading-md mb-6">Frequently Asked Questions</h3>
               <div className="space-y-3">
                 {faqs.map((faq) => (
-                  <details key={faq.q} className="group bg-card rounded-lg border border-border open:shadow-sm transition-all">
+                  <details key={faq.q} className="group card open:shadow-sm transition-all">
                     <summary className="flex cursor-pointer items-center justify-between p-4 font-medium text-foreground">
                       {faq.q}
                       <span className="text-muted-foreground transition-transform group-open:rotate-180">▾</span>
@@ -212,13 +212,13 @@ export default function ListYourCompanyPage() {
                 Join manufacturers connecting with qualified buyers every day.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="#submit" className="btn btn--lg bg-white text-primary hover:bg-white/90 border-none w-full sm:w-auto">
+                <SubmitFormButton className="btn btn--lg bg-white text-primary hover:bg-white/90 border-none w-full sm:w-auto">
                   Submit Free Listing
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link href="/contact" className="btn btn--lg btn--outline border-white/30 text-white hover:bg-white/10 w-full sm:w-auto">
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </SubmitFormButton>
+                <ContactSalesButton className="btn btn--lg btn--outline border-white/30 text-white hover:bg-white/10 w-full sm:w-auto">
                   Contact Sales
-                </Link>
+                </ContactSalesButton>
               </div>
             </div>
           </section>

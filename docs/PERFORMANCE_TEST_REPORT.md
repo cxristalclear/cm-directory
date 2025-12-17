@@ -294,3 +294,5 @@ npm test -- test/lib/utils/performance.benchmark.test.ts
 3. Consider pagination if company count exceeds 500
 4. Continue monitoring Core Web Vitals
 
+
+

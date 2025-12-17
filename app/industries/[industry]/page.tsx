@@ -5,7 +5,6 @@ import CompanyList from "@/components/CompanyList"
 import CompanyListErrorBoundary from "@/components/CompanyListErrorBoundary"
 import FilterSidebar from "@/components/FilterSidebar"
 import FilterErrorBoundary from "@/components/FilterErrorBoundary"
-import { Breadcrumbs } from "@/components/Breadcrumbs"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { getCanonicalUrl, siteConfig } from "@/lib/config"
 import { parseFiltersFromSearchParams } from "@/lib/filters/url"
@@ -22,6 +21,7 @@ import {
   type IndustrySlug,
 } from "@/lib/industries"
 import Navbar from "@/components/navbar"
+import { GradientHero } from "@/components/GradientHero"
 
 const siteName = siteConfig.name
 
@@ -115,57 +115,68 @@ export default async function IndustryPage({
     ],
   })
 
+  // ItemList schema for companies in this industry
+  const itemListSchema = {
+    "@context": "https://schema.org" as const,
+    "@type": "ItemList",
+    name: `${industryData.name} Contract Manufacturers`,
+    url: canonicalUrl,
+    numberOfItems: typedCompanies?.length ?? 0,
+    itemListElement: (typedCompanies || [])
+      .filter((company) => Boolean(company.slug))
+      .slice(0, 100)
+      .map((company, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: getCanonicalUrl(`/companies/${company.slug}`),
+        name: company.company_name,
+        ...(company.description ? { description: company.description } : {}),
+      })),
+  }
+
   return (
     <FilterProvider initialFilters={initialFilters}>
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <script {...jsonLdScriptProps(industrySchema)} />
+        <script {...jsonLdScriptProps(itemListSchema)} />
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
-          <div className="container mx-auto px-4 py-12">
-            <Breadcrumbs
-              className="mb-6 text-blue-100"
-              items={[
-                { name: "Home", url: "/" },
-                { name: "Industries", url: "/industries" },
-                { name: industryData.name, url: canonicalUrl },
-              ]}
-            />
-
-            <div className="flex flex-col gap-6 md:flex-row md:items-start">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white/20 text-md font-semibold backdrop-blur-sm">
-                {industryData.name.split(" ")[0]}
-              </div>
-              <div>
-                <h1 className="mb-3 text-4xl font-bold">{industryData.title}</h1>
-                <p className="max-w-3xl text-xl text-blue-100">{industryData.description}</p>
-                <div className="mt-6 inline-flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2 text-sm text-blue-100">
-                  <span className="text-2xl font-bold text-white">{typedCompanies?.length || 0}</span>
-                  <span>Specialized Manufacturers</span>
-                </div>
-                <div className="mt-6">
-                  <Link
-                    href="/industries"
-                    className="inline-flex items-center text-sm font-medium text-blue-100 transition hover:text-white"
-                  >
-                    ← View all industries
-                  </Link>
-                </div>
-              </div>
-            </div>
+        <GradientHero
+          title={industryData.title}
+          subtitle={industryData.description}
+          breadcrumbs={[
+            { name: "Home", url: "/" },
+            { name: "Industries", url: "/industries" },
+            { name: industryData.name, url: canonicalUrl },
+          ]}
+          icon={industryData.name.split(" ")[0]}
+          variant="with-icon"
+          decorativeGlows={false}
+        >
+          <div className="mt-6 inline-flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2 text-sm text-blue-100">
+            <span className="text-2xl font-bold text-white">{typedCompanies?.length || 0}</span>
+            <span>Specialized Manufacturers</span>
           </div>
-        </div>
+          <div className="mt-6">
+            <Link
+              href="/industries"
+              className="inline-flex items-center text-sm font-medium text-blue-100 transition hover:text-white"
+            >
+              ← View all industries
+            </Link>
+          </div>
+        </GradientHero>
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-8">
+        <div className="page-container section">
           {/* SEO Content */}
-          <div className="mb-8 rounded-xl bg-white p-8 shadow-sm">
-            <h2 className="text-2xl font-bold mb-4">{industryData.name} Manufacturing Requirements</h2>
+          <div className="mb-16 rounded-xl bg-white p-8 shadow-sm">
+            <h2 className="heading-lg mb-4">{industryData.name} Manufacturing Requirements</h2>
             <div className="prose max-w-none text-gray-700">
               <p>
                 Contract manufacturers serving the {industryData.name.toLowerCase()} industry must meet specific regulatory and quality requirements.
               </p>
-              <h3 className="mt-6 text-lg font-semibold">Key Requirements</h3>
+              <h3 className="heading-sm mt-6">Key Requirements</h3>
               <ul>
                 {industryData.requirements.map(req => (
                   <li key={req}>{req}</li>
@@ -175,28 +186,30 @@ export default async function IndustryPage({
           </div>
 
           {/* Company Listings */}
-          <h2 className="text-2xl font-bold mb-6">{industryData.name} Manufacturers</h2>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-4">
-              <FilterErrorBoundary>
-                <FilterSidebar allCompanies={typedCompanies || []} />
-              </FilterErrorBoundary>
-            </div>
-            <div className="lg:col-span-8">
-              <CompanyListErrorBoundary>
-                <CompanyList allCompanies={typedCompanies || []} />
-              </CompanyListErrorBoundary>
+          <div className="mb-16">
+            <h2 className="heading-lg mb-6">{industryData.name} Manufacturers</h2>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+              <div className="lg:col-span-4">
+                <FilterErrorBoundary>
+                  <FilterSidebar allCompanies={typedCompanies || []} />
+                </FilterErrorBoundary>
+              </div>
+              <div className="lg:col-span-8">
+                <CompanyListErrorBoundary>
+                  <CompanyList allCompanies={typedCompanies || []} />
+                </CompanyListErrorBoundary>
+              </div>
             </div>
           </div>
 
           {/* Related industries */}
           {relatedIndustries.length > 0 && (
-            <div className="mt-12 rounded-xl bg-white p-8 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900">Explore related industries</h3>
+            <div className="rounded-xl bg-white p-8 shadow-sm">
+              <h3 className="heading-sm text-gray-900">Explore related industries</h3>
               <p className="mt-2 text-sm text-gray-600">
                 Expand your search with adjacent manufacturing specializations.
               </p>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="mt-6 grid gap-4 grid-cols-1 md:grid-cols-2">
                 {relatedIndustries.map(related => (
                   <Link
                     key={related.slug}

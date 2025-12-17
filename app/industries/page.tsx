@@ -41,10 +41,9 @@ export default function IndustriesIndexPage() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="page-shell">
       <Navbar />
-      <main className="pb-16 pt-12">
-        <div className="container mx-auto px-4">
+      <main className="page-container section">
           <script {...jsonLdScriptProps(itemListSchema)} />
           <Breadcrumbs
             className="text-sm text-gray-500"
@@ -55,14 +54,14 @@ export default function IndustriesIndexPage() {
           />
 
           <div className="mt-8 max-w-3xl">
-            <h1 className="text-4xl font-bold text-gray-900">Industries we serve</h1>
+            <h1 className="heading-xl text-gray-900">Industries we serve</h1>
             <p className="mt-3 text-lg text-gray-600">
               Build shortlists of contract manufacturers with the certifications, regulatory programs, and process controls required
               for your industry.
             </p>
           </div>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-12 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {allIndustries.map(industry => (
               <Link
                 key={industry.slug}
@@ -73,17 +72,16 @@ export default function IndustriesIndexPage() {
                   <p className="text-xs font-semibold uppercase tracking-widest text-blue-600">
                     {industry.name}
                   </p>
-                  <h2 className="mt-3 text-xl font-semibold text-gray-900">{industry.title}</h2>
+                  <h2 className="heading-sm mt-3 text-gray-900">{industry.title}</h2>
                   <p className="mt-3 text-sm text-gray-600">{industry.summary}</p>
                 </div>
                 <span className="mt-6 inline-flex items-center text-sm font-medium text-blue-600 transition group-hover:text-blue-700">
                   Explore manufacturers
-                  <ArrowUpRight className="ml-1 h-4 w-4" />
+                  <ArrowUpRight className="h-4 w-4 ml-2" />
                 </span>
               </Link>
             ))}
           </div>
-        </div>
       </main>
     </div>
   )

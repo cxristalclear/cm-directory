@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Building2, Calendar, CheckCircle, DollarSign, Globe, MapPin, Users } from "lucide-react"
 import { Breadcrumbs } from "@/components/Breadcrumbs"
 import ClaimEditSection from "@/components/ClaimEditSection"
@@ -11,6 +11,7 @@ import { getCanonicalUrl } from "@/lib/config"
 import { getStateSlug } from "@/lib/states"
 import { formatCountryLabel, getFacilityCountryCode } from "@/utils/locationFilters"
 import type { Company } from "@/types/company"
+import { trackCompanyView } from "@/lib/utils/analytics"
 
 interface CompanyDetailClientProps {
   company: Company
@@ -74,6 +75,16 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
   const companyName = company.company_name ?? ""
   const primaryFacility = company.facilities?.[0] ?? null
 
+  // Track company profile view
+  useEffect(() => {
+    trackCompanyView({
+      company_name: companyName,
+      company_slug: company.slug || undefined,
+      company_id: company.id || undefined,
+      event_label: `Company View: ${companyName}`,
+    })
+  }, [company.id, company.slug, companyName])
+
   const relatedLinks = (() => {
     const links: Array<{ href: string; label: string }> = []
 
@@ -117,20 +128,20 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 bg-blue-500 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                <Building2 className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 bg-primary backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-primary-foreground" />
               </div>
               <div>
                 <div className="flex items-center gap-8">
-                  <h1 className="text-3xl lg:text-4xl font-bold text-black mb-2">{companyName}</h1>
+                  <h1 className="heading-xl text-black mb-2">{companyName}</h1>
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-700 border border-green-400/30">
-                    <CheckCircle className="w-3 h-3 mr-1.5" />
+                    <CheckCircle className="w-4 h-4 mr-2" />
                     Verified Manufacturer
                   </span>
                 </div>
                 {primaryFacility && (
                   <span className="flex items-center text-gray-600 text-sm">
-                    <MapPin className="w-3.5 h-3.5 mr-1" />
+                    <MapPin className="w-4 h-4 mr-2" />
                     {formatFacilityLocation(primaryFacility)}
                   </span>
                 )}
@@ -178,7 +189,7 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
               {activeTab === "overview" && (
                 <>
                   <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">Company Overview</h2>
+                    <h2 className="heading-sm text-gray-900 mb-4">Company Overview</h2>
 
                     {company.description ? (
                       <p className="text-gray-700 leading-relaxed mb-6">{company.description}</p>
@@ -189,7 +200,7 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {company.year_founded && (
                         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                          <Calendar className="w-5 h-5 text-green-600" />
+                          <Calendar className="w-5 h-5 text-primary" />
                           <div>
                             <p className="text-sm text-gray-500">Founded</p>
                             <p className="font-semibold text-gray-900">{company.year_founded}</p>
@@ -199,7 +210,7 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
                       {company.annual_revenue_range && (
                         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                          <DollarSign className="w-5 h-5 text-purple-600" />
+                          <DollarSign className="w-5 h-5 text-primary" />
                           <div>
                             <p className="text-sm text-gray-500">Annual Revenue</p>
                             <p className="font-semibold text-gray-900">{company.annual_revenue_range}</p>
@@ -209,7 +220,7 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
                       {company.employee_count_range && (
                         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                          <Users className="w-5 h-5 text-blue-600" />
+                          <Users className="w-5 h-5 text-primary" />
                           <div>
                             <p className="text-sm text-gray-500">Team Size</p>
                             <p className="font-semibold text-gray-900">{company.employee_count_range} employees</p>
@@ -219,8 +230,8 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
                       {company.website_url && (
                         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                          <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <Globe className="w-5 h-5 text-indigo-600" />
+                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <Globe className="w-5 h-5 text-primary" />
                           </div>
                           <div>
                             <p className="text-sm text-gray-500">Website</p>
@@ -240,7 +251,7 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
                   {company.industries && company.industries.length > 0 && (
                     <div className="bg-white rounded-xl shadow-sm p-6">
-                      <h2 className="text-xl font-bold text-gray-900 mb-4">Industries Served</h2>
+                      <h2 className="heading-sm text-gray-900 mb-4">Industries Served</h2>
                       <div className="flex flex-wrap gap-2">
                         {company.industries.map((industry, index) => {
                           const label = industry?.industry_name || "Industry"
@@ -268,14 +279,14 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
                   {company.facilities && company.facilities.length > 0 && (
                     <div className="bg-white rounded-xl shadow-sm p-6">
-                      <h2 className="text-xl font-bold text-gray-900 mb-4">Facilities</h2>
+                      <h2 className="heading-sm text-gray-900 mb-4">Facilities</h2>
                       <div className="space-y-4">
                         {company.facilities.map((facility, index) => {
                           const locationLabel = formatFacilityLocation(facility)
                           const stateSlug = resolveStateSlug(facility)
                           return (
                             <div key={index} className="border-l-4 border-blue-500 pl-4 py-1">
-                              <h3 className="font-semibold text-gray-900">
+                              <h3 className="heading-sm text-gray-900">
                                 {facility?.facility_type || "Manufacturing Facility"}
                                 {facility?.is_primary && (
                                   <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Primary</span>
@@ -307,60 +318,60 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
               {activeTab === "capabilities" && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Manufacturing Capabilities</h2>
+                  <h2 className="heading-sm text-gray-900 mb-6">Manufacturing Capabilities</h2>
                   {capabilities ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {capabilities.pcb_assembly_smt && (
                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                           <span className="text-gray-700">SMT PCB Assembly</span>
                         </div>
                       )}
                       {capabilities.pcb_assembly_through_hole && (
                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                           <span className="text-gray-700">Through-Hole Assembly</span>
                         </div>
                       )}
                       {capabilities.pcb_assembly_fine_pitch && (
                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                           <span className="text-gray-700">Fine Pitch Assembly</span>
                         </div>
                       )}
                       {capabilities.cable_harness_assembly && (
                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                           <span className="text-gray-700">Cable & Harness Assembly</span>
                         </div>
                       )}
                       {capabilities.box_build_assembly && (
                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                           <span className="text-gray-700">Box Build Assembly</span>
                         </div>
                       )}
                       {capabilities.prototyping && (
                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                           <span className="text-gray-700">Prototyping Services</span>
                         </div>
                       )}
                       {capabilities.low_volume_production && (
                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                           <span className="text-gray-700">Low Volume Production</span>
                         </div>
                       )}
                       {capabilities.medium_volume_production && (
                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                           <span className="text-gray-700">Medium Volume Production</span>
                         </div>
                       )}
                       {capabilities.high_volume_production && (
                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                           <span className="text-gray-700">High Volume Production</span>
                         </div>
                       )}
@@ -373,13 +384,13 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
               {activeTab === "certifications" && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Certifications</h2>
+                  <h2 className="heading-sm text-gray-900 mb-6">Certifications</h2>
                   {company.certifications && company.certifications.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {company.certifications.map((cert, index) => (
                         <div key={index} className="border border-gray-200 rounded-xl p-4">
                           <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-semibold text-gray-900">
+                            <h3 className="heading-sm text-gray-900">
                               {cert?.certification_type || "Certification"}
                             </h3>
                             {cert?.status === "Active" && (
@@ -407,7 +418,7 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
               {activeTab === "technical" && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Technical Specifications</h2>
+                  <h2 className="heading-sm text-gray-900 mb-6">Technical Specifications</h2>
                   {company.technical_specs && company.technical_specs.length > 0 && company.technical_specs[0] ? (
                     <div className="space-y-4">
                       {company.technical_specs[0].max_pcb_layers && (
@@ -429,7 +440,7 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
                   {company.business_info && company.business_info.length > 0 && company.business_info[0] && (
                     <div className="mt-8">
-                      <h3 className="font-semibold text-gray-900 mb-4">Business Information</h3>
+                      <h3 className="heading-sm text-gray-900 mb-4">Business Information</h3>
                       <div className="space-y-3">
                         {company.business_info[0].min_order_qty && (
                           <div className="flex justify-between py-2 border-b">
@@ -469,22 +480,22 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
             <div className="lg:col-span-1 space-y-4">
               {company.key_differentiators && (
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-                  <h3 className="font-bold text-gray-900 mb-3">Key Differentiators</h3>
+                  <h3 className="heading-sm text-gray-900 mb-3">Key Differentiators</h3>
                   <p className="text-sm text-gray-700">{company.key_differentiators}</p>
                 </div>
               )}
 
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <h3 className="font-bold text-gray-900 mb-4">Get in Touch</h3>
+                <h3 className="heading-sm text-gray-900 mb-4">Get in Touch</h3>
                 <div className="space-y-3">
                   {company.website_url && (
                     <a
                       href={company.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg text-blue-700 hover:bg-blue-100 transition-colors"
+                      className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg text-primary hover:bg-primary/20 transition-colors"
                     >
-                      <Globe className="w-4 h-4" />
+                      <Globe className="w-4 h-4 text-primary" />
                       <span className="font-medium">Visit Website</span>
                     </a>
                   )}
@@ -492,7 +503,7 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
               </div>
 
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <h3 className="font-bold text-gray-900 mb-4">Quick Facts</h3>
+                <h3 className="heading-sm text-gray-900 mb-4">Quick Facts</h3>
                 <div className="pl-4 pr-4 space-y-1">
                   <div className="flex justify-between items-center py-1 border-b border-gray-100">
                     <span className="text-sm text-gray-500">Status</span>
@@ -529,23 +540,23 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
               {(capabilities?.prototyping || capabilities?.low_volume_production || capabilities?.high_volume_production) && (
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-                  <h3 className="font-bold text-gray-900 mb-3">Specializations</h3>
+                  <h3 className="heading-sm text-gray-900 mb-3">Specializations</h3>
                   <div className="space-y-2">
                     {capabilities?.prototyping && (
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-blue-600" />
+                        <CheckCircle className="w-4 h-4 text-primary" />
                         <span className="text-sm text-gray-700">Prototyping Services</span>
                       </div>
                     )}
                     {capabilities?.low_volume_production && (
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-blue-600" />
+                        <CheckCircle className="w-4 h-4 text-primary" />
                         <span className="text-sm text-gray-700">Low Volume Production</span>
                       </div>
                     )}
                     {capabilities?.high_volume_production && (
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-blue-600" />
+                        <CheckCircle className="w-4 h-4 text-primary" />
                         <span className="text-sm text-gray-700">High Volume Production</span>
                       </div>
                     )}
@@ -563,7 +574,7 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
 
           {relatedLinks.length > 0 && (
             <section className="mt-10 bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Keep exploring</h2>
+              <h2 className="heading-sm text-gray-900 mb-3">Keep exploring</h2>
               <ul className="space-y-2">
                 {relatedLinks.map((link) => (
                   <li key={link.href}>

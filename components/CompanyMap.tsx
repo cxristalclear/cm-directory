@@ -8,6 +8,7 @@ import type { FeatureCollection, Point } from "geojson"
 
 import { useFilters } from "../contexts/FilterContext"
 import { createPopupFromFacility } from "../lib/mapbox-utils"
+import { trackMapMarkerClick } from "@/lib/utils/analytics"
 import { filterCompanies, getLocationFilteredFacilities } from "../utils/filtering"
 import { getFallbackBounds } from "../utils/locationBounds"
 import { useDebounce } from "../hooks/useDebounce"
@@ -221,6 +222,14 @@ export default function CompanyMap({ allCompanies }: CompanyMapProps) {
       while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
       }
+
+      // Track map marker click
+      trackMapMarkerClick({
+        marker_company_name: props.company_name,
+        marker_company_slug: props.company_slug,
+        map_zoom_level: map.current.getZoom(),
+        event_label: `Map Marker: ${props.company_name}`,
+      })
 
       createPopupFromFacility({
         company: { company_name: props.company_name, slug: props.company_slug },

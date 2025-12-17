@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode, useTransition, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { EmployeeCountRanges, type FilterState, type FilterContextType } from "../types/company"
+import { trackFilter } from "@/lib/utils/analytics"
 import { useDebounce } from "../hooks/useDebounce"
 import type { CapabilitySlug, ProductionVolume } from "@/lib/filters/url"
 
@@ -87,7 +88,34 @@ export function FilterProvider({ children, initialFilters }: FilterProviderProps
 
   const updateFilter = useCallback(
     <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
-      setFilters((prevFilters) => ({ ...prevFilters, [key]: value }))
+      setFilters((prevFilters) => {
+        const newFilters = { ...prevFilters, [key]: value }
+        
+        // Track filter changes (only for non-search filters to avoid spam)
+        if (key !== 'searchQuery' && typeof window !== 'undefined') {
+          const filterType = key === 'capabilities' ? 'capability' : 
+                           key === 'countries' ? 'country' :
+                           key === 'states' ? 'state' :
+                           key === 'productionVolume' ? 'volume' :
+                           key === 'employeeCountRanges' ? 'employees' : key
+          
+          const filterValue = Array.isArray(value) ? value.join(',') : String(value || '')
+          const activeCount = Object.values(newFilters).filter(v => {
+            if (Array.isArray(v)) return v.length > 0
+            if (typeof v === 'string') return v.trim().length > 0
+            return v !== null && v !== undefined
+          }).length
+          
+          trackFilter({
+            filter_type: filterType,
+            filter_value: filterValue,
+            active_filters_count: activeCount,
+            event_label: `${filterType}: ${filterValue}`,
+          })
+        }
+        
+        return newFilters
+      })
     },
     []
   )

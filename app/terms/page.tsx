@@ -28,12 +28,12 @@ export const metadata: Metadata = {
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="page-shell">
       <Navbar />
-      <header className="gradient-bg pb-20 pt-16 text-white">
+      <header className="gradient-bg py-8 md:py-12 lg:py-16 text-white">
         <div className="container mx-auto px-4">
           <p className="text-sm uppercase tracking-wide text-blue-100">Terms</p>
-          <h1 className="mt-3 text-4xl font-semibold md:text-5xl">Terms of Service</h1>
+          <h1 className="heading-xl mt-3 text-white">Terms of Service</h1>
           <p className="mt-4 max-w-2xl text-lg text-blue-100">
             These terms detail the acceptable use policies, responsibilities, and commitments between the {siteName} team and our
             users.
@@ -42,8 +42,8 @@ export default function TermsOfServicePage() {
         </div>
       </header>
 
-      <main className="container mx-auto -mt-12 px-4">
-        <section className="rounded-2xl border border-white/40 bg-white/80 p-4 shadow-lg backdrop-blur">
+      <main className="page-container section">
+        <section className="mb-8 rounded-2xl border border-white/40 bg-white/80 p-4 shadow-lg backdrop-blur">
           <Breadcrumbs
             items={[
               { name: "Home", url: "/" },
@@ -52,9 +52,9 @@ export default function TermsOfServicePage() {
           />
         </section>
 
-        <article className="mt-8 space-y-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-xl">
+        <article className="space-y-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-xl">
           <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-gray-900">Use of the platform</h2>
+            <h2 className="heading-lg text-gray-900">Use of the platform</h2>
             <p className="text-sm text-gray-700">
               Users agree to use {siteName} for lawful purposes related to discovering and collaborating with contract
               manufacturers. Automated scraping or republishing of content without consent is prohibited.
@@ -62,7 +62,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-gray-900">Company submissions</h2>
+            <h2 className="heading-lg text-gray-900">Company submissions</h2>
             <p className="text-sm text-gray-700">
               Manufacturers submitting profiles confirm they have authority to share the provided information and agree it can be
               published in the directory after verification. We may remove submissions that cannot be validated.
@@ -70,7 +70,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-gray-900">Limitations of liability</h2>
+            <h2 className="heading-lg text-gray-900">Limitations of liability</h2>
             <p className="text-sm text-gray-700">
               We work diligently to curate accurate information, but users should conduct their own due diligence before entering
               into commercial agreements. {siteName} is not liable for direct or indirect damages arising from use of the platform.
@@ -78,7 +78,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-gray-900">Contact</h2>
+            <h2 className="heading-lg text-gray-900">Contact</h2>
             <p className="text-sm text-gray-700">
               Questions about these terms can be directed to{" "}
               <a href="mailto:legal@pcba-finder.com" className="font-medium text-blue-600 underline">

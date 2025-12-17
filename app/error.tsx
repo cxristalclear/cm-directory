@@ -41,7 +41,7 @@ export default function Error({
       <Navbar />
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+        <div className="card-elevated rounded-2xl p-8 text-center">
           {/* Error Icon */}
           <div className="mb-6 flex justify-center">
             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
@@ -75,7 +75,7 @@ export default function Error({
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={reset}
-              className="btn btn--primary btn--lg flex-1"
+              className="btn btn-primary btn--lg flex-1"
             >
               <RefreshCcw className="w-4 h-4" />
               Try Again
