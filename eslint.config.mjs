@@ -19,6 +19,7 @@ const eslintConfig = [
       "build/**/*",
       "js/**/*.js",
       "public/js/**/*.js",
+      "**/*.md",
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
@@ -40,12 +41,6 @@ const eslintConfig = [
     rules: {
       "@typescript-eslint/triple-slash-reference": "off",
       "@typescript-eslint/no-unused-vars": "off",
-    },
-  },
-  {
-    files: ["**/*.md"],
-    rules: {
-      "react/no-unescaped-entities": "off",
     },
   },
 ];

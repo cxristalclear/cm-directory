@@ -1,8 +1,11 @@
+<!-- eslint-disable -->
+
 # Google Analytics 4 Events Guide - For Beginners
 
 ## Understanding Your Events
-
 Your website is tracking the following events (all prefixed with `cm_directory_`):
+
+<!-- eslint-enable -->
 
 ### Conversion Events
 - **`cm_directory_conversion`** - Tracks when users click:
