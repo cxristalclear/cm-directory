@@ -60,13 +60,17 @@ export default function SiteFooter() {
           <div className="space-y-4">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Resources</h3>
             <ul className="space-y-2">
-              {footerLinks.map(link => (
-                <li key={link.href}>
-                  <Link className={linkClass} href={link.href}>
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+              {footerLinks.map(link => {
+                // Disable prefetching for XML routes (API routes, not pages)
+                const isXmlRoute = link.href.endsWith('.xml')
+                return (
+                  <li key={link.href}>
+                    <Link className={linkClass} href={link.href} prefetch={!isXmlRoute}>
+                      {link.label}
+                    </Link>
+                  </li>
+                )
+              })}
             </ul>
           </div>
 
