@@ -75,7 +75,7 @@ export default function Error({
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={reset}
-              className="btn btn-primary btn--lg flex-1"
+              className="btn btn--primary btn--lg flex-1"
             >
               <RefreshCcw className="w-4 h-4" />
               Try Again

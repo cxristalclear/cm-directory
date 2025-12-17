@@ -135,12 +135,11 @@ export async function GET(): Promise<Response> {
 
     if (error) {
       console.error('Failed to load feed data:', error)
-      // Return a valid RSS feed with error message instead of plain text
-      const errorFeed = serializeFeed([])
-      return new Response(errorFeed, {
-        status: 200,
+      // Return 500 status so caches retry and feed readers don't drop previously indexed items
+      return new Response('Internal Server Error', {
+        status: 500,
         headers: {
-          'Content-Type': 'application/rss+xml; charset=utf-8',
+          'Content-Type': 'text/plain; charset=utf-8',
           'Cache-Control': 'no-cache',
         },
       })
@@ -166,12 +165,11 @@ export async function GET(): Promise<Response> {
     })
   } catch (error) {
     console.error('Unexpected error generating feed:', error)
-    // Return a valid empty RSS feed instead of error message
-    const emptyFeed = serializeFeed([])
-    return new Response(emptyFeed, {
-      status: 200,
+    // Return 500 status so caches retry and feed readers don't drop previously indexed items
+    return new Response('Internal Server Error', {
+      status: 500,
       headers: {
-        'Content-Type': 'application/rss+xml; charset=utf-8',
+        'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
       },
     })

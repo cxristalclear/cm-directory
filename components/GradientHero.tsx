@@ -95,23 +95,23 @@ export function GradientHero({
                   {icon}
                 </div>
                 <div className="flex-1">
-                  <h1 className="heading-xl mb-3 !text-white">{title}</h1>
+                  <h1 className="heading-xl mb-3 text-white!">{title}</h1>
                   {subtitle && (
-                    <p className="body-lg max-w-3xl !text-white">{subtitle}</p>
+                    <p className="body-lg max-w-3xl text-white!">{subtitle}</p>
                   )}
                 </div>
               </div>
             ) : (
               <>
                 <h1 className={cn(
-                  "heading-xl mb-3 !text-white",
+                  "heading-xl mb-3 important:text-white",
                   variant === "centered" && "text-3xl md:text-5xl"
                 )}>
                   {title}
                 </h1>
                 {subtitle && (
                   <p className={cn(
-                    "body-lg mb-6 !text-white",
+                    "body-lg mb-6 important:text-white",
                     variant !== "centered" && "max-w-3xl"
                   )}>
                     {subtitle}

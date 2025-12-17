@@ -88,8 +88,8 @@ export function buildMetadata({
     },
     ...(twitter ? { twitter } : {}),
     robots,
+    ...(keywords?.length ? { keywords } : {}),
     other: {
-      ...(keywords?.length ? { keywords: keywords.join(', ') } : {}),
       ...(other ? Object.fromEntries(
         Object.entries(other).filter(([, value]) => value !== undefined)
       ) : {}),

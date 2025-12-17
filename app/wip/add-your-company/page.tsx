@@ -166,7 +166,7 @@ export default function AddYourCompanyPage() {
           padding="lg"
           actions={
             <>
-              <Link href="/list-your-company" className="btn btn-primary btn--lg bg-white text-primary hover:bg-white/90">
+              <Link href="/list-your-company" className="btn btn--primary btn--lg bg-white text-primary hover:bg-white/90">
                 Submit Free Listing
                 <ArrowRight className="h-5 w-5" />
               </Link>

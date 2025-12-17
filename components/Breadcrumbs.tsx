@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ChevronRight, Home } from 'lucide-react'
 import { getCanonicalUrl } from '@/lib/config'
+import { cn } from '@/components/utils'
 
 export interface BreadcrumbItem {
   name: string
@@ -13,7 +14,7 @@ interface BreadcrumbsProps {
   className?: string
 }
 
-export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, variant = 'default', className }: BreadcrumbsProps) {
   const resolveItemUrl = (url: string) => {
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url
@@ -22,7 +23,30 @@ export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
     return getCanonicalUrl(url)
   }
   
-    
+  // Use CSS variables or neutral classes that respect parent text color
+  // Default colors for when no parent color is provided
+  const colorClasses = {
+    default: {
+      icon: 'text-current opacity-60',
+      separator: 'text-current opacity-60',
+      link: 'text-current opacity-80 hover:opacity-100 hover:text-blue-600 transition-colors',
+      current: 'text-current font-medium',
+    },
+    dark: {
+      icon: 'text-gray-400',
+      separator: 'text-gray-400',
+      link: 'text-gray-600 hover:text-blue-600 transition-colors',
+      current: 'text-gray-900 font-medium',
+    },
+    minimal: {
+      icon: 'text-current opacity-50',
+      separator: 'text-current opacity-50',
+      link: 'text-current opacity-70 hover:opacity-100 transition-colors',
+      current: 'text-current font-medium',
+    },
+  }
+
+  const colors = colorClasses[variant]
 
   const schema = {
     '@context': 'https://schema.org',
@@ -39,11 +63,11 @@ export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
     <>
       <nav 
         aria-label="Breadcrumb" 
-        className={`flex items-center flex-wrap gap-2 text-sm ${className}`}
+        className={cn("flex items-center flex-wrap gap-2 text-sm", className)}
       >
         {/* Optional: Add home icon for first item */}
         {items[0]?.name === 'Home' && (
-          <Home className="w-4 h-4 text-gray-400" />
+          <Home className={cn("w-4 h-4", colors.icon)} />
         )}
         
         {items.map((item, i) => {
@@ -52,18 +76,18 @@ export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
           return (
             <div key={i} className="flex items-center gap-2">
               {i > 0 && (
-                <ChevronRight className="w-4 h-4 text-gray-400" />
+                <ChevronRight className={cn("w-4 h-4", colors.separator)} />
               )}
               
               {isLast ? (
                 // Current page shouldn't be a link
-                <span className="text-gray-900 font-medium">
+                <span className={colors.current}>
                   {item.name}
                 </span>
               ) : (
                 <Link 
                   href={item.url} 
-                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  className={colors.link}
                 >
                   {item.name}
                 </Link>
