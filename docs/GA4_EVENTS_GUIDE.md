@@ -25,7 +25,7 @@ Your website is tracking the following events (all prefixed with `cm_directory_`
 **This is the fastest way to see if events are working!**
 
 1. Go to [Google Analytics](https://analytics.google.com)
-2. Select your property (should show `G-6VEF34G0WM`)
+2. Select your property (should show your `NEXT_PUBLIC_GA_MEASUREMENT_ID` value)
 3. In the left sidebar, click **Reports** → **Realtime**
 4. Scroll down to the **Event count by Event name** section
 5. Perform an action on your website (e.g., click "List Your Company")
@@ -68,8 +68,9 @@ If you have Google Tag Assistant or GA Debugger extension:
 **If you see these messages:** Events are firing! ✅
 
 **If you don't see messages:**
-- Make sure you're in development mode (localhost)
-- Check that `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set in your `.env.local`
+- **For local testing:** Check browser console with localhost (development mode shows `[GA Event]` logs)
+- **For GA4 validation:** Use the live production site (GA requires the gtag script to run on your live domain)
+- Check that `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set in your `.env.local` (for local) or production environment (for live site)
 - Verify cookie consent was given (GA only loads after consent)
 
 ### Step 2: Check Real-Time Reports
@@ -137,13 +138,91 @@ In the Real-Time report, you should see:
 3. Find `cm_directory_conversion`
 4. Toggle the switch to **"Mark as conversion"**
 
+### Issue 5: "Events show in localhost console but not on production site"
+
+**This is a common issue!** Here's how to diagnose and fix it:
+
+#### Quick Diagnosis Steps:
+
+1. **Check if GA Script is Loading on Production:**
+   - Open your production site
+   - Press F12 → Console tab
+   - Type: `window.gtag` and press Enter
+   - ✅ If you see `function gtag() { ... }` → GA is loaded
+   - ❌ If you see `undefined` → GA is NOT loading (see fixes below)
+
+2. **Check Cookie Consent:**
+   - Look for cookie banner at bottom of production site
+   - If banner is showing, click "Accept" or "Allow Cookies"
+   - Verify consent is saved:
+     - F12 → Application tab → Local Storage → your domain
+     - Look for `cookie-consent` key
+     - Should show: `{"status":"accepted","version":"1.0",...}`
+   - **Important:** Cookie consent is required for GA to load!
+
+3. **Check Environment Variable:**
+   - Verify `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set in production
+   - **Vercel:** Project Settings → Environment Variables
+   - **Other platforms:** Check your deployment platform's env vars
+   - Must match your GA4 Measurement ID (starts with `G-`)
+   - **After setting:** Redeploy your application
+
+4. **Check Network Tab:**
+   - F12 → Network tab
+   - Filter by: `gtag` or `google-analytics`
+   - Refresh page
+   - ✅ Should see requests to `googletagmanager.com/gtag/js?id=G-...`
+   - ❌ If no requests → GA script isn't loading
+
+#### Important: Console Logs vs Production
+
+- **Localhost (development):** You see `[GA Event]` messages in console ✅
+- **Production:** You won't see console logs, but events are still sent to GA4 ✅
+
+**To verify events on production:**
+- Use GA4 Real-Time reports (Reports → Realtime)
+- Don't rely on console logs - they only show in development mode
+
+#### Production Testing Checklist:
+
+- [ ] Cookie consent accepted on production site
+- [ ] `NEXT_PUBLIC_GA_MEASUREMENT_ID` set in production environment
+- [ ] Environment variable matches your GA4 Measurement ID
+- [ ] Application redeployed after setting environment variable
+- [ ] Testing on production domain (not localhost)
+- [ ] `window.gtag` exists in production console
+- [ ] GA script loads (check Network tab)
+- [ ] No console errors
+- [ ] Checking Real-Time reports (not console logs)
+
+#### Debugging Commands (Run in Production Console):
+
+```javascript
+// Check if GA is loaded
+console.log('GA Loaded:', typeof window.gtag !== 'undefined')
+
+// Check cookie consent
+console.log('Cookie Consent:', localStorage.getItem('cookie-consent'))
+
+// Manually test an event (if GA is loaded)
+if (window.gtag) {
+  window.gtag('event', 'test_event', {
+    event_category: 'test',
+    event_label: 'manual_test'
+  })
+  console.log('Test event sent! Check GA4 Real-Time reports.')
+} else {
+  console.error('GA not loaded - check cookie consent and environment variable')
+}
+```
+
 ---
 
 ## Quick Checklist
 
 Use this to verify everything is working:
 
-- [ ] GA Measurement ID is set: `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-6VEF34G0WM`
+- [ ] GA Measurement ID is set: `NEXT_PUBLIC_GA_MEASUREMENT_ID=<your-measurement-id>`
 - [ ] Cookie consent is working (GA script loads after consent)
 - [ ] Browser console shows `[GA Event]` messages (in development)
 - [ ] Real-Time reports show events when testing (on live site)
@@ -171,6 +250,22 @@ When you click on an event in GA4, you'll see parameters. Here's what they mean:
 - **filter_type**: Type of filter (e.g., `capability`, `country`, `state`)
 - **filter_value**: What filter was applied
 - **active_filters_count**: Total number of active filters
+- **event_category**: Always `funnel`
+
+### For `cm_directory_companyView`:
+- **company_name**: Name of the company being viewed
+- **company_slug**: URL slug of the company
+- **company_id**: Database ID of the company
+- **event_category**: Always `funnel`
+- **event_label**: Descriptive label like `Company View: Acme Manufacturing`
+
+### For `cm_directory_mapMarkerClick`:
+- **marker_company_name**: Name of the company whose marker was clicked
+- **marker_company_slug**: URL slug of the company
+- **marker_company_id**: Database ID of the company (optional)
+- **map_zoom_level**: Current zoom level of the map when marker was clicked
+- **event_category**: Always `funnel`
+- **event_label**: Descriptive label like `Map Marker: Acme Manufacturing`
 
 ---
 
@@ -185,12 +280,40 @@ When you click on an event in GA4, you'll see parameters. Here's what they mean:
 
 ## Need Help?
 
+### If Events Show in Localhost But Not Production:
+
+**Most Common Cause:** Cookie consent not accepted on production site.
+
+**Quick Fix:**
+1. Visit your production site
+2. Accept cookies (click "Accept" on cookie banner)
+3. Refresh page
+4. Check `window.gtag` in console (should show function, not undefined)
+5. Test events and check GA4 Real-Time reports
+
+**Remember:** Console logs (`[GA Event]`) only appear in development mode. In production, use GA4 Real-Time reports to verify events are working.
+
+### General Troubleshooting:
+
 If events still aren't showing:
 1. Check browser console for errors
-2. Verify `NEXT_PUBLIC_GA_MEASUREMENT_ID` is correct
-3. Make sure you're testing on the live site (not just localhost)
-4. Ensure cookie consent was given
-5. Check Real-Time reports first (not standard reports)
+2. Verify `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set in production environment
+3. Ensure cookie consent was given (GA only loads after consent)
+4. Check Real-Time reports first (not standard reports - they have 24-48 hour delay)
+5. Verify `window.gtag` exists in production console
+6. Check Network tab for GA script loading
+
+### Still Not Working?
+
+1. **Verify GA4 Property Settings:**
+   - GA4 → Admin → Data Streams
+   - Verify Measurement ID matches your environment variable
+   - Check if data collection is enabled
+
+2. **Test with GA Debugger:**
+   - Install [Google Analytics Debugger](https://chrome.google.com/webstore/detail/google-analytics-debugger/jnkmfdileelhofjcijamephohjechhna)
+   - Enable on production site
+   - Check GA4 → Admin → DebugView for real-time event details
 
 Remember: **Real-Time reports are your friend!** Use them to verify events are working immediately.
 

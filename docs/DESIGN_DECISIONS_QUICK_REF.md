@@ -124,11 +124,11 @@ Accent Orange: #ea580c (orange-600)
 ### Button Classes (Recommended)
 ```css
 /* Add to globals.css */
-.btn-primary {
+.btn--primary {
   @apply px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors;
 }
 
-.btn-secondary {
+.btn--secondary {
   @apply px-6 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors;
 }
 ```

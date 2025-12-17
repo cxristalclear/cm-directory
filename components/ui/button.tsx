@@ -8,11 +8,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "btn-primary",
+        default: "btn--primary",
         destructive: "btn--destructive",
         outline: "btn--outline",
-        secondary: "btn-secondary",
-        ghost: "btn-ghost",
+        secondary: "btn--secondary",
+        ghost: "btn--ghost",
         link: "btn--link",
       },
       size: {

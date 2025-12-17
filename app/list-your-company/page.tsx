@@ -114,7 +114,7 @@ export default function ListYourCompanyPage() {
               List your contract manufacturing company for free and connect with OEMs, startups, and engineers searching for reliable partners.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <SubmitFormButton className="btn btn-primary btn--lg shadow-md shadow-primary/20">
+              <SubmitFormButton className="btn btn--primary btn--lg shadow-md shadow-primary/20">
                 Submit Free Listing
                 <ArrowRight className="h-4 w-4 ml-2" />
               </SubmitFormButton>

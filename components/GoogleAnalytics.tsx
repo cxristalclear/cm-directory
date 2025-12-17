@@ -21,6 +21,14 @@ export default function GoogleAnalytics() {
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.gaId}`}
         strategy="afterInteractive"
+        onLoad={() => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[GA] Google Analytics script loaded successfully')
+          }
+        }}
+        onError={() => {
+          console.error('[GA] Failed to load Google Analytics script')
+        }}
       />
       <Script id="google-analytics" strategy="afterInteractive">
         {`
@@ -28,6 +36,7 @@ export default function GoogleAnalytics() {
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
           gtag('config', '${analyticsConfig.gaId}');
+          ${process.env.NODE_ENV === 'development' ? "console.log('[GA] Google Analytics initialized with ID:', '" + analyticsConfig.gaId + "');" : ''}
         `}
       </Script>
     </>

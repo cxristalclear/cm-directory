@@ -42,9 +42,6 @@ Ensure no API keys are exposed or committed.
 - [x] Confirm all keys stored in env vars only
 - [x] Confirm `.env.local` ignored in git
 - [x] Remove hardcoded keys in test files
-- [ ] Confirm API keys are ONLY in environment variables, never hardcoded (verify in production)
-- [ ] Use Vercel/deployment platform's encrypted environment variables
-- [ ] Set up separate API keys for dev/staging/production
 
 ---
 
@@ -588,6 +585,17 @@ Verify all required environment variables are set correctly in production.
   - [x] `NEXT_PUBLIC_GA_MEASUREMENT_ID` (GA4 measurement ID)
 - [x] Verify no placeholder values in production env vars
 - [ ] Verify `NEXT_PUBLIC_BUILD_TIMESTAMP` or `BUILD_TIMESTAMP` is set in CI/CD
+- [ ] **BLOCKER:** Verify API keys are ONLY in environment variables, never hardcoded (verify in production deployment)
+  - [ ] Confirm all API keys use deployment platform's encrypted environment variables (Vercel/Netlify/etc.)
+  - [ ] Verify no API keys appear in client-side code (check production build bundle)
+  - [ ] Confirm separate API keys are set up for dev/staging/production environments
+  - [ ] Document verification evidence (screenshots of deployment settings or commit hashes showing env var usage)
+
+**Verification Steps:**
+1. Check deployment platform (Vercel/Netlify) environment variables dashboard - all keys should be in encrypted env vars
+2. Search production build bundle for hardcoded keys (should find none)
+3. Verify different keys are used for each environment (dev, staging, production)
+4. Document where each key is enforced (e.g., "OPENAI_API_KEY enforced server-side in lib/ai/openaiClient.ts")
 
 ### Status
 ✅ **VERIFIED** - Build timestamp configuration documented and fallback mechanism in place.
@@ -776,6 +784,42 @@ All TODO comments have been reviewed and categorized:
 
 ---
 
+## ISSUE: PHASE 4 — Code Quality Improvements
+**Labels:** code-quality, cleanup, post-launch
+
+### Description
+Address minor code quality improvements and technical debt items that don't affect functionality but improve maintainability and code clarity.
+
+### Tasks
+- [ ] Extract lastReviewed date into constant in `app/terms/page.tsx` (lines 106-119) to ensure WebPage schema and UI stay synchronized
+- [ ] Fix misleading comment in `app/manufacturers/page.tsx` generateMetadata (line 32) - comment says "Redirect" but code returns metadata
+- [ ] Remove unused variant prop from `components/Breadcrumbs.tsx` (lines 10-14) or implement variant styles
+- [ ] Use stable keys in `components/GradientHero.tsx` stats rendering (line 137) - use stat.label instead of array index if stats become dynamic
+
+**Priority:** Low - these are code quality improvements that don't affect functionality but improve maintainability.
+
+---
+
+## ISSUE: PHASE 4 — Facility Data Consistency
+**Labels:** data-quality, post-launch, low-priority
+
+### Description
+Upstream facility data should include full state/country names consistently to avoid empty segments in location strings.
+
+### Tasks
+- [ ] Review facility data import process
+- [ ] Update data model to require full state/country names
+- [ ] Migrate existing data to include full names
+- [ ] Remove workaround code after data is consistent (currently in `app/companies/[slug]/page.tsx` line 98)
+
+**Current Workaround:**
+- Code filters out empty/null values when building location strings
+- Works correctly but could be cleaner with better data
+
+**Impact:** Low - current implementation works correctly
+
+---
+
 ## ISSUE: PHASE 1 — Test Navigation Flows
 **Labels:** testing, navigation, pre-launch
 
@@ -826,6 +870,31 @@ Verify site works correctly on mobile devices.
 
 ---
 
+## ISSUE: PHASE 1 — Baseline Accessibility Checks
+**Labels:** accessibility, testing, pre-launch, blocker
+
+### Description
+Perform minimal baseline accessibility checks before launch to ensure core functionality is accessible. Full WCAG 2.1 Level AA audit deferred to Phase 4.
+
+### Tasks
+- [ ] Keyboard navigation spot-check:
+  - [ ] Tab through homepage (verify focus indicators visible)
+  - [ ] Tab through filter sidebar (verify all interactive elements reachable)
+  - [ ] Tab through company detail page (verify navigation works)
+  - [ ] Verify Escape key closes modals/dialogs
+- [ ] Color contrast verification:
+  - [ ] Verify primary buttons meet WCAG AA contrast (4.5:1 for normal text)
+  - [ ] Verify primary links meet WCAG AA contrast
+  - [ ] Verify error/warning messages are readable
+- [ ] Alt-text audit:
+  - [ ] Verify all images have alt text (check homepage, company pages, icons)
+  - [ ] Verify decorative images have empty alt="" attributes
+  - [ ] Verify informative images have descriptive alt text
+
+**Note:** These are required pre-launch baseline checks. Full comprehensive WCAG 2.1 Level AA audit and complete testing suite (screen readers, full keyboard testing, etc.) is in Phase 4.
+
+---
+
 ## ISSUE: PHASE 1 — Verify AI-Generated Content SEO
 **Labels:** seo, ai, pre-launch
 
@@ -837,134 +906,6 @@ Ensure AI-generated company content is SEO-friendly.
 - [ ] Verify company descriptions are unique (not duplicated)
 - [ ] Check that AI-generated slugs are URL-friendly
 - [ ] Ensure AI-generated content includes relevant keywords naturally
-
----
-
-## ISSUE: PHASE 1 — Verify Production Environment Variables
-**Labels:** deployment, pre-launch, blocker
-
-### Description
-Verify all required environment variables are set correctly in production.
-
-### Tasks
-- [x] Verify all required environment variables are set in production:
-  - [x] `NEXT_PUBLIC_SUPABASE_URL` (production Supabase project)
-  - [x] `NEXT_PUBLIC_SUPABASE_ANON_KEY` (production anon key)
-  - [x] `SUPABASE_SERVICE_ROLE_KEY` (production service role key)
-  - [x] `NEXT_PUBLIC_SITE_URL` (production domain with https://www)
-  - [x] `NEXT_PUBLIC_SITE_NAME` (production site name)
-  - [x] `NEXT_PUBLIC_LINKEDIN_URL` (production LinkedIn URL)
-  - [x] `NEXT_PUBLIC_GA_MEASUREMENT_ID` (GA4 measurement ID)
-- [x] Verify no placeholder values in production env vars
-- [ ] Verify `NEXT_PUBLIC_BUILD_TIMESTAMP` or `BUILD_TIMESTAMP` is set in CI/CD
-
-### Status
-✅ **VERIFIED** - Build timestamp configuration documented and fallback mechanism in place.
-
-**Summary:**
-- ✅ **Code implementation**: `getBuildTimestamp()` function in `lib/time.ts` properly checks for `NEXT_PUBLIC_BUILD_TIMESTAMP` or `BUILD_TIMESTAMP`
-- ✅ **Fallback mechanism**: Uses `new Date().toISOString()` if env vars not set (ensures sitemap/feed always has valid timestamps)
-- ⚠️ **CI/CD configuration**: No CI/CD config files found in repository; needs to be configured in deployment platform settings
-
-**Build Timestamp Usage:**
-- Used in sitemap (`app/sitemap.ts`) for evergreen page `lastModified` timestamps
-- Used in RSS feed (`app/feed.xml/route.ts`) for feed item timestamps
-- Format: ISO 8601 string (e.g., `2024-04-01T00:00:00.000Z`)
-
-**Deployment Platform Configuration:**
-
-**Vercel (Recommended):**
-- Option 1: Set in Vercel Dashboard → Project Settings → Environment Variables (System Variable)
-- Option 2: Use `vercel.json` build command to set dynamically
-- Option 3: Accept fallback behavior (uses build-time date) - **Currently implemented**
-
-**Other Platforms:**
-- **Netlify**: Set in `netlify.toml` or dashboard environment variables
-- **AWS Amplify**: Configure in Amplify Console environment variables
-- **GitHub Actions**: Set in workflow file using `${{ github.event.head_commit.timestamp }}`
-
-**Current Status:**
-- ✅ Code ready to use build timestamp if provided
-- ✅ Fallback mechanism ensures functionality without explicit configuration
-- ⚠️ **Recommendation**: Set `NEXT_PUBLIC_BUILD_TIMESTAMP` in deployment platform for accurate sitemap/feed timestamps, but not strictly required due to fallback
-
----
-
-## ISSUE: PHASE 1 — Test Production Build Locally
-**Labels:** deployment, pre-launch, blocker
-
-### Description
-Test production build with production environment variables before deploying.
-
-### Tasks
-- [x] Test production build locally with production env vars
-- [ ] Verify canonical domain redirects (www/https) at hosting layer
-- [ ] Test production deployment to staging/preview environment first
-
-### Status
-✅ **COMPLETED** - Deployment verification script created and integrated.
-
-**Summary:**
-- ✅ **Verification script created**: `scripts/verify-deployment.ts` - Comprehensive deployment verification tool
-- ✅ **Environment variable validation**: Checks all required and optional env vars, detects placeholder values
-- ✅ **Production build testing**: Automatically builds and tests production bundle locally
-- ✅ **Server status checking**: Detects if production server is running before URL verification
-- ✅ **Cross-platform support**: Works on Windows, macOS, and Linux
-- ✅ **NPM script added**: `npm run verify-deployment` for easy execution
-- ✅ **Documentation updated**: `docs/DEPLOYMENT_RUNBOOK.md` includes usage instructions
-
-**Script Features:**
-- Environment variable validation (required + optional)
-- Production build testing with cleanup
-- Sitemap.xml accessibility and XML validation
-- Feed.xml accessibility and RSS validation
-- Robots.txt accessibility and sitemap reference check
-- Canonical URL verification (HTTPS, subdomain, homepage)
-- Server status detection for localhost checks
-- Clear error messages with actionable instructions
-- Summary report with pass/fail counts
-
-**Usage:**
-```bash
-# Test production build locally (requires server running)
-npm run verify-deployment
-
-# Verify remote deployment (no local server needed)
-npm run verify-deployment -- --url https://www.pcbafinder.com
-```
-
-**Next Steps:**
-- ⚠️ **Canonical domain redirects**: Configure at hosting layer (Vercel/Netlify/etc.) - requires deployment platform configuration
-- ⚠️ **Staging/preview testing**: Run verification script against preview deployment URL before production
-
----
-
-## ISSUE: PHASE 1 — Post-Deployment Verification
-**Labels:** deployment, seo, pre-launch, blocker
-
-### Description
-Verify critical files and services are accessible after deployment.
-
-### Tasks
-- [x] Verify sitemap.xml is accessible at production URL
-- [x] Verify feed.xml is accessible at production URL
-- [x] Verify robots.txt is accessible at production URL
-- [x] Submit to Google Search Console:
-  - [x] Add property for production domain (verification file placed in `public/googled17cadb5cf939200.html`)
-  - [x] Submit sitemap.xml
-  - [x] Submit feed.xml
-  - [x] Request indexing for key pages
-
-### Status
-✅ **COMPLETED** - All Google Search Console tasks completed.
-
-**Summary:**
-- ✅ **Property verified**: Domain verified in Google Search Console
-- ✅ **Sitemap submitted**: `sitemap.xml` submitted and processed
-- ✅ **Feed accessible**: `feed.xml` accessible and valid
-- ✅ **Indexing requested**: Key pages submitted for indexing
-- ✅ **Automated verification**: `scripts/verify-deployment.ts` can verify all critical files after deployment
-- ✅ **Documentation**: `docs/GOOGLE_SEARCH_CONSOLE_SETUP.md` includes complete setup guide
 
 ---
 
@@ -1080,15 +1021,15 @@ Metadata must be centralized and consistent.
 
 ### Tasks
 - [x] Decision: Tailwind shared classes
-- [x] Create `.btn-primary`, `.btn-secondary`, `.btn-ghost`
+- [x] Create `.btn--primary`, `.btn--secondary`, `.btn--ghost`
 - [x] Replace all buttons across project
 - [x] Document button usage
 
 ### Status
-✅ **COMPLETED** - Button system standardized with new CSS classes.
+✅ **COMPLETED** - Button system standardized with BEM-style CSS classes.
 
 **Summary:**
-- ✅ **CSS classes created**: Replaced BEM-style classes (`.btn--primary`, `.btn--secondary`, `.btn--ghost`) with new naming (`.btn-primary`, `.btn-secondary`, `.btn-ghost`) in `app/globals.css`
+- ✅ **CSS classes created**: Standardized to BEM-style classes (`.btn--primary`, `.btn--secondary`, `.btn--ghost`) in `app/globals.css` to match existing modifiers (`.btn--outline`, `.btn--sm`)
 - ✅ **Button usage migrated**: Updated 6 files to use new class names:
   - `app/about/page.tsx` (2 instances)
   - `app/list-your-company/page.tsx` (1 instance)
@@ -1310,27 +1251,29 @@ Metadata must be centralized and consistent.
 
 ---
 
-## ISSUE: PHASE 1 — Facility Data Consistency
-**Labels:** data-quality, post-launch, low-priority
+## ISSUE: PHASE 3 — Design System Documentation
+**Labels:** design-system, documentation, post-launch
 
 ### Description
-Upstream facility data should include full state/country names consistently to avoid empty segments in location strings.
+Create comprehensive design system documentation to guide future development and maintain consistency.
 
 ### Tasks
-- [ ] Review facility data import process
-- [ ] Update data model to require full state/country names
-- [ ] Migrate existing data to include full names
-- [ ] Remove workaround code after data is consistent (currently in `app/companies/[slug]/page.tsx` line 98)
+- [ ] Create `DESIGN_SYSTEM.md` documentation
+- [ ] Document color palette (Primary Blue: #2563eb, Blue Gradient: from-blue-600 to-indigo-700, Accent Orange: #ea580c)
+- [ ] Document typography scale (heading sizes, body variants, font weights)
+- [ ] Document spacing system (section padding, container widths, element spacing)
+- [ ] Document icon usage guidelines (sizes: w-4 h-4, w-5 h-5, w-6 h-6, w-8 h-8, w-10 h-10, w-12 h-12)
+- [ ] Document button system (variants, sizes, usage)
+- [ ] Document card system (variants, usage guidelines)
+- [ ] Document responsive breakpoints and grid patterns
+- [ ] Include code examples and usage guidelines
+- [ ] Fix icon prop semantic confusion in `app/industries/[industry]/page.tsx` and `app/manufacturers/[state]/page.tsx` (currently accepts strings but named "icon" - consider renaming to iconOrLabel or using actual icon components)
 
-**Current Workaround:**
-- Code filters out empty/null values when building location strings
-- Works correctly but could be cleaner with better data
-
-**Impact:** Low - current implementation works correctly
+**Reference:** See `app/styleguide/page.tsx` for existing documentation that can be extracted and expanded.
 
 ---
 
-## ISSUE: PHASE 1 — Mobile Filter Toggle Deprecation
+## ISSUE: PHASE 3 — Mobile Filter Toggle Deprecation
 **Labels:** ui, cleanup, post-launch, low-priority
 
 ### Description
@@ -1348,27 +1291,6 @@ Mobile Toggle button should be removed after MobileFilterBar is implemented acro
 - Requires product design sign-off before removal
 
 **Impact:** Low - feature works correctly, just needs cleanup after migration
-
----
-
-## ISSUE: PHASE 3 — Design System Documentation
-**Labels:** design-system, documentation, post-launch
-
-### Description
-Create comprehensive design system documentation to guide future development and maintain consistency.
-
-### Tasks
-- [ ] Create `DESIGN_SYSTEM.md` documentation
-- [ ] Document color palette (Primary Blue: #2563eb, Blue Gradient: from-blue-600 to-indigo-700, Accent Orange: #ea580c)
-- [ ] Document typography scale (heading sizes, body variants, font weights)
-- [ ] Document spacing system (section padding, container widths, element spacing)
-- [ ] Document icon usage guidelines (sizes: w-4 h-4, w-5 h-5, w-6 h-6, w-8 h-8, w-10 h-10, w-12 h-12)
-- [ ] Document button system (variants, sizes, usage)
-- [ ] Document card system (variants, usage guidelines)
-- [ ] Document responsive breakpoints and grid patterns
-- [ ] Include code examples and usage guidelines
-
-**Reference:** See `app/styleguide/page.tsx` for existing documentation that can be extracted and expanded.
 
 ---
 
@@ -1411,6 +1333,7 @@ Optimize application performance through code splitting, caching, and image opti
 - [ ] Lazy-load heavy components
 - [ ] Remove unused client JS
 - [ ] Add caching for directory queries
+- [ ] Fix duplicate data fetching in `app/manufacturers/page.tsx` (state counts query runs in both generateMetadata and page component - use React cache() to deduplicate)
 
 **Image Optimization:**
 - [x] Decision: Migrate to `next/image`
@@ -1427,7 +1350,7 @@ Optimize application performance through code splitting, caching, and image opti
 Implement pagination when company count approaches the 500 company limit to ensure site can scale beyond initial capacity.
 
 ### Tasks
-- [ ] Monitor company count (trigger at 450 companies - 90% of limit)
+- [ ] Monitor company count weekly post-launch: `SELECT COUNT(*) FROM companies WHERE is_active = true` (trigger at 450 companies - 90% of limit)
 - [ ] Implement pagination on homepage when limit is reached
 - [ ] Design URL structure for paginated pages (e.g., `/page/2`, `/page/3`)
 - [ ] Add pagination controls to UI
@@ -1441,33 +1364,42 @@ Implement pagination when company count approaches the 500 company limit to ensu
 - Pagination already implemented on manufacturers index page
 - Need to extend to homepage when approaching limit
 
+**Monitoring:**
+- Track growth velocity weekly post-launch to prioritize implementation timeline
+- Implementation should be prioritized based on actual company growth trajectory
+
 **Reference:** See `docs/PRODUCTION_READINESS_ANALYSIS.md` (Item #14) and `docs/LAUNCH_DECISIONS_CHECKLIST.md` (Decision 9)
 
 ---
 
-## ISSUE: PHASE 4 — Accessibility Audit
+## ISSUE: PHASE 4 — Comprehensive Accessibility Audit
 **Labels:** accessibility, ux, post-launch
 
 ### Description
-Ensure the site is accessible to all users, including those using assistive technologies.
+Conduct full WCAG 2.1 Level AA compliance audit and comprehensive accessibility testing. Baseline checks completed in Phase 1.
 
 ### Tasks
-- [ ] Conduct WCAG 2.1 compliance audit (target Level AA)
-- [ ] Test keyboard navigation (Tab, Enter, Escape, Arrow keys)
-- [ ] Test with screen readers (NVDA, JAWS, VoiceOver)
-- [ ] Verify color contrast ratios meet WCAG standards
-- [ ] Add ARIA labels where needed
-- [ ] Ensure all images have alt text
-- [ ] Test form accessibility (labels, error messages)
-- [ ] Verify focus indicators are visible
-- [ ] Test skip navigation links
+- [ ] Conduct full WCAG 2.1 compliance audit (target Level AA)
+- [ ] Complete keyboard navigation testing (all pages, all interactive elements)
+- [ ] Test with screen readers (NVDA, JAWS, VoiceOver) on all major pages
+- [ ] Comprehensive color contrast audit (all text, all UI elements)
+- [ ] Add ARIA labels where needed (beyond baseline)
+- [ ] Comprehensive alt-text audit (verify all images, icons, decorative elements)
+- [ ] Test form accessibility comprehensively (all forms, error states, validation messages)
+- [ ] Verify focus indicators are visible and consistent across all components
+- [ ] Test skip navigation links on all pages
+- [ ] Test with assistive technologies beyond screen readers (voice control, switch control, etc.)
 - [ ] Document accessibility features and compliance level
+- [ ] Create accessibility statement page
 
 **Tools:**
 - Lighthouse accessibility audit
 - WAVE browser extension
 - axe DevTools
 - Manual screen reader testing
+- Color contrast analyzers
+
+**Note:** Baseline accessibility checks (keyboard navigation spot-check, color contrast verification, alt-text audit) were completed in Phase 1. This Phase 4 audit is the comprehensive post-launch assessment.
 
 ---
 

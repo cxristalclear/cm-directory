@@ -355,11 +355,11 @@
     @apply px-2 py-2;
   }
 
-  .btn-primary {
+  .btn--primary {
     @apply bg-primary text-primary-foreground hover:bg-primary/90;
   }
 
-  .btn-secondary {
+  .btn--secondary {
     @apply bg-secondary text-secondary-foreground backdrop-blur-sm hover:bg-secondary/80;
   }
 
@@ -371,7 +371,7 @@
     @apply border border-primary/40 bg-background text-primary hover:border-primary hover:bg-primary/5;
   }
 
-  .btn-ghost {
+  .btn--ghost {
     @apply text-primary hover:bg-primary/10 hover:text-primary;
   }
 

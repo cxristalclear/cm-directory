@@ -1,12 +1,12 @@
 export {}
 
-const fromMock = jest.fn()
+import { createClient } from '@/lib/supabase-server'
 
-jest.mock('@/lib/supabase', () => ({
-  supabase: {
-    from: (table: string) => fromMock(table),
-  },
+jest.mock('@/lib/supabase-server', () => ({
+  createClient: jest.fn(),
 }))
+
+const mockedCreateClient = createClient as jest.MockedFunction<typeof createClient>
 
 beforeAll(() => {
   if (typeof globalThis.Response === 'undefined') {
@@ -40,7 +40,7 @@ beforeAll(() => {
 describe('RSS feed generation', () => {
   beforeEach(() => {
     jest.resetModules()
-    fromMock.mockReset()
+    jest.clearAllMocks()
   })
 
   afterEach(() => {
@@ -75,19 +75,21 @@ describe('RSS feed generation', () => {
           cms_metadata: null,
         },
       ],
+      error: null,
     })
 
     const orderMock = jest.fn().mockReturnValue({ limit: limitMock })
     const eqMock = jest.fn().mockReturnValue({ order: orderMock })
     const selectMock = jest.fn().mockReturnValue({ eq: eqMock })
 
-    fromMock.mockImplementation((table: string) => {
-      if (table === 'companies') {
-        return { select: selectMock }
-      }
-
-      throw new Error(`Unexpected table ${table}`)
-    })
+    mockedCreateClient.mockResolvedValue({
+      from: (table: string) => {
+        if (table === 'companies') {
+          return { select: selectMock }
+        }
+        throw new Error(`Unexpected table ${table}`)
+      },
+    } as any)
 
     const { GET } = await import('@/app/feed.xml/route')
     const response = await GET()
@@ -109,5 +111,38 @@ describe('RSS feed generation', () => {
     expect(xml).toContain('<pubDate>Mon, 01 Apr 2024 00:00:00 GMT</pubDate>')
     expect(xml).not.toContain('Missing Slug Co.')
     expect(xml).toContain('<atom:link href="https://www.pcbafinder.com/feed.xml" rel="self" type="application/rss+xml" />')
+  })
+
+  it('returns 500 status when Supabase query fails', async () => {
+    const limitMock = jest.fn().mockResolvedValue({
+      data: null,
+      error: { message: 'Network error', code: 'PGRST116' },
+    })
+
+    const orderMock = jest.fn().mockReturnValue({ limit: limitMock })
+    const eqMock = jest.fn().mockReturnValue({ order: orderMock })
+    const selectMock = jest.fn().mockReturnValue({ eq: eqMock })
+
+    mockedCreateClient.mockResolvedValue({
+      from: () => ({ select: selectMock }),
+    } as any)
+
+    const { GET } = await import('@/app/feed.xml/route')
+    const response = await GET()
+    const body = await response.text()
+
+    expect(response.status).toBe(500)
+    expect(body).toBe('Internal Server Error')
+  })
+
+  it('returns 500 status when unexpected error occurs', async () => {
+    mockedCreateClient.mockRejectedValue(new Error('Unexpected error'))
+
+    const { GET } = await import('@/app/feed.xml/route')
+    const response = await GET()
+    const body = await response.text()
+
+    expect(response.status).toBe(500)
+    expect(body).toBe('Internal Server Error')
   })
 })

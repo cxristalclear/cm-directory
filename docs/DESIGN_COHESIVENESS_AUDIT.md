@@ -163,9 +163,9 @@ Background: gray-50
 **Option A: Tailwind + Shared Classes**
 ```tsx
 // Define in globals.css
-.btn-primary { @apply px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors; }
-.btn-secondary { @apply px-6 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors; }
-.btn-ghost { @apply px-6 py-3 text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition-colors; }
+.btn--primary { @apply px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors; }
+.btn--secondary { @apply px-6 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors; }
+.btn--ghost { @apply px-6 py-3 text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition-colors; }
 ```
 
 **Option B: shadcn/ui Button Component**

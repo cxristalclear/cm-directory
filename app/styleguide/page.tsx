@@ -194,11 +194,11 @@ export default function StyleguidePage() {
           <div className="card-compact p-6 space-y-4">
             <h2 className="heading-md">Buttons</h2>
             <div className="flex flex-wrap gap-3">
-              <button className="btn btn-primary">Primary</button>
-              <button className="btn btn-secondary">Secondary</button>
+              <button className="btn btn--primary">Primary</button>
+              <button className="btn btn--secondary">Secondary</button>
               <button className="btn btn--outline">Outline</button>
-              <button className="btn btn-ghost">Ghost</button>
-              <button className="btn btn-primary btn--sm">Compact</button>
+              <button className="btn btn--ghost">Ghost</button>
+              <button className="btn btn--primary btn--sm">Compact</button>
             </div>
           </div>
 
@@ -299,9 +299,9 @@ export default function StyleguidePage() {
               <h3 className="heading-sm mb-3">Variants</h3>
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-3">
-                  <button className="btn btn-primary">Primary</button>
-                  <button className="btn btn-secondary">Secondary</button>
-                  <button className="btn btn-ghost">Ghost</button>
+                  <button className="btn btn--primary">Primary</button>
+                  <button className="btn btn--secondary">Secondary</button>
+                  <button className="btn btn--ghost">Ghost</button>
                   <button className="btn btn--outline">Outline</button>
                 </div>
                 <div className="space-y-2 text-sm text-muted-foreground">
@@ -316,9 +316,9 @@ export default function StyleguidePage() {
             <div>
               <h3 className="heading-sm mb-3">Sizes</h3>
               <div className="flex flex-wrap items-center gap-3">
-                <button className="btn btn-primary btn--sm">Small</button>
-                <button className="btn btn-primary">Default</button>
-                <button className="btn btn-primary btn--lg">Large</button>
+                <button className="btn btn--primary btn--sm">Small</button>
+                <button className="btn btn--primary">Default</button>
+                <button className="btn btn--primary btn--lg">Large</button>
               </div>
               <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                 <p><strong className="text-foreground">Small (btn--sm):</strong> px-3 py-1.5 text-xs - For compact spaces, tables, or inline actions</p>
@@ -331,12 +331,12 @@ export default function StyleguidePage() {
               <h3 className="heading-sm mb-3">Usage Examples</h3>
               <div className="space-y-3 text-sm">
                 <div className="rounded-md bg-muted p-3 font-mono text-xs">
-                  <div className="text-muted-foreground">{"<button className=\"btn btn-primary\">"}</div>
+                  <div className="text-muted-foreground">{"<button className=\"btn btn--primary\">"}</div>
                   <div className="ml-4">Submit</div>
                   <div className="text-muted-foreground">{"</button>"}</div>
                 </div>
                 <div className="rounded-md bg-muted p-3 font-mono text-xs">
-                  <div className="text-muted-foreground">{"<Link href=\"/\" className=\"btn btn-primary btn--lg\">"}</div>
+                  <div className="text-muted-foreground">{"<Link href=\"/\" className=\"btn btn--primary btn--lg\">"}</div>
                   <div className="ml-4">Get Started</div>
                   <div className="text-muted-foreground">{"</Link>"}</div>
                 </div>

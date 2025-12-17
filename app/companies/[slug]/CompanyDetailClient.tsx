@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Building2, Calendar, CheckCircle, DollarSign, Globe, MapPin, Users } from "lucide-react"
 import { Breadcrumbs } from "@/components/Breadcrumbs"
 import ClaimEditSection from "@/components/ClaimEditSection"
@@ -75,15 +75,21 @@ export default function CompanyDetailClient({ company }: CompanyDetailClientProp
   const companyName = company.company_name ?? ""
   const primaryFacility = company.facilities?.[0] ?? null
 
-  // Track company profile view
+  // Track company profile view - only once per company ID
+  const lastTrackedCompanyId = useRef<string | null>(null)
   useEffect(() => {
+    if (!companyName || !company.id) return
+    // Only track if this is a different company than we last tracked
+    if (lastTrackedCompanyId.current === company.id) return
+    
+    lastTrackedCompanyId.current = company.id
     trackCompanyView({
       company_name: companyName,
       company_slug: company.slug || undefined,
       company_id: company.id || undefined,
       event_label: `Company View: ${companyName}`,
     })
-  }, [company.id, company.slug, companyName])
+  }, [company.id, companyName, company.slug])
 
   const relatedLinks = (() => {
     const links: Array<{ href: string; label: string }> = []
